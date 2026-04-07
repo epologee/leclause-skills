@@ -1,6 +1,6 @@
 ---
 name: eye-of-the-beholder
-user-invocable: false
+user-invocable: true
 description: Use when producing or reviewing any visual layout (screen, print, responsive). Also use when the user shares a screenshot with spacing concerns. Activates DURING and AFTER layout CSS work. Catches cramped text, missing margins, disproportionate spacing.
 ---
 
