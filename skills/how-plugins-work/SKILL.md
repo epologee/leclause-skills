@@ -84,9 +84,24 @@ packages/leclause/skills/ship-it     -> skills/ship-it   (bundel)
 - Elke nieuwe skill vereist een symlink in de bundel EN een nieuw individueel package
 - De pre-commit hook moet de bundel-versie bumpen bij elke skill-wijziging
 
-## SKILL.md frontmatter en de name field
+## SKILL.md frontmatter
 
-De `name` field in SKILL.md frontmatter is optioneel. Wanneer aanwezig, moet deze matchen met de directory naam. Als ze niet matchen, zijn er gedocumenteerde bugs: het model kan de skill niet vinden bij invocatie (anthropics/claude-code#22063). De directory naam is altijd de bron van waarheid.
+### name
+
+Optioneel. Wanneer aanwezig, moet deze matchen met de directory naam. Als ze niet matchen, zijn er gedocumenteerde bugs: het model kan de skill niet vinden bij invocatie (anthropics/claude-code#22063). De directory naam is altijd de bron van waarheid.
+
+### user-invocable
+
+**Defaultt naar `true` wanneer niet opgegeven.** Elke skill is automatisch een slash command. De flag is alleen nuttig als `user-invocable: false` om een skill expliciet uit autocomplete te halen. `user-invocable: true` toevoegen is een no-op.
+
+Geverifieerd in de Claude Code 2.1.92 binary:
+```javascript
+T = H["user-invocable"] === void 0 ? !0 : G0H(H["user-invocable"])
+```
+
+### disable-model-invocation
+
+Wanneer `true`: het model kan de skill niet automatisch activeren op basis van context. De skill is dan alleen bereikbaar via expliciete slash command. Nuttig voor skills die nooit auto-triggered moeten worden (bijv. `/clipboard`, `/saysay`). Verkleint het actieve context-budget in `skill-budget`.
 
 ## Versioning
 
