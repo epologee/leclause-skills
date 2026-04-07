@@ -1,0 +1,47 @@
+#!/bin/sh
+#
+# Verify that every skill directory is mentioned in README.md.
+# Prevents publishing a skill that visitors can't discover.
+#
+# Also enforces per-plugin version bumps via bin/plugin-versions --staged.
+# Backstop for the dont-do-that Claude Code PreToolUse hook, which misses
+# chained `git add && git commit` calls because staging happens after the
+# PreToolUse hook fires. This git-level hook runs after staging, so it
+# always sees the real staged diff.
+#
+# Setup: git config core.hooksPath hooks
+
+readme="README.md"
+
+if [ ! -f "$readme" ]; then
+  echo "ERROR: README.md not found."
+  exit 1
+fi
+
+missing=""
+
+for skill_dir in skills/*/; do
+  skill_name=$(basename "$skill_dir")
+  if ! grep -qF "$skill_name" "$readme"; then
+    missing="$missing  - $skill_name\n"
+  fi
+done
+
+if [ -n "$missing" ]; then
+  echo "ERROR: Skills missing from README.md:"
+  echo ""
+  printf "$missing"
+  echo ""
+  echo "Add a description for each skill to README.md before committing."
+  exit 1
+fi
+
+plugin_versions_script="bin/plugin-versions"
+if [ -x "$plugin_versions_script" ]; then
+  PLUGIN_VERSIONS_GIT_CMD=$(ps -o args= -p $PPID 2>/dev/null || echo "git commit")
+  export PLUGIN_VERSIONS_GIT_CMD
+  if ! "$plugin_versions_script" --staged; then
+    echo "ERROR: $plugin_versions_script --staged failed." >&2
+    exit 1
+  fi
+fi

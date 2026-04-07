@@ -1,0 +1,101 @@
+{
+  "name": "leclause",
+  "owner": {
+    "name": "Leclause"
+  },
+  "metadata": {
+    "description": "Skills marketplace for Claude Code and other AI agents"
+  },
+  "plugins": [
+    {
+      "name": "clipboard",
+      "description": "Copy core content of the last answer to the macOS clipboard via pbcopy. Supports plain text and Slack rich text.",
+      "source": "./packages/clipboard"
+    },
+    {
+      "name": "commit-all-the-things",
+      "description": "Commit all uncommitted changes in the working tree, grouped into logical commits with descriptive messages.",
+      "source": "./packages/commit-all-the-things"
+    },
+    {
+      "name": "dont-do-that",
+      "description": "Guardrail hooks that push back on common AI reflexes: shifting blame, stopping prematurely, delegating verification, asking for confirmation when none was needed, and em-dashes in prose.",
+      "source": "./packages/dont-do-that"
+    },
+    {
+      "name": "export-skill",
+      "description": "Export and sanitize a skill for sharing, stripping PII and checking for security issues. Supports translation and platform porting.",
+      "source": "./packages/export-skill"
+    },
+    {
+      "name": "eye-of-the-beholder",
+      "description": "Visual layout review skill. Observation before explanation: screenshot, describe what you see, then diagnose. Design-TDD for CSS.",
+      "source": "./packages/eye-of-the-beholder"
+    },
+    {
+      "name": "ground",
+      "description": "Verify Claude's recent output with external sources when the user expresses skepticism. Ad-hoc retrieval-augmented verification.",
+      "source": "./packages/ground"
+    },
+    {
+      "name": "gurus",
+      "description": "Opinionated code review panel with 8 expert perspectives (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot).",
+      "source": "./packages/gurus"
+    },
+    {
+      "name": "inspiratie",
+      "description": "Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. Dutch-language skill.",
+      "source": "./packages/inspiratie"
+    },
+    {
+      "name": "rebase-origin-default",
+      "description": "Safely rebase current branch on the remote default branch with staleness check and automatic conflict resolution.",
+      "source": "./packages/rebase-origin-default"
+    },
+    {
+      "name": "recap",
+      "description": "Structured status overview of the current session: what we're doing, where we are, what's next.",
+      "source": "./packages/recap"
+    },
+    {
+      "name": "recursion",
+      "description": "Daily deep research producing atomic improvement plans for the Claude Code workflow. Research machine, not executor.",
+      "source": "./packages/recursion"
+    },
+    {
+      "name": "rename-suggestion",
+      "description": "Generate a descriptive session name based on conversation context and copy the rename command to clipboard.",
+      "source": "./packages/rename-suggestion"
+    },
+    {
+      "name": "saysay",
+      "description": "Speech mode via macOS say command. Claude speaks output aloud after every response, translating screen content to spoken language.",
+      "source": "./packages/saysay"
+    },
+    {
+      "name": "screen-recording",
+      "description": "Automated screen recordings and demo videos of browser-based features using Playwright video recording.",
+      "source": "./packages/screen-recording"
+    },
+    {
+      "name": "self-improvement",
+      "description": "Update CLAUDE.md and skills based on user feedback. Detects duplication, determines optimal location, extracts large sections into skills.",
+      "source": "./packages/self-improvement"
+    },
+    {
+      "name": "testing-philosophy",
+      "description": "TDD principles, Cucumber/Gherkin conventions, flaky test handling, and test suite health. Red-Green-Refactor workflow.",
+      "source": "./packages/testing-philosophy"
+    },
+    {
+      "name": "whywhy",
+      "description": "Drill N layers deep into a question or goal (default 7). Claude autonomously asks and answers 'why?' N times, then analyzes the chain for a better direction.",
+      "source": "./packages/whywhy"
+    },
+    {
+      "name": "how-plugins-work",
+      "description": "Explains how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work in practice.",
+      "source": "./packages/how-plugins-work"
+    }
+  ]
+}

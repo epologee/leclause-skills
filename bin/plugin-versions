@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+#
+# plugin-versions: enforce per-plugin semver based on commit count.
+#
+# Each plugin in .claude-plugin/marketplace.json gets version 1.0.{N}
+# where N is the number of commits touching packages/<name>/ or skills/<name>/.
+#
+# Modes:
+#   --check      Exit 1 if any plugin.json version or marketplace description drifts.
+#   --write      Rewrite plugin.json versions to current count, sync descriptions.
+#   --bootstrap  Like --write but anticipates the upcoming commit (count+1 for every plugin).
+#   --staged     Used by the pre-commit hook. Only bumps plugins with staged changes.
+#                Uses count+1 normally, count on amend. Detects -a via PLUGIN_VERSIONS_GIT_CMD.
+
+set -eu
+
+cd "$(git rev-parse --show-toplevel)"
+
+MARKETPLACE_FILE=".claude-plugin/marketplace.json"
+
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 {--check|--write|--bootstrap|--staged}" >&2
+  exit 1
+fi
+
+MODE="$1"
+
+plugin_names() {
+  jq -r '.plugins[].name' "$MARKETPLACE_FILE" | sort
+}
+
+# Echoes the plugin's owned paths on one line, space-separated, safe for expansion.
+# Plugin names and path segments do not contain spaces in this repo.
+paths_for() {
+  local name="$1"
+  if [ -d "skills/$name" ]; then
+    echo "packages/$name skills/$name"
+  else
+    echo "packages/$name"
+  fi
+}
+
+count_commits() {
+  local name="$1"
+  # shellcheck disable=SC2086
+  git rev-list --count HEAD -- $(paths_for "$name")
+}
+
+current_version() {
+  jq -r '.version' "packages/$1/.claude-plugin/plugin.json"
+}
+
+current_plugin_description() {
+  jq -r '.description' "packages/$1/.claude-plugin/plugin.json"
+}
+
+current_marketplace_description() {
+  jq -r --arg n "$1" '.plugins[] | select(.name == $n) | .description' "$MARKETPLACE_FILE"
+}
+
+write_plugin_version() {
+  local name="$1"
+  local version="$2"
+  local file="packages/$name/.claude-plugin/plugin.json"
+  local tmp
+  tmp=$(mktemp)
+  jq --indent 2 --arg v "$version" '.version = $v' "$file" > "$tmp"
+  mv "$tmp" "$file"
+}
+
+sync_marketplace_description() {
+  local name="$1"
+  local desc
+  desc=$(current_plugin_description "$name")
+  local tmp
+  tmp=$(mktemp)
+  jq --indent 2 --arg n "$name" --arg d "$desc" \
+    '(.plugins[] | select(.name == $n).description) = $d' \
+    "$MARKETPLACE_FILE" > "$tmp"
+  mv "$tmp" "$MARKETPLACE_FILE"
+}
+
+has_staged_changes() {
+  local name="$1"
+  # shellcheck disable=SC2086
+  [ -n "$(git diff --cached --name-only -- $(paths_for "$name"))" ]
+}
+
+has_working_changes() {
+  local name="$1"
+  # shellcheck disable=SC2086
+  [ -n "$(git diff --name-only HEAD -- $(paths_for "$name"))" ]
+}
+
+is_amend() {
+  case "${PLUGIN_VERSIONS_GIT_CMD:-}" in
+    *--amend*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+is_all_flag() {
+  local cmd=" ${PLUGIN_VERSIONS_GIT_CMD:-} "
+  case "$cmd" in
+    *" --all "*) return 0 ;;
+  esac
+  # Short flag cluster containing 'a', preceded by single dash and whitespace.
+  if [[ "$cmd" =~ [[:space:]]-[a-zA-Z]*a[a-zA-Z]*[[:space:]] ]]; then
+    return 0
+  fi
+  return 1
+}
+
+mode_check() {
+  local drift=0
+  local name expected actual plugin_desc market_desc
+  while IFS= read -r name; do
+    expected="1.0.$(count_commits "$name")"
+    actual=$(current_version "$name")
+    if [ "$expected" != "$actual" ]; then
+      echo "VERSION DRIFT: $name expected $expected, got $actual" >&2
+      drift=1
+    fi
+    plugin_desc=$(current_plugin_description "$name")
+    market_desc=$(current_marketplace_description "$name")
+    if [ "$plugin_desc" != "$market_desc" ]; then
+      echo "DESCRIPTION DRIFT: $name marketplace.json out of sync with plugin.json" >&2
+      drift=1
+    fi
+  done < <(plugin_names)
+  exit $drift
+}
+
+mode_write() {
+  local name version
+  while IFS= read -r name; do
+    version="1.0.$(count_commits "$name")"
+    if [ "$(current_version "$name")" != "$version" ]; then
+      write_plugin_version "$name" "$version"
+      echo "Wrote $name $version"
+    fi
+    if [ "$(current_plugin_description "$name")" != "$(current_marketplace_description "$name")" ]; then
+      sync_marketplace_description "$name"
+      echo "Synced $name description"
+    fi
+  done < <(plugin_names)
+}
+
+mode_bootstrap() {
+  local name count version
+  while IFS= read -r name; do
+    count=$(count_commits "$name")
+    version="1.0.$((count + 1))"
+    write_plugin_version "$name" "$version"
+    sync_marketplace_description "$name"
+    echo "Bootstrapped $name $version"
+  done < <(plugin_names)
+}
+
+mode_staged() {
+  local delta=1
+  local use_all=0
+  local name dirty count version
+  if is_amend; then
+    delta=0
+  fi
+  if is_all_flag; then
+    use_all=1
+  fi
+  while IFS= read -r name; do
+    dirty=0
+    if [ $use_all -eq 1 ]; then
+      has_working_changes "$name" && dirty=1
+    else
+      has_staged_changes "$name" && dirty=1
+    fi
+    [ $dirty -eq 1 ] || continue
+    count=$(count_commits "$name")
+    version="1.0.$((count + delta))"
+    if [ "$(current_version "$name")" != "$version" ]; then
+      write_plugin_version "$name" "$version"
+      git add "packages/$name/.claude-plugin/plugin.json"
+      echo "Bumped $name to $version" >&2
+    fi
+    if [ "$(current_plugin_description "$name")" != "$(current_marketplace_description "$name")" ]; then
+      sync_marketplace_description "$name"
+      git add "$MARKETPLACE_FILE"
+      echo "Synced $name description" >&2
+    fi
+  done < <(plugin_names)
+}
+
+case "$MODE" in
+  --check) mode_check ;;
+  --write) mode_write ;;
+  --bootstrap) mode_bootstrap ;;
+  --staged) mode_staged ;;
+  *)
+    echo "Unknown mode: $MODE" >&2
+    echo "Usage: $0 {--check|--write|--bootstrap|--staged}" >&2
+    exit 1
+    ;;
+esac

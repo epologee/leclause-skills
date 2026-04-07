@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# Require a "[doublecheck]" trailer in the commit message body.
+# This forces a conscious check before every commit: is this content
+# safe to publish? The trailer must NOT be on the first line.
+#
+# Setup: git config core.hooksPath hooks
+
+message=$(cat "$1")
+first_line=$(head -1 "$1")
+rest=$(tail -n +2 "$1")
+
+if echo "$first_line" | grep -qF "[doublecheck]"; then
+  echo "ERROR: [doublecheck] must not be on the first line."
+  echo "Add it as a trailer in the commit body:"
+  echo ""
+  echo "  Your commit message here"
+  echo ""
+  echo "  [doublecheck]"
+  exit 1
+fi
+
+if ! echo "$rest" | grep -qF "[doublecheck]"; then
+  echo "ERROR: Missing [doublecheck] sign-off."
+  echo ""
+  echo "Every commit in this repo becomes publicly visible."
+  echo ""
+  echo "BEFORE adding the trailer, actually review the diff:"
+  echo "  git diff --cached"
+  echo ""
+  echo "Look for:"
+  echo "  - Personal names, email addresses, phone numbers"
+  echo "  - Organization or project names"
+  echo "  - Internal URLs, .test domains (that aren't example.test)"
+  echo "  - API keys, tokens, credentials"
+  echo "  - Home directory paths with usernames (/Users/...)"
+  echo ""
+  echo "Use /ground to verify your diff is clean. Use /export-skill"
+  echo "for the full sanitization checklist."
+  echo ""
+  echo "Only after reviewing, add this trailer to the commit body:"
+  echo ""
+  echo "  [doublecheck]"
+  exit 1
+fi

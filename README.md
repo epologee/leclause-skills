@@ -33,9 +33,9 @@ Skills you invoke explicitly with `/<name>`:
 | **whywhy** | `/whywhy [n]` | Drill N layers deep into a question or goal (default 7). Claude autonomously asks and answers "why?" N times, then analyzes the chain. |
 | **how-plugins-work** | `/how-plugins-work` | Living document explaining how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work. |
 
-### Automatic skills
+### Also auto-triggered
 
-Skills that activate based on context, no slash command needed:
+All skills above are slash commands. The skills below are too (`/eye-of-the-beholder`, `/testing-philosophy`), but they also activate automatically based on context:
 
 | Skill | Triggers on |
 |-------|-------------|
