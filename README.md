@@ -1,6 +1,8 @@
-# Leclause Skills
+# Lecl(a)use Skills
 
-A collection of skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Install individual skills or the complete collection.
+A curated subset of the skills I built while developing applications in Ruby, Swift, Go, JavaScript, Python, Kotlin, and others across various projects. These are the ones I managed to make reusable for colleagues and friends.
+
+I typically prompt in Dutch but write English code, so these skills are a mix of both. The `export-skill` skill can translate if needed.
 
 ## Install
 
