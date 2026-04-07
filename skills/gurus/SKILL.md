@@ -1,7 +1,6 @@
 ---
 name: gurus
 description: Use when code needs opinionated review from multiple expert perspectives. Triggers on /gurus, expert review panel, guru review, or when seeking consensus across engineering philosophies.
-user-invocable: true
 allowed-tools:
   - Bash(git diff *)
   - Bash(git log *)

@@ -1,8 +1,6 @@
 ---
 name: how-plugins-work
 description: Explains how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work in practice. Living document based on empirical testing.
-user-invocable: true
-disable-model-invocation: true
 ---
 
 # How Plugins Work

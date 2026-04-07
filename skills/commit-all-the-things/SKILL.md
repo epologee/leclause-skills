@@ -1,7 +1,6 @@
 ---
 name: commit-all-the-things
 description: Use when the user wants to commit ALL uncommitted changes in the working tree, grouped into logical commits. Triggers on /commit-all-the-things or "commit alles", "ruim de working tree op", "commit what's left".
-user-invocable: true
 ---
 
 # Commit All The Things

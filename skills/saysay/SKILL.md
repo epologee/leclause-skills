@@ -1,7 +1,6 @@
 ---
 name: saysay
 description: Use when the user types /saysay to enter speech mode, or /saysay off to exit. In speech mode, Claude speaks its output aloud via macOS say command after every response.
-user-invocable: true
 allowed-tools:
   - Bash(saysay *)
   - Bash(*| saysay*)

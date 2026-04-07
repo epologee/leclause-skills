@@ -1,7 +1,6 @@
 ---
 name: inspiratie
 description: Use when tackling unfamiliar topics, designing something new, evaluating approaches, or when the conversation benefits from external perspectives and research. Triggers on questions like "hoe doen anderen dit", "wat bestaat er al", research requests, and unfamiliar domains.
-user-invocable: true
 ---
 
 # Inspiratie

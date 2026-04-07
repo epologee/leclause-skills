@@ -1,5 +1,5 @@
 {
   "name": "rebase-origin-default",
   "description": "Safely rebase current branch on the remote default branch with staleness check and automatic conflict resolution.",
-  "version": "1.0.1"
+  "version": "1.0.2"
 }

@@ -5,7 +5,6 @@ description: >
   Triggers on /recursion, "wat kunnen we verbeteren", "workflow
   improvements", or scheduled daily runs. Produces atomic improvement
   plans with full motivation.
-user-invocable: true
 argument-hint: "[now | on | off | status | focus <thema> | reject <file>]"
 allowed-tools:
   - Bash(date *)

@@ -1,7 +1,6 @@
 ---
 name: screen-recording
 description: Use when creating automated screen recordings, demo videos, or visual documentation of browser-based features
-user-invocable: true
 ---
 
 # Screen Recording

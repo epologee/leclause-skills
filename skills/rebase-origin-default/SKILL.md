@@ -4,7 +4,6 @@ description: >
   Rebase current branch on the remote default branch (main/master).
   Never fetches origin automatically, but warns when the tracking ref
   is stale. Resolves simple merge conflicts automatically.
-user-invocable: true
 allowed-tools: Bash(git rev-parse:*), Bash(git ls-remote:*), Bash(git rebase:*), Bash(git rev-list:*), Bash(git add:*), Bash(git diff:*), Bash(git status:*), Bash(git symbolic-ref:*)
 optional: true
 scope: global

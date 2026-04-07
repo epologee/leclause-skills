@@ -1,7 +1,6 @@
 ---
 name: export-skill
 description: Use when the user wants to export/share a skill with others, stripping private information and checking for security issues. Supports optional translation (en/nl) and platform porting (linux/windows).
-user-invocable: true
 args: "<skill-name> [en|nl|linux|windows]"
 allowed-tools:
   - Bash(zip *)

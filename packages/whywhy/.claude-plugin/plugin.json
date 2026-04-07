@@ -1,5 +1,5 @@
 {
   "name": "whywhy",
   "description": "Drill N layers deep into a question or goal (default 7). Claude autonomously asks and answers 'why?' N times, then analyzes the chain for a better direction.",
-  "version": "1.0.1"
+  "version": "1.0.2"
 }
