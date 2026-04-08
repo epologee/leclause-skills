@@ -19,7 +19,7 @@ claude plugins install <skill-name>@leclause
 | **commit-all-the-things** | `/commit-all-the-things` | | | Commit all uncommitted changes in the working tree, grouped into logical commits with descriptive messages. |
 | **dont-do-that** | ❌ | | ✅ | Six guardrail hooks that push back on common AI reflexes: shifting blame, stopping prematurely, delegating verification, and em-dashes in prose. See [dont-do-that](packages/dont-do-that/README.md). |
 | **export-skill** | `/export-skill` | | | Export and sanitize a skill for sharing, stripping PII and checking for security issues. Supports translation and platform porting. |
-| **eye-of-the-beholder** | ❌ | ✅ | | Catches cramped text, missing margins, and disproportionate spacing in visual layouts (screen, print, responsive). |
+| **eye-of-the-beholder** | `/eye-of-the-beholder` | ✅ | | Catches cramped text, missing margins, and disproportionate spacing in visual layouts (screen, print, responsive). |
 | **ground** | `/ground` | ✅ | | Verify Claude's recent output with external sources when you challenge accuracy. |
 | **gurus** | `/gurus` | | | Opinionated code review panel with 8 expert perspectives (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). |
 | **how-plugins-work** | `/how-plugins-work` | ✅ | | Living document explaining how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work. |
