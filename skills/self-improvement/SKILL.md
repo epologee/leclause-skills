@@ -1,5 +1,6 @@
 ---
 name: self-improvement
+user-invocable: true
 description: Use when user gives feedback on Claude behavior, says "remember this", or asks to create/improve skills or CLAUDE.md instructions.
 ---
 

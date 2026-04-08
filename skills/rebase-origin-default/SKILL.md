@@ -1,5 +1,6 @@
 ---
 name: rebase-origin-default
+user-invocable: true
 description: >
   Rebase current branch on the remote default branch (main/master).
   Never fetches origin automatically, but warns when the tracking ref

@@ -1,5 +1,5 @@
 {
   "name": "export-skill",
   "description": "Export and sanitize a skill for sharing, stripping PII and checking for security issues. Supports translation and platform porting.",
-  "version": "1.0.2"
+  "version": "1.0.3"
 }

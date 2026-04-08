@@ -1,5 +1,6 @@
 ---
 name: ground
+user-invocable: true
 description: Use when the user challenges recent output accuracy, says "dat klopt niet", types /ground, or expresses skepticism about a claim. Triggers on any doubt signal about factual correctness of Claude's own output.
 ---
 

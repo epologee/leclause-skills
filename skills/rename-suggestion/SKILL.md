@@ -1,5 +1,6 @@
 ---
 name: rename-suggestion
+user-invocable: true
 description: Suggest a descriptive session name based on conversation context. Use when the user wants to rename the current session or when prompted by other skills.
 args: ""
 effort: low

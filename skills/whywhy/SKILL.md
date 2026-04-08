@@ -1,5 +1,6 @@
 ---
 name: whywhy
+user-invocable: true
 description: Use when the user types /whywhy with a question or goal to drill N layers deep autonomously (default 7). Claude asks and answers "why?" itself, then analyzes the chain for a better direction toward the goal.
 args: "[aantal] <vraag, doel, of stelling>"
 ---

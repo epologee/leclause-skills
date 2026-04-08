@@ -1,5 +1,5 @@
 {
   "name": "ground",
   "description": "Verify Claude's recent output with external sources when the user expresses skepticism. Ad-hoc retrieval-augmented verification.",
-  "version": "1.0.2"
+  "version": "1.0.3"
 }

@@ -1,5 +1,6 @@
 ---
 name: export-skill
+user-invocable: true
 description: Use when the user wants to export/share a skill with others, stripping private information and checking for security issues. Supports optional translation (en/nl) and platform porting (linux/windows).
 args: "<skill-name> [en|nl|linux|windows]"
 allowed-tools:

@@ -1,5 +1,6 @@
 ---
 name: recap
+user-invocable: true
 description: Use when the user needs a status overview of the current session. Triggers on /recap, or when returning to a session after idle time, compaction, or repetitive background output.
 ---
 

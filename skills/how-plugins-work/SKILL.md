@@ -1,5 +1,6 @@
 ---
 name: how-plugins-work
+user-invocable: true
 description: Explains how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work in practice. Living document based on empirical testing.
 ---
 
@@ -90,9 +91,9 @@ Optioneel. Wanneer aanwezig, moet deze matchen met de directory naam. Als ze nie
 
 ### user-invocable
 
-**Defaultt naar `true` wanneer niet opgegeven.** Elke skill is automatisch een slash command. De flag is alleen nuttig als `user-invocable: false` om een skill expliciet uit autocomplete te halen. `user-invocable: true` toevoegen is een no-op.
+**Altijd expliciet zetten.** Ondanks dat de binary code (hieronder) suggereert dat de default `true` is, toont de praktijk dat skills zonder expliciete `user-invocable: true` niet altijd in autocomplete verschijnen. Zet het veld altijd expliciet: `true` voor slash commands, `false` voor skills die alleen model-triggered zijn.
 
-Geverifieerd in de Claude Code 2.1.92 binary:
+Binary code uit Claude Code 2.1.92 (de default `true` werkt niet betrouwbaar voor plugins):
 ```javascript
 T = H["user-invocable"] === void 0 ? !0 : G0H(H["user-invocable"])
 ```

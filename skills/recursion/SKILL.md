@@ -1,5 +1,6 @@
 ---
 name: recursion
+user-invocable: true
 description: >
   Use when improving the Claude Code workflow through deep research.
   Triggers on /recursion, "wat kunnen we verbeteren", "workflow
