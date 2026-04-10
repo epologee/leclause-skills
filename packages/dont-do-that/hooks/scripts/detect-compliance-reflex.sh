@@ -47,7 +47,7 @@ if [ -z "$LAST_ASSISTANT" ]; then
 fi
 
 ESCALATION=$(echo "$LAST_ASSISTANT" \
-  | grep -ciE "^Follow-up:")
+  | grep -cE "^🧭")
 
 if [ "$ESCALATION" -gt 0 ] 2>/dev/null; then
   exit 0
@@ -68,4 +68,4 @@ if [ "$GENUINE_QUESTION" -gt 0 ] 2>/dev/null; then
   exit 0
 fi
 
-echo '{"decision":"block","reason":"Vraagteken aan het eind van je antwoord. Ik (de hook) lees de inhoud niet, jij wel. Even drie dingen checken: (1) was die vraag écht voor de user? (2) stond het antwoord al in het gesprek, expliciet of impliciet in wat de user vroeg? (3) mis je context en moet je de oorspronkelijke opdracht opnieuw lezen? Echte nieuwe vraag? Begin met \"Follow-up:\"."}'
+echo '{"decision":"block","reason":"Vraagteken aan het eind van je antwoord. Ik (de hook) lees de inhoud niet, jij wel. Even drie dingen checken: (1) was die vraag écht voor de user? (2) stond het antwoord al in het gesprek, expliciet of impliciet in wat de user vroeg? (3) mis je context en moet je de oorspronkelijke opdracht opnieuw lezen? Echte nieuwe vraag, of een voorstel voor de volgende koers? Begin de regel met 🧭 (kompas)."}'
