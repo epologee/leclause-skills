@@ -1,41 +1,41 @@
 #!/bin/bash
-# PostToolUse hook: warns when em-dash (—) or en-dash (–) appears in non-code text
-# Dashes zijn alleen toegestaan in code en als bullet point/lijstitem
+# PostToolUse hook: blocks em-dash (—) and en-dash (–) in ALL output
+# Geen uitzonderingen: niet in bestanden, niet in clipboard, niet in chat
 
 INPUT=$(cat)
-FILE_PATH=$(jq -r '.tool_response.filePath // .tool_input.file_path' <<< "$INPUT")
-
-# Only check text/markdown files
-case "$FILE_PATH" in
-  *.md|*.txt|*.mdx) ;;
-  *) exit 0 ;;
-esac
-
-# Get the new content that was just written
 TOOL=$(jq -r '.tool_name' <<< "$INPUT")
-if [ "$TOOL" = "Edit" ]; then
+HOOK_EVENT=$(jq -r '.hook_event_name // "PostToolUse"' <<< "$INPUT")
+
+if [ "$HOOK_EVENT" = "Stop" ]; then
+  CONTENT=$(jq -r '.assistant_message // empty' <<< "$INPUT")
+  SOURCE="chat output"
+elif [ "$TOOL" = "Edit" ]; then
   CONTENT=$(jq -r '.tool_input.new_string // empty' <<< "$INPUT")
+  SOURCE=$(jq -r '.tool_input.file_path // "unknown file"' <<< "$INPUT")
 elif [ "$TOOL" = "Write" ]; then
   CONTENT=$(jq -r '.tool_input.content // empty' <<< "$INPUT")
+  SOURCE=$(jq -r '.tool_input.file_path // "unknown file"' <<< "$INPUT")
+elif [ "$TOOL" = "Bash" ]; then
+  CONTENT=$(jq -r '.tool_input.command // empty' <<< "$INPUT")
+  SOURCE="bash command"
 else
   exit 0
 fi
 
 [ -z "$CONTENT" ] && exit 0
 
-# Strip code blocks and bullet points, check for em/en-dashes
+# Strip code blocks, check remaining text for em/en-dashes
 VIOLATIONS=$(awk '
   /^```/ { in_code = !in_code; next }
   in_code { next }
-  /^[[:space:]]*[-*+] / { next }
   /[—–]/ { print NR": "$0 }
 ' <<< "$CONTENT" | head -3)
 
 if [ -n "$VIOLATIONS" ]; then
-  jq -n --arg v "$VIOLATIONS" --arg f "$FILE_PATH" '{
+  jq -n --arg v "$VIOLATIONS" --arg s "$SOURCE" '{
     hookSpecificOutput: {
       hookEventName: "PostToolUse",
-      additionalContext: ("DASH DETECTED in " + $f + ". Em-dashes (\u2014) en en-dashes (\u2013) zijn verboden in lopende tekst. Herschrijf met komma, punt, of haakjes.\nGevonden:\n" + $v)
+      additionalContext: ("DASH DETECTED in " + $s + ". Em-dashes (\u2014) en en-dashes (\u2013) zijn VERBODEN. Altijd. Overal. Herschrijf met komma, punt, of haakjes.\nGevonden:\n" + $v)
     }
   }'
 fi
