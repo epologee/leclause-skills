@@ -26,12 +26,40 @@ Alles in het Claude Code ecosysteem is fair game:
 
 | Type | Locatie | Wanneer |
 |------|---------|---------|
-| **CLAUDE.md** | `~/.claude/README.md` | Algemene conventies |
+| **CLAUDE.md** | `~/.claude/README.md` | Algemene conventies (ALLEEN in persoonlijke context) |
 | **CLAUDE.md** | `~/projects/**/CLAUDE.md` | Project-specifiek |
-| **Skills** | `~/.claude/skills/**` | Workflows, tools |
-| **Hooks** | `~/.claude/hooks/**` | Pre-tools-use guards, enforcement |
+| **Skills** | `~/.claude/skills/**` | User-level workflows, tools |
+| **Skills** | `packages/<plugin>/skills/**` | Plugin-level workflows (in marketplace projecten) |
+| **Hooks** | `~/.claude/hooks/**` | User-level guards, enforcement |
+| **Hooks** | `packages/<plugin>/hooks/**` | Plugin-level guards (in marketplace projecten) |
+| **Hook reasons** | in hook scripts | Inline guidance die altijd zichtbaar is wanneer de hook firet |
 | **Settings** | `~/.claude/settings.json` | Permissions, allow/deny rules |
 | **Scripts** | `~/.claude/bin/**` | Helper scripts |
+
+## Plugin marketplace projecten
+
+**KRITIEK:** Als het huidige project een publieke plugin marketplace is (indicatoren: `packages/*/` directory met `.claude-plugin/plugin.json` per package, of `.claude-plugin/marketplace.json` in root), dan zijn user-level CLAUDE.md wijzigingen GEEN geldige verbetering. User-level is persoonlijk aan één ontwikkelaar; een marketplace wordt door anderen gebruikt.
+
+In zo'n project gaan verbeteringen in de relevante plugin zelf:
+- Gedrag rond een plugin hook → hook reason aanscherpen in `packages/<plugin>/hooks/scripts/<hook>.sh`
+- Workflow/patroon dat bij de plugin hoort → skill in `packages/<plugin>/skills/<skill-name>/`
+- Algemene docs → `packages/<plugin>/README.md`
+
+Check bij elke `/self-improvement` eerst: is dit een marketplace? `ls packages/*/.claude-plugin/plugin.json 2>/dev/null` geeft antwoord. Zo ja → zoek de plugin waar de feedback bij hoort, en verbeter daar.
+
+## Hook-gerelateerde feedback: hook reason first
+
+Wanneer feedback gaat over Claude's gedrag rond een hook (misbruik van escape hatches, onduidelijke reasons, ongewenst patroon in reactie), is de **hook reason** meestal de juiste plek om te verbeteren. Redenen:
+
+1. De hook reason is de enige tekst die Claude GEGARANDEERD ziet wanneer de hook firet
+2. Een skill activeert alleen op description match (geen garantie dat hij ingrijpt bij een hook fire)
+3. Een CLAUDE.md regel bereikt alleen gebruikers van dezelfde CLAUDE.md
+
+**Volgorde van interventies bij hook-feedback:**
+
+1. **Eerst:** Scherp de hook reason aan. Expliciete anti-patronen benoemen in de tekst ("`🧭 dit was een reflex` is contradictair").
+2. **Daarna:** Skill in de plugin, alleen als de workflow te complex is voor een hook reason en het patroon breder is dan één hook fire.
+3. **Laatste redmiddel:** CLAUDE.md, alleen voor persoonlijke projecten, nooit voor marketplace plugins.
 
 ## Workflow
 
@@ -120,7 +148,9 @@ Stel voor om project-level te updaten of op te schonen.
 
 ### Stap 3: Bepaal beste locatie
 
-**Voor CLAUDE.md:**
+**Eerst:** Is het huidige project een plugin marketplace (zie "Plugin marketplace projecten" hierboven)? Zo ja, dan zijn user-level paden UITGESLOTEN voor feedback die bij een plugin hoort. Verbeteringen landen in `packages/<plugin>/...`.
+
+**Voor CLAUDE.md (niet-marketplace projecten):**
 
 | Criterium | Locatie |
 |-----------|---------|
@@ -133,8 +163,15 @@ Stel voor om project-level te updaten of op te schonen.
 
 | Criterium | Locatie |
 |-----------|---------|
-| Workflow bruikbaar in alle projecten | `~/.claude/skills/` (user-level) |
-| Project-specifieke workflow | `~/projects/{owner}/{repo}/.claude/skills/` |
+| Workflow bruikbaar in alle projecten, persoonlijk gebruik | `~/.claude/skills/` (user-level) |
+| Workflow hoort bij een plugin in een marketplace | `packages/<plugin>/skills/<name>/` (plugin-level) |
+| Project-specifieke workflow (niet-marketplace) | `~/projects/{owner}/{repo}/.claude/skills/` |
+
+**Voor hook reasons (in marketplace of persoonlijk):**
+
+| Criterium | Locatie |
+|-----------|---------|
+| Feedback gaat over Claude's gedrag rond een hook | De hook script zelf, aanscherpen van de `reason` text |
 
 **Hiërarchie binnen een project:**
 - Repo-root CLAUDE.md: algemene project conventies
