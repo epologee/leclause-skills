@@ -5,14 +5,14 @@
 # Deze hook prikkelt Claude om te checken: was dit een bewuste afronding,
 # of stopte de chain per ongeluk te vroeg? Geen druk om sneller te werken.
 #
-# Mutex met detect-compliance-reflex.sh: deze hook firet alleen als de
-# laatste regel NIET op "?" eindigt; de compliance reflex hook firet
-# alleen als die wel op "?" eindigt. Daardoor kan altijd maar één van
-# de twee tegelijk blokkeren.
+# Mutex met detect-compliance-reflex.sh: deze hook firet alleen als er
+# GEEN "?" in de recente assistant text staat. Daardoor kan altijd maar
+# één van de twee tegelijk blokkeren, ook bij multi-block assistant
+# turns waar tool_use blocks tussen text-stukken zitten.
 #
 # Skips when:
-#   - the last line ends with "?" (compliance reflex hook's domain)
-#   - 🏁 appears in the last non-empty line of the assistant text (escape hatch)
+#   - "?" appears anywhere in the last 500 bytes (compliance reflex hook's domain)
+#   - 🏁 appears anywhere in the recent assistant text (escape hatch)
 
 INPUT=$(cat)
 
@@ -44,18 +44,18 @@ if [ -z "$LAST_ASSISTANT" ]; then
   exit 0
 fi
 
-LAST_LINE=$(echo "$LAST_ASSISTANT" | grep -v '^$' | tail -1)
-
-# Skip when the last line ends with "?" — that's the compliance reflex hook's domain
-if echo "$LAST_LINE" | grep -qE '\?[[:space:]]*$'; then
+# Skip when the recent text contains "?" — that's the compliance reflex hook's
+# domain. Checked across the whole recent text (not just the last line) to
+# survive multi-block assistant turns where tool_use blocks shift the "?"
+# out of the very last text block.
+if echo "$LAST_ASSISTANT" | tail -c 500 | grep -q '?'; then
   exit 0
 fi
 
-# Escape hatch: 🏁 anywhere in the last 200 bytes of the assistant text.
-# Permissive on purpose — covers tool_use blocks between text, trailing
-# whitespace, invisible characters, or 🏁 in a slightly earlier text block
-# from the same turn.
-if echo "$LAST_ASSISTANT" | tail -c 200 | grep -q '🏁'; then
+# Escape hatch: 🏁 anywhere in the recent assistant text. False positives on
+# a chat about the emoji itself are acceptable; false negatives (hook fires
+# while 🏁 is visibly present) are what we want to avoid.
+if echo "$LAST_ASSISTANT" | grep -q '🏁'; then
   exit 0
 fi
 
