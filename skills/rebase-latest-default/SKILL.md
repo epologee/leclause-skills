@@ -42,7 +42,7 @@ Based on availability, determine `$TARGET`:
   ```bash
   git rev-list --left-right --count refs/heads/$DEFAULT...refs/remotes/origin/$DEFAULT
   ```
-  Left count = commits in local not in origin (local ahead). Right count = commits in origin not in local (origin ahead). If origin is strictly ahead (right > 0, left = 0), use `origin/$DEFAULT`. If local is ahead or equal, use `$DEFAULT` (local). Report which target was chosen and why.
+  Left count = commits in local not in origin (local ahead). Right count = commits in origin not in local (origin ahead). If origin is strictly ahead (right > 0, left = 0), use `origin/$DEFAULT`. If both have diverged (left > 0 AND right > 0), warn: `Local $DEFAULT and origin/$DEFAULT have diverged (<left> and <right> commits respectively). Rebasing on local. Consider fetching and fast-forwarding local $DEFAULT first.` Then use `$DEFAULT` (local). If local is ahead or equal, use `$DEFAULT` (local). Report which target was chosen and why.
 - **Only local exists:** Use `$DEFAULT`. No staleness check needed.
 - **Only remote exists:** Use `origin/$DEFAULT`. Proceed to Step 1 (staleness check).
 - **Neither exists:** Stop and ask the user.
