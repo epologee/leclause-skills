@@ -24,7 +24,7 @@ claude plugins install <skill-name>@leclause
 | **gurus** | `/gurus` | | | Opinionated code review panel with 8 expert perspectives (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). |
 | **how-plugins-work** | `/how-plugins-work` | ✅ | | Living document explaining how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work. |
 | **inspiratie** | `/inspiratie` | ✅ | | Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. |
-| **rebase-origin-default** | `/rebase-origin-default` | | | Safely rebase current branch on the remote default branch with staleness check and automatic conflict resolution. |
+| **rebase-latest-default** | `/rebase-latest-default` | | | Rebase current branch on the latest default branch (local or remote) with staleness check and automatic conflict resolution. |
 | **recap** | `/recap` | | | Structured status overview of the current session: what we're doing, where we are, what's next. |
 | **recursion** | `/recursion` | | | Deep research producing atomic improvement plans for the Claude Code workflow. |
 | **rename-suggestion** | `/rename-suggestion` | | | Suggest a descriptive session name based on conversation context. |
