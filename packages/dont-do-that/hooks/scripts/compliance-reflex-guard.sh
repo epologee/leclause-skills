@@ -68,4 +68,4 @@ if [ "$GENUINE_QUESTION" -gt 0 ] 2>/dev/null; then
   exit 0
 fi
 
-echo '{"decision":"block","reason":"Vraagteken aan het eind. Drie checks: (1) was die vraag voor de user of voor jezelf? (2) stond het antwoord al impliciet in de opdracht? (3) mis je context in plaats van instructie? Als één van deze drie je naar \"reflex\" brengt → werk door (GEEN 🧭). De 🧭 is alleen voor een genuine nieuwe richting die NIET uit de huidige opdracht volgt. \"🧭 compliance reflex\" of \"🧭 dit was een reflex\" is contradictair: dan is het een reflex, en moet je doorwerken."}'
+echo '{"decision":"block","reason":"Vraagteken aan het eind. Check: (1) was die vraag voor de user of voor jezelf? (2) stond het antwoord al in de opdracht? (3) mis je context? Reflex → werk door, niet met het kompas omzeilen. Alleen een genuine nieuwe richting begint met 🧭."}'
