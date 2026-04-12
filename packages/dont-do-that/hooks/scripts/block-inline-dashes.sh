@@ -7,7 +7,7 @@ TOOL=$(jq -r '.tool_name' <<< "$INPUT")
 HOOK_EVENT=$(jq -r '.hook_event_name // "PostToolUse"' <<< "$INPUT")
 
 if [ "$HOOK_EVENT" = "Stop" ]; then
-  CONTENT=$(jq -r '.assistant_message // empty' <<< "$INPUT")
+  CONTENT=$(jq -r '.last_assistant_message // empty' <<< "$INPUT")
   SOURCE="chat output"
 elif [ "$TOOL" = "Edit" ]; then
   CONTENT=$(jq -r '.tool_input.new_string // empty' <<< "$INPUT")

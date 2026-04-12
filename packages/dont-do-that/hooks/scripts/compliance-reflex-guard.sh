@@ -11,9 +11,9 @@ if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
   exit 0
 fi
 
-# Prefer assistant_message from Stop hook input (current message text).
+# Prefer last_assistant_message from Stop hook input (current message text).
 # Transcript fallback for older Claude Code versions that don't provide it.
-ASSISTANT_MSG=$(echo "$INPUT" | jq -r '.assistant_message // empty' 2>/dev/null)
+ASSISTANT_MSG=$(echo "$INPUT" | jq -r '.last_assistant_message // empty' 2>/dev/null)
 
 if [ -n "$ASSISTANT_MSG" ]; then
   LAST_ASSISTANT=$(echo "$ASSISTANT_MSG" | tail -c 500)
