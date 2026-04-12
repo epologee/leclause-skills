@@ -5,7 +5,7 @@
 # Deze hook prikkelt Claude om te checken: was dit een bewuste afronding,
 # of stopte de chain per ongeluk te vroeg? Geen druk om sneller te werken.
 #
-# Mutex met detect-compliance-reflex.sh: deze hook firet alleen als er
+# Mutex met compliance-reflex-guard.sh: deze hook firet alleen als er
 # GEEN "?" in de recente assistant text staat. Daardoor kan altijd maar
 # één van de twee tegelijk blokkeren, ook bij multi-block assistant
 # turns waar tool_use blocks tussen text-stukken zitten.

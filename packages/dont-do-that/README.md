@@ -22,11 +22,11 @@ Blocks Stop when the recent assistant text relativizes a test or error as alread
 **cache-excuse-guard**
 Blocks Stop when the recent assistant text blames cache for a problem on localhost. On a dev server, cache is rarely the real cause. Forces investigation of the actual root cause.
 
-**detect-compliance-reflex**
+**compliance-reflex-guard**
 Blocks Stop when the last assistant message ends with a confirmation question ("wil je dat ik...?", "shall I...?") despite a clear user instruction. Claude can pass with a 🧭 (compass) prefix for genuine new questions or pre-emptive forward-looking statements.
 
 **premature-interruption-guard**
-Blocks Stop when the last assistant message does NOT end with a question, as a stop-gap against Claude Code tool chains that occasionally truncate before a chain-of-thought is complete. Claude can pass by ending the message with 🏁 (finish flag) when work is genuinely done. Mutually exclusive with detect-compliance-reflex by condition: that hook handles the "ends with ?" case, this one handles everything else.
+Blocks Stop when the last assistant message does NOT end with a question, as a stop-gap against Claude Code tool chains that occasionally truncate before a chain-of-thought is complete. Claude can pass by ending the message with 🏁 (finish flag) when work is genuinely done. Mutually exclusive with compliance-reflex-guard by condition: that hook handles the "ends with ?" case, this one handles everything else.
 
 **nudge-after-tool-error**
 Blocks Stop when the last significant event was a failed tool call. Forces analysis and retry instead of giving up. Maximum two nudges per session to prevent infinite loops.
