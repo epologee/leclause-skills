@@ -42,7 +42,7 @@ Based on availability, determine `$TARGET`:
   ```bash
   git rev-list --left-right --count refs/heads/$DEFAULT...refs/remotes/origin/$DEFAULT
   ```
-  If origin is strictly ahead of local (left count > 0, right count = 0), use `origin/$DEFAULT`. If local is ahead or equal, use `$DEFAULT` (local). Report which target was chosen and why.
+  Left count = commits in local not in origin (local ahead). Right count = commits in origin not in local (origin ahead). If origin is strictly ahead (right > 0, left = 0), use `origin/$DEFAULT`. If local is ahead or equal, use `$DEFAULT` (local). Report which target was chosen and why.
 - **Only local exists:** Use `$DEFAULT`. No staleness check needed.
 - **Only remote exists:** Use `origin/$DEFAULT`. Proceed to Step 1 (staleness check).
 - **Neither exists:** Stop and ask the user.
@@ -70,7 +70,25 @@ Compare the SHAs:
   ```
   Do NOT proceed with the rebase. Do NOT fetch. The user must fetch explicitly because fetching updates all remote tracking refs, which affects `--force-with-lease` behavior on other branches.
 
-## Step 2: Pre-rebase State
+## Step 2: Pre-rebase Guards
+
+First, check if the current branch IS the default branch:
+
+```bash
+git rev-parse --abbrev-ref HEAD
+```
+
+If the current branch equals `$DEFAULT`, report `You are on $DEFAULT, nothing to rebase.` and stop.
+
+Then, check for uncommitted changes:
+
+```bash
+git status --porcelain
+```
+
+If the output is non-empty, report `Working tree is dirty. Stash or commit your changes first.` and stop.
+
+## Step 3: Pre-rebase State
 
 Record the current state so the user can assess the rebase afterward:
 
@@ -82,16 +100,16 @@ Report: `Branch is <ahead> commits ahead, <behind> commits behind $TARGET.`
 
 If the branch is 0 commits behind, report `Already up to date with $TARGET.` and stop.
 
-## Step 3: Rebase
+## Step 4: Rebase
 
 ```bash
 git rebase $TARGET
 ```
 
-- **If the rebase succeeds cleanly:** proceed to Step 4.
-- **If the rebase hits conflicts:** proceed to Step 3a.
+- **If the rebase succeeds cleanly:** proceed to Step 5.
+- **If the rebase hits conflicts:** proceed to Step 4a.
 
-## Step 3a: Resolve Conflicts
+## Step 4a: Resolve Conflicts
 
 When a rebase stops on conflicts:
 
@@ -107,6 +125,6 @@ When a rebase stops on conflicts:
 4. Repeat if the rebase stops on further commits.
 5. If a conflict is genuinely ambiguous (both sides made intentional, incompatible changes to the same logic), stop and describe the conflict to the user instead of guessing.
 
-## Step 4: After Rebase
+## Step 5: After Rebase
 
 Report the result: how many commits ahead of `$TARGET`, and whether conflicts were resolved (and if so, which files). No proactive suggestions beyond that. The user will push or take further action when ready.
