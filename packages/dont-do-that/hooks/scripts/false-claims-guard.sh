@@ -5,10 +5,9 @@
 
 INPUT=$(cat)
 
-STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null)
-if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
-  exit 0
-fi
+# No stop_hook_active mutex: this guard must always run, even when
+# another Stop hook (e.g. block-inline-dashes) already blocked.
+# The LAST_CHECKED line tracking prevents redundant scans.
 
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // .sessionId // empty' 2>/dev/null)
 
@@ -42,13 +41,15 @@ ASSISTANT_TEXT=$(tail -"$NEW_LINES" "$TRANSCRIPT" \
 
 # Filter out meta-references to the hook itself before scanning
 FILTERED_TEXT=$(echo "$ASSISTANT_TEXT" \
+  | sed -E 's/false[_-]claims[_-]guard//gi' \
   | sed -E 's/pre-existing[_-]trap[_-]guard//gi' \
   | sed -E 's/pre-existing-trap//gi' \
-  | sed -E 's/`pre-existing`//gi')
+  | sed -E 's/`pre-existing`//gi' \
+  | sed -E 's/`(known issue|bekende bug|already fail[a-z]*)`//gi')
 
 FOUND=$(echo "$FILTERED_TEXT" \
-  | grep -ciE "pre-existing (failure|test|error|bug|issue|problem)|bestond(en)? al|reeds bestaand|al bestaand|niet gerelateerd aan (deze|mijn|onze) wijziging")
+  | grep -ciE "pre-existing (failure|test|error|bug|issue|problem)|bestond(en)? al|reeds bestaand|al bestaand|niet gerelateerd aan (deze|mijn|onze) wijziging|known (issue|bug|flak)|bekende (bug|fout|issue)|was al (stuk|kapot|broken)|already fail")
 
 if [ "$FOUND" -gt 0 ] 2>/dev/null; then
-  echo '{"decision":"block","reason":"Als je net een failure relativeerde als pre-existing: fix het of onderbouw waarom niet."}'
+  echo '{"decision":"block","reason":"Boy Scout Rule: pre-existing is geen excuus. Fix het. Enige uitzondering: als er bewijs is van een parallelle sessie in dezelfde working dir, formuleer dat als parallel werk, niet als pre-existing."}'
 fi
