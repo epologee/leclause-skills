@@ -43,15 +43,32 @@ Wanneer je een screenshot bekijkt (zelf genomen of aangeleverd), stel deze vrage
 
 2. **Trace de randen.** Boven -> rechts -> onder -> links. Wat is het dichtstbijzijnde element aan elke rand? Hoeveel ruimte zit ertussen? Raakt iets de rand?
 
+   **Trace is fractaal.** Doe dit op elk niveau waar iets een rand heeft:
+   - Pagina vs. viewport
+   - Container vs. parent padding
+   - Component vs. eigen border/padding
+   - Glyph of icon vs. viewBox of bounding box
+   - Path/stroke vs. pixel-grid
+
+   Dezelfde regels werken op elk niveau. Een icoon dat in zijn viewBox wordt geclipt is hetzelfde probleem als een titel die de paginarand raakt, alleen een zoomstap dieper.
+
 3. **Zoek het ritme.** Zijn de afstanden tussen herhalende elementen (secties, kaarten, regels) consistent? Wordt het ritme ergens gebroken?
 
 4. **Zoek de vreemde eend.** Is er een element dat net anders is dan de rest? Iets dat bijna hetzelfde is maar niet helemaal? Dat is waarschijnlijk een bug, geen variatie.
 
 5. **Benoem elke aanraking.** Welke elementen raken elkaar? Welke elementen raken een rand? Welke elementen vallen buiten hun container? Lijst ze op. Voor elk: is dit intentioneel? Een border die de container raakt is meestal bewust. Tekst die de paginarand raakt is dat bijna nooit. Bewuste aanrakingen zijn expliciet (bijv. een `bleed` class), onbewuste zijn bugs.
 
-6. **Vergelijk links met rechts, boven met onder.** Is de compositie in balans? Niet per se symmetrisch, maar intentioneel?
+6. **Glyph- en icoon-check.** Voor elk vector-icoon of glyph in de screenshot: past de inhoud binnen zijn eigen container? Een icoon dat aan één rand "afgesneden" voelt is bijna altijd een path die buiten zijn viewBox loopt. SVG heeft default `overflow: hidden`, dus de clip is stilletjes. Voor stroke-based iconen: tel de halve stroke-width op bij de path-bounds (bij `stroke-width="1.5"` ligt de werkelijke rand op `coördinaat ± 0.75`). Fix altijd door viewBox groter of path kleiner, nooit door `overflow="visible"` (dat verplaatst het probleem naar de parent).
 
-7. **Hoe wordt dit vastgehouden?** Het ontwerp grenst aan de fysieke wereld. Papier wordt vastgehouden met vingers die de randen bedekken. Een telefoonscherm heeft bezels (of niet meer). Een laptop heeft een rand. De marges van het ontwerp moeten rekening houden met wat de gebruiker fysiek bedekt.
+7. **Optische vs. mathematische bounds.** Cirkels, driehoeken en ronde glyphs wegen optisch minder dan vierkanten met dezelfde mathematische bounds. Designers compenseren met *overshoot*: een "O" is fractioneel groter dan een "H", een cirkel moet ~113% van een vierkant zijn om even groot te lezen, een driehoek moet met zijn scherpe punt buiten de baseline steken. Voelt een ronde vorm "kleiner" dan een vierkante buur van dezelfde pixel-grootte? Dat is geen illusie, dat is een ontbrekende overshoot.
+
+8. **Optisch centrum zit hoger dan geometrisch centrum (Arnheim).** Mathematisch gecentreerde content voelt top-heavy. Duw het visuele zwaartepunt 2-5% omhoog. Dit is waarom `align-items: center` in CSS vaak "net te laag" aanvoelt, het is mathematisch correct, niet optisch correct.
+
+   **Uitzondering voor typografie in iconen-containers** (buttons, pills, badges): hier werkt de regel *omgekeerd*. Een digit of letter zit van nature al hoog binnen zijn line-box omdat font ascent groter is dan font descent (typisch 80/20). Cap-height center zit ~5% boven em-box center. Bij een pill met SVG-icoon dat wél symmetrisch is, voelt de tekst "te hoog" (meer witruimte eronder dan erboven). Spiekermann's regel: *align op cap-height center, niet op glyph bounding box*. Fix via micro-translate (~0.5-1px) of via `text-box-trim` / cap-height line-height libraries (Braid's capsize). Bij een review: zie je tekst en icoon die niet gelijk gecentreerd voelen in hun container, met tekst hoger dan icoon? Dat is font metric asymmetry, niet je brein.
+
+9. **Vergelijk links met rechts, boven met onder.** Is de compositie in balans? Niet per se symmetrisch, maar intentioneel? Symmetrische compositie voelt vaak saai; asymmetrische balans via visuele weging (kleur, contrast, massa) is levendiger (Arnheim).
+
+10. **Hoe wordt dit vastgehouden?** Het ontwerp grenst aan de fysieke wereld. Papier wordt vastgehouden met vingers die de randen bedekken. Een telefoonscherm heeft bezels (of niet meer). Een laptop heeft een rand. De marges van het ontwerp moeten rekening houden met wat de gebruiker fysiek bedekt.
 
 **Tschichold's margeverhoudingen voor gedrukt werk: 1:1:2:3** (binnen:boven:buiten:onder). De onderste marge is het grootst omdat handen daar het papier vasthouden. Het Van de Graaf canon uit middeleeuwse manuscripten: 2:3:4:6. Dezelfde logica, nog dramatischer.
 
@@ -76,6 +93,12 @@ Druk problemen uit als verhoudingen, niet als pixels:
 
 **Tufte:** Maximaliseer de data-ink ratio. Elk visueel element moet bijdragen aan begrip. **Tschichold:** Witruimte is een actief ontwerpelement, niet wat overblijft.
 
+**Arnheim (Art and Visual Perception):** Visueel zwaartepunt telt meer dan pixel-midden. Optisch centrum ligt boven geometrisch centrum. Asymmetrische balans via visuele weging (massa, contrast, kleur) is levendiger dan strikte symmetrie.
+
+**Apple HIG / Material Design / Lucide (icon grids):** Elk icoon heeft twee bounding boxes. Een outer canvas en een inner "live area". Primaire content blijft binnen de live area, secundaire content mag tot de outer, nooit daarbuiten. Material: 24x24 canvas, 20x20 live area, 2 dp padding rondom. Lucide: 24x24 canvas, 22x22 live area, stroke-width 2 centered (wat de feitelijke rand nog een halve stroke naar buiten duwt). Apple SF Symbols: inner icon-grid box plus outer bounding box. Een icoon dat de outer raakt voelt out-of-place.
+
+**Bjango / Spiekermann (optical adjustments):** Mathematisch identieke vormen zijn optisch ongelijk. Cirkels moeten overshooten baseline en x-height. Scherpe punten van driehoeken moeten buiten de bounding box steken. Verticale lijnen moeten dikker lijken dan horizontale om gelijk te wegen. Het is geen illusie die gefixt moet worden, het is hoe ogen werken.
+
 ## Veelvoorkomende blinde vlekken
 
 | Wat Claude doet | Wat er misgaat |
@@ -87,6 +110,12 @@ Druk problemen uit als verhoudingen, niet als pixels:
 | Een fix doen en stoppen | Elke fix triggert een rescan van alle vier de randen. |
 | CSS lezen als bewijs | CSS beschrijft intentie, niet resultaat. De screenshot is de waarheid. |
 | Fontsizes verkleinen om te passen | Krimpen is altijd fout. Herstructureer de layout. |
+| SVG-pad vult de viewBox tot de rand | Default `overflow: hidden` clipt stilletjes. Laat 1-2 eenheden marge, of vergroot de viewBox. |
+| Stroke-width vergeten bij bounds-check | Centered stroke voegt `width/2` toe aan alle kanten. Een path tot y=16 met stroke=2 eindigt feitelijk op y=17. |
+| Glyph mathematisch centreren | Optisch centrum ligt hoger. Duw 2-5% omhoog. |
+| Ronde vorm gelijk maken aan vierkante | Cirkels moeten ~113% zijn om optisch gelijk te wegen. |
+| Alleen de pagina-randen tracen | Trace is fractaal. Elke container met randen verdient een edge-trace: component, glyph, pad, pixel. |
+| Tekst en icoon symmetrisch centreren in een pill | Font ascent > descent maakt digits optisch hoog. Align op cap-height center, niet bounding box. Micro-translate van 0.5-1px of cap-height line-height. |
 
 ## Output
 
