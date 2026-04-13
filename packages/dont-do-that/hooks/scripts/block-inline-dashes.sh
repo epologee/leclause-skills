@@ -32,10 +32,17 @@ VIOLATIONS=$(awk '
 ' <<< "$CONTENT" | head -3)
 
 if [ -n "$VIOLATIONS" ]; then
-  jq -n --arg v "$VIOLATIONS" --arg s "$SOURCE" '{
-    hookSpecificOutput: {
-      hookEventName: "PostToolUse",
-      additionalContext: ("DASH DETECTED in " + $s + ". Em-dashes (\u2014) en en-dashes (\u2013) zijn VERBODEN. Altijd. Overal. Herschrijf met komma, punt, of haakjes.\nGevonden:\n" + $v)
-    }
-  }'
+  if [ "$HOOK_EVENT" = "Stop" ]; then
+    jq -n --arg v "$VIOLATIONS" --arg s "$SOURCE" '{
+      decision: "block",
+      reason: ("DASH DETECTED in " + $s + ". Em-dashes (\u2014) en en-dashes (\u2013) zijn VERBODEN. Altijd. Overal. Herschrijf met komma, punt, of haakjes.\nGevonden:\n" + $v)
+    }'
+  else
+    jq -n --arg v "$VIOLATIONS" --arg s "$SOURCE" '{
+      hookSpecificOutput: {
+        hookEventName: "PostToolUse",
+        additionalContext: ("DASH DETECTED in " + $s + ". Em-dashes (\u2014) en en-dashes (\u2013) zijn VERBODEN. Altijd. Overal. Herschrijf met komma, punt, of haakjes.\nGevonden:\n" + $v)
+      }
+    }'
+  fi
 fi
