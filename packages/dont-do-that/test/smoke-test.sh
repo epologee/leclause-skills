@@ -49,8 +49,14 @@ msg() {
 assert_blocks "premature: no escape hatch" \
   premature-interruption-guard.sh "$(msg "Ik heb het aangepast.")"
 
-assert_passes "premature: finish flag" \
-  premature-interruption-guard.sh "$(msg "Alles klaar. 🏁")"
+assert_passes "premature: finish flag with substantive sentence" \
+  premature-interruption-guard.sh "$(msg "Beide hooks gefixt en de syntax check slaagt nu. 🏁")"
+
+assert_blocks "premature: bare finish flag" \
+  premature-interruption-guard.sh "$(msg "🏁")"
+
+assert_blocks "premature: flag without substantive sentence" \
+  premature-interruption-guard.sh "$(msg "Klaar 🏁")"
 
 assert_passes "premature: question hands off to compliance" \
   premature-interruption-guard.sh "$(msg "Wat bedoel je precies?")"
