@@ -77,3 +77,16 @@ Recovery after rebase or manual edits:
 bin/plugin-versions --check   # Report drift
 bin/plugin-versions --write   # Fix drift
 ```
+
+## Plugin cache cleanup
+
+Claude Code keeps every installed version of a plugin under `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/` and never cleans up old ones. Each `claude plugins update` adds a fresh directory.
+
+Prune the stale versions for the leclause marketplace:
+
+```bash
+bin/plugin-cache-prune           # Dry run
+bin/plugin-cache-prune --write   # Remove stale versions
+```
+
+Only the active `installPath` from `~/.claude/plugins/installed_plugins.json` is kept per plugin. Plugins no longer installed are removed entirely.

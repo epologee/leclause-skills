@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+#
+# plugin-cache-prune: remove stale versioned plugin caches.
+#
+# Claude Code keeps every installed version of a plugin in
+# ~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/. The active
+# version is tracked in ~/.claude/plugins/installed_plugins.json. Older
+# versions are never cleaned up and accumulate indefinitely.
+#
+# This script prunes every version directory that is not the active
+# installPath for each plugin in the leclause marketplace.
+#
+# Modes:
+#   (default)  Dry-run: print what would be removed.
+#   --write    Actually remove the stale version directories.
+
+set -eu
+
+MARKETPLACE="leclause"
+CACHE_DIR="$HOME/.claude/plugins/cache/$MARKETPLACE"
+INSTALLED_JSON="$HOME/.claude/plugins/installed_plugins.json"
+
+MODE="${1:---dry-run}"
+
+if [ ! -d "$CACHE_DIR" ]; then
+  echo "No cache directory at $CACHE_DIR" >&2
+  exit 0
+fi
+
+if [ ! -f "$INSTALLED_JSON" ]; then
+  echo "Cannot find $INSTALLED_JSON" >&2
+  exit 1
+fi
+
+active_path_for() {
+  local plugin="$1"
+  jq -r --arg key "${plugin}@${MARKETPLACE}" \
+    '.plugins[$key][0].installPath // empty' "$INSTALLED_JSON"
+}
+
+removed=0
+kept=0
+
+for plugin_dir in "$CACHE_DIR"/*/; do
+  [ -d "$plugin_dir" ] || continue
+  plugin=$(basename "$plugin_dir")
+  active=$(active_path_for "$plugin")
+
+  for version_dir in "$plugin_dir"*/; do
+    [ -d "$version_dir" ] || continue
+    version_path="${version_dir%/}"
+    if [ "$version_path" = "$active" ]; then
+      kept=$((kept + 1))
+      continue
+    fi
+    version=$(basename "$version_path")
+    if [ "$MODE" = "--write" ]; then
+      rm -rf "$version_path"
+      echo "Removed $plugin $version"
+    else
+      echo "Would remove $plugin $version"
+    fi
+    removed=$((removed + 1))
+  done
+done
+
+if [ "$MODE" = "--write" ]; then
+  echo "Pruned $removed stale versions, kept $kept active."
+else
+  echo "Dry run: $removed stale, $kept active. Pass --write to remove."
+fi
