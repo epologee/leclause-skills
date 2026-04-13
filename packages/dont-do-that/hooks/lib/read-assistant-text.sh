@@ -75,6 +75,12 @@ read_assistant_text() {
   fi
 
   tail -"$tail_lines" "$transcript" \
-    | jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "text") | .text' 2>/dev/null \
+    | jq -s -r '
+        . as $all
+        | ([$all | to_entries[] | select(.value.type == "user") | .key] | last // -1) as $lu
+        | $all[$lu + 1:]
+        | map(select(.type == "assistant") | .message.content[]? | select(.type == "text") | .text)
+        | join("\n")
+      ' 2>/dev/null \
     | tail -c "$chars"
 }
