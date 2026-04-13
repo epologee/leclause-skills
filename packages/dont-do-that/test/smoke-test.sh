@@ -55,6 +55,12 @@ assert_passes "premature: finish flag" \
 assert_passes "premature: question hands off to compliance" \
   premature-interruption-guard.sh "$(msg "Wat bedoel je precies?")"
 
+assert_blocks "premature: flag + question is contradiction" \
+  premature-interruption-guard.sh "$(msg "Of zal ik hem starten? 🏁")"
+
+assert_blocks "premature: flag + question separated" \
+  premature-interruption-guard.sh "$(msg "Wil je dit nog? Ja hoor. 🏁")"
+
 assert_passes "premature: WIP hatch" \
   premature-interruption-guard.sh "$(msg "Bezig met hooks 🚧")"
 
