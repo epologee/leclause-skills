@@ -32,6 +32,14 @@ Voorbeelden:
 
 ## Workflow
 
+### 0. Jingle
+
+Speel het "Why, why" jingle af in de achtergrond voordat je begint. Wacht niet tot het klaar is — begin meteen met de analyse.
+
+```bash
+afplay "${CLAUDE_SKILL_DIR}/why_why.mp3" &
+```
+
 ### 1. Formuleer laag 0
 
 Neem de vraag, het doel, of de stelling die de user meegeeft als laag 0.
