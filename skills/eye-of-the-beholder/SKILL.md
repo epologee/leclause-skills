@@ -1,7 +1,7 @@
 ---
 name: eye-of-the-beholder
 user-invocable: true
-description: Use when producing or reviewing any visual layout (screen, print, responsive). Also use when the user shares a screenshot with spacing concerns. Activates DURING and AFTER layout CSS work. Catches cramped text, missing margins, disproportionate spacing.
+description: Use when producing or reviewing any visual layout or color system (screen, print, responsive). Also use when the user shares a screenshot with spacing, contrast, or color-token concerns. Activates DURING and AFTER layout CSS, color token, or contrast work. Catches cramped text, missing margins, disproportionate spacing, broken WCAG contrast, and ad-hoc token use.
 ---
 
 # Eye of the Beholder
@@ -83,6 +83,68 @@ Druk problemen uit als verhoudingen, niet als pixels:
 - "De sectie-gap is 14px maar de interne gap is 5px. Dat is een 2.8:1 ratio, helder genoeg."
 - "Dit is een geprint A4-vel. Tschichold's ratio 1:1:2:3 geeft bij 1.5cm basis: boven 1.5cm, binnen 1.5cm, buiten 3cm, onder 4.5cm."
 
+## Kleur: dezelfde discipline, andere as
+
+Ruimte is één as waarop je observerend kijkt. Kleur is een tweede. Dezelfde houding werkt: niet "deze twee cells hebben allebei een border dus ze zijn gescheiden" maar "zie ik het verschil?" Niet "er staat `text-muted` dus de tekst is leesbaar" maar "kan ik dit comfortabel lezen zonder te turen?"
+
+### Visuele kleur-observatie
+
+Voeg deze vragen toe aan de scan in "Hoe te kijken":
+
+11. **Hoeveel grijstinten zie je?** Tel ze in de screenshot. Een gedisciplineerd systeem heeft er weinig en consistent gebruikt. Tien subtiele varianten is geen subtiliteit, het zijn tien losse keuzes die toevallig in dezelfde repo wonen.
+
+12. **Aangrenzende oppervlakken.** Staan twee "verschillende" surfaces naast elkaar (canvas vs. list pane, list vs. detail)? Zie je het onderscheid direct, of moet je zoeken? Als je moet zoeken, is de luminance-delta te klein. Dit is vooral een val in dark mode.
+
+13. **Kun je secundaire tekst lezen zonder te turen?** Metadata, timestamps, captions. Als je het instinctief vergroot of dichterbij schuift, faalt het WCAG AA niveau. Dat is geen smaakkwestie maar een structurele fout.
+
+14. **Waarschuwings- en statuskleuren.** Zijn "rood voor fout" en "groen voor ok" duidelijk genoeg? Failure text op een witte achtergrond moet AA halen, net als body text. Tailwind's `red-500` en `green-500` halen dat meestal net niet op wit. Donkerder (`red-700`, `green-700`) wel.
+
+### Onder de screenshot kijken: het tokensysteem
+
+Een screenshot kan er prima uitzien terwijl het systeem eronder rommelig is. Drie audits die je op code-niveau doet, niet op beeld:
+
+**1. Token-vocabulaire scan.** Grep in de component-laag naar de omzeilings-patronen:
+
+- Opacity modifiers op kleur-utilities (Tailwind `text-foo/50`, `bg-foo/20`): meestal een teken van een missende tint, niet een bewuste opacity. Developer had een derde tekstniveau nodig en er bestond er maar twee.
+- Palette-kleuren in app-code (`text-red-500`, `bg-blue-200`): omzeilt het semantische systeem. Elk gebruik is een vraag "waarom had `text-danger` hier niet gewerkt?"
+- Hardcoded hex/rgb/oklch in style blocks (`color: #94a3b8`): frameworkloze escape. Meestal omdat het tokensysteem geen passend woord had.
+- Undefined tokens die wel worden gebruikt (`bg-surface-muted` terwijl dat token niet bestaat): Tailwind v4 genereert dan geen class en valt stilletjes leeg terug. Zie je een lege achtergrond waar je kleur verwacht, check de theme definitie.
+
+Elk van deze patronen signaleert een onvolledig tokensysteem. De fix is zelden "voeg een token toe" (reactief, herhaal probleem). De fix is "herzie de vocabulaire tot elke rol die in de UI voorkomt een eigen naam heeft."
+
+**2. WCAG contrast math.** Voor elke gebruikte tekstkleur op elke gebruikte achtergrond, bereken de ratio. Je hoeft niet te turen; de wiskunde geeft het definitieve antwoord.
+
+WCAG 2.1 SC 1.4.3 formule:
+
+```
+Per kanaal c (R, G, B):
+  c_norm = c / 255
+  c_lin  = c_norm ≤ 0.03928 ? c_norm / 12.92 : ((c_norm + 0.055) / 1.055)^2.4
+
+Luminance:
+  L = 0.2126 * R_lin + 0.7152 * G_lin + 0.0722 * B_lin
+
+Ratio van twee kleuren:
+  ratio = (L_lichter + 0.05) / (L_donkerder + 0.05)
+```
+
+Drempels:
+
+| Gebruik                                         | AA     | AAA  |
+| ----------------------------------------------- | ------ | ---- |
+| Body text (< 18pt regular, < 14pt bold)         | 4.5:1  | 7:1  |
+| Large text (≥ 18pt, of ≥ 14pt bold)             | 3:1    | 4.5:1 |
+| UI component boundary (button, input, control)  | 3:1    | -    |
+| Decoratieve dividers / non-functional borders   | vrijgesteld | -    |
+
+Een klein scriptje in Ruby, Python of JavaScript scheelt uren visuele twijfel. Draai het voor elke fg/bg combinatie die de app daadwerkelijk gebruikt, niet voor alle theoretische combinaties.
+
+**3. Perceptuele surface-delta.** Aangrenzende surface-niveaus (canvas, list pane, detail pane, hover, active) moeten visueel onderscheidbaar zijn. Minimum: **1.07x luminance ratio** tussen aangrenzende niveaus. Onder die drempel pretendeert het systeem hiërarchie die er optisch niet is.
+
+Dit is vooral een val in dark mode. Absolute luminance-waarden zijn daar klein (typisch 0.003 - 0.02), dus een absolute delta van 0.004 ziet er in een spreadsheet substantieel uit maar is perceptueel nul. Check altijd de ratio, niet het verschil.
+
+**Light en dark zijn twee ontwerpen, niet één.** Als je een rol (`surface-1`) licht goed invult en dan dark mode "wel ergens donker" maakt, heb je twee verschillende semantische systemen die toevallig dezelfde naam delen. Elke rol moet in beide modes dezelfde betekenis dragen: als `surface-1` in licht het meest prominente leesoppervlak is, moet hij dat in donker ook zijn. Gebruik `light-dark(licht, donker)` in CSS custom properties zodat beide waarden naast elkaar staan in dezelfde regel en niet uit elkaar drijven.
+
 ## Fundament
 
 **Robin Williams (CRAP):** Contrast (maak verschil onmiskenbaar of maak het gelijk), Repetition (herhaal visuele keuzes voor samenhang), Alignment (alles moet visueel verbonden zijn met iets anders), Proximity (nabijheid impliceert relatie).
@@ -116,6 +178,12 @@ Druk problemen uit als verhoudingen, niet als pixels:
 | Ronde vorm gelijk maken aan vierkante | Cirkels moeten ~113% zijn om optisch gelijk te wegen. |
 | Alleen de pagina-randen tracen | Trace is fractaal. Elke container met randen verdient een edge-trace: component, glyph, pad, pixel. |
 | Tekst en icoon symmetrisch centreren in een pill | Font ascent > descent maakt digits optisch hoog. Align op cap-height center, niet bounding box. Micro-translate van 0.5-1px of cap-height line-height. |
+| Opacity modifier als derde tekstkleur (`text-foo/50`) | Je hebt een missend tertiary-niveau, geen halve tekst. Definieer een expliciet token. |
+| Palette-kleur in app-code (`text-red-500`) | Semantic bypass. Vervang door `text-danger` of vergelijkbaar. |
+| Hardcoded hex in een component style block | Missing token. Definieer een nieuwe rol, of gebruik een bestaand token dat past. |
+| "Dark mode ziet er wel ok uit" zonder math | Check de ratios. Surface delta onder 1.07x is onzichtbaar, text contrast onder 4.5 faalt AA. |
+| Twee aangrenzende surfaces waar je geen verschil ziet | Het verschil IS er niet. Vergroot de luminance-delta tot minstens 1.07x. |
+| Kleurwaarden voor licht zonder tegenwaarde voor donker | Beide modes zijn aparte ontwerpen. Gebruik `light-dark(L, D)` zodat ze naast elkaar leven. |
 
 ## Output
 
