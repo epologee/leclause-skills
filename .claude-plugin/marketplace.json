@@ -13,6 +13,11 @@
       "source": "./packages/clipboard"
     },
     {
+      "name": "bonsai",
+      "description": "Worktree lifecycle manager. Create a worktree with branch and launch a Claude session in a new iTerm2 pane, or prune worktrees with safety checks. Requires macOS + iTerm2.",
+      "source": "./packages/bonsai"
+    },
+    {
       "name": "commit-all-the-things",
       "description": "Commit all uncommitted changes in the working tree, grouped into logical commits with descriptive messages.",
       "source": "./packages/commit-all-the-things"

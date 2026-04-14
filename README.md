@@ -15,6 +15,7 @@ claude plugins install <skill-name>@leclause
 
 | Plugin | Command | Auto | Hooks | Description |
 |--------|---------|:----:|:-----:|-------------|
+| **bonsai** | `/bonsai` | | | Worktree lifecycle manager: create a worktree + Claude session in a new iTerm2 pane, or prune worktrees with safety checks. Requires macOS + iTerm2. |
 | **clipboard** | `/clipboard` | | | Copy the core content of the last answer to the clipboard. `/clipboard slack` for rich text. |
 | **commit-all-the-things** | `/commit-all-the-things` | | | Commit all uncommitted changes in the working tree, grouped into logical commits with descriptive messages. |
 | **dont-do-that** | ❌ | | ✅ | Eight guardrail hooks that push back on common AI reflexes: shifting blame, stopping prematurely, delegating verification, and em-dashes in prose. See [dont-do-that](packages/dont-do-that/README.md). |
@@ -66,6 +67,18 @@ Requires [Playwright](https://playwright.dev/) installed globally:
 ```bash
 npm install -g playwright
 ```
+
+### bonsai
+
+Requires macOS + iTerm2. `/bonsai new` opens a new iTerm2 pane via `osascript`, which is macOS-only. `/bonsai prune` works anywhere git runs.
+
+If you use a wrapper around `claude` (custom alias, flags, model pinning), expose it via the `CLAUDE_CLI` env var in your shell rc:
+
+```bash
+export CLAUDE_CLI=my-wrapper
+```
+
+Bonsai falls back to `claude` if the var is not set.
 
 ## Plugin versioning
 
