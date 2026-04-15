@@ -1,15 +1,12 @@
 #!/bin/bash
-# PostToolUse hook: blocks em-dash (—) and en-dash (–) in ALL output
-# Geen uitzonderingen: niet in bestanden, niet in clipboard, niet in chat
+# PostToolUse hook: blocks em dash (U+2014) and en dash (U+2013) characters
+# in persisted output.
+# Scope: Edit/Write (files) and Bash (clipboard, pipes). Chat is NOT checked.
 
 INPUT=$(cat)
 TOOL=$(jq -r '.tool_name' <<< "$INPUT")
-HOOK_EVENT=$(jq -r '.hook_event_name // "PostToolUse"' <<< "$INPUT")
 
-if [ "$HOOK_EVENT" = "Stop" ]; then
-  CONTENT=$(jq -r '.last_assistant_message // empty' <<< "$INPUT")
-  SOURCE="chat output"
-elif [ "$TOOL" = "Edit" ]; then
+if [ "$TOOL" = "Edit" ]; then
   CONTENT=$(jq -r '.tool_input.new_string // empty' <<< "$INPUT")
   SOURCE=$(jq -r '.tool_input.file_path // "unknown file"' <<< "$INPUT")
 elif [ "$TOOL" = "Write" ]; then
@@ -24,25 +21,19 @@ fi
 
 [ -z "$CONTENT" ] && exit 0
 
-# Strip code blocks, check remaining text for em/en-dashes
-VIOLATIONS=$(awk '
+DASH_CLASS=$(printf '[\xe2\x80\x94\xe2\x80\x93]')
+
+VIOLATIONS=$(awk -v pat="$DASH_CLASS" '
   /^```/ { in_code = !in_code; next }
   in_code { next }
-  /[—–]/ { print NR": "$0 }
+  $0 ~ pat { print NR": "$0 }
 ' <<< "$CONTENT" | head -3)
 
 if [ -n "$VIOLATIONS" ]; then
-  if [ "$HOOK_EVENT" = "Stop" ]; then
-    jq -n --arg v "$VIOLATIONS" --arg s "$SOURCE" '{
-      decision: "block",
-      reason: ("DASH DETECTED in " + $s + ". Em-dashes (\u2014) en en-dashes (\u2013) zijn VERBODEN. Altijd. Overal. Herschrijf met komma, punt, of haakjes.\nGevonden:\n" + $v)
-    }'
-  else
-    jq -n --arg v "$VIOLATIONS" --arg s "$SOURCE" '{
-      hookSpecificOutput: {
-        hookEventName: "PostToolUse",
-        additionalContext: ("DASH DETECTED in " + $s + ". Em-dashes (\u2014) en en-dashes (\u2013) zijn VERBODEN. Altijd. Overal. Herschrijf met komma, punt, of haakjes.\nGevonden:\n" + $v)
-      }
-    }'
-  fi
+  jq -n --arg v "$VIOLATIONS" --arg s "$SOURCE" '{
+    hookSpecificOutput: {
+      hookEventName: "PostToolUse",
+      additionalContext: ("DASH DETECTED in " + $s + ". Em-dashes (\u2014) en en-dashes (\u2013) zijn VERBODEN in bestanden en shell commandos (clipboard/pipes). Herschrijf met komma, punt, of haakjes.\nGevonden:\n" + $v)
+    }
+  }'
 fi
