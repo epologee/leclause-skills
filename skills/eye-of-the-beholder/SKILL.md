@@ -1,7 +1,7 @@
 ---
 name: eye-of-the-beholder
 user-invocable: true
-description: Use when producing or reviewing any visual layout or color system (screen, print, responsive). Also use when the user shares a screenshot with spacing, contrast, or color-token concerns. Activates DURING and AFTER layout CSS, color token, or contrast work. Catches cramped text, missing margins, disproportionate spacing, broken WCAG contrast, and ad-hoc token use.
+description: Use when producing or reviewing any visual layout, color system, or animation (screen, print, responsive, transitions). Also use when the user shares a screenshot or screen recording with spacing, contrast, color-token, or timing concerns. Activates DURING and AFTER layout CSS, color token, contrast, or animation work. Catches cramped text, missing margins, disproportionate spacing, broken WCAG contrast, ad-hoc token use, snapping transitions, out-of-sync animations, and content that disappears before its container does.
 ---
 
 # Eye of the Beholder
@@ -25,13 +25,13 @@ Dit is het verschil tussen bevestigend kijken en observerend kijken. Een arts be
 
 Bij visueel werk is deze skill niet iets dat je aan het eind aanroept. Het is een werkwijze:
 
-1. **Schrijf een blok layout CSS** (een container, een sectie, een pagina-structuur)
-2. **Screenshot** (zelf nemen of van de user ontvangen)
-3. **Beschrijf wat je ziet** in de screenshot, zonder naar de CSS te kijken. Scan kloksgewijs: boven -> rechts -> onder -> links. Benoem per rand het dichtstbijzijnde element.
-4. **Vergelijk observatie met intentie.** Plakt er iets? Voelt iets krap? Is er een leegte?
+1. **Schrijf een blok layout CSS of een transitie** (een container, een sectie, een pagina-structuur, een state-overgang)
+2. **Screenshot of recording** (zelf nemen of van de user ontvangen). Voor transities: een GIF/MP4 of een reeks frames uit een headless browser.
+3. **Beschrijf wat je ziet** in het resultaat, zonder naar de CSS te kijken. Scan kloksgewijs: boven -> rechts -> onder -> links. Benoem per rand het dichtstbijzijnde element. Voor animaties: herhaal de scan op start-, mid-, en eind-frame.
+4. **Vergelijk observatie met intentie.** Plakt er iets? Voelt iets krap? Is er een leegte? Snapt er iets terwijl de rest animeert?
 5. **Fix en herhaal** vanaf stap 2.
 
-Dit is design-TDD: de screenshot is de test, de CSS is de implementatie.
+Dit is design-TDD: het rendered resultaat is de test, de CSS is de implementatie.
 
 ## Hoe te kijken
 
@@ -145,6 +145,72 @@ Dit is vooral een val in dark mode. Absolute luminance-waarden zijn daar klein (
 
 **Light en dark zijn twee ontwerpen, niet één.** Als je een rol (`surface-1`) licht goed invult en dan dark mode "wel ergens donker" maakt, heb je twee verschillende semantische systemen die toevallig dezelfde naam delen. Elke rol moet in beide modes dezelfde betekenis dragen: als `surface-1` in licht het meest prominente leesoppervlak is, moet hij dat in donker ook zijn. Gebruik `light-dark(licht, donker)` in CSS custom properties zodat beide waarden naast elkaar staan in dezelfde regel en niet uit elkaar drijven.
 
+## Animatie: dezelfde discipline, tijd als as
+
+Ruimte en kleur zijn twee assen. Tijd is een derde. Dezelfde houding werkt: niet "ik schreef een `transition: transform 200ms`, dus het animeert soepel" maar "wat zie ik tussen frame 0 en frame 12?" De screenshot wordt een *serie* screenshots. De randen-trace gebeurt op elk key-frame. Het ritme is de timing-curve. De "vreemde eend" is het ene element dat uit de maat valt.
+
+Een statisch eindbeeld dat klopt zegt niets over de reis ernaartoe. Een UI die voor en na het animeren keurig gelayout is kan ertussenin lelijk kapseizen.
+
+### Visuele animatie-observatie
+
+Voeg deze vragen toe aan de scan in "Hoe te kijken". Ze worden toegepast op een *reeks* frames (start, kwart, half, drie-kwart, eind) in plaats van op één screenshot:
+
+15. **Bewegen alle elementen die samen horen als één?** Wanneer een header en zijn content allebei op nieuwe posities eindigen, moeten ze tijdens de transitie hetzelfde *tempo* hebben. Snapt de header terwijl de content animeert, of stopt de ene bij 80% terwijl de ander bij 60% is? Dit is ritme op de tijd-as. Een component dat uit de maat loopt is de "vreemde eend" van animatie.
+
+16. **Wat gebeurt er met verdwijnende content?** Vervalt een element instant terwijl zijn container nog beweegt? Dat is een "teleporting element": het vertrekt voordat zijn vervoermiddel vertrokken is. Je verwacht dat content meereist tot de rit eindigt. Fix patroon: `transition: visibility 0s linear var(--duration)` op de hidden-state zodat de visibility-flip pas NA de beweging plaatsvindt. Spiegelbeeld: verschijnt content pas nadat zijn container al bewogen is? Dan is de entry gebroken, de visibility moet dan juist instant flippen.
+
+17. **Begint en eindigt alles op hetzelfde moment?** Check de transition delay, duration en easing van elk animerend element via `getComputedStyle`. Verschillende durations zijn soms intentioneel (stagger) maar vaker een bug. "Nav snapt, content animeert 200ms" is zelden expressief, meestal een vergeten `transition` regel op de nav.
+
+18. **Is een cell die "hidden" is echt weg of alleen onzichtbaar?** Off-screen parken (visibility hidden bij volledige renderWidth) en collapsen naar 0 (width 0, display none) zien er op een statische screenshot hetzelfde uit. Onder beweging niet: een geparkeerde cell kan als één geheel mee-schuiven met de rest, een gecollapste cell snapt weg. Voor slide-achtige transities: park, niet collapse.
+
+19. **Timing versus afstand.** Een transitie van 200ms voelt snel voor een 50px shift en traag voor een 800px shift. Als er meerdere transities tegelijk lopen met verschillende afstanden, wordt dit zichtbaar. De vraag is niet "is de duration goed?" maar "klopt de SNELHEID (px/ms) voor wat ik vertel?" In grote column-shifts is een kortere duration soms expressiever dan hetzelfde 200ms dat je overal gebruikt.
+
+### Onder de screenshot kijken: timing en sync
+
+Een transitie kan er goed uitzien op één frame maar onder de motorkap uit sync zijn. Code-niveau audits, zoals bij de token-vocabulaire scan:
+
+**1. Timing-bron scan.** Grep naar hardcoded durations en easings in component code:
+
+- Numerieke ms/s waarden in CSS (`200ms`, `0.3s`): meestal een ontbrekende custom property. Als twee elementen in dezelfde flow animeren en beiden apart `200ms` hardcoden, drijven ze bij de eerste refactor uit elkaar.
+- Hardcoded cubic-bezier of named ease (`ease`, `ease-out`, `cubic-bezier(...)`): zelfde probleem. Definieer een `--duration-*` en `--ease-*` vocabulaire en gebruik die overal.
+- `transition: all`: bijna altijd fout. "All" inclusief properties die je niet wilde animeren (kleur, border) en properties die layout triggeren (width, padding). Wees expliciet: `transition: transform var(--duration) var(--ease), opacity ...`.
+- Svelte/React animation libs op plekken waar CSS-transition volstaat: extra bundle, extra concept, meestal niet nodig voor state-to-state transitions.
+
+**2. Sync-audit.** Voor een flow waar meerdere elementen samen moeten bewegen: lijst expliciet op wat wel en wat niet transitioneert. Een element dat een inline `style:width` krijgt zonder `transition` regel erop is een snapping element. Dat is het ene snelle controlepatroon dat je zelf via `grep -n "style:" --include="*.svelte"` kunt draaien.
+
+**3. Compositor-only properties.** Transform en opacity worden door de compositor geanimeerd zonder layout. Width, top, left, padding, margin zijn layout-properties en triggeren reflow per frame. Voor kleine elementen is dat fine. Voor rijen van 5+ items of bij parallelle transities kan het janken. `contain: layout` op animerende children isoleert de reflow tot hun eigen box. `will-change: transform` (niet `will-change: width`, dat is een anti-pattern per MDN) promoot de strip naar een eigen layer.
+
+### Zelf opnemen en dissecten
+
+Een animatie verifieren zonder hem op te nemen is hetzelfde als een layout verifieren zonder screenshot. Workflow:
+
+**1. Reproduce.** User levert een GIF of MP4, OF je neemt zelf op. Zelf opnemen kan via:
+
+- **Headless browser test driver** (Cuprite, Playwright): `session.driver.save_screenshot(path, full: true)` in een loop met `sleep` ertussen, of sequentiele snapshots met expliciete viewport resizes.
+- **Screen recording** (macOS: CleanShot, Cmd+Shift+5): snel maar handmatig.
+- **Chrome DevTools Recorder**: structureel, als je een user flow wilt reproduceren.
+
+Sla de recording op in `tmp/` of een scratch map die gitignored is.
+
+**2. Dissect.** Frame extraction via `ffmpeg`:
+
+```bash
+ffmpeg -i capture.mp4 -vf "fps=15,scale=900:-1" /tmp/frame_%03d.png
+```
+
+`fps=15` is genoeg voor 200-400ms transities (3-6 frames over de animatie). `scale=900:-1` houdt de file sizes klein zodat de Read tool de frames kan inzien. Voor langere of subtielere animaties: verhoog naar `fps=30` en leef met de grotere files.
+
+Read de frames via de Read tool. Per frame: doe de scan-vragen uit "Hoe te kijken" (randen, ritme, vreemde eend). Vergelijk frame N met frame N+1: wat is veranderd, wat had niet mogen veranderen, wat had WEL moeten veranderen?
+
+**3. Self-capture verificatie**. Na een fix: zelf een nieuwe recording maken om te bewijzen dat het probleem weg is. Dezelfde workflow.
+
+**4. Mid-animation inspection.** Rest-state screenshots bewijzen alleen de eindposities, niet de reis. Voor tussentijdse inspectie:
+
+- **Slow-mo truc**: override de duration custom property via JS in een test: `document.querySelector('.root').style.setProperty('--duration', '1s')`. Trigger de transitie, sleep 100-500ms, sample `getComputedStyle(element).transform` of `.visibility`. De 5x of 10x vertraging geeft je een ruim venster om mid-animation waardes te lezen.
+- **Multiple samples**: op t=50, 100, 150, 200ms een snapshot, verifieer dat de waardes monotoon interpoleren en dat samenhorende elementen op elk sample punt in sync zijn.
+
+**5. Rest-vs-mid testing**. Een animatie-test die alleen rest-state checkt is gebroken per definitie: hij kan niet falen op de helft-van-de-animatie bugs waar de klant last van heeft. Schrijf expliciet een mid-animation assertie als het kritisch is dat elementen synchroon lopen. De slow-mo truc maakt dat schrijfbaar in Cucumber/Playwright zonder race conditions.
+
 ## Fundament
 
 **Robin Williams (CRAP):** Contrast (maak verschil onmiskenbaar of maak het gelijk), Repetition (herhaal visuele keuzes voor samenhang), Alignment (alles moet visueel verbonden zijn met iets anders), Proximity (nabijheid impliceert relatie).
@@ -184,6 +250,13 @@ Dit is vooral een val in dark mode. Absolute luminance-waarden zijn daar klein (
 | "Dark mode ziet er wel ok uit" zonder math | Check de ratios. Surface delta onder 1.07x is onzichtbaar, text contrast onder 4.5 faalt AA. |
 | Twee aangrenzende surfaces waar je geen verschil ziet | Het verschil IS er niet. Vergroot de luminance-delta tot minstens 1.07x. |
 | Kleurwaarden voor licht zonder tegenwaarde voor donker | Beide modes zijn aparte ontwerpen. Gebruik `light-dark(L, D)` zodat ze naast elkaar leven. |
+| Alleen rest-state screenshots bij animatie | De reis is de bug. Neem frames of gebruik de slow-mo truc om mid-animation te inspecteren. |
+| Content die verdwijnt vóór zijn container | Teleporting element. Delay `visibility: hidden` met `transition: visibility 0s linear var(--duration)` op de hidden-state. |
+| Hardcoded ms/ease verspreid over componenten | Definieer `--duration-*` en `--ease-*` custom properties, gebruik overal. Anders drijven elementen bij eerste refactor uit elkaar. |
+| `transition: all` | Animeert ook kleur, border, layout-props. Expliciet: `transform var(--dur), opacity var(--dur)`. |
+| `will-change: width` | Anti-pattern per MDN. Width is een layout-property en krijgt geen GPU compositing. Gebruik alleen `will-change: transform` / `opacity`. |
+| Inline `style:width` zonder `transition` regel | Snapt instant. Grep op `style:` in componenten om snapping elements op te sporen. |
+| Cells die naar 0 collapseren ipv off-screen parken | Collapse forceert "van niets naar iets" sprongen. Park via visibility-hidden met behouden renderWidth. |
 
 ## Output
 
@@ -204,4 +277,27 @@ Diagnose (na CSS check):
 
 Fix:
 - padding: 0.6rem 0.9rem (0.9rem = 3x basisunit, gelijk aan .main padding-x)
+```
+
+Na het bekijken van een reeks frames (animatie):
+
+```
+Observatie per frame (voor ik naar de CSS kijk):
+- Frame 0 (start): nav toont 3 titels, content toont 3 cells, alles netjes in ritme.
+- Frame 3 (mid): nav staat al op de nieuwe layout met 2 titels, content is halverwege.
+  De nav-titels zijn gesnapt, de cells animeren nog.
+- Frame 6 (eind): nav en content beide in eindpositie.
+- Vreemde eend: de nav loopt niet in ritme met de content. Ze eindigen samen maar
+  beginnen niet samen.
+- Verdwijnende content: in frame 3 is de inhoud van de wegglijdende cell al hidden
+  terwijl zijn container nog beweegt. Teleporting element.
+
+Diagnose (na CSS check):
+- .nav-title heeft inline style:width maar geen `transition` regel in de CSS.
+- .cell-collapsed zet visibility: hidden instant zonder delay.
+
+Fix:
+- .nav-title krijgt transition: width var(--duration) var(--ease).
+- .cell-collapsed krijgt transition: visibility 0s linear var(--duration), zodat
+  de visibility pas flipt nadat de beweging klaar is.
 ```

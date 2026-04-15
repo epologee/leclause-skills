@@ -1,5 +1,5 @@
 {
   "name": "eye-of-the-beholder",
   "description": "Visual layout review skill. Observation before explanation: screenshot, describe what you see, then diagnose. Design-TDD for CSS.",
-  "version": "1.0.5"
+  "version": "1.0.6"
 }
