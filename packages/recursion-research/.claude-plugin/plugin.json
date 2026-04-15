@@ -1,5 +1,0 @@
-{
-  "name": "recursion-research",
-  "description": "Deep research workflow producing atomic improvement plans for the Claude Code setup. Research machine invoked by the recursion orchestrator or directly.",
-  "version": "1.0.1"
-}

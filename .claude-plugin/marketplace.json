@@ -64,13 +64,8 @@
     },
     {
       "name": "recursion",
-      "description": "Orchestrator for the nightly workflow improvement loop. Manages schedule, state, blocklist, and dispatches research runs to recursion-research.",
+      "description": "Nightly workflow-improvement loop. /recursion orchestrates schedule, state, focus, and reject. Ships with an internal research sub-skill that runs the deep research workflow producing atomic improvement plans.",
       "source": "./packages/recursion"
-    },
-    {
-      "name": "recursion-research",
-      "description": "Deep research workflow producing atomic improvement plans for the Claude Code setup. Research machine invoked by the recursion orchestrator or directly.",
-      "source": "./packages/recursion-research"
     },
     {
       "name": "rename-suggestion",

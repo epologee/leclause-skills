@@ -1,6 +1,6 @@
 # Plan Template
 
-Canonical schema voor plan-bestanden in `~/.claude/recursion/plans/`. Single source of truth, gedeeld door `recursion` (leest `status` bij reject) en `recursion-research` (schrijft nieuwe plannen).
+Canonical schema voor plan-bestanden in `~/.claude/recursion/plans/`. Single source of truth, gedeeld door `recursion` (leest `status` bij reject) en `research` (schrijft nieuwe plannen).
 
 ## Bestandsnaam
 
@@ -12,11 +12,11 @@ Voorbeeld: `2026-03-25-hook-test-coverage-check.md`
 
 | Veld | Mogelijke waarden | Schrijver |
 |------|-------------------|-----------|
-| `status` | `proposed`, `rejected`, `implemented` | `recursion-research` (proposed bij schrijven), `recursion` (rejected bij /recursion reject) |
-| `datum` | `YYYY-MM-DD` | `recursion-research` |
-| `categorie` | `skill`, `claude-md`, `hook`, `setting`, `structural` | `recursion-research` |
-| `impact` | `high`, `medium`, `low` | `recursion-research` |
-| `confidence` | `robuust`, `waarschijnlijk`, `fragiel` | `recursion-research` |
+| `status` | `proposed`, `rejected`, `implemented` | `research` (proposed bij schrijven), `recursion` (rejected bij /recursion reject) |
+| `datum` | `YYYY-MM-DD` | `research` |
+| `categorie` | `skill`, `claude-md`, `hook`, `setting`, `structural` | `research` |
+| `impact` | `high`, `medium`, `low` | `research` |
+| `confidence` | `robuust`, `waarschijnlijk`, `fragiel` | `research` |
 
 ## Body template
 
@@ -91,9 +91,9 @@ Te grote verbeteringen: splits in meerdere plannen met volgorde.
 ## Status transities
 
 ```
-(nieuw) --recursion-research schrijft--> proposed
+(nieuw) --research schrijft--> proposed
 proposed --recursion reject--> rejected (plus blocklist toevoeging)
 proposed --user implementeert via /auto-loop--> implemented
 ```
 
-`recursion-research` schrijft alleen `proposed`. De status-transities `rejected` en `implemented` zijn eigendom van de orchestrator resp. de user.
+`research` schrijft alleen `proposed`. De status-transities `rejected` en `implemented` zijn eigendom van de orchestrator resp. de user.

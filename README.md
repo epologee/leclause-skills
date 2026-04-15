@@ -27,8 +27,7 @@ claude plugins install <skill-name>@leclause
 | **inspiratie** | `/inspiratie` | ✅ | | Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. |
 | **rebase-latest-default** | `/rebase-latest-default` | | | Rebase current branch on the latest default branch (local or remote) with staleness check and automatic conflict resolution. |
 | **recap** | `/recap` | | | Structured status overview of the current session: what we're doing, where we are, what's next. |
-| **recursion** | `/recursion` | | | Orchestrator for the improvement loop: manages schedule, state, blocklist, reject, focus. Dispatches research runs to recursion-research. |
-| **recursion-research** | `/recursion-research` | | | Deep research machine that produces atomic improvement plans. Spawns parallel friction and external discovery agents, synthesizes findings, writes plans. |
+| **recursion** | `/recursion` | | | Nightly workflow-improvement loop. Orchestrator manages schedule, state, focus, reject. Ships with an internal `research` sub-skill that runs parallel friction and external discovery agents, synthesizes findings, and writes atomic improvement plans. |
 | **rename-suggestion** | `/rename-suggestion` | | | Suggest a descriptive session name based on conversation context. |
 | **saysay** | `/saysay` | | | Claude speaks every response aloud. `/saysay off` to exit. |
 | **screen-recording** | `/screen-recording` | ✅ | | Automated screen recordings and demo videos of browser-based features. |

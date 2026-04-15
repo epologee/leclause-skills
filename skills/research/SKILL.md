@@ -1,16 +1,15 @@
 ---
-name: recursion-research
-user-invocable: true
+name: research
+user-invocable: false
 description: >
-  Use when executing the deep research workflow that produces atomic
-  improvement plans for the Claude Code setup. Triggers on
-  /recursion-research, "wat kunnen we verbeteren", "workflow
-  improvements", "research run", explicit delegation from the recursion
-  orchestrator, or scheduled nightly runs. Spawns parallel Opus agents
-  for friction analysis and external discovery, synthesizes findings
-  across three rounds, and writes self-contained plan files. Research
-  machine only, never executes the plans it produces.
-argument-hint: "(no arguments, input comes from ~/.claude/recursion/state.md)"
+  Internal sub-skill of the recursion plugin. Not user-invocable:
+  dispatched only by the recursion orchestrator (via Skill tool) or by
+  a scheduled trigger that calls this skill by name. Runs the deep
+  research workflow that produces atomic improvement plans: spawns
+  parallel Opus agents for friction analysis and external discovery,
+  synthesizes findings across three rounds, and writes self-contained
+  plan files in ~/.claude/recursion/plans/. Research machine only,
+  never executes the plans it produces.
 allowed-tools:
   - Bash(date *)
   - Bash(stat *)
@@ -28,29 +27,32 @@ allowed-tools:
   - Agent
 ---
 
-# Recursion Research
+# Research
 
 Research machine achter de recursion improvement loop. Produceert
 kant-en-klare plannen door drie rondes deep research (verkenning,
 diepte, contrarian). Schrijft plannen in `~/.claude/recursion/plans/`.
 Voert de plannen niet uit.
 
+Niet user-invocable. Altijd aangeroepen vanuit de `recursion` orchestrator
+of een geplande trigger.
+
 ## State contract
 
-Beide recursion skills (`recursion` orchestrator en `recursion-research`)
-delen `~/.claude/recursion/`. Om race conditions te voorkomen heeft elk
+De `recursion` orchestrator en `research` skill delen
+`~/.claude/recursion/`. Om race conditions te voorkomen heeft elk
 state-veld één schrijver:
 
 | Bestand / veld | Eigenaar | Andere skill mag |
 |----------------|----------|------------------|
 | `state.md` `schedule_id` | `recursion` | lezen |
 | `state.md` `focus` | `recursion` | lezen |
-| `state.md` `last_run` | `recursion-research` | lezen |
-| `state.md` `total_runs` | `recursion-research` | lezen |
-| `state.md` Knowledge Base | `recursion-research` | lezen |
-| `state.md` Sources Crawled | `recursion-research` | lezen |
+| `state.md` `last_run` | `research` | lezen |
+| `state.md` `total_runs` | `research` | lezen |
+| `state.md` Knowledge Base | `research` | lezen |
+| `state.md` Sources Crawled | `research` | lezen |
 | `blocklist.md` | `recursion` (append bij reject) | lezen |
-| `plans/*.md` nieuwe bestanden | `recursion-research` | lezen |
+| `plans/*.md` nieuwe bestanden | `research` | lezen |
 | `plans/*.md` `status` veld | `recursion` (flip naar rejected) | lezen |
 
 De plan-body (alle velden behalve `status`) is immutable na creatie.
@@ -186,7 +188,7 @@ Pas nu (na de laatste write) is de run echt voltooid. Werk
 Meld in de console welke plannen geschreven zijn:
 
 ```
-Recursion klaar: N plannen geschreven.
+Research klaar: N plannen geschreven.
 
 [titels]
 
@@ -203,7 +205,7 @@ op de `recursion` orchestrator wanneer die via de Skill tool delegeert.
 - Geen projectnamen, bedrijfsnamen of persoonlijke namen in zoekopdrachten
   (zie `prompts/explore.md § Privacy Regels`).
 - Geen content uploaden naar externe diensten.
-- Recursion-research wijzigt GEEN code, skills, hooks of settings buiten
+- Research wijzigt GEEN code, skills, hooks of settings buiten
   `~/.claude/recursion/`. Alleen plan-bestanden en state velden uit het
   ownership tabel hierboven.
 - Blocklist items worden nooit opnieuw voorgesteld.

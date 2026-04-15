@@ -5,8 +5,8 @@ description: >
   Use when scheduling or managing the nightly workflow-improvement loop.
   Triggers on /recursion, "schedule on/off", status check, focus set,
   or plan reject. Manages cron, state, focus, and the blocklist.
-  Dispatches research runs to the recursion-research skill. Does not
-  perform research itself.
+  Dispatches research runs to the research sub-skill of the same plugin.
+  Does not perform research itself.
 argument-hint: "[now | on | off | status | focus <thema> | reject <file>]"
 allowed-tools:
   - Bash(date *)
@@ -30,16 +30,16 @@ allowed-tools:
 
 Orchestrator voor de nightly improvement loop. Beheert cron, state,
 focus, blocklist en de reject-flow. Draait zelf geen research. Voor de
-daadwerkelijke research workflow en safety regels: zie
-`recursion-research`.
+daadwerkelijke research workflow en safety regels: zie de `research`
+sub-skill (`recursion:research`).
 
 ## State eigenaarschap
 
 Orchestrator is de enige schrijver van `schedule_id`, `focus`, en
 `blocklist.md` appends. De status-flip van een plan naar `rejected` is
 ook orchestrator-werk. Alle andere velden in `state.md` en `plans/*.md`
-zijn eigendom van `recursion-research`. Volledige ownership-tabel staat
-in `skills/recursion-research/SKILL.md § State contract`.
+zijn eigendom van de `research` sub-skill. Volledige ownership-tabel
+staat in `skills/research/SKILL.md § State contract`.
 
 ## Subcommando's
 
@@ -54,7 +54,7 @@ in `skills/recursion-research/SKILL.md § State contract`.
 | `focus off` | Terug naar brede verkenning |
 | `reject <bestand>` | Markeer plan als rejected, voeg toe aan blocklist |
 
-## Delegatie naar recursion-research
+## Delegatie naar research
 
 Eén contract, twee paden (in-session versus achtergrond cron). Gebruik
 exact een van deze twee.
@@ -62,31 +62,33 @@ exact een van deze twee.
 **In-session (synchrone Skill tool call):**
 
 ```
-Skill(skill: "recursion-research")
+Skill(skill: "recursion:research")
 ```
 
-De Skill tool wacht tot recursion-research klaar is en retourneert de
+De Skill tool wacht tot de research run klaar is en retourneert de
 NOTIFY-output. Dit is het pad voor `/recursion now`.
 
 **Cron / RemoteTrigger (verse sessie):**
 
+Verse sessies kunnen een sub-skill niet direct als slash-command
+aanroepen (research is niet user-invocable). Cron prompt daarom:
+
 ```
-prompt: "/recursion-research"
+prompt: "/recursion now"
 ```
 
-Dit is een expliciete slash-command invocatie. De verse sessie laadt
-`recursion-research` via de slash command, geen natural-language routing.
-Dit is het pad voor `/recursion`, `/recursion on`, en scheduled runs.
+De verse sessie laadt dan de orchestrator en die dispatcht via de Skill
+tool naar research. Eén ingang, één codepad.
 
 ### `/recursion` (eenmalig vannacht)
 
 1. Bereken cron voor vannacht 1:03: `3 1 <dag> <maand> *`
-2. CronCreate met `recurring: false` en prompt `/recursion-research`
+2. CronCreate met `recurring: false` en prompt `/recursion now`
 3. Waarschuw: session-only, verdwijnt als sessie sluit
 
 ### `/recursion now`
 
-1. Roep `Skill(skill: "recursion-research")` aan. Wacht synchroon op
+1. Roep `Skill(skill: "recursion:research")` aan. Wacht synchroon op
    terugkeer.
 2. Toon de NOTIFY-output die de research skill retourneert.
 3. Geen aparte state-updates in de orchestrator; de research skill
@@ -95,7 +97,7 @@ Dit is het pad voor `/recursion`, `/recursion on`, en scheduled runs.
 ### `/recursion on` / `off`
 
 Gebruik RemoteTrigger via de `/schedule` skill. Cron: `3 1 * * *`.
-Prompt in de trigger: `/recursion-research`.
+Prompt in de trigger: `/recursion now`.
 Sla trigger ID op in state.md als `schedule_id`.
 
 `off` stopt de trigger via `schedule_id` en wist het veld uit state.md.
