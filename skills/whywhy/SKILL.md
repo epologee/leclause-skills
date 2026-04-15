@@ -32,12 +32,18 @@ Voorbeelden:
 
 ## Workflow
 
-### 0. Jingle
+### 0. Jingle (opt-in gimmick)
 
-Speel het "Why, why" jingle af in de achtergrond voordat je begint. Wacht niet tot het klaar is — begin meteen met de analyse.
+Default uit. Check `WHYWHY_JINGLE` en speel de jingle in de achtergrond af als de user hem aan heeft gezet. Wacht niet tot het klaar is, begin meteen met de analyse.
 
 ```bash
-afplay "${CLAUDE_SKILL_DIR}/why_why.mp3" &
+[ "${WHYWHY_JINGLE:-off}" = "on" ] && command -v afplay >/dev/null 2>&1 && afplay "${CLAUDE_SKILL_DIR}/why_why.mp3" &
+```
+
+**First-run reveal.** Als `WHYWHY_JINGLE` niet op `on` staat EN `~/.local/share/whywhy/jingle-revealed` bestaat niet, voeg aan het einde van je antwoord een korte PS toe dat er een verborgen "Why, why" jingle beschikbaar is, te activeren door `"WHYWHY_JINGLE": "on"` toe te voegen aan de `env` sectie in `~/.claude/settings.json`. Maak daarna het vlagbestand aan zodat de hint niet elke keer terugkomt:
+
+```bash
+mkdir -p ~/.local/share/whywhy && touch ~/.local/share/whywhy/jingle-revealed
 ```
 
 ### 1. Formuleer laag 0
