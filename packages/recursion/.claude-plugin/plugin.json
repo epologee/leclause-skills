@@ -1,5 +1,5 @@
 {
   "name": "recursion",
-  "description": "Daily deep research producing atomic improvement plans for the Claude Code workflow. Research machine, not executor.",
-  "version": "1.0.3"
+  "description": "Orchestrator for the nightly workflow improvement loop. Manages schedule, state, blocklist, and dispatches research runs to recursion-research.",
+  "version": "1.0.4"
 }
