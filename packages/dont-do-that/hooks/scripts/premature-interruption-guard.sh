@@ -10,13 +10,17 @@
 #
 # Skips when:
 #   - "?" appears in the last 500 bytes (compliance-reflex-guard's domain)
-#   - 🏁 appears in the recent assistant text (escape hatch)
+#   - 🏁 appears in the recent assistant text (work-done escape hatch)
+#   - 🚦 appears in the recent assistant text (waiting-on-user escape
+#     hatch: legitimate approval-gate pause, e.g. waiting for a push go)
 #   - 🚧 appears in the text (WIP mode)
 #
-# Blocks the contradiction 🏁 + "?": finish-flag and question are
-# mutually exclusive. Either the work is done (no question, no check-in)
-# or a real question remains (no flag). This catches the bypass where
-# trailing 🏁 would otherwise defeat compliance-reflex-guard's \?\s*$ anchor.
+# Blocks contradictions between escape flags and "?":
+#   - 🏁 + "?": work is either done or has an open question, not both.
+#   - 🚦 + "?": waiting on user input is itself the question, adding "?"
+#     double-asks and re-triggers compliance-reflex-guard logic.
+# These rules catch bypass attempts where trailing emoji would otherwise
+# defeat compliance-reflex-guard's \?\s*$ anchor.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/../lib/read-assistant-text.sh"
@@ -49,39 +53,62 @@ fi
 is_wip_mode "$LAST_ASSISTANT" && exit 0
 
 has_flag=0
+has_gate=0
 has_question=0
 echo "$LAST_ASSISTANT" | grep -q '🏁' && has_flag=1
+echo "$LAST_ASSISTANT" | grep -q '🚦' && has_gate=1
 echo "$LAST_ASSISTANT" | tail -c 500 | grep -q '?' && has_question=1
 
-# Contradiction: finish-flag and question cannot coexist.
+# Contradictions: finish-flag or approval-gate paired with a question.
 if [ "$has_flag" -eq 1 ] && [ "$has_question" -eq 1 ]; then
   echo '{"decision":"block","reason":"🏁 en ? samen is tegenstrijdig. Klaar = geen vraag. Vraag = geen 🏁. Kies."}'
+  exit 0
+fi
+if [ "$has_gate" -eq 1 ] && [ "$has_question" -eq 1 ]; then
+  echo '{"decision":"block","reason":"🚦 en ? samen dubbelvraagt. 🚦 betekent al: ik wacht op jouw go. Haal de ? weg."}'
   exit 0
 fi
 
 # Hand off to compliance-reflex-guard when the text contains "?"
 [ "$has_question" -eq 1 ] && exit 0
 
-# Escape hatch: 🏁 means work is genuinely done, but only when paired
-# with a real sentence. A bare "🏁" or "klaar 🏁" is the reflex pattern
-# where Claude drops the flag as a free pass after compliance-reflex-guard
-# blocked the prior turn. Require substantive text: at least one sentence
+# Shared substantive-text check: an emoji escape only counts when paired
+# with a real sentence. A bare "🏁" / "🚦" is the reflex pattern where
+# Claude drops an emoji as a free pass. Require at least one sentence
 # terminator (. ! :) and 40+ non-emoji, non-whitespace characters.
-if [ "$has_flag" -eq 1 ]; then
-  stripped=$(echo "$LAST_ASSISTANT" | LC_ALL=C tr -d '[:space:]' | python3 -c "
+check_substance() {
+  local text="$1"
+  local stripped
+  stripped=$(echo "$text" | LC_ALL=C tr -d '[:space:]' | python3 -c "
 import sys, re
 text = sys.stdin.read()
 text = re.sub(r'[\U0001F300-\U0001FAFF\U00002600-\U000027BF]', '', text)
 sys.stdout.write(text)
 " 2>/dev/null)
+  local char_count
   char_count=$(printf '%s' "$stripped" | wc -m | tr -d ' ')
-  has_terminator=0
-  echo "$LAST_ASSISTANT" | grep -Eq '[.!:]' && has_terminator=1
-  if [ "$char_count" -ge 40 ] && [ "$has_terminator" -eq 1 ]; then
+  local has_terminator=0
+  echo "$text" | grep -Eq '[.!:]' && has_terminator=1
+  [ "$char_count" -ge 40 ] && [ "$has_terminator" -eq 1 ]
+}
+
+# Escape hatch: 🏁 means work is genuinely done.
+if [ "$has_flag" -eq 1 ]; then
+  if check_substance "$LAST_ASSISTANT"; then
     exit 0
   fi
   echo '{"decision":"block","reason":"🏁 alleen is geen afsluiting. Schrijf een volzin die vertelt wat klaar is, en zet dan pas 🏁."}'
   exit 0
 fi
 
-echo '{"decision":"block","reason":"Premature chain-stop? Werk door. Echt klaar? Eindig met 🏁."}'
+# Escape hatch: 🚦 means waiting on user approval (commit, push, merge,
+# deploy, or any external-effect gate). Legitimate pause, not a reflex.
+if [ "$has_gate" -eq 1 ]; then
+  if check_substance "$LAST_ASSISTANT"; then
+    exit 0
+  fi
+  echo '{"decision":"block","reason":"🚦 alleen is geen pauze. Schrijf een volzin die vertelt waarop je wacht (welke actie, welke user input), en zet dan pas 🚦."}'
+  exit 0
+fi
+
+echo '{"decision":"block","reason":"Premature chain-stop? Werk door. Echt klaar? Eindig met 🏁. Wachten op user go voor push, merge of andere publieke actie? Eindig met 🚦 plus een volzin wat je wacht."}'
