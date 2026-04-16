@@ -8,7 +8,13 @@ Scope: alle Windows-gebruikers van de leclause marketplace. Niet één specifiek
 
 De leclause-marketplace gebruikt symlinks om skills tussen plugins te delen. Elke `packages/<plugin>/skills/<skill>` verwijst met `../../../skills/<skill>` naar de canonieke source onder de repo-root. Op macOS en Linux werkt dit direct: git bewaart de symlink bij clone, Claude Code kopieert de plugin naar zijn cache zonder te dereferencen, en de symlink blijft tijdens runtime werkend.
 
-Op Windows breekt dit al bij de git-clone-stap. Git for Windows heeft `core.symlinks=false` als default. Zonder die instelling worden symlinks bij clone geconverteerd naar text files die het doel-pad als inhoud hebben. Wat Claude Code vervolgens naar zijn cache kopieert is dus geen symlink meer, maar een text file. Bij runtime probeert Claude Code de "skill directory" te openen, krijgt een file terug in plaats van een directory, en de skill faalt.
+Op Windows breekt dit potentieel in TWEE lagen.
+
+**Laag 1: git clone.** Git for Windows heeft `core.symlinks=false` als default. Zonder die instelling worden symlinks bij clone geconverteerd naar text files die het doel-pad als inhoud hebben.
+
+**Laag 2: Claude Code cache-symlinks.** Empirisch op macOS getest: bij installatie via een github source kopieert Claude Code geen real content naar de cache, maar maakt absolute symlinks die naar de marketplace-clone wijzen (`cache/<marketplace>/<plugin>/<version>/skills/<skill>` → `/Users/.../plugins/marketplaces/<marketplace>/skills/<skill>`). Bij installatie via een lokale directory source kopieert Claude Code wel real content. Dit verschil suggereert dat github-source-installs op Windows een symlink-creatie-stap doorlopen die zelf admin of Developer Mode kan vereisen.
+
+Combineer beide: zelfs als laag 1 wordt opgelost (door bijvoorbeeld een release-branch zonder symlinks), is laag 2 een aparte kwestie. De empirie ontbreekt om met zekerheid te zeggen dat Claude Code's install-stap op Windows zonder verdere configuratie absolute symlinks kan maken (of een copy-fallback heeft). Tot dat geverifieerd is op een Windows-machine, blijft elke aanbeveling deels speculatief.
 
 De Anthropic-docs bevestigen dat symlinks op zich wel ondersteund zijn:
 
@@ -45,7 +51,9 @@ Npm distribution is een echt alternatief. Elke plugin publiceren als npm package
 
 ## Aanbeveling: materialise-at-release
 
-De structureel juiste aanpak is optie 4. Symlinks blijven de source-of-truth in de main branch. Een release-stap vertaalt ze naar echte directories in een artefact dat consumers installeren. De macOS-workflow blijft identiek aan vandaag; Windows-consumers krijgen werkende files zonder enige configuratie.
+De structureel juiste aanpak is optie 4. Symlinks blijven de source-of-truth in de main branch. Een release-stap vertaalt ze naar echte directories in een artefact dat consumers installeren. De macOS-workflow blijft identiek aan vandaag; Windows-consumers krijgen werkende files (laag 1 weg).
+
+**Waarschuwing.** Deze aanpak adresseert laag 1 (symlinks in de marketplace-clone). Laag 2 (Claude Code's cache-creatie-gedrag op Windows voor github sources) is niet gevalideerd vanaf macOS en blijft een open kwestie. Voor de eerste Windows-rollout is een echte Windows-test verplicht. Zonder die test is de claim "consumer hoeft niks te doen" speculatie.
 
 Concreet:
 
@@ -100,7 +108,7 @@ Aparte loop of implementatie, in deze volgorde:
 
 1. `packages/autonomous/bin/relative-cron` porten naar Node. Dit blokkeert PowerShell-setups en moet vóór de eerste Windows-release af zijn.
 2. `bin/marketplace-release` schrijven (dry-run plus write modes, rsync -aL plus plugin-versions write).
-3. Een eerste release-branch bouwen en verifiëren dat een Windows-consumer (zowel Git Bash/WSL als native PowerShell) de plugin kan installeren en draaien.
+3. Een eerste release-branch bouwen en op een echte Windows-machine verifiëren dat (a) `claude plugins install autonomous@leclause` slaagt zonder Developer Mode of admin, (b) de cache real content of werkende symlinks bevat, (c) `/autonomous:help` of een andere skill draait. Laag 2 (cache-symlink-creatie) wordt hier voor het eerst écht getest.
 4. `marketplace.json` entries updaten met `ref: release`.
 5. GitHub Action voor automatische release-updates bij elke push op `main`. Niet optioneel als we alle Windows-gebruikers willen bedienen; handmatige runs betekenen periodes waarin release achterloopt op main.
 
