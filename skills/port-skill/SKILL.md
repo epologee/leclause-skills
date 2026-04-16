@@ -111,9 +111,11 @@ Voor reverse ports: gebruik de bovenstaande matrices omgekeerd. Wanneer de bron 
 ## Compositie
 
 ```
-/export-skill say                                           # sanitiseer + package + share
-/export-skill:port-skill /tmp/skill-exports/say/ linux      # port de geexporteerde directory
-/export-skill:package-skill /tmp/skill-exports/say-linux/   # herpakketteer naar zip
+/export-skill:sanitize-skill say                            # strip PII, output /tmp/skill-exports/say/
+/export-skill:port-skill /tmp/skill-exports/say/ linux      # port de gesanitiseerde directory
+/export-skill:package-skill /tmp/skill-exports/say-linux/   # zip of md
 ```
+
+Of gebruik de orchestrator in een stap: `/export-skill say linux` doet sanitize + port + package + share.
 
 Sanitiseren voor porten is belangrijk als je gaat delen: platform-specifieke paden kunnen zelf PII bevatten (bijv. `/Users/alice/Library/...`).

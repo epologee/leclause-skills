@@ -13,7 +13,7 @@ allowed-tools:
 
 # Translate Skill
 
-Vertaal de tekst van een skill tussen Nederlands en Engels. De bronbestanden blijven ongemoeid; de vertaalde versie wordt ernaast geschreven. Geen sanitisatie, geen porting: alleen taaltransformatie. Voor sanitisatie zie `export-skill`; voor platform-porting zie `port-skill`.
+Vertaal de tekst van een skill tussen Nederlands en Engels. De bronbestanden blijven ongemoeid; de vertaalde versie wordt ernaast geschreven. Geen sanitisatie, geen porting: alleen taaltransformatie. Voor sanitisatie zie `sanitize-skill`; voor platform-porting zie `port-skill`.
 
 ## Invocatie
 
@@ -93,8 +93,11 @@ Eerste argument: skill-naam of pad. Tweede argument: doeltaal (`en` of `nl`).
 Deze skill doet een ding. Voor een volledige export-flow chain je hem met andere skills:
 
 ```
-/export-skill say                                            # sanitiseer, output in /tmp/skill-exports/
-/export-skill:translate-skill /tmp/skill-exports/say-SKILL.md en    # vertaal het geexporteerde bestand
+/export-skill:sanitize-skill say                            # strip PII, output /tmp/skill-exports/say/
+/export-skill:translate-skill /tmp/skill-exports/say/ en    # vertaal de gesanitiseerde directory
+/export-skill:package-skill /tmp/skill-exports/say-en/      # zip of md
 ```
+
+Of gebruik de orchestrator in een stap: `/export-skill say en` doet sanitize + translate + package + share.
 
 De volgorde sanitiseren-voor-transformeren is belangrijk: transformeren van een ongesanitiseerd bestand lekt PII in de vertaling.

@@ -24,7 +24,7 @@ Geen content-transformatie: deze skill verandert de tekst niet. Voor sanitisatie
 ```
 /export-skill:package-skill /tmp/skill-exports/say/            # directory met meerdere bestanden -> say.zip
 /export-skill:package-skill /tmp/skill-exports/say-en/         # translated directory -> say-en.zip
-/export-skill:package-skill ~/.claude/skills/saysay/           # directory met alleen SKILL.md -> saysay-SKILL.md (nee, uit source)
+/export-skill:package-skill ~/.claude/skills/saysay/           # directory met alleen SKILL.md -> saysay-SKILL.md
 ```
 
 Enig argument: pad naar de directory die je wilt verpakken.

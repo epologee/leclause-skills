@@ -12,33 +12,32 @@ allowed-tools:
 
 # Share Skill
 
-Hand een verpakte skill over aan de user zodat die hem direct kan versturen. Schrijft een korte samenvatting, zet hem klaar voor `/clipboard`, opent de parent-directory in Finder, en print een rapport.
+Hand een verpakte skill over aan de user zodat die hem direct kan versturen. Opent de parent-directory in Finder, print eerst het export-rapport, en sluit af met een korte samenvatting zodat een opvolgende `/clipboard` alleen die samenvatting kopieert.
 
 macOS-only: gebruikt `open` voor Finder. Op Linux/Windows vereist dit een port (zie `port-skill`).
 
 ## Invocatie
 
 ```
-/export-skill:share-skill /tmp/skill-exports/say.zip       # zip-export
 /export-skill:share-skill /tmp/skill-exports/say-SKILL.md  # single-file export
-/export-skill:share-skill /tmp/skill-exports/say/          # losse directory (zonder voorafgaand packagen)
+/export-skill:share-skill /tmp/skill-exports/say/          # directory (bron voor samenvatting)
 ```
 
-Enig argument: pad naar het bestand of de directory die gedeeld moet worden.
+Enig argument: pad naar een directory met `SKILL.md` of naar een los `*-SKILL.md` bestand. Zip-bestanden worden niet gelezen (geen unzip-tool); roep deze skill aan voor het packagen, of wijs naar de bron-directory.
 
 ## Stappen
 
-1. **Valideer** dat het pad bestaat.
-2. **Lees** de SKILL.md (of, bij een zip, het hoofdbestand in de zip als dat kan; anders overslaan) om de skill te begrijpen.
+1. **Valideer** dat het pad bestaat en een `SKILL.md` bevat (of zelf een `*-SKILL.md` is).
+2. **Lees** de `SKILL.md` om de skill te begrijpen.
 3. **Schrijf samenvatting:** genereer een beknopte samenvatting, in de taal van de skill (niet de doeltaal van een eventuele vertaling). De samenvatting is bedoeld voor collega's, online posts, of een chatbericht.
    - Wat de skill doet (1 tot 2 zinnen)
    - Hoe je hem aanroept
    - De belangrijkste features/stappen (beknopte lijst)
    - Eventuele vereisten of beperkingen
    - Geen PII, geen sanitisatie-details, geen rapport-informatie
-4. **Stash voor clipboard:** sla de samenvatting op als het "laatste inhoudelijke antwoord" zodat een opvolgende `/clipboard` alleen deze samenvatting kopieert, zonder dit rapport zelf.
-5. **Open in Finder:** `open {parent-dir}` zodat de user het bestand direct kan slepen of mailen.
-6. **Rapporteer:** print het export-rapport met bestand-pad en de samenvatting die klaar staat.
+4. **Print de samenvatting als laatste inhoudelijke antwoord:** de chain-call van deze skill moet eindigen met de samenvatting als enige output, zodat een opvolgende `/clipboard` aanroep alleen de samenvatting kopieert. Geen meta-tekst, geen rapport-headers na de samenvatting.
+5. **Open in Finder:** `open {parent-dir}` zodat de user het bestand direct kan slepen of mailen. Dit gebeurt voor de samenvatting zodat Finder niet de laatst-gegenereerde tekst overschrijft.
+6. **Rapporteer** het pad en de locatie apart, boven de samenvatting.
 
 ## Samenvattings-richtlijnen
 
