@@ -107,8 +107,8 @@ if [ "$has_gate" -eq 1 ]; then
   if check_substance "$LAST_ASSISTANT"; then
     exit 0
   fi
-  echo '{"decision":"block","reason":"🚦 alleen is geen pauze. Schrijf een volzin die vertelt waarop je wacht (welke actie, welke user input), en zet dan pas 🚦."}'
+  echo '{"decision":"block","reason":"🚦 alleen is geen pauze. Schrijf een volzin die vertelt waarop je wacht (welke actie, welke user input), en zet dan pas 🚦. Herhaal de wacht-melding niet elke turn; eenmaal surface is genoeg, daarna is 🏁 prima ook al wachten de commits nog. De user weet het."}'
   exit 0
 fi
 
-echo '{"decision":"block","reason":"Premature chain-stop? Werk door. Echt klaar? Eindig met 🏁. Wachten op user go voor push, merge of andere publieke actie? Eindig met 🚦 plus een volzin wat je wacht."}'
+echo '{"decision":"block","reason":"Premature chain-stop? Werk door. Klaar met dit turn (ook als er onpushed commits liggen)? Eindig met 🏁 plus een volzin wat klaar is. Geen ander werk over en je wacht echt op een externe go (push, merge, deploy) die je nog niet eerder hebt gemeld? Eindig met 🚦 plus een volzin wat je wacht. Heb je dezelfde wacht-melding deze sessie al gegeven? Niet herhalen, kies 🏁."}'
