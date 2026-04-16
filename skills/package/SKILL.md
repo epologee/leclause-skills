@@ -1,5 +1,5 @@
 ---
-name: package-skill
+name: package
 user-invocable: true
 description: Use when bundling a skill directory into transportable form. Single-file directories (only a SKILL.md) emit as `{name}-SKILL.md`. Multi-file directories become `{name}.zip`. Purely mechanical, no content transformation.
 argument-hint: "<dir-path>"
@@ -17,14 +17,14 @@ allowed-tools:
 
 Verpak een skill-directory tot een transporteerbare vorm. Mechanisch werk: een directory met alleen `SKILL.md` wordt een los `.md` bestand (leesbaar op iPhone zonder unzip). Een directory met meerdere bestanden wordt een `.zip`.
 
-Geen content-transformatie: deze skill verandert de tekst niet. Voor sanitisatie zie `sanitize-skill`, voor vertaling `translate-skill`, voor porting `port-skill`.
+Geen content-transformatie: deze skill verandert de tekst niet. Voor sanitisatie zie `sanitize`, voor vertaling `translate`, voor porting `port`.
 
 ## Invocatie
 
 ```
-/export-skill:package-skill /tmp/skill-exports/say/            # directory met meerdere bestanden -> say.zip
-/export-skill:package-skill /tmp/skill-exports/say-en/         # translated directory -> say-en.zip
-/export-skill:package-skill ~/.claude/skills/saysay/           # directory met alleen SKILL.md -> saysay-SKILL.md (alleen voor lokaal gebruik; draai sanitize-skill eerst voor delen)
+/export-skill:package /tmp/skill-exports/say/            # directory met meerdere bestanden -> say.zip
+/export-skill:package /tmp/skill-exports/say-en/         # translated directory -> say-en.zip
+/export-skill:package ~/.claude/skills/saysay/           # directory met alleen SKILL.md -> saysay-SKILL.md (alleen voor lokaal gebruik; draai sanitize eerst voor delen)
 ```
 
 Enig argument: pad naar de directory die je wilt verpakken.
@@ -72,7 +72,7 @@ De regel is "leesbaar op iPhone zonder extra tools". Een los `SKILL.md` bestand 
 ## Compositie
 
 ```
-/export-skill:sanitize-skill say                       # strip PII
-/export-skill:package-skill /tmp/skill-exports/say/    # maak say.zip of say-SKILL.md
-/export-skill:share-skill /tmp/skill-exports/say.zip   # handoff
+/export-skill:sanitize say                       # strip PII
+/export-skill:package /tmp/skill-exports/say/    # maak say.zip of say-SKILL.md
+/export-skill:share /tmp/skill-exports/say.zip   # handoff
 ```

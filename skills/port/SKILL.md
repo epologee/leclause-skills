@@ -1,5 +1,5 @@
 ---
-name: port-skill
+name: port
 user-invocable: true
 description: Use when porting a Claude Code skill between platforms (macOS, Linux, Windows). Replaces platform-specific commands (say, pbcopy, osascript, brew, etc.) with the target equivalents. Operates on a source skill directory or an already-exported path.
 argument-hint: "<skill-name-or-path> <linux|windows|macos>"
@@ -13,15 +13,15 @@ allowed-tools:
 
 # Port Skill
 
-Port platform-specifieke commands van een skill naar het doelplatform. De bronbestanden blijven ongemoeid; de geporte versie wordt ernaast geschreven. Geen sanitisatie, geen vertaling: alleen platform-transformatie. Voor sanitisatie zie `sanitize-skill`; voor taalvertaling zie `translate-skill`.
+Port platform-specifieke commands van een skill naar het doelplatform. De bronbestanden blijven ongemoeid; de geporte versie wordt ernaast geschreven. Geen sanitisatie, geen vertaling: alleen platform-transformatie. Voor sanitisatie zie `sanitize`; voor taalvertaling zie `translate`.
 
 ## Invocatie
 
 ```
-/export-skill:port-skill say linux                          # bron: ~/.claude/skills/say/, doel: Linux
-/export-skill:port-skill saysay windows                     # bron: ~/.claude/skills/saysay/, doel: Windows
-/export-skill:port-skill /tmp/skill-exports/say/ linux      # bron: geexporteerde directory
-/export-skill:port-skill /tmp/skill-exports/say-SKILL.md macos    # bron: los bestand, reverse port naar macOS
+/export-skill:port say linux                          # bron: ~/.claude/skills/say/, doel: Linux
+/export-skill:port saysay windows                     # bron: ~/.claude/skills/saysay/, doel: Windows
+/export-skill:port /tmp/skill-exports/say/ linux      # bron: geexporteerde directory
+/export-skill:port /tmp/skill-exports/say-SKILL.md macos    # bron: los bestand, reverse port naar macOS
 ```
 
 Eerste argument: skill-naam of pad. Tweede argument: doelplatform (`linux`, `windows`, of `macos`).
@@ -111,9 +111,9 @@ Voor reverse ports: gebruik de bovenstaande matrices omgekeerd. Wanneer de bron 
 ## Compositie
 
 ```
-/export-skill:sanitize-skill say                            # strip PII, output /tmp/skill-exports/say/
-/export-skill:port-skill /tmp/skill-exports/say/ linux      # port de gesanitiseerde directory
-/export-skill:package-skill /tmp/skill-exports/say-linux/   # zip of md
+/export-skill:sanitize say                            # strip PII, output /tmp/skill-exports/say/
+/export-skill:port /tmp/skill-exports/say/ linux      # port de gesanitiseerde directory
+/export-skill:package /tmp/skill-exports/say-linux/   # zip of md
 ```
 
 Of gebruik de orchestrator in een stap: `/export-skill say linux` doet sanitize + port + package + share.

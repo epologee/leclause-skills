@@ -1,5 +1,5 @@
 ---
-name: share-skill
+name: share
 user-invocable: true
 description: Use when handing off a packaged skill to the user for sharing. Writes a short sharing summary, stashes it for /clipboard, opens the parent directory in Finder, and prints a report. macOS-only handoff.
 argument-hint: "<file-or-dir-path>"
@@ -14,13 +14,13 @@ allowed-tools:
 
 Hand een verpakte skill over aan de user zodat die hem direct kan versturen. Opent de parent-directory in Finder, print eerst het export-rapport, en sluit af met een korte samenvatting zodat een opvolgende `/clipboard` alleen die samenvatting kopieert.
 
-macOS-only: gebruikt `open` voor Finder. Op Linux/Windows vereist dit een port (zie `port-skill`).
+macOS-only: gebruikt `open` voor Finder. Op Linux/Windows vereist dit een port (zie `port`).
 
 ## Invocatie
 
 ```
-/export-skill:share-skill /tmp/skill-exports/say-SKILL.md  # single-file export
-/export-skill:share-skill /tmp/skill-exports/say/          # directory (bron voor samenvatting)
+/export-skill:share /tmp/skill-exports/say-SKILL.md  # single-file export
+/export-skill:share /tmp/skill-exports/say/          # directory (bron voor samenvatting)
 ```
 
 Enig argument: pad naar een directory met `SKILL.md` of naar een los `*-SKILL.md` bestand. Zip-bestanden worden niet gelezen (geen unzip-tool); roep deze skill aan voor het packagen, of wijs naar de bron-directory.
@@ -43,7 +43,7 @@ Enig argument: pad naar een directory met `SKILL.md` of naar een los `*-SKILL.md
 
 De samenvatting is expliciet verschillend van het sanitisatie-rapport:
 
-- **Sanitisatie-rapport** (van `sanitize-skill`) is gedetailleerd: wat is vervangen, welke security findings, welke binaries. Voor de user zelf.
+- **Sanitisatie-rapport** (van `sanitize`) is gedetailleerd: wat is vervangen, welke security findings, welke binaries. Voor de user zelf.
 - **Samenvatting** (van deze skill) is deelbaar: wat doet de skill en hoe werkt hij. Voor ontvangers.
 
 Houd de samenvatting onder 10 regels. Inline formatting met backticks voor commando's en bestandsnamen.
@@ -70,9 +70,9 @@ Sleep het bestand uit Finder naar je chat/mail, of gebruik `/clipboard` om de sa
 ## Compositie
 
 ```
-/export-skill:sanitize-skill say                       # strip PII, output /tmp/skill-exports/say/
-/export-skill:package-skill /tmp/skill-exports/say/    # zip of md
-/export-skill:share-skill /tmp/skill-exports/say/      # samenvatting + Finder (wijs naar de dir, niet naar de zip)
+/export-skill:sanitize say                       # strip PII, output /tmp/skill-exports/say/
+/export-skill:package /tmp/skill-exports/say/    # zip of md
+/export-skill:share /tmp/skill-exports/say/      # samenvatting + Finder (wijs naar de dir, niet naar de zip)
 ```
 
 Of gebruik de `/export-skill` orchestrator voor de complete chain.

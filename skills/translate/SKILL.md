@@ -1,5 +1,5 @@
 ---
-name: translate-skill
+name: translate
 user-invocable: true
 description: Use when translating a Claude Code skill between Dutch and English. Operates on a source skill directory in `~/.claude/skills/` or on an already-exported path. Applies translate rules consistently: body text yes, frontmatter and code no.
 argument-hint: "<skill-name-or-path> <en|nl>"
@@ -13,15 +13,15 @@ allowed-tools:
 
 # Translate Skill
 
-Vertaal de tekst van een skill tussen Nederlands en Engels. De bronbestanden blijven ongemoeid; de vertaalde versie wordt ernaast geschreven. Geen sanitisatie, geen porting: alleen taaltransformatie. Voor sanitisatie zie `sanitize-skill`; voor platform-porting zie `port-skill`.
+Vertaal de tekst van een skill tussen Nederlands en Engels. De bronbestanden blijven ongemoeid; de vertaalde versie wordt ernaast geschreven. Geen sanitisatie, geen porting: alleen taaltransformatie. Voor sanitisatie zie `sanitize`; voor platform-porting zie `port`.
 
 ## Invocatie
 
 ```
-/export-skill:translate-skill say en                        # bron: ~/.claude/skills/say/, doel: Engels
-/export-skill:translate-skill saysay nl                     # bron: ~/.claude/skills/saysay/, doel: Nederlands
-/export-skill:translate-skill /tmp/skill-exports/say/ en    # bron: geexporteerde directory
-/export-skill:translate-skill /tmp/skill-exports/say-SKILL.md en   # bron: los bestand
+/export-skill:translate say en                        # bron: ~/.claude/skills/say/, doel: Engels
+/export-skill:translate saysay nl                     # bron: ~/.claude/skills/saysay/, doel: Nederlands
+/export-skill:translate /tmp/skill-exports/say/ en    # bron: geexporteerde directory
+/export-skill:translate /tmp/skill-exports/say-SKILL.md en   # bron: los bestand
 ```
 
 Eerste argument: skill-naam of pad. Tweede argument: doeltaal (`en` of `nl`).
@@ -93,9 +93,9 @@ Eerste argument: skill-naam of pad. Tweede argument: doeltaal (`en` of `nl`).
 Deze skill doet een ding. Voor een volledige export-flow chain je hem met andere skills:
 
 ```
-/export-skill:sanitize-skill say                            # strip PII, output /tmp/skill-exports/say/
-/export-skill:translate-skill /tmp/skill-exports/say/ en    # vertaal de gesanitiseerde directory
-/export-skill:package-skill /tmp/skill-exports/say-en/      # zip of md
+/export-skill:sanitize say                            # strip PII, output /tmp/skill-exports/say/
+/export-skill:translate /tmp/skill-exports/say/ en    # vertaal de gesanitiseerde directory
+/export-skill:package /tmp/skill-exports/say-en/      # zip of md
 ```
 
 Of gebruik de orchestrator in een stap: `/export-skill say en` doet sanitize + translate + package + share.

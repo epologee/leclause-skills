@@ -1,7 +1,7 @@
 ---
 name: export-skill
 user-invocable: true
-description: Use when the user wants to export/share a skill with others. Thin orchestrator that chains sanitize-skill, optional translate-skill or port-skill, package-skill, and share-skill. For partial workflows, invoke the sub-skills directly.
+description: Use when the user wants to export/share a skill with others. Thin orchestrator that chains sanitize, optional translate or port, package, and share. For partial workflows, invoke the sub-skills directly.
 argument-hint: "<skill-name> [en|nl|linux|windows|macos]"
 allowed-tools:
   - Skill
@@ -32,7 +32,7 @@ Elke stap is een `Skill` tool invocatie. De output van stap N is de input van st
 ### Stap 1. Sanitiseren (altijd)
 
 ```
-Skill(skill="export-skill:sanitize-skill", args="{{NAME}}")
+Skill(skill="export-skill:sanitize", args="{{NAME}}")
 ```
 
 Verwachte output: directory `/tmp/skill-exports/{{NAME}}/`. Zet `CURRENT_PATH = /tmp/skill-exports/{{NAME}}/`.
@@ -42,13 +42,13 @@ Verwachte output: directory `/tmp/skill-exports/{{NAME}}/`. Zet `CURRENT_PATH = 
 Bij taal (`en`/`nl`):
 
 ```
-Skill(skill="export-skill:translate-skill", args="{{CURRENT_PATH}} {{SUFFIX}}")
+Skill(skill="export-skill:translate", args="{{CURRENT_PATH}} {{SUFFIX}}")
 ```
 
 Bij platform (`linux`/`windows`/`macos`):
 
 ```
-Skill(skill="export-skill:port-skill", args="{{CURRENT_PATH}} {{SUFFIX}}")
+Skill(skill="export-skill:port", args="{{CURRENT_PATH}} {{SUFFIX}}")
 ```
 
 Verwachte output: directory `/tmp/skill-exports/{{NAME}}-{{SUFFIX}}/`. Zet `CURRENT_PATH = /tmp/skill-exports/{{NAME}}-{{SUFFIX}}/`.
@@ -58,7 +58,7 @@ Sla stap 2 over als er geen tweede argument is.
 ### Stap 3. Verpakken
 
 ```
-Skill(skill="export-skill:package-skill", args="{{CURRENT_PATH}}")
+Skill(skill="export-skill:package", args="{{CURRENT_PATH}}")
 ```
 
 Verwachte output: bestand `{{CURRENT_PATH%/}}.zip` of `{{CURRENT_PATH%/}}-SKILL.md` (afhankelijk van het aantal tekstbestanden in de directory). Zet `CURRENT_PATH` naar het nieuwe pad.
@@ -66,12 +66,12 @@ Verwachte output: bestand `{{CURRENT_PATH%/}}.zip` of `{{CURRENT_PATH%/}}-SKILL.
 ### Stap 4. Handoff
 
 ```
-Skill(skill="export-skill:share-skill", args="{{CURRENT_PATH}}")
+Skill(skill="export-skill:share", args="{{CURRENT_PATH}}")
 ```
 
-share-skill leest de bron-SKILL.md (uit een directory of een los `-SKILL.md` bestand), opent Finder op de parent, en eindigt met een samenvatting als laatste antwoord zodat `/clipboard` die kopieert.
+share leest de bron-SKILL.md (uit een directory of een los `-SKILL.md` bestand), opent Finder op de parent, en eindigt met een samenvatting als laatste antwoord zodat `/clipboard` die kopieert.
 
-Wanneer de input een `.zip` is, wijs `share-skill` naar de oorspronkelijke directory (voor stap 3) of naar het single-file `-SKILL.md` alternatief. Zip-bestanden leest share-skill niet.
+Wanneer de input een `.zip` is, wijs `share` naar de oorspronkelijke directory (voor stap 3) of naar het single-file `-SKILL.md` alternatief. Zip-bestanden leest share niet.
 
 ### Foutafhandeling
 
@@ -81,19 +81,19 @@ Als een Skill-invocatie faalt of de verwachte output niet produceert, stop de ch
 
 Elke sub-skill is ook zelfstandig user-invocable. Gebruik de sub-skills direct als je maar een deel van de workflow wilt:
 
-- `/export-skill:sanitize-skill <naam>` om alleen PII te strippen.
-- `/export-skill:translate-skill <pad> <en|nl>` om te vertalen.
-- `/export-skill:port-skill <pad> <linux|windows|macos>` om te porten.
-- `/export-skill:package-skill <pad>` om een willekeurige directory te zippen of als single-file md te emitten.
-- `/export-skill:share-skill <pad>` om samenvatting + Finder handoff te doen op een bestaande export.
+- `/export-skill:sanitize <naam>` om alleen PII te strippen.
+- `/export-skill:translate <pad> <en|nl>` om te vertalen.
+- `/export-skill:port <pad> <linux|windows|macos>` om te porten.
+- `/export-skill:package <pad>` om een willekeurige directory te zippen of als single-file md te emitten.
+- `/export-skill:share <pad>` om samenvatting + Finder handoff te doen op een bestaande export.
 
 De orchestrator is een gemak voor de meest voorkomende flow: "ik wil deze skill met iemand delen."
 
 ### Veelvoorkomende combinaties
 
-- **Port voor eigen gebruik** (niet delen, geen Finder): `/export-skill:port-skill <naam> linux`. Schrijft naar `~/.claude/skills/<naam>-linux/`, geen `/tmp/skill-exports/`, geen package, geen Finder.
-- **Vertaal EN port**: de orchestrator doet maar een transformatie tegelijk. Voor de combinatie chain je handmatig: `sanitize-skill` -> `translate-skill` -> `port-skill` -> `package-skill` -> `share-skill`.
-- **Alleen repackagen** (bestaande geexporteerde dir opnieuw inpakken): `/export-skill:package-skill /tmp/skill-exports/<naam>/`.
+- **Port voor eigen gebruik** (niet delen, geen Finder): `/export-skill:port <naam> linux`. Schrijft naar `~/.claude/skills/<naam>-linux/`, geen `/tmp/skill-exports/`, geen package, geen Finder.
+- **Vertaal EN port**: de orchestrator doet maar een transformatie tegelijk. Voor de combinatie chain je handmatig: `sanitize` -> `translate` -> `port` -> `package` -> `share`.
+- **Alleen repackagen** (bestaande geexporteerde dir opnieuw inpakken): `/export-skill:package /tmp/skill-exports/<naam>/`.
 
 ## Validatie vooraf
 

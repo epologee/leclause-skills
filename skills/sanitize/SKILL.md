@@ -1,5 +1,5 @@
 ---
-name: sanitize-skill
+name: sanitize
 user-invocable: true
 description: Use when sanitizing a Claude Code skill: strip PII (home paths, names, internal URLs, credentials, etc.) and flag security issues. Operates on a source skill directory. The single step that makes a skill "safe to leave this machine."
 argument-hint: "<skill-name-or-path>"
@@ -15,14 +15,14 @@ allowed-tools:
 
 Strip PII en security-issues uit een skill. De bronbestanden blijven ongemoeid; de gesanitiseerde versie wordt weggeschreven onder `/tmp/skill-exports/<naam>/`. Dit is de enige stap die een skill "veilig om van de machine te halen" maakt.
 
-Voor vertaling zie `translate-skill`. Voor platform-porting zie `port-skill`. Voor inpakken zie `package-skill`.
+Voor vertaling zie `translate`. Voor platform-porting zie `port`. Voor inpakken zie `package`.
 
 ## Invocatie
 
 ```
-/export-skill:sanitize-skill say                # bron: ~/.claude/skills/say/
-/export-skill:sanitize-skill saysay             # bron: ~/.claude/skills/saysay/
-/export-skill:sanitize-skill ./skills/my-skill  # bron: relatief pad
+/export-skill:sanitize say                # bron: ~/.claude/skills/say/
+/export-skill:sanitize saysay             # bron: ~/.claude/skills/saysay/
+/export-skill:sanitize ./skills/my-skill  # bron: relatief pad
 ```
 
 Enig argument: skill-naam of pad.
@@ -102,10 +102,10 @@ Het rapport is bewust gedetailleerd: sanitisatie-findings wijzen vaak op verbete
 ## Compositie
 
 ```
-/export-skill:sanitize-skill say                            # stap 1: strip PII
-/export-skill:translate-skill /tmp/skill-exports/say/ en    # stap 2 (optioneel): vertaal
-/export-skill:package-skill /tmp/skill-exports/say/         # stap 3: verpak tot .zip of .md
-/export-skill:share-skill /tmp/skill-exports/say.zip        # stap 4: handoff met clipboard + Finder
+/export-skill:sanitize say                            # stap 1: strip PII
+/export-skill:translate /tmp/skill-exports/say/ en    # stap 2 (optioneel): vertaal
+/export-skill:package /tmp/skill-exports/say/         # stap 3: verpak tot .zip of .md
+/export-skill:share /tmp/skill-exports/say.zip        # stap 4: handoff met clipboard + Finder
 ```
 
 Of gebruik de `/export-skill` orchestrator voor de standaard chain.

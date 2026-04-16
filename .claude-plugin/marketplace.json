@@ -29,7 +29,7 @@
     },
     {
       "name": "export-skill",
-      "description": "Export a skill for sharing. Orchestrator plus five user-invocable sub-skills: sanitize-skill (PII + security), translate-skill (en/nl), port-skill (linux/windows/macos), package-skill (zip or md), share-skill (clipboard + Finder handoff).",
+      "description": "Export a skill for sharing. Orchestrator plus five user-invocable sub-skills: sanitize (PII + security), translate (en/nl), port (linux/windows/macos), package (zip or md), share (clipboard + Finder handoff).",
       "source": "./packages/export-skill"
     },
     {
