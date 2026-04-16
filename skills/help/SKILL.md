@@ -63,7 +63,7 @@ SURVEY ──► DRIVE ──► INSPECT ──► STOW ──► STANDBY
 
 - **SURVEY.** Read the codebase, form hypotheses, lock down a plan, write Done criteria via `verify --propose`.
 - **DRIVE.** Build. Commit per logical step. Verify as you go.
-- **INSPECT.** Four passes: `verify` against Done criteria, `pride` contrarian review, end-user walkthrough, technical plan-vs-diff. Any failure sends the Rover back to DRIVE.
+- **INSPECT.** Four passes: `verify` against Done criteria, `pride` contrarian review (hard gate on every artefact the Rover produced, prose as well as code), end-user walkthrough, technical plan-vs-diff. Any failure sends the Rover back to DRIVE.
 - **STOW.** Mechanical cleanup only. Debug prints gone, unused imports gone, half-finished refactors finished. Separate commit.
 - **STANDBY.** Watch channels (PR comments, CI, uncommitted work). Back off the cron as idleness grows. Auto-stop after about five hours of quiet.
 
@@ -89,7 +89,7 @@ SURVEY ──► DRIVE ──► INSPECT ──► STOW ──► STANDBY
 - Ask "A or B?" mid-phase (it uses `decide` instead)
 - Push to a remote without explicit operator go
 - Transition out of DRIVE with a dirty working tree
-- Skip the `pride` pass before proposing a push
+- Hand off any artefact (code, docs, prose, research brief, media, communiqué) without a logged `pride` pass covering it
 - Call a mission done without ticked Done criteria and evidence
 
 ## Cost awareness

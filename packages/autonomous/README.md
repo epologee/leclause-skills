@@ -20,7 +20,7 @@ Cleanly stop a running loop. Deletes the cron, writes a final log entry, produce
 
 ### `/autonomous:pride [git-range | uncommitted]`
 
-Spawns a contrarian agent that reviews the current diff for what the user would notice but the rover missed. Auto-triggered before any push or PR-ready transition. Also invocable directly.
+Spawns a contrarian agent that reviews a rover artefact for what the user would notice but the rover missed. Hard gate inside the rover: runs on every artefact the rover produces (code, docs, prose, research briefs, media, communiqués), not just pushes. Also invocable directly.
 
 ### `/autonomous:verify [--propose <loop-file> | <loop-file> | free text]`
 
@@ -37,7 +37,7 @@ Evidence discipline. With `--propose`, writes Done criteria into the loop file a
 ANALYZE -> IMPLEMENT -> REVIEW -> STOW -> OBSERVE
 ```
 
-The loop is autonomous. It does not ask questions mid-phase. When it hits a choice it invokes `decide`. Before any push or PR-ready transition it invokes `pride`. Pushes themselves are never autonomous: the user must say "push" or equivalent.
+The loop is autonomous. It does not ask questions mid-phase. When it hits a choice it invokes `decide`. Before any artefact leaves the rover (push, PR, handoff communiqué, research brief, generated doc, media, or any other deliverable) it invokes `pride`. Pushes themselves are never autonomous: the user must say "push" or equivalent.
 
 ## Loop file
 
