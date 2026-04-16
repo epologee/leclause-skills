@@ -20,7 +20,7 @@ claude plugins install <skill-name>@leclause
 | **clipboard** | `/clipboard` | | | Copy the core content of the last answer to the clipboard. `/clipboard slack` for rich text. |
 | **commit-all-the-things** | `/commit-all-the-things` | | | Commit all uncommitted changes in the working tree, grouped into logical commits with descriptive messages. |
 | **dont-do-that** | ❌ | | ✅ | Eight guardrail hooks that push back on common AI reflexes: shifting blame, stopping prematurely, delegating verification, and em-dashes in prose. See [dont-do-that](packages/dont-do-that/README.md). |
-| **export-skill** | `/export-skill` | | | Export and sanitize a skill for sharing, stripping PII and checking for security issues. Supports translation and platform porting. |
+| **export-skill** | `/export-skill` | | | Export a skill for sharing. Orchestrator that chains five sub-skills, each also user-invocable on its own: `sanitize-skill` (PII + security), `translate-skill` (en/nl), `port-skill` (linux/windows/macos), `package-skill` (zip or single-file md), `share-skill` (clipboard summary + Finder handoff). |
 | **eye-of-the-beholder** | `/eye-of-the-beholder` | ✅ | | Catches cramped text, missing margins, and disproportionate spacing in visual layouts (screen, print, responsive). |
 | **ground** | `/ground` | ✅ | | Verify Claude's recent output with external sources when you challenge accuracy. |
 | **gurus** | `/gurus` | | | Opinionated code review panel with 8 expert perspectives (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). |

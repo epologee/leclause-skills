@@ -29,7 +29,7 @@
     },
     {
       "name": "export-skill",
-      "description": "Export and sanitize a skill for sharing, stripping PII and checking for security issues. Supports translation and platform porting.",
+      "description": "Export a skill for sharing. Orchestrator plus five user-invocable sub-skills: sanitize-skill (PII + security), translate-skill (en/nl), port-skill (linux/windows/macos), package-skill (zip or md), share-skill (clipboard + Finder handoff).",
       "source": "./packages/export-skill"
     },
     {
