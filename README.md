@@ -6,10 +6,23 @@ I typically prompt in Dutch but write English code, so these skills are a mix of
 
 ## Install
 
+macOS and Linux:
+
 ```bash
 claude plugins marketplace add epologee/leclause-skills
 claude plugins install <skill-name>@leclause
 ```
+
+Windows:
+
+```bash
+claude plugins marketplace add epologee/leclause-skills@release
+claude plugins install <skill-name>@leclause
+```
+
+In both blocks, the second command's `@leclause` is the marketplace alias that the first command sets up (from `.claude-plugin/marketplace.json`'s `name` field), not a branch ref. The first command is where you choose the branch: default branch for macOS/Linux, `@release` for Windows.
+
+The `@release` branch carries the same plugins as `main` but with every symlink replaced by its target content. Git for Windows defaults to `core.symlinks=false` and turns symlinks into text files on clone; the release branch sidesteps that. See [`docs/release-workflow.md`](docs/release-workflow.md) for how the release branch is built and kept in sync with main.
 
 ## Skills
 

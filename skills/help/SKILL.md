@@ -46,6 +46,8 @@ On dispatch, the Rover writes `.autonomous/<NAME>.md`, the mission file that hol
 
 The mission file is your window. Tail it to watch the traverse.
 
+Windows consumers install this plugin from `@release` (`claude plugins marketplace add <owner>/<repo>@release`) to get a symlink-free build. macOS and Linux consumers can use the default branch. See the marketplace README for the full install matrix.
+
 ## What the Rover does
 
 You dispatch a Rover at a task. You stay back. The Rover rolls across the codebase on its own, surveying terrain, driving changes, inspecting its own work, stowing the build-time clutter, and standing by for new signals. It does not radio home for every fork in the traverse; it carries a `decide` framework and a `pride` check so it can keep moving without waking you up.
