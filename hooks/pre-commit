@@ -36,6 +36,42 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 
+# Block consumer-facing shell scripts under packages/*/bin/.
+# These ship with the plugin and run on the consumer's machine via Claude Code's
+# Bash tool. On Windows setups where the Bash tool routes through PowerShell,
+# shell shebangs break. Portable equivalents (Node, Python) must be used
+# instead. Operator-only tooling lives under the repo-root bin/ and is free to
+# stay shell.
+#
+# Runs BEFORE plugin-versions so a rejected commit does not leave a bumped
+# plugin.json in the working tree.
+staged_files=$(git diff --cached --name-only --diff-filter=ACM)
+for staged_file in $staged_files; do
+  case "$staged_file" in
+    packages/*/bin/*)
+      [ -f "$staged_file" ] || continue
+      first_line=$(head -1 "$staged_file" 2>/dev/null)
+      case "$first_line" in
+        "#!/usr/bin/env bash"*|"#!/bin/bash"*|"#!/usr/bin/env sh"*|"#!/bin/sh"*|"#!/usr/bin/env zsh"*|"#!/bin/zsh"*)
+          echo "ERROR: consumer-facing bin script uses a shell shebang."
+          echo "  File:    $staged_file"
+          echo "  Shebang: $first_line"
+          echo ""
+          echo "Consumer-facing bin/ scripts must run on macOS, Linux, AND"
+          echo "Windows (including Claude Code setups that route the Bash tool"
+          echo "through PowerShell). Port to Node (#!/usr/bin/env node) or"
+          echo "Python (#!/usr/bin/env python3) before committing."
+          echo ""
+          echo "Operator-only scripts live under the repo-root bin/ and may"
+          echo "stay shell; consumer-facing scripts under packages/<plugin>/bin/"
+          echo "must be portable."
+          exit 1
+          ;;
+      esac
+      ;;
+  esac
+done
+
 plugin_versions_script="bin/plugin-versions"
 if [ -x "$plugin_versions_script" ]; then
   PLUGIN_VERSIONS_GIT_CMD=$(ps -o args= -p $PPID 2>/dev/null || echo "git commit")
