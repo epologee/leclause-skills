@@ -101,6 +101,11 @@
       "name": "how-plugins-work",
       "description": "Explains how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work in practice.",
       "source": "./packages/how-plugins-work"
+    },
+    {
+      "name": "autonomous",
+      "description": "Dispatch a rover at a task. You stay back, the rover works in the field; the distance means it must decide autonomously. A decide framework picks the path, a pride check catches blind spots, and the rover only reports done when the mission is solid. No hard dependencies on personal or team skills.",
+      "source": "./packages/autonomous"
     }
   ]
 }

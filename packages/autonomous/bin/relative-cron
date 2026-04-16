@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Calculates a cron expression that fires N minutes from now.
+#
+# For short intervals (<= 10 min), returns */N (close enough).
+# For longer intervals, calculates the exact minute to fire at,
+# because */20 means :00/:20/:40, not "in 20 minutes."
+#
+# Usage: relative-cron <minutes>
+# Output: a 5-field cron expression on stdout
+
+set -euo pipefail
+
+if [ $# -ne 1 ]; then
+  echo "Usage: relative-cron <minutes>" >&2
+  exit 1
+fi
+
+minutes="$1"
+
+if ! [[ "$minutes" =~ ^[0-9]+$ ]] || [ "$minutes" -le 0 ]; then
+  echo "Usage: relative-cron <minutes> (must be positive integer)" >&2
+  exit 1
+fi
+
+if [ "$minutes" -le 10 ]; then
+  echo "*/${minutes} * * * *"
+else
+  # 10# prefix forces base-10 so leading zeros don't trigger octal parsing.
+  current=$(( 10#$(date +%M) ))
+  # When minutes is a multiple of 60, the mod-60 math would produce the current
+  # minute and fire immediately. Nudge up by one so the cron fires on the next
+  # full cycle.
+  if [ "$(( minutes % 60 ))" -eq 0 ]; then
+    fire_at=$(( (current + 1) % 60 ))
+  else
+    fire_at=$(( (current + minutes) % 60 ))
+  fi
+  echo "${fire_at} * * * *"
+fi
