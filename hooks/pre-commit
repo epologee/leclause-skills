@@ -36,12 +36,13 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 
-# Block consumer-facing shell scripts under packages/*/bin/.
+# Block non-portable consumer-facing scripts under packages/*/bin/.
 # These ship with the plugin and run on the consumer's machine via Claude Code's
 # Bash tool. On Windows setups where the Bash tool routes through PowerShell,
-# shell shebangs break. Portable equivalents (Node, Python) must be used
-# instead. Operator-only tooling lives under the repo-root bin/ and is free to
-# stay shell.
+# shell shebangs and interpreters that Windows typically lacks will break.
+# Only Node, Python 3, and PowerShell Core (pwsh) are considered portable
+# enough to ship. Operator-only tooling lives under the repo-root bin/ and is
+# free to use anything.
 #
 # Runs BEFORE plugin-versions so a rejected commit does not leave a bumped
 # plugin.json in the working tree.
@@ -52,19 +53,24 @@ for staged_file in $staged_files; do
       [ -f "$staged_file" ] || continue
       first_line=$(head -1 "$staged_file" 2>/dev/null)
       case "$first_line" in
-        "#!/usr/bin/env bash"*|"#!/bin/bash"*|"#!/usr/bin/env sh"*|"#!/bin/sh"*|"#!/usr/bin/env zsh"*|"#!/bin/zsh"*)
-          echo "ERROR: consumer-facing bin script uses a shell shebang."
+        # Portable: Node, Python 3, PowerShell Core. Skip them.
+        "#!/usr/bin/env node"*|"#!/usr/bin/env python3"*|"#!/usr/bin/env pwsh"*)
+          ;;
+        # Anything else that looks like a shebang is a non-portable interpreter.
+        "#!"*)
+          echo "ERROR: consumer-facing bin script uses a non-portable interpreter."
           echo "  File:    $staged_file"
           echo "  Shebang: $first_line"
           echo ""
           echo "Consumer-facing bin/ scripts must run on macOS, Linux, AND"
           echo "Windows (including Claude Code setups that route the Bash tool"
-          echo "through PowerShell). Port to Node (#!/usr/bin/env node) or"
-          echo "Python (#!/usr/bin/env python3) before committing."
+          echo "through PowerShell). The only portable shebangs are:"
+          echo "  #!/usr/bin/env node"
+          echo "  #!/usr/bin/env python3"
+          echo "  #!/usr/bin/env pwsh"
           echo ""
-          echo "Operator-only scripts live under the repo-root bin/ and may"
-          echo "stay shell; consumer-facing scripts under packages/<plugin>/bin/"
-          echo "must be portable."
+          echo "Port the script to one of those before committing. Operator-only"
+          echo "scripts live under the repo-root bin/ and may use anything."
           exit 1
           ;;
       esac

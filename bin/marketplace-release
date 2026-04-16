@@ -21,14 +21,17 @@
 #     tree or index.
 #   * Dry-run is default. --write is the explicit publish step.
 
-set -eu
+set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
 MODE="${1:---dry-run}"
-BUILD="/tmp/leclause-release-build"
+BUILD=$(mktemp -d -t leclause-release-build)
 RELEASE_BRANCH="release"
 REMOTE="origin"
+
+# Clean up the staging dir on exit so the disk does not accumulate droppings.
+trap 'rm -rf "$BUILD"' EXIT
 
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 if [ "$current_branch" != "main" ]; then
@@ -45,7 +48,6 @@ fi
 SOURCE_SHA=$(git rev-parse HEAD)
 
 # Build staging with every symlink dereferenced to its target content.
-rm -rf "$BUILD"
 rsync -aL \
   --exclude=.git \
   --exclude=.autonomous \
@@ -73,19 +75,20 @@ case "$MODE" in
     echo "Dry-run complete. To publish: $0 --write"
     ;;
   --write)
+    ORIGIN_URL=$(git remote get-url "$REMOTE")
     (
       cd "$BUILD"
       git init -q -b "$RELEASE_BRANCH"
       git add -A
       git commit -q -m "Release snapshot from main @ $SOURCE_SHA"
-      git remote add origin "$(cd "$OLDPWD" && git remote get-url "$REMOTE")"
+      git remote add origin "$ORIGIN_URL"
       git push --force origin "HEAD:$RELEASE_BRANCH"
+      echo ""
+      echo "Pushed $RELEASE_BRANCH to $REMOTE."
+      echo ""
+      echo "Consumer install:"
+      echo "  claude plugins marketplace add <owner>/<repo>@$RELEASE_BRANCH"
     )
-    echo ""
-    echo "Pushed $RELEASE_BRANCH to $REMOTE."
-    echo ""
-    echo "Consumer install:"
-    echo "  claude plugins marketplace add <owner>/<repo>@$RELEASE_BRANCH"
     ;;
   --help|-h)
     echo "Usage: $0 {--dry-run|--write}"

@@ -5,7 +5,7 @@
 // For longer intervals, calculates the exact minute to fire at,
 // because */20 means :00/:20/:40, not "in 20 minutes."
 //
-// Usage: relative-cron.js <minutes>
+// Usage: relative-cron <minutes>
 // Output: a 5-field cron expression on stdout
 //
 // Behaviour matches the legacy bash version bit-for-bit:
@@ -21,21 +21,21 @@
 const args = process.argv.slice(2);
 
 if (args.length !== 1) {
-  process.stderr.write("Usage: relative-cron.js <minutes>\n");
+  process.stderr.write("Usage: relative-cron <minutes>\n");
   process.exit(1);
 }
 
 const input = args[0];
 
 if (!/^[0-9]+$/.test(input)) {
-  process.stderr.write("Usage: relative-cron.js <minutes> (must be positive integer)\n");
+  process.stderr.write("Usage: relative-cron <minutes> (must be positive integer)\n");
   process.exit(1);
 }
 
 const minutes = parseInt(input, 10);
 
-if (minutes <= 0) {
-  process.stderr.write("Usage: relative-cron.js <minutes> (must be positive integer)\n");
+if (minutes <= 0 || !Number.isSafeInteger(minutes)) {
+  process.stderr.write("Usage: relative-cron <minutes> (must be positive integer)\n");
   process.exit(1);
 }
 
