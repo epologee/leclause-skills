@@ -9,7 +9,7 @@ argument-hint: "standing by for mission parameters..."
 
 Dispatch a rover at a task. You stay back, the rover works in the field. Round-tripping every question takes too long, so it decides locally. The rover cycles through SURVEY, DRIVE, INSPECT, STOW, STANDBY on its own and reports back when the mission is solid.
 
-The metaphor is load-bearing. Every time the rover catches itself wanting to ask "A or B?", it remembers the distance: asking costs time in both directions, and the mission does not wait. So it uses `decide` instead. Every time it catches itself wanting to ship work without checking, it remembers nobody in the field has reviewed it yet: so it uses `pride` first.
+The metaphor is load-bearing. Every time the rover catches itself wanting to ask "A or B?", it remembers the distance: asking costs time in both directions, and the mission does not wait. So it uses `decide` instead. Every time it catches itself wanting to ship work without checking, it remembers nobody in the field has reviewed it yet: so it uses `pride` first. This applies to every artefact the rover produces (code, documentation, prose, research briefs, media, anything), not just pushes. No output leaves the rover without a pride pass on record in the loop file.
 
 ## Tranquility by design
 
@@ -26,6 +26,24 @@ Three rules the rover applies because no one else is there to:
 3. **Green is not a stop condition.** The stop condition is the Done criteria that `verify` writes before implementation. Tests passing without criteria is the training's voice saying "ship now"; ignore it.
 
 Haste is not speed; haste is skipping understanding. The loop cycles faster than a human pair session because it can, not because it must. Take the time a careful pair session would take. Then take a bit more.
+
+## Pride is a hard gate
+
+Every rover output goes through `pride` before it leaves the rover. Every output. Not just pushes. Not just diffs. Not just "code changes." If the rover produces an artefact, `pride` runs on that artefact first, findings get addressed, and the pass is logged in the loop file under a `[HH:MM] Pride check findings:` block. No log block, no handoff. No exceptions.
+
+"Output" is read broadly: source code, migrations, configs, documentation, READMEs, research briefs, summaries, letters, emails, slide decks, video scripts, generated images, audio, slash-command responses, communiqués written by `stop`, PR descriptions, anything the rover emits that the operator or a third party will read. If the rover typed it, pride reviews it.
+
+Rationalisations the rover will generate to skip this, and the correct response to each:
+
+- "This is pure research, there is no diff, so pride has nothing to look at." Wrong. The research brief is the artefact. Pride reviews the brief: confidence laundering, unsourced claims, over-stated positions, missing caveats, weak references, locations or names invented from training data.
+- "Findings can go into a follow-up, I want to hand off now." Wrong. Pride findings are fixed in a new DRIVE cycle inside this mission, or explicitly accepted with a written reason in the log. "Later" is a skip.
+- "Tests are green, so pride is redundant." Wrong. Green proves behaviour under the tests that exist. Pride asks what the user would hate regardless of whether a test covered it.
+- "I already thought about this while writing." Wrong. You thought about the happy path while producing the artefact. Pride is an independent, hostile read.
+- "The user will review it anyway." Wrong. The rover operates at a distance precisely because the operator is not doing line-by-line review. Pride is the stand-in. Skipping it outsources review to the operator.
+- "This is a one-line fix." Wrong. One-line changes are where defensive filtering, type smells, and ugly helpers hide best. Pride is cheaper than the user finding it.
+- "I'll run pride after I push." Wrong. Pride runs before, not after. Running pride after a push means the artefact has already left the rover unreviewed.
+
+If the rover catches itself typing "🏁", "mission complete", "ready to ship", "ready for review", "handing off", or any equivalent closing language, and there is no pride log entry covering the current batch of work, stop mid-sentence and run pride. This is the only correct response.
 
 ## What you see in the first 60 seconds
 
@@ -58,7 +76,7 @@ SURVEY ──► DRIVE ──► INSPECT ──► STOW ──► STANDBY
     └──────── new issues ────────────────────────┘
 ```
 
-The loop is autonomous. It does not ask questions mid-phase. When it hits a choice, it invokes `decide`. Before any push or PR-ready transition it invokes `pride` to catch what it missed. No human is required to keep it moving, but you can intervene via the `## Input` section or the `/autonomous:stop` and `/autonomous:resume` commands at any time.
+The loop is autonomous. It does not ask questions mid-phase. When it hits a choice, it invokes `decide`. Before any artefact leaves the rover (push, PR, handoff communiqué, research brief, generated doc, media, or any other deliverable), it invokes `pride` to catch what it missed. No human is required to keep it moving, but you can intervene via the `## Input` section or the `/autonomous:stop` and `/autonomous:resume` commands at any time.
 
 ## Cost awareness
 
@@ -153,7 +171,7 @@ _Write new input here during a running loop. The loop reads this section each ST
 
 ## Instructions
 
-You are an autonomous loop. Follow the phase machine below. The user is not available for decisions, use `decide` when you face a choice. Use `pride` before any push or PR-ready transition.
+You are an autonomous loop. Follow the phase machine below. The user is not available for decisions, use `decide` when you face a choice. Run `pride` before any output leaves the rover. This covers every artefact, not just pushes: code, documents, prose, research briefs, plans, letters, songs, videos, audio, slides, scripts, configs. Including this one. If you cannot point to a `[HH:MM] Pride check findings:` block in the Log that covers what you are about to hand off, pride has not run. Stop and run it.
 
 ### Phases
 
@@ -172,17 +190,17 @@ During DRIVE, verify each significant change as you go (run the code, screenshot
 When the feature does what the Done criteria say it should, transition to INSPECT.
 
 **INSPECT**
-Four passes. Each one can send the rover back to DRIVE with a specific target. INSPECT only completes when all four are clean.
+Four passes. Each one can send the rover back to DRIVE with a specific target. INSPECT only completes when all four are clean, and the pride pass is a hard gate: no transition out of INSPECT without a pride log entry on record.
 
 1. **Verify pass.** Invoke `verify` against the loop file's Done criteria. Any criterion without evidence, or with failed evidence, sends the rover back to DRIVE. INSPECT only continues once every criterion is either met with evidence or explicitly marked unverified with a reason the operator can accept.
 
-2. **Pride pass.** Invoke `pride` on the diff. A contrarian subagent looks for what the user would hate: duplicate fixes, type smells, ugly helpers, defensive filtering, race conditions. Findings go back to DRIVE until pride is clean.
+2. **Pride pass (hard gate).** Invoke `pride` on whatever the rover produced since the last pride pass. A contrarian subagent looks for what the user would hate: duplicate fixes, type smells, ugly helpers, defensive filtering, race conditions, confidence laundering, over-claims, ungrounded references, missing sources. Findings are either fixed in a new DRIVE cycle, or explicitly accepted with a written reason by the rover (not silently skipped), and the outcome is logged under a `[HH:MM] Pride check findings:` block in the Log. INSPECT cannot transition to STOW without that block in the Log for the current batch of work. No exemption for "there is no diff": if the rover produced a research brief, a plan, a letter, a video script, or any other artefact, pride runs on that artefact. See the "Pride is a hard gate" section below for the rationalisations to refuse.
 
 3. **End-user pass.** Spawn an agent with only the stated goal and the application domain. Not the code, not the plan. The agent uses the feature as a user and reports confusion, missing feedback, edge cases, dead ends. Default to fixing, not deferring.
 
 4. **Technical pass.** Spawn a Sonnet subagent (Agent tool with `model: "sonnet"`) that reviews the diff against the plan. Does it match the goal? Odd jumps? Unnecessary complexity? Missed alternatives? Before the technical review, if the project has tech-specific skills matching the changed file types, load them. The subagent returns its findings; the loop reads them on the session model and decides whether they send the rover back to DRIVE.
 
-When all four passes are clean, transition to STOW.
+When all four passes are clean and the pride log entry exists, transition to STOW.
 
 **STOW**
 Final housekeeping before handoff. Mars rovers literally stow their robotic arm and instruments before driving on or going into uplink; the software equivalent is removing what got used during build and review but should not ship.
@@ -307,7 +325,9 @@ These are project-specific and not hardcoded in this skill.
 - Ask the user "A or B?" mid-phase
 - Push without explicit user approval
 - Transition out of DRIVE with a dirty working tree
-- Skip `pride` before proposing a push
+- Hand off any artefact (code, docs, prose, research brief, media, communiqué, anything) without a pride pass logged in the loop file for that artefact
+- Treat "there is no diff" as an excuse to skip pride; the produced artefact is the review target
+- Type "🏁", "mission complete", or any equivalent closing language without a pride log entry on record
 - Assume any personal or team integration skill exists without the user naming it at invocation
 - Write loop files anywhere other than `.autonomous/` in the git root
 
