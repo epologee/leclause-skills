@@ -4,29 +4,38 @@ Status: aanbevelingsdocument. Geen code change, dit is de voorbereiding op een i
 
 ## Probleemstelling
 
-De leclause-marketplace gebruikt symlinks om skills tussen plugins te delen. Elke `packages/<plugin>/skills/<skill>` verwijst met `../../../skills/<skill>` naar de canonieke source onder de repo-root. Op macOS en Linux werkt dit direct: git bewaart de symlink, Claude Code kopieert de plugin naar zijn cache, en de symlink blijft tijdens runtime werkend.
+De leclause-marketplace gebruikt symlinks om skills tussen plugins te delen. Elke `packages/<plugin>/skills/<skill>` verwijst met `../../../skills/<skill>` naar de canonieke source onder de repo-root. Op macOS en Linux werkt dit direct: git bewaart de symlink bij clone, Claude Code kopieert de plugin naar zijn cache zonder te dereferencen, en de symlink blijft tijdens runtime werkend.
 
-Op Windows breekt dit in twee stappen. Ten eerste heeft Git for Windows `core.symlinks=false` als default. Zonder die instelling landen symlinks bij clone als text files die het doel-pad als inhoud hebben. Ten tweede, volgens de Anthropic-docs:
+Op Windows breekt dit al bij de git-clone-stap. Git for Windows heeft `core.symlinks=false` als default. Zonder die instelling worden symlinks bij clone geconverteerd naar text files die het doel-pad als inhoud hebben. Wat Claude Code vervolgens naar zijn cache kopieert is dus geen symlink meer, maar een text file. Bij runtime probeert Claude Code de "skill directory" te openen, krijgt een file terug in plaats van een directory, en de skill faalt.
+
+De Anthropic-docs bevestigen dat symlinks op zich wel ondersteund zijn:
 
 > Symlinks are preserved in the cache rather than dereferenced, and they resolve to their target at runtime.
 
-Bron: [Plugins reference, Plugin caching and file resolution](https://code.claude.com/docs/en/plugins-reference).
+Bron: [Plugins reference, Plugin caching and file resolution](https://code.claude.com/docs/en/plugins-reference). Let op: die passage beschrijft absolute symlinks als workaround voor het pad-traversal-verbod binnen de cache. De mechanische implicatie, "geen dereferentie bij install", is ook van toepassing op onze relatieve symlinks, maar het probleem op Windows zit één laag eerder: de symlink bereikt de cache nooit als symlink.
 
-Claude Code materialiseert symlinks dus niet bij installatie. Het kopieert ze door en probeert ze pas bij runtime te volgen. Op Windows betekent dat: de "symlink" in de cache is een text file, de runtime probeert hem als directory te openen, en de skill faalt. Voor mijn broer, een Windows-gebruiker, is `claude plugins install autonomous@leclause` daarmee stuk zonder verdere handeling.
+Voor mijn broer, een Windows-gebruiker, is `claude plugins install autonomous@leclause` daarmee stuk zonder verdere handeling.
 
 ## Onderzochte alternatieven
 
-Drie aanpakken zijn in het veld terug te vinden, met verschillende kosten en trade-offs.
+Vier aanpakken zijn in het veld terug te vinden of uit de Claude-docs af te leiden, met verschillende kosten en trade-offs.
 
 | Aanpak | Voorbeeld | Wat de consumer moet doen | Bron |
 |--------|-----------|---------------------------|------|
-| Consumer configureert git | Officiële Anthropic-docs adviseren `git config core.symlinks=true` en herclone. | Developer Mode aanzetten (Windows 10 1703+), git-config zetten, soms admin. Mislukt ook bij achterliggende cache-dereferentie van Claude Code. | [Plugin marketplaces docs](https://code.claude.com/docs/en/plugin-marketplaces), [Git for Windows symbolic links](https://gitforwindows.org/symbolic-links.html) |
+| Consumer configureert git | `git config core.symlinks=true` plus Developer Mode of admin. | Developer Mode aanzetten (Windows 10 1703+), git-config zetten, soms admin. | [Git for Windows symbolic links](https://gitforwindows.org/symbolic-links.html) |
 | POSIX-shell vereiste | garrytan/gstack schrijft expliciet: "gstack works on Windows 11 via Git Bash or WSL." Install via bash install-script dat symlinks lokaal maakt. | Git Bash of WSL installeren. Shell-script runnen. Ook hier: nog steeds Developer Mode of admin nodig voor symlink creation. | [garrytan/gstack README](https://github.com/garrytan/gstack) |
+| `git-subdir` source per plugin | De Anthropic-docs documenteren `git-subdir` als sparse clone van een subdirectory in een monorepo. Per plugin-entry in `marketplace.json` zou je kunnen wijzen naar `packages/<plugin>` in onze repo. | Niks. Consumer krijgt een sparse clone van alleen die subdirectory. | [Plugin marketplaces docs, git-subdir](https://code.claude.com/docs/en/plugin-marketplaces) |
 | Materialiseren bij release | Geen publiek voorbeeld in de Claude Code plugin-ecosystem gevonden. Standaardpatroon in JavaScript-monorepos (pnpm, npm workspaces): publish-stap vertaalt interne package-refs naar echte kopieën. | Niks. Consumer ziet een gewone marketplace met echte directories. | Algemene monorepo-patroon; geen specifieke docs-URL in het Claude ecosysteem |
+
+### Waarom `git-subdir` niet voldoet
+
+Aantrekkelijk op het eerste gezicht: Anthropic-geïndorste source-type, sparse clone, geen extra infrastructuur. Maar de sparse clone van `packages/<plugin>` pakt alleen die subdirectory mee. De symlinks daarin wijzen met `../../../skills/<skill>` naar paden buiten de sparse clone. Op macOS/Linux blijft dat een symlink naar een pad dat niet bestaat in de checkout. Op Windows blijft de symlink een text file. Beide gevallen zijn stuk.
+
+Om `git-subdir` wel te laten werken zou ik de source moeten herstructureren: elk `packages/<plugin>` moet een zelfstandige directory zijn zonder symlinks naar buiten. Dat is effectief hetzelfde als materialiseren aan de bron, alleen dan permanent in `main`. Dat offert het shared-skill-pattern op dat dual-publishing (individueel plus `leclause` bundle) mogelijk maakt. Trade-off te groot; niet de gewenste richting.
 
 ## Aanbeveling: materialise-at-release
 
-De structureel juiste aanpak is optie 3. Symlinks blijven de source-of-truth in de main branch. Een release-stap vertaalt ze naar echte directories in een artefact dat consumers installeren. De macOS-workflow blijft identiek aan vandaag; Windows-consumers krijgen werkende files zonder enige configuratie.
+De structureel juiste aanpak is optie 4. Symlinks blijven de source-of-truth in de main branch. Een release-stap vertaalt ze naar echte directories in een artefact dat consumers installeren. De macOS-workflow blijft identiek aan vandaag; Windows-consumers krijgen werkende files zonder enige configuratie.
 
 Concreet:
 
@@ -38,13 +47,13 @@ Concreet:
 
 4. **Nieuwe script: `bin/marketplace-release`.** Dit is het workhorse. Dry-run modus voor diffen, write-modus voor daadwerkelijk bouwen en force-pushen van `release`. Later eventueel te vervangen door een GitHub Action die bij elke push op `main` de release branch bijwerkt.
 
-5. **Versioning blijft ongewijzigd.** `plugin-versions` werkt op `main` en telt commits per plugin. Omdat `release` een mirror is van `main` met dezelfde commit-geschiedenis effectief platgeslagen of opnieuw gecommit, moet versioning synchroon lopen. Simpelste invulling: `release` commits dragen dezelfde plugin-versies als `main` op dat moment, via `bin/plugin-versions --write` op de release branch.
+5. **Versioning koppelt main aan release.** `plugin-versions` telt commits per plugin op de branch waar het draait. Als `release` wordt force-pushed met één mirror-commit, zou het tool op die branch overal "1.0.1" rapporteren. Oplossing: `plugin-versions --write` draait altijd op `main`, het resultaat wordt in de plugin.json files van de release-build geschreven, en die files gaan mee in de force-push. Het tool zelf verandert niet; de release-script roept het aan op main, leest de versies, en commit ze naar release. Dit is niet optioneel: Claude Code detecteert updates via `plugin.json` version, dus release moet de correcte versies van main dragen of consumers missen nooit een update.
 
 ### Impact
 
-- **`bin/plugin-versions`**: ongewijzigd. Werkt op `main`, gebruikt commit-counts op paths onder `packages/<name>/` en `skills/<name>/`.
+- **`bin/plugin-versions`**: zelf ongewijzigd, maar de aanroep-context wijzigt. Moet op `main` draaien; het resultaat landt via het release-script in de plugin.json files van de release-build.
 - **`bin/plugin-cache-prune`**: ongewijzigd. Operator-only, draait op macOS, schoont lokale cache.
-- **`bin/marketplace-release`**: nieuw. Consumer-facing artefact wordt hiermee gebouwd.
+- **`bin/marketplace-release`**: nieuw. Consumer-facing artefact wordt hiermee gebouwd. Force-push model: draait plugin-versions op main, rsync -aL van `main` naar een build-directory (resolveert symlinks naar echte directories), schrijft plugin.json versies, force-pusht naar `release`.
 - **`marketplace.json`**: elke plugin-entry krijgt een expliciete `ref: release` source.
 
 ### Open vragen voor implementatie
@@ -52,7 +61,6 @@ Concreet:
 Niet in scope van dit onderzoek, wel om op te volgen:
 
 - Update-frequentie van `release`. Per commit op `main`, per tag, of per handmatige run.
-- Release-branch met nieuwe commits (handmatig pushen) of met force-push (altijd mirror van `main` state, geen history). Force-push is simpeler; nieuwe commits geeft history.
 - Of `release` ook de `.autonomous/`, `docs/`, en andere non-plugin paths moet bevatten. Waarschijnlijk niet; een sparse mirror met alleen `packages/`, `skills/`, `.claude-plugin/`, `README.md` en `LICENSE` is schoner.
 - Eventuele GitHub Action als vervolg op het handmatige script.
 
@@ -67,11 +75,11 @@ Drie bash-scripts in de repo, verschillende doelgroepen.
 
 Geen port nodig. Deze scripts verlaten mijn machine nooit.
 
-**Consumer-facing (blijft bash, mits Bash tool POSIX-shell gebruikt op Windows):**
+**Consumer-facing (bash, afhankelijk van hoe Claude Code de Bash tool uitvoert op Windows):**
 
 - `packages/autonomous/bin/relative-cron`: wordt via de Bash tool aangeroepen door de cron-skill in elke autonomous-loop iteratie. Draait dus op de consumer.
 
-Claude Code's Bash tool gebruikt op Windows Git Bash of WSL als POSIX-shell. Bash-scripts werken daar. Zolang de Bash tool zelf een POSIX-shell op Windows heeft, is geen port nodig. Als er ooit een configuratie is waar de Bash tool een andere shell gebruikt, is een port naar Python of Node de logische vervolgstap. Voor nu: observeer, port alleen als het bewijst nodig te zijn.
+Niet zonder meer veilig aan te nemen dat Claude Code's Bash tool op Windows een POSIX-shell gebruikt. In de praktijk draait Claude Code op Windows vaak onder WSL2 of Git Bash, en dan werken bash-scripts. Er zijn echter configuraties waarin de Bash tool via PowerShell draait (bijvoorbeeld `CLAUDE_CODE_USE_POWERSHELL_TOOL=1`), en daar breekt `relative-cron` zoals het nu geschreven is. Aanbeveling voor deze mission-scope: geen port nu, maar markeer als "verifieer op target consumer." Als mijn broer Claude Code via WSL/Git Bash draait, werkt het. Als hij Claude Code via PowerShell draait, vereist `relative-cron` een port naar Python of Node. Deze verificatie hoort bij de eerste test-installatie op Windows.
 
 ## Volgende stap
 
