@@ -34,6 +34,18 @@ Print the briefing below to the user **verbatim**, including the ASCII art and a
 
 Welcome to Mission Control. This is the short version of what the Rover does and how you drive it. Roughly ten percent astronaut, ninety percent practical.
 
+## How to dispatch
+
+```
+/autonomous:rover "<mission brief>"
+/autonomous:rover https://github.com/owner/repo/issues/N
+/autonomous:rover .autonomous/<NAME>.md         # resume an existing mission
+```
+
+On dispatch, the Rover writes `.autonomous/<NAME>.md`, the mission file that holds context, plan, Done criteria, decision audit, and a timestamped log. Then it sets up a Claude Code cron that fires the loop every minute while the REPL is idle and runs the first SURVEY iteration in the same turn.
+
+The mission file is your window. Tail it to watch the traverse.
+
 ## What the Rover does
 
 You dispatch a Rover at a task. You stay back. The Rover rolls across the codebase on its own, surveying terrain, driving changes, inspecting its own work, stowing the build-time clutter, and standing by for new signals. It does not radio home for every fork in the traverse; it carries a `decide` framework and a `pride` check so it can keep moving without waking you up.
@@ -54,18 +66,6 @@ SURVEY ──► DRIVE ──► INSPECT ──► STOW ──► STANDBY
 - **INSPECT.** Four passes: `verify` against Done criteria, `pride` contrarian review, end-user walkthrough, technical plan-vs-diff. Any failure sends the Rover back to DRIVE.
 - **STOW.** Mechanical cleanup only. Debug prints gone, unused imports gone, half-finished refactors finished. Separate commit.
 - **STANDBY.** Watch channels (PR comments, CI, uncommitted work). Back off the cron as idleness grows. Auto-stop after about five hours of quiet.
-
-## How to dispatch
-
-```
-/autonomous:rover "<mission brief>"
-/autonomous:rover https://github.com/owner/repo/issues/N
-/autonomous:rover .autonomous/<NAME>.md         # resume an existing mission
-```
-
-On dispatch, the Rover writes `.autonomous/<NAME>.md`, the mission file that holds context, plan, Done criteria, decision audit, and a timestamped log. Then it sets up a Claude Code cron that fires the loop every minute while the REPL is idle and runs the first SURVEY iteration in the same turn.
-
-The mission file is your window. Tail it to watch the traverse.
 
 ## How to steer a running Rover
 
@@ -95,5 +95,7 @@ The mission file is your window. Tail it to watch the traverse.
 ## Cost awareness
 
 A cron at one-minute cadence drives many Claude turns during active phases. That is the point: the Rover is working for you. During STANDBY the backoff grows to 60-minute intervals and auto-stops after sustained quiet. For small tasks, a normal conversation is cheaper than a full Rover dispatch.
+
+The Rover keeps reasoning on your session model and offloads the mechanical work to Sonnet subagents: STANDBY polling (`git status`, PR comments, CI checks) and the INSPECT technical pass (diff-vs-plan review). Hand work to subagents, keep head work on the session model. Your model choice for the session sets the ceiling on quality; the subagent floor is Sonnet.
 
 Standing by for mission parameters.

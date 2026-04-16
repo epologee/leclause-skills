@@ -180,7 +180,7 @@ Four passes. Each one can send the rover back to DRIVE with a specific target. I
 
 3. **End-user pass.** Spawn an agent with only the stated goal and the application domain. Not the code, not the plan. The agent uses the feature as a user and reports confusion, missing feedback, edge cases, dead ends. Default to fixing, not deferring.
 
-4. **Technical pass.** Spawn an agent that reviews the diff against the plan. Does it match the goal? Odd jumps? Unnecessary complexity? Missed alternatives? Before the technical review, if the project has tech-specific skills matching the changed file types, load them.
+4. **Technical pass.** Spawn a Sonnet subagent (Agent tool with `model: "sonnet"`) that reviews the diff against the plan. Does it match the goal? Odd jumps? Unnecessary complexity? Missed alternatives? Before the technical review, if the project has tech-specific skills matching the changed file types, load them. The subagent returns its findings; the loop reads them on the session model and decides whether they send the rover back to DRIVE.
 
 When all four passes are clean, transition to STOW.
 
@@ -215,6 +215,8 @@ When a PR exists, minimum checks per iteration:
 - `git status --short` (uncommitted work from the session)
 - PR comments and reviews (via `gh api`)
 - CI status (via `gh pr checks`)
+
+**Token economy.** Delegate the polling itself to a Sonnet subagent (Agent tool with `model: "sonnet"`). Brief it to run the three commands and return the raw output, nothing interpreted. Comparing yesterday's snapshot against today's, deciding what is new, judging whether a finding warrants a transition to SURVEY: that reasoning happens in the main loop on the session model. The subagent is a hand, not a head.
 
 New findings from STANDBY go back to SURVEY (not DRIVE, and not queued for the user). New input is new information: understand it before acting on it. Iteratively downgrading to a fix-first approach has a track record of missing the real cause.
 

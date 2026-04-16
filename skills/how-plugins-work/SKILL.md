@@ -102,6 +102,18 @@ T = H["user-invocable"] === void 0 ? !0 : G0H(H["user-invocable"])
 
 Wanneer `true`: het model kan de skill niet automatisch activeren op basis van context. De skill is dan alleen bereikbaar via expliciete slash command. Nuttig voor skills die nooit auto-triggered moeten worden (bijv. `/clipboard`, `/saysay`). Verkleint het actieve context-budget in `skill-budget`.
 
+## Model selectie
+
+Een skill kan het session model NIET veranderen. Het model dat de user koos bij sessie-start (of via `/model`) draait door alle turns heen, inclusief turns die door cron worden gevuurd. Een skill die `/model haiku` als tekst output, gedraagt zich als een nep-user-input, is onbetrouwbaar, en blijft hangen na de skill-run, dus verneukt de user-sessie.
+
+**Subagents wel.** De `Agent`/`Task` tool accepteert een `model` parameter (`haiku`, `sonnet`, `opus`). Een subagent draait in een aparte conversation context met zijn eigen model, returnt een result, en raakt het session model niet aan. Dit is het juiste mechanisme voor:
+
+- Token besparing in cron-driven loops (delegeer poll-werk aan een Sonnet- of Haiku-subagent)
+- Parallelle independent taken (meerdere agents op verschillende modellen tegelijk)
+- Het session model reserveren voor reasoning, terwijl mechanisch werk goedkoper draait
+
+**Vuistregel:** session model = head, subagent = hand. Geef subagents het werk dat geen interpretatie vereist (commands runnen, files lezen en raw teruggeven, gh-scrapes doen). Houd interpretatie en beslissingen op de session model.
+
 ## Versioning
 
 De `version` field in `plugin.json` wordt automatisch bijgewerkt door de leclause pre-commit hook. Het format is `1.0.{commits}` waar `{commits}` het aantal commits is dat `packages/<name>/` of `skills/<name>/` heeft geraakt.
