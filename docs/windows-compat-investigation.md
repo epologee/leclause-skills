@@ -4,6 +4,8 @@ Status: aanbevelingsdocument. Geen code change, dit is de voorbereiding op een i
 
 Scope: alle Windows-gebruikers van de leclause marketplace. Niet één specifieke consumer. Een oplossing die alleen voor één gebruiker werkt (handmatige resolved kopie, eenmalige SEED_DIR setup) valt daarmee af: elke Windows-consument moet `claude plugins install <plugin>@leclause` kunnen draaien en krijgen wat werkt, zonder verdere handeling.
 
+**Caveat vooraf.** Deze aanbeveling is niet getest op een echte Windows-machine. Ze lost aantoonbaar laag 1 op (symlinks in de marketplace-clone), en lokaal op macOS gedraagt het materialized artefact zich correct. Laag 2 (Claude Code's cache-stap op Windows voor github sources) is niet gevalideerd vanaf macOS en kan zelfstandig Developer Mode of admin vereisen. Lees wat volgt met die onzekerheid in het achterhoofd; de echte bevestiging moet van een Windows-test komen.
+
 ## Probleemstelling
 
 De leclause-marketplace gebruikt symlinks om skills tussen plugins te delen. Elke `packages/<plugin>/skills/<skill>` verwijst met `../../../skills/<skill>` naar de canonieke source onder de repo-root. Op macOS en Linux werkt dit direct: git bewaart de symlink bij clone, Claude Code kopieert de plugin naar zijn cache zonder te dereferencen, en de symlink blijft tijdens runtime werkend.
@@ -45,7 +47,7 @@ Om `git-subdir` wel te laten werken zou ik de source moeten herstructureren: elk
 
 Twee alternatieven die bovenkomen bij diepere research maar niet in de hoofdtabel horen.
 
-`CLAUDE_CODE_PLUGIN_SEED_DIR` is een environment variable die Claude Code naar een voorgematerialiseerde plugins-directory laat wijzen. Dit is een consumer-side workaround: elke gebruiker zou zelf een resolved kopie van de repo moeten klaarzetten (bijvoorbeeld via `cp -rL`) en bij elke update opnieuw synchroniseren. Valt in dezelfde categorie als optie 1 en schaalt niet naar meerdere Windows-gebruikers. Niet gekozen.
+`CLAUDE_CODE_PLUGIN_SEED_DIR` is een environment variable, gedocumenteerd in de Anthropic [plugin-marketplaces docs](https://code.claude.com/docs/en/plugin-marketplaces) onder "Pre-populate plugins for containers", die Claude Code naar een voorgematerialiseerde plugins-directory laat wijzen. Dit is een consumer-side workaround: elke gebruiker zou zelf een resolved kopie van de repo moeten klaarzetten (bijvoorbeeld via `cp -rL`) en bij elke update opnieuw synchroniseren. Valt in dezelfde categorie als optie 1 en schaalt niet naar meerdere Windows-gebruikers. Niet gekozen.
 
 Npm distribution is een echt alternatief. Elke plugin publiceren als npm package met een post-install script dat materialized files naar de plugin cache schrijft. Symlinks spelen geen rol meer. Nadelen: npm-account nodig, publish-workflow, versie-drift tussen npm en GitHub. De marketplace-entries zouden `source: npm` gebruiken in plaats van `source: github`. Te ver buiten de huidige architectuur, en voegt een tweede publicatiekanaal toe zonder sterk voordeel boven materialise-at-release. Niet gekozen.
 
@@ -98,7 +100,7 @@ Geen port nodig. Deze scripts verlaten mijn machine nooit.
 
 - `packages/autonomous/bin/relative-cron`: wordt via de Bash tool aangeroepen door de cron-skill in elke autonomous-loop iteratie. Draait dus op de consumer.
 
-Omdat de scope alle Windows-gebruikers omvat, kunnen we niet aannemen dat iedereen Claude Code via Git Bash of WSL draait. Sommigen gebruiken native PowerShell (o.a. via `CLAUDE_CODE_USE_POWERSHELL_TOOL=1`), en daar breekt `relative-cron` meteen. Port voor de eerste Windows-release: herschrijven naar Node of Python. Node heeft de voorkeur omdat Claude Code zelf al Node vereist, dus er komt geen extra runtime-eis bij. Python werkt ook, maar zou een nieuwe dependency introduceren voor wie hem niet heeft staan.
+Omdat de scope alle Windows-gebruikers omvat, kunnen we niet aannemen dat iedereen Claude Code via Git Bash of WSL draait. Sommige setups routeren de Bash tool mogelijk via native PowerShell (deze optie werd in een WebSearch-samenvatting genoemd met env var `CLAUDE_CODE_USE_POWERSHELL_TOOL=1`, niet zelfstandig geverifieerd tegen Anthropic-docs), en daar breekt `relative-cron` meteen. Port voor de eerste Windows-release: herschrijven naar Node of Python. Node heeft de voorkeur omdat Claude Code zelf al Node vereist, dus er komt geen extra runtime-eis bij. Python werkt ook, maar zou een nieuwe dependency introduceren voor wie hem niet heeft staan.
 
 Dit is geen "later observeren"-beslissing meer: zonder port blijft autonomous op PowerShell-setups stuk. De port hoort bij de implementatie-loop, niet erna.
 

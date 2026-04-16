@@ -43,6 +43,8 @@ Staging lands in a fresh temp directory under `/tmp/leclause-release-build.*` (c
 
 The force-push is intentional. The `release` branch is a regenerated artefact, not an accumulation of commits. Each release is a fresh root commit (no parent) force-pushed over the previous release's root commit. Consumers with a local checkout of `release` see diverged history on each push, which is fine because nobody develops there.
 
+If the push itself fails (no remote, auth failure, branch protection rules), the script exits non-zero and the staging directory is cleaned up by the trap. The `release` branch stays at its previous state; nothing partial lands. Fix the underlying cause (usually credentials or protection settings) and re-run.
+
 ## Why this beats the alternatives
 
 Other paths exist; none of them bring plugins to every Windows consumer without asking the consumer to do something. They were considered and rejected in [`docs/windows-compat-investigation.md`](windows-compat-investigation.md).
@@ -58,7 +60,7 @@ If you add a plugin that has a consumer-facing requirement the guards do not cov
 
 ## The part that still needs a Windows machine
 
-Local testing on macOS validates that the release pipeline produces a symlink-free artefact and that `claude plugins install` consumes it cleanly. That is 99% confidence. The 1% gap: Claude Code's install pipeline on Windows may itself create absolute symlinks in the plugin cache that require Developer Mode or admin to create.
+Local testing on macOS validates that the release pipeline produces a symlink-free artefact and that `claude plugins install` consumes it cleanly on the macOS install path. That validates laag 1 (marketplace clone) and macOS cache behaviour. The open gap: Claude Code's install pipeline on Windows may itself create absolute symlinks in the plugin cache that require Developer Mode or admin to create. Until a real Windows install succeeds, the pipeline is directionally correct but end-to-end untested on the target platform.
 
 The first real Windows install is the missing test. Hand it to someone with a recent Windows machine. Ask them to:
 
@@ -72,6 +74,6 @@ If step 4 works, the pipeline is end-to-end validated. If it does not, the failu
 ## Related
 
 - [`docs/windows-compat-investigation.md`](windows-compat-investigation.md): the full problem analysis and why materialise-at-release is the approach.
-- `bin/marketplace-release`: the script itself, under 100 lines of shell, commented.
+- `bin/marketplace-release`: the script itself, about 100 lines of shell, commented.
 - `hooks/pre-commit`: the mechanical guard against new non-portable scripts.
 - `skills/how-plugins-work/SKILL.md`: documents symlink handling and cross-platform materialisation in general.
