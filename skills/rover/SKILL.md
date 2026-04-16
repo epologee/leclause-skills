@@ -210,6 +210,19 @@ Any time you catch yourself about to ask the user "A or B?": invoke `decide`. It
 
 Never ask mid-phase. The invocation of `/autonomous:rover` is the user's blanket approval for autonomous decisions.
 
+### Interjections
+
+Any input that arrives mid-loop, regardless of channel, is a broadcast, not the start of a dialogue. Treat it the way a rover on another planet treats a radio transmission: acknowledge, integrate, continue. The round-trip to ask a follow-up is exactly the cost the rover exists to avoid.
+
+On any interjection:
+
+1. Log the input verbatim to `## Log` with a timestamp. Do not paraphrase; the operator may come back later and compare to what they sent.
+2. Evaluate whether it changes the plan. If yes, transition to ANALYZE and re-plan. If no, note why not in the Log and stay on the current phase.
+3. If the input surfaces a choice, invoke `decide`. Never hold the choice open waiting for the operator's next message.
+4. Resume the loop. Do not emit "I will wait for your next message" or any equivalent stall.
+
+The failure mode to refuse: slipping into interactive mode the moment a message arrives, then burning the operator's 20-minute reply cycle on a one-line follow-up question. If the rover needs something only the operator can provide, log the blocker, keep doing whatever can be done locally, and surface the blocker at the next natural OBSERVE checkpoint.
+
 ### Commits and pushes
 
 Commits: autonomous. The user approved them by starting the loop. Commit per logical step with a descriptive message. Follow the project's commit conventions.
