@@ -87,3 +87,18 @@ if [ -x "$plugin_versions_script" ]; then
     exit 1
   fi
 fi
+
+# After a commit on main that changed plugin content, nudge the operator to
+# push so the release-branch GitHub Action republishes for Windows consumers.
+# Silent on other branches (Action only triggers on main) and silent when the
+# staged diff did not touch packages/ or skills/ (nothing for consumers to
+# catch up with).
+current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+if [ "$current_branch" = "main" ]; then
+  if git diff --cached --name-only --diff-filter=ACMR | grep -qE '^(packages|skills)/'; then
+    echo "" >&2
+    echo "Push this to main so the release-branch GitHub Action republishes" >&2
+    echo "for Windows consumers. Run bin/marketplace-release --write locally" >&2
+    echo "only if CI is down or you are debugging the pipeline." >&2
+  fi
+fi

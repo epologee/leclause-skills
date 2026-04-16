@@ -26,7 +26,7 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 MODE="${1:---dry-run}"
-BUILD=$(mktemp -d -t leclause-release-build)
+BUILD=$(mktemp -d "${TMPDIR:-/tmp}/leclause-release-build.XXXXXX")
 RELEASE_BRANCH="release"
 REMOTE="origin"
 

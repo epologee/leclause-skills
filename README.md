@@ -94,6 +94,16 @@ export CLAUDE_CLI=my-wrapper
 
 Bonsai falls back to `claude` if the var is not set.
 
+## Authoring a new plugin
+
+The two rules that keep plugins working on Mac and Windows from day one:
+
+1. **Consumer-facing scripts under `packages/<plugin>/bin/` must use a portable shebang.** Only `#!/usr/bin/env node`, `#!/usr/bin/env python3`, and `#!/usr/bin/env pwsh` are accepted. The pre-commit hook rejects anything else and tells you what to port to. Operator-only scripts under repo-root `bin/` can use any shebang.
+
+2. **Push to `main` and CI republishes `release` automatically.** The `release-branch` GitHub Action runs `bin/marketplace-release --write` on every push to `main`. Windows consumers catch up without any manual step. Run the script by hand only when debugging or publishing outside the normal flow; see [`docs/release-workflow.md`](docs/release-workflow.md).
+
+Symlinks inside the plugin tree (for example, sharing a skill from the repo's top-level `skills/` directory) are fine on `main`. The release branch materialises them so Windows consumers never see a symlink.
+
 ## Plugin versioning
 
 Every plugin's version in `packages/<name>/.claude-plugin/plugin.json` follows the format `1.0.{commits}`, where `commits` is the number of commits that touched `packages/<name>/` or `skills/<name>/`. Versions bump automatically via the repo's pre-commit hook.

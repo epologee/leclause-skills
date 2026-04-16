@@ -7,18 +7,17 @@ Two branches, one source of truth, no thinking required during normal work.
 - **`main`** is the working branch. Plugins share skills via relative symlinks (`packages/<plugin>/skills/<skill>` → `../../../skills/<skill>`). macOS and Linux consumers install from `main` and everything works.
 - **`release`** is the Windows-installable snapshot. Every symlink is replaced by its target content, so Git for Windows does not turn anything into text files on clone. Windows consumers install from `@release`.
 
-`bin/marketplace-release` builds the `release` branch from the current state of `main`. Run it whenever you want Windows consumers to catch up with `main`.
+`bin/marketplace-release` builds the `release` branch from the current state of `main`. A GitHub Action (`.github/workflows/release-branch.yml`) runs it automatically on every push to `main`, so Windows consumers catch up without any manual step. Run the script by hand only when you want to publish before CI runs or when debugging.
 
 ## When to run
 
-Run `bin/marketplace-release --write` after any of these land on `main`:
+The GitHub Action covers the normal path: any push to `main` triggers `bin/marketplace-release --write`. Authoring flow becomes: commit on main, push, Windows consumers get a fresh release automatically.
 
-- New plugin added
-- New skill added (inside a plugin or as a shared-skill symlinked from multiple plugins)
-- Content change to any plugin that Windows consumers care about
-- Any change to `.claude-plugin/marketplace.json`
+Run the script by hand only in these cases:
 
-If you are only editing documentation or internal tooling that never runs on a consumer, you can skip the release push. When in doubt, push; the operation is cheap and idempotent.
+- You want to publish a release without going through `main` (for example, testing a staging branch locally against the materialised artefact).
+- The Action failed and you want to reproduce the failure locally.
+- You are debugging the pipeline itself.
 
 ## How to run
 
@@ -31,7 +30,7 @@ bin/marketplace-release --write   # Build staging, force-push origin/release
 
 The script refuses to run from any branch other than `main`, or with uncommitted changes in the working tree. That is deliberate; `release` is meant to reflect the shippable state of `main` and nothing else.
 
-Staging lands in `/tmp/leclause-release-build/` and is rebuilt from scratch each run.
+Staging lands in a fresh temp directory under `/tmp/leclause-release-build.*` (created via `mktemp -d`) and is cleaned up on exit. Each run gets an isolated dir so concurrent runs do not collide.
 
 ## What happens under the hood
 
