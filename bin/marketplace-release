@@ -2,6 +2,11 @@
 #
 # marketplace-release: build a materialised release branch for Windows consumers.
 #
+# Runs on macOS (operator) and on Linux (GitHub Actions, .github/workflows/
+# release-branch.yml). The normal publish path is the Action on every push to
+# main; operators only invoke this by hand to debug or to publish outside the
+# normal flow.
+#
 # main carries symlinks that share skills across plugins. Windows users cannot
 # clone those cleanly, because Git for Windows defaults to core.symlinks=false
 # (symlinks become text files) and Claude Code's install pipeline compounds

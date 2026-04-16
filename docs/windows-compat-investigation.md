@@ -69,10 +69,10 @@ Concreet:
 
 ### Impact
 
-- **`bin/plugin-versions`**: zelf ongewijzigd, maar de aanroep-context wijzigt. Moet op `main` draaien; het resultaat landt via het release-script in de plugin.json files van de release-build.
+- **`bin/plugin-versions`**: ongewijzigd. Operator-only, draait op macOS.
 - **`bin/plugin-cache-prune`**: ongewijzigd. Operator-only, draait op macOS, schoont lokale cache.
-- **`bin/marketplace-release`**: nieuw. Consumer-facing artefact wordt hiermee gebouwd. Force-push model: draait plugin-versions op main, rsync -aL van `main` naar een build-directory (resolveert symlinks naar echte directories), schrijft plugin.json versies, force-pusht naar `release`.
-- **`marketplace.json`**: elke plugin-entry krijgt een expliciete `ref: release` source.
+- **`bin/marketplace-release`**: nieuw. Consumer-facing artefact wordt hiermee gebouwd. `rsync -aL` van de huidige checkout naar een temp-directory (resolveert symlinks naar echte directories), force-pusht naar `release` branch van origin. Werkt op macOS en Linux (GitHub Actions).
+- **`marketplace.json`**: ongewijzigd op zowel `main` als `release`. De branch-selectie zit in het `claude plugins marketplace add <owner>/<repo>@<branch>` commando dat consumenten runnen, niet in de marketplace.json zelf. Mac/Linux-consumenten gebruiken de default branch; Windows-consumenten voegen `@release` toe aan dat commando.
 
 ### Open vragen voor implementatie
 

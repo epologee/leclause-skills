@@ -1,0 +1,62 @@
+name: consumer-scripts
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  relative-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Smoke test packages/autonomous/bin/relative-cron
+        run: |
+          set -euo pipefail
+          script=packages/autonomous/bin/relative-cron
+
+          check_pattern() {
+            local n="$1"
+            local pattern="$2"
+            local out
+            out=$(node "$script" "$n")
+            if [[ ! "$out" =~ $pattern ]]; then
+              echo "FAIL: N=$n expected ${pattern} got ${out}" >&2
+              exit 1
+            fi
+            echo "PASS: N=$n -> $out"
+          }
+
+          # Short path: */N for N in 1..10
+          for n in 1 2 5 10; do
+            check_pattern "$n" "^\\*/${n} \\* \\* \\* \\*$"
+          done
+
+          # Long path: a specific minute follows for N > 10
+          for n in 11 20 30 60 90; do
+            check_pattern "$n" "^[0-9]+ \\* \\* \\* \\*$"
+          done
+
+          # Rejects non-integer
+          if node "$script" abc 2>/dev/null; then
+            echo "FAIL: non-integer should exit 1" >&2
+            exit 1
+          fi
+          echo "PASS: rejects non-integer"
+
+          # Rejects zero
+          if node "$script" 0 2>/dev/null; then
+            echo "FAIL: zero should exit 1" >&2
+            exit 1
+          fi
+          echo "PASS: rejects zero"
+
+          # Rejects unsafe integer
+          if node "$script" 99999999999999999999 2>/dev/null; then
+            echo "FAIL: unsafe integer should exit 1" >&2
+            exit 1
+          fi
+          echo "PASS: rejects unsafe integer"
