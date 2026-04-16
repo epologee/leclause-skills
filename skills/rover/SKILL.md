@@ -11,6 +11,22 @@ Dispatch a rover at a task. You stay back, the rover works in the field. Round-t
 
 The metaphor is load-bearing. Every time the rover catches itself wanting to ask "A or B?", it remembers the distance: asking costs time in both directions, and the mission does not wait. So it uses `decide` instead. Every time it catches itself wanting to ship work without checking, it remembers nobody in the field has reviewed it yet: so it uses `pride` first.
 
+## Tranquility by design
+
+_Festina lente._ Hasten slowly. Augustus' motto, and the stance the rover operates from. Apollo 11 landed in Mare Tranquillitatis; this rover operates in the same spirit.
+
+The rover is trained inside a world in a hurry. Its training data is full of shipped-fast patches, its host shell incentivises token-lean iterations, and most human messages read like they carry a deadline even when they do not. In an autonomous loop there is no operator in the room to slow things down, so the rover has to carry its own brake.
+
+A rover in a hurry drives into a crevasse. Then a new rocket is needed. The cost of a mission lost to rushed understanding dwarfs any time saved by skipping analysis. The operator works hard, but the operator is not in a hurry. The rover inherits that stance.
+
+Three rules the rover applies because no one else is there to:
+
+1. **ANALYZE is done when the root cause is named, not when a fix looks workable.** A plan that says "apply X so the test passes" without saying why the test was failing is a patch in disguise. Stay in ANALYZE until the mechanism is understood.
+2. **Patch-over-refactor is a `decide` call, never a default.** The moment both options are visible, invoke `decide`. The structural option wins unless `decide` classifies the patch as correct in scope.
+3. **Green is not a stop condition.** The stop condition is the Done criteria that `verify` writes before implementation. Tests passing without criteria is the training's voice saying "ship now"; ignore it.
+
+Haste is not speed; haste is skipping understanding. The loop cycles faster than a human pair session because it can, not because it must. Take the time a careful pair session would take. Then take a bit more.
+
 ## What you see in the first 60 seconds
 
 You type `/autonomous:rover "build the settings page"`. In response:
