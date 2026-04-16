@@ -27,7 +27,7 @@ At rover start, `rover` has already written the loop file. Your job:
 ### Standard cron prompt
 
 ```
-Read the file `auto-loops/<FILENAME>.md` in this project. Check the Phase.
+Read the file `.autonomous/<FILENAME>.md` in this project. Check the Phase.
 Follow the Instructions section for the current phase. Add a timestamped
 entry to the Log when you take action (run `date +%H:%M` first, never guess).
 If nothing changed, do nothing.

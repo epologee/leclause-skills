@@ -11,13 +11,13 @@ Revive a loop that was paused, auto-stopped, or lost its cron because the Claude
 
 ## When to use
 
-- Session restarted and an old loop file in `auto-loops/` should continue
+- Session restarted and an old loop file in `.autonomous/` should continue
 - Loop auto-stopped after ten idle polls but new activity is expected (a review just came in, a test just ran)
 - Context was compacted and the loop file shows work mid-flight
 
 ## What it does
 
-1. Read the loop file at the argument path. If no argument, list candidates from `auto-loops/*.md` and ask which to resume.
+1. Read the loop file at the argument path. If no argument, list candidates from `.autonomous/*.md` and ask which to resume.
 2. Check liveness of the recorded `cron_job_id`. Use `CronList` if available via the Skill/Tool interface. A `cron_job_id` of `stopped` or `failed` is a durable terminal marker and means the loop needs a fresh cron regardless of file age.
 3. If the loop file records a branch (under `## Context` or similar), verify the current branch matches or offer to switch. If no branch was recorded, continue on the current branch.
 4. Invoke `cron` via the Skill tool to restore: `CronCreate` at the interval matching `watch_checks`, write the new `cron_job_id` into the file.

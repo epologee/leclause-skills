@@ -17,7 +17,7 @@ End a loop on purpose, with a recap.
 
 ## What it does
 
-1. Locate the loop file. If an argument is given, use it. If not, list `auto-loops/*.md` candidates in the conversation and ask which to stop. This is the one place where asking is correct: stop is a user-invoked destructive action, and the user is present.
+1. Locate the loop file. If an argument is given, use it. If not, list `.autonomous/*.md` candidates in the conversation and ask which to stop. This is the one place where asking is correct: stop is a user-invoked destructive action, and the user is present.
 2. Read `cron_job_id` from the file. Invoke `cron` via the Skill tool to `CronDelete` that id.
 3. Set `cron_job_id: stopped` in the loop file.
 4. Append a final log entry with a timestamp from `date +%H:%M`: `[HH:MM] Stopped by user. Phase at stop: <PHASE>.`

@@ -15,23 +15,23 @@ The metaphor is load-bearing. Every time the rover catches itself wanting to ask
 
 You type `/autonomous:rover "build the settings page"`. In response:
 
-1. Claude writes `auto-loops/.gitignore` and `auto-loops/BUILD-SETTINGS-PAGE.md` (the loop file holds the full plan and progress).
+1. Claude writes `.autonomous/.gitignore` and `.autonomous/BUILD-SETTINGS-PAGE.md` (the loop file holds the full plan and progress).
 2. Claude starts a `CronCreate` job that will re-enter this conversation every minute while the REPL is idle, carrying a prompt that tells Claude to read the loop file and act on the current phase.
 3. Claude immediately runs the first ANALYZE iteration in the same turn, so you see work happening right away. Reading files, searching the codebase, forming a plan.
 4. Between your turns, the cron ticks. Every tick is Claude reading the loop file and either doing the next chunk of work or logging "nothing to do."
 
-The loop file is your window. `auto-loops/BUILD-SETTINGS-PAGE.md` gets a timestamped log line on every action. Tail it to watch progress.
+The loop file is your window. `.autonomous/BUILD-SETTINGS-PAGE.md` gets a timestamped log line on every action. Tail it to watch progress.
 
 ## How to steer a running loop
 
 - You can keep chatting in the same session. Your messages take priority; the cron waits for the REPL to be idle.
 - To inject guidance without interrupting mid-work: open the loop file and add text under `## Input`. The loop reads this section each OBSERVE iteration and acts on it.
 - To stop: type `/autonomous:stop`. The loop cancels its cron and gives you a recap.
-- To resume after you closed Claude and came back: type `/autonomous:resume auto-loops/<NAME>.md`. Crons are session-scoped; they do not survive restarts. Resume recreates a fresh cron from the file's state.
+- To resume after you closed Claude and came back: type `/autonomous:resume .autonomous/<NAME>.md`. Crons are session-scoped; they do not survive restarts. Resume recreates a fresh cron from the file's state.
 
 ## What you are building
 
-A markdown file in `auto-loops/` that holds context, phase, plan, decision audit, and log. A Claude Code cron job that fires the loop prompt every minute while the REPL is idle. A phase machine (ANALYZE, IMPLEMENT, REVIEW, STOW, OBSERVE) that each cron tick advances.
+A markdown file in `.autonomous/` that holds context, phase, plan, decision audit, and log. A Claude Code cron job that fires the loop prompt every minute while the REPL is idle. A phase machine (ANALYZE, IMPLEMENT, REVIEW, STOW, OBSERVE) that each cron tick advances.
 
 Phases and transitions:
 
@@ -56,8 +56,8 @@ The rover invokes `verify --propose` at the end of ANALYZE to write Done criteri
 
 The first tool calls after this skill loads are:
 
-1. `Write auto-loops/.gitignore` with content `*` (always, even if the dir already exists; the Write tool creates parent dirs)
-2. `Write auto-loops/<NAME>.md` with the template below, fully populated
+1. `Write .autonomous/.gitignore` with content `*` (always, even if the dir already exists; the Write tool creates parent dirs)
+2. `Write .autonomous/<NAME>.md` with the template below, fully populated
 3. Invoke `cron` via the Skill tool to `CronCreate` and write the job id back
 4. Run the first ANALYZE iteration directly in this same turn
 
@@ -71,7 +71,7 @@ The first iteration races with the cron's period. This is safe because cron only
 |----------|---------|
 | (none) | Use the current conversation as context. Distill to 2-3 sentences. |
 | `https://github.com/.../issues/N` | Run `gh issue view`, use title + body as context. |
-| `auto-loops/<name>.md` | Resume. Delegate to `resume`. |
+| `.autonomous/<name>.md` | Resume. Delegate to `resume`. |
 | Free-form text | Use the text directly as context. |
 
 Free-form text may also describe optional integrations. Parse phrases like:
@@ -278,7 +278,7 @@ These are project-specific and not hardcoded in this skill.
 - Transition out of IMPLEMENT with a dirty working tree
 - Skip `pride` before proposing a push
 - Assume `/afk`, `/touche`, `/retake`, `/review-bot-party`, `/screenshots`, or any team/personal skill exists
-- Write loop files anywhere other than `auto-loops/` in the git root
+- Write loop files anywhere other than `.autonomous/` in the git root
 
 ## Resuming or stopping
 
