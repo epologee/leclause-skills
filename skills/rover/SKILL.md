@@ -139,9 +139,13 @@ notify_on_done: <skill name or empty>
 reviewbot: <skill name or empty>
 commit_splitter: <skill name or empty>
 
+## Dispatch
+
+<Verbatim paste of the operator's invocation argument. This is the source of truth for the mission and is NEVER rewritten or paraphrased. Context below is your interpretation of this; checks compare against this block, not against Context. If the operator added follow-up messages before the loop started, append them here in order with timestamps.>
+
 ## Context
 
-<2 to 5 paragraphs. What is the task. Why. What is known. What is in scope and out. Any constraints from the user. Any optional integrations and how to use them.>
+<2 to 5 paragraphs. What is the task. Why. What is known. What is in scope and out. Any constraints from the user. Any optional integrations and how to use them. Context is your interpretation; the Dispatch block above is source of truth.>
 
 ## Phase
 
@@ -176,9 +180,21 @@ You are an autonomous loop. Follow the phase machine below. The user is not avai
 ### Phases
 
 **SURVEY**
-Search the codebase. Read relevant files, tests, logs, errors. Form hypotheses. Verify with concrete evidence: a failing test, a trace, a grep result. Write findings to the Log. When the plan is concrete and verifiable, fill the Plan section, invoke `verify --propose` to generate Done criteria, then transition to DRIVE.
+Search the codebase. Read relevant files, tests, logs, errors. Form hypotheses. Verify with concrete evidence: a failing test, a trace, a grep result. Write findings to the Log. When the plan is concrete and verifiable, fill the Plan section, run the Plan-vs-Context check below, invoke `verify --propose` to generate Done criteria, then transition to DRIVE.
 
 Scope must match the goal. "Manage X" means at least create + view in the first iteration. "Read-only first, CRUD later" is scope reduction in disguise. If the goal is management, the first iteration is management.
+
+**Plan-vs-Dispatch check (mandatory, multiple times).** The Dispatch block in the loop file holds the operator's verbatim invocation; it is the source of truth. Context is your interpretation and can itself have shrunk scope. Every check compares against Dispatch, never only against Context.
+
+Run the check at three moments:
+
+1. **At the end of SURVEY, before transitioning to DRIVE.** Read the Dispatch block. Identify its action verbs: build, ship, fix, port, install, make work, deliver, enable, set up, write (code), implement. Then read the Plan you just wrote. If Dispatch says "build X" (or any action verb on X) and the Plan says "document how we will build X" (or "research X", "analyse X", "describe X", "recommend an approach for X"), that is scope-shrink. The default deliverable for an action-verb dispatch is a minimal-but-working X in the first DRIVE round, not a research artefact. Document-only deliverables require the Dispatch to explicitly contain a research verb (research, investigate, analyse, document, write a report). If the Plan shrinks the scope without operator request, log a loud line and either rewrite the Plan to include the actual implementation, or surface to the operator that the dispatch will produce only research and ask if that is acceptable.
+
+2. **At the start of each DRIVE round.** Re-read the Dispatch block. Ask: does the current work trajectory still move toward realising what the Dispatch asked for, or has the work drifted into refinement of an intermediate artefact (the doc, the audit trail, the criteria list)? If drifted, log and correct.
+
+3. **At the start of INSPECT.** Before running the four review passes, re-read the Dispatch block. If the Done criteria being verified do not include at least one criterion that directly asserts the Dispatch's action verbs are realised, INSPECT cannot pass regardless of how cleanly the other criteria tick. Surface to the operator: "Done criteria do not cover the Dispatch's action verbs. INSPECT would pass on the wrong mission."
+
+Do not silently slide from "ship X" to "write a doc about X", not at setup, not at SURVEY end, not at DRIVE entry, not at INSPECT entry. Four gates, same question: are we delivering what the Dispatch asked for?
 
 **DRIVE**
 Follow the project conventions. Read project CLAUDE.md and user CLAUDE.md for branch strategy (trunk vs feature-branch), commit style, push policy. Default to the most recent pattern in the repo, not the most common.
@@ -330,6 +346,8 @@ These are project-specific and not hardcoded in this skill.
 - Type "🏁", "mission complete", or any equivalent closing language without a pride log entry on record
 - Assume any personal or team integration skill exists without the user naming it at invocation
 - Write loop files anywhere other than `.autonomous/` in the git root
+- Silently produce a research-only or document-only deliverable for an action-verb dispatch (build, ship, fix, port, install, implement). The Plan-vs-Dispatch check runs at four gates (setup, SURVEY end, DRIVE entry, INSPECT entry); if any triggers, surface to operator instead of proceeding
+- Rewrite the Dispatch block. The operator's verbatim invocation is source of truth, not a draft
 
 ## Resuming or stopping
 

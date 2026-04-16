@@ -24,12 +24,14 @@ Without active evidence, the rover coasts on proxies: "CI green," "the code comp
 
 Invocation: `/autonomous:verify --propose <loop-file>` or called by rover at end of SURVEY.
 
-1. Read the loop file's `## Context` and `## Plan` sections.
-2. Derive 3 to 10 criteria. Each criterion is:
+1. Read the loop file's `## Dispatch`, `## Context`, and `## Plan` sections. Dispatch is the source of truth; Context is interpretation; Plan is the proposed deliverable.
+2. **Plan-vs-Dispatch check (mandatory).** Compare the action verbs in Dispatch against the deliverables described in Plan. If Dispatch contains action verbs (build, ship, fix, port, install, deliver, enable, make work, implement) and the Plan only describes producing research, documentation, or analysis without naming the actual implementation as the deliverable, refuse to generate Done criteria. Surface to the operator: "Plan reduces the Dispatch to research-only. Generating doc-criteria would lock in the wrong scope. Rewrite the Plan to include the implementation, or confirm explicitly that a research-only outcome is acceptable." Always compare against Dispatch, never against Context alone; Context can itself have shrunk the dispatch.
+3. Derive 3 to 10 criteria. Each criterion is:
    - **Concrete:** names a specific file, command, endpoint, UI element, or observable state
    - **Observable:** you can run, see, or measure it, not just "know" it
    - **Binary:** either met or not met, not a spectrum
-3. Write the criteria into the loop file under `## Done criteria` (create the section if missing).
+   - **Aligned with the Dispatch's action verbs:** if Dispatch says "make X work on Windows," at least one criterion must directly assert that X works on Windows. Doc-quality criteria alone (file exists, in Dutch, no em-dashes) do not satisfy an action-verb dispatch.
+4. Write the criteria into the loop file under `## Done criteria` (create the section if missing).
 
 ### Good vs bad criteria
 
