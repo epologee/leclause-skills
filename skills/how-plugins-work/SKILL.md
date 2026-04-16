@@ -114,6 +114,24 @@ Een skill kan het session model NIET veranderen. Het model dat de user koos bij 
 
 **Vuistregel:** session model = head, subagent = hand. Geef subagents het werk dat geen interpretatie vereist (commands runnen, files lezen en raw teruggeven, gh-scrapes doen). Houd interpretatie en beslissingen op de session model.
 
+## Symlinks en cross-platform
+
+Symlinks zijn het vehikel waarmee de leclause marketplace skills deelt tussen plugins: `packages/<plugin>/skills/<skill>` verwijst met `../../../skills/<skill>` naar de canonieke source. Officiële Anthropic docs bevestigen dat Claude Code symlinks niet dereferences tijdens install:
+
+> Symlinks are preserved in the cache rather than dereferenced, and they resolve to their target at runtime.
+
+Bron: [Plugins reference, Plugin caching and file resolution](https://code.claude.com/docs/en/plugins-reference).
+
+Op macOS/Linux werkt dit direct. Op Windows breekt het één laag eerder: Git for Windows heeft `core.symlinks=false` als default, dus bij git clone worden symlinks geconverteerd naar text files die het doelpad als inhoud hebben. Wat in de plugin cache belandt is dan geen symlink meer maar een text file, en de runtime resolution faalt.
+
+**`git-subdir` lost dit niet op.** De sparse clone pakt alleen de subdirectory van een plugin mee, en onze symlinks wijzen met `../../../skills/` naar paden buiten de sparse clone. Voor elke consument (macOS, Linux, Windows) levert dat dangling symlinks of text files op.
+
+**`rsync -aL` produceert een gematerialiseerde kopie.** Empirisch getest tegen een lokale marketplace source: `rsync -aL --exclude=.git` van de repo naar een build-directory vervangt elke symlink door de echte directory-inhoud. `claude plugins install` op die build-directory landt in de cache zonder één symlink over. Dit is de structurele aanpak voor Windows-consumers: `main` blijft symlinks gebruiken, een release-branch bevat gematerialiseerde directories, en `marketplace.json` pinnen plugin sources op die branch.
+
+**`CLAUDE_CODE_PLUGIN_SEED_DIR`** is een consumer-side alternatief: een env variable die Claude Code naar een voorgematerialiseerde plugins-directory laat wijzen. Elke consument moet zelf zijn seed dir klaarzetten en bijhouden. Schaalt niet naar meerdere Windows-gebruikers.
+
+Zie `docs/windows-compat-investigation.md` in de leclause-skills repo voor de volledige analyse, inclusief afgewezen alternatieven en de bin-script impact.
+
 ## Versioning
 
 De `version` field in `plugin.json` wordt automatisch bijgewerkt door de leclause pre-commit hook. Het format is `1.0.{commits}` waar `{commits}` het aantal commits is dat `packages/<name>/` of `skills/<name>/` heeft geraakt.
