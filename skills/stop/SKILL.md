@@ -20,7 +20,7 @@ End a loop on purpose, with a recap.
 2. Read `cron_job_id` from the file. Invoke `cron` via the Skill tool to `CronDelete` that id.
 3. Set `cron_job_id: stopped` in the loop file.
 4. Append a final log entry with a timestamp from `date +%H:%M`: `[HH:MM] Stopped by user. Phase at stop: <PHASE>.`
-5. Produce a communiqué to the conversation. Not a data dump: a rover's report back home. Enough story for the operator to understand what happened without re-reading the log. Six sections, one paragraph each, in this order:
+5. Produce a communiqué to the conversation. The communiqué is itself a rover artefact, so run `pride` on the drafted text before transmitting it (log the pride findings in the loop file, fix them or explicitly accept them with a written reason, then send the final version). Not a data dump: a rover's report back home. Enough story for the operator to understand what happened without re-reading the log. Six sections, one paragraph each, in this order:
 
    **Mission.** Restate the goal from the Context section in one sentence. What was the rover sent out to do.
 
