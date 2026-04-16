@@ -2,6 +2,8 @@
 
 Status: aanbevelingsdocument. Geen code change, dit is de voorbereiding op een implementatie die in een vervolgloop landt.
 
+Scope: alle Windows-gebruikers van de leclause marketplace. Niet één specifieke consumer. Een oplossing die alleen voor één gebruiker werkt (handmatige resolved kopie, eenmalige SEED_DIR setup) valt daarmee af: elke Windows-consument moet `claude plugins install <plugin>@leclause` kunnen draaien en krijgen wat werkt, zonder verdere handeling.
+
 ## Probleemstelling
 
 De leclause-marketplace gebruikt symlinks om skills tussen plugins te delen. Elke `packages/<plugin>/skills/<skill>` verwijst met `../../../skills/<skill>` naar de canonieke source onder de repo-root. Op macOS en Linux werkt dit direct: git bewaart de symlink bij clone, Claude Code kopieert de plugin naar zijn cache zonder te dereferencen, en de symlink blijft tijdens runtime werkend.
@@ -37,7 +39,7 @@ Om `git-subdir` wel te laten werken zou ik de source moeten herstructureren: elk
 
 Twee alternatieven die bovenkomen bij diepere research maar niet in de hoofdtabel horen.
 
-`CLAUDE_CODE_PLUGIN_SEED_DIR` is een environment variable die Claude Code naar een voorgematerialiseerde plugins-directory laat wijzen. Dit is een consumer-side workaround, valt in dezelfde categorie als optie 1: de consumer moet zelf iets configureren en een resolved kopie van de repo klaarzetten (bijvoorbeeld via `cp -rL`). Past niet bij de eis "consumer hoeft niks te doen." Niet gekozen.
+`CLAUDE_CODE_PLUGIN_SEED_DIR` is een environment variable die Claude Code naar een voorgematerialiseerde plugins-directory laat wijzen. Dit is een consumer-side workaround: elke gebruiker zou zelf een resolved kopie van de repo moeten klaarzetten (bijvoorbeeld via `cp -rL`) en bij elke update opnieuw synchroniseren. Valt in dezelfde categorie als optie 1 en schaalt niet naar meerdere Windows-gebruikers. Niet gekozen.
 
 Npm distribution is een echt alternatief. Elke plugin publiceren als npm package met een post-install script dat materialized files naar de plugin cache schrijft. Symlinks spelen geen rol meer. Nadelen: npm-account nodig, publish-workflow, versie-drift tussen npm en GitHub. De marketplace-entries zouden `source: npm` gebruiken in plaats van `source: github`. Te ver buiten de huidige architectuur, en voegt een tweede publicatiekanaal toe zonder sterk voordeel boven materialise-at-release. Niet gekozen.
 
@@ -84,19 +86,22 @@ Drie bash-scripts in de repo, verschillende doelgroepen.
 
 Geen port nodig. Deze scripts verlaten mijn machine nooit.
 
-**Consumer-facing (bash, afhankelijk van hoe Claude Code de Bash tool uitvoert op Windows):**
+**Consumer-facing (bash, moet portable worden voor Windows-release):**
 
 - `packages/autonomous/bin/relative-cron`: wordt via de Bash tool aangeroepen door de cron-skill in elke autonomous-loop iteratie. Draait dus op de consumer.
 
-Niet zonder meer veilig aan te nemen dat Claude Code's Bash tool op Windows een POSIX-shell gebruikt. In de praktijk draait Claude Code op Windows vaak onder WSL2 of Git Bash, en dan werken bash-scripts. Er zijn echter configuraties waarin de Bash tool via PowerShell draait (bijvoorbeeld `CLAUDE_CODE_USE_POWERSHELL_TOOL=1`), en daar breekt `relative-cron` zoals het nu geschreven is. Aanbeveling voor deze mission-scope: geen port nu, maar markeer als "verifieer op target consumer." Als mijn broer Claude Code via WSL/Git Bash draait, werkt het. Als hij Claude Code via PowerShell draait, vereist `relative-cron` een port naar Python of Node. Deze verificatie hoort bij de eerste test-installatie op Windows.
+Omdat de scope alle Windows-gebruikers omvat, kunnen we niet aannemen dat iedereen Claude Code via Git Bash of WSL draait. Sommigen gebruiken native PowerShell (o.a. via `CLAUDE_CODE_USE_POWERSHELL_TOOL=1`), en daar breekt `relative-cron` meteen. Port voor de eerste Windows-release: herschrijven naar Node of Python. Node heeft de voorkeur omdat Claude Code zelf al Node vereist, dus er komt geen extra runtime-eis bij. Python werkt ook, maar zou een nieuwe dependency introduceren voor wie hem niet heeft staan.
+
+Dit is geen "later observeren"-beslissing meer: zonder port blijft autonomous op PowerShell-setups stuk. De port hoort bij de implementatie-loop, niet erna.
 
 ## Volgende stap
 
-Aparte loop of implementatie:
+Aparte loop of implementatie, in deze volgorde:
 
-1. `bin/marketplace-release` schrijven (dry-run + write modes).
-2. Een eerste release-branch bouwen en verifiëren dat een Windows-consumer de plugin kan installeren.
-3. `marketplace.json` entries updaten met `ref: release`.
-4. Eventueel een GitHub Action voor automatische releases.
+1. `packages/autonomous/bin/relative-cron` porten naar Node. Dit blokkeert PowerShell-setups en moet vóór de eerste Windows-release af zijn.
+2. `bin/marketplace-release` schrijven (dry-run plus write modes, rsync -aL plus plugin-versions write).
+3. Een eerste release-branch bouwen en verifiëren dat een Windows-consumer (zowel Git Bash/WSL als native PowerShell) de plugin kan installeren en draaien.
+4. `marketplace.json` entries updaten met `ref: release`.
+5. GitHub Action voor automatische release-updates bij elke push op `main`. Niet optioneel als we alle Windows-gebruikers willen bedienen; handmatige runs betekenen periodes waarin release achterloopt op main.
 
 Deze loop produceerde alleen de aanbeveling. De implementatie wacht op een aparte `/autonomous:rover` dispatch.
