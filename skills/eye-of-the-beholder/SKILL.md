@@ -211,6 +211,55 @@ Read de frames via de Read tool. Per frame: doe de scan-vragen uit "Hoe te kijke
 
 **5. Rest-vs-mid testing**. Een animatie-test die alleen rest-state checkt is gebroken per definitie: hij kan niet falen op de helft-van-de-animatie bugs waar de klant last van heeft. Schrijf expliciet een mid-animation assertie als het kritisch is dat elementen synchroon lopen. De slow-mo truc maakt dat schrijfbaar in Cucumber/Playwright zonder race conditions.
 
+### Pixel-level animatie-sampling
+
+Wanneer je frames visueel bekijkt en de bewegingen ogen "ongeveer goed" of je kunt niet zien of een progress van 10% naar 5% terugtrekt, dan komt dat door het image-viewer limiet: een 4px-brede bar over een 60px-hoge rij rendert 5% verschil als 3 pixels. Op een schaal-gecomprimeerde image-view zie je dat niet. Je moet dan direct de pixel-data uit de frames lezen.
+
+**Techniek**: ffmpeg extract een 1-pixel brede verticale slice op de bar-positie, per frame. Decode de raw RGB bytes uit een PPM-header. Classificeer elke pixel als `P` (paars/selected), `A` (amber/unread), `.` (background) op basis van RGB-drempels. Count de P en A pixels per frame om een exact percentage te krijgen.
+
+```javascript
+const { execSync } = require('child_process')
+const fs = require('fs')
+
+const X = 29  // bar x-positie in de GIF (meet vooraf via één slice)
+const gif = '/tmp/capture.gif'
+
+function classify(r, g, b) {
+  if (b > 150 && r < 180) return 'P'                    // paars/violet
+  if (r > 200 && g > 140 && g < 190 && b < 120) return 'A'  // amber
+  if (r > 200 && g > 200 && b > 200) return '.'         // background
+  return '?'                                             // transitiestate
+}
+
+for (let n = 0; n < 50; n++) {
+  execSync(`ffmpeg -y -v error -i ${gif} -vf "select=eq(n\\,${n}),crop=1:206:${X}:0" -vframes 1 /tmp/slice-${n}.ppm`)
+  const buf = fs.readFileSync(`/tmp/slice-${n}.ppm`)
+  // PPM: P6\n<w> <h>\n<max>\n<binary>
+  const headerEnd = buf.indexOf(0x0a, buf.indexOf(0x0a, buf.indexOf(0x0a) + 1) + 1) + 1
+  const pixels = buf.slice(headerEnd)
+  const cells = []
+  for (let i = 0; i < pixels.length; i += 3) cells.push(classify(pixels[i], pixels[i + 1], pixels[i + 2]))
+  const p = cells.filter((c) => c === 'P').length
+  const a = cells.filter((c) => c === 'A').length
+  const pct = p + a > 0 ? Math.round(p * 100 / (p + a)) : 0
+  console.log(`f${n}: ${cells.join('')}  purple=${pct}%`)
+}
+```
+
+**De output geeft het waarheidsbeeld dat image-view niet levert.** Je ziet niet alleen dat de bar van amber naar paars gaat, je ziet exact dat er op frame 13 een sprong naar 28% is, op frame 14 een piek naar 33%, op frame 27 een laagste punt van 12%, etc. Pas met deze data kun je terugrekenen welke CSS-transition, $effect-race, of JS-reset de oorzaak is.
+
+**Wanneer gebruiken**:
+- Een user meldt een bug in een animatie die jij visueel niet ziet.
+- Je twijfelt of een progress-bar lineair vult of overshoot heeft.
+- Je ziet een piek/dal/oscillatie en wilt weten hoeveel het is.
+- Twee elementen animeren tegelijk en je wilt weten of ze synchroon lopen.
+
+**Wanneer niet nodig**:
+- Grove beweging (heel element verplaatst, opacity 0→1).
+- Een verschil van 20%+ dat je met het oog ziet.
+
+**Vuistregel**: als de user twee keer zegt "er zit nog een knipper/terugtrekking/jitter" en jij ziet het niet, ga van visueel inspecteren naar pixel-sampling. Image-view heeft sub-5% bewegingen gewoon niet in resolutie.
+
 ## Fundament
 
 **Robin Williams (CRAP):** Contrast (maak verschil onmiskenbaar of maak het gelijk), Repetition (herhaal visuele keuzes voor samenhang), Alignment (alles moet visueel verbonden zijn met iets anders), Proximity (nabijheid impliceert relatie).
@@ -251,6 +300,7 @@ Read de frames via de Read tool. Per frame: doe de scan-vragen uit "Hoe te kijke
 | Twee aangrenzende surfaces waar je geen verschil ziet | Het verschil IS er niet. Vergroot de luminance-delta tot minstens 1.07x. |
 | Kleurwaarden voor licht zonder tegenwaarde voor donker | Beide modes zijn aparte ontwerpen. Gebruik `light-dark(L, D)` zodat ze naast elkaar leven. |
 | Alleen rest-state screenshots bij animatie | De reis is de bug. Neem frames of gebruik de slow-mo truc om mid-animation te inspecteren. |
+| Progress-animaties beoordelen op gewone screenshots | 5% verschillen in bar-fill zijn onzichtbaar op gewoon image-view. Sample pixels direct uit frames. Zie "Pixel-level animatie-sampling" sectie. |
 | Content die verdwijnt vóór zijn container | Teleporting element. Delay `visibility: hidden` met `transition: visibility 0s linear var(--duration)` op de hidden-state. |
 | Hardcoded ms/ease verspreid over componenten | Definieer `--duration-*` en `--ease-*` custom properties, gebruik overal. Anders drijven elementen bij eerste refactor uit elkaar. |
 | `transition: all` | Animeert ook kleur, border, layout-props. Expliciet: `transform var(--dur), opacity var(--dur)`. |
