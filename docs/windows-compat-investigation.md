@@ -20,18 +20,26 @@ Voor mijn broer, een Windows-gebruiker, is `claude plugins install autonomous@le
 
 Vier aanpakken zijn in het veld terug te vinden of uit de Claude-docs af te leiden, met verschillende kosten en trade-offs.
 
-| Aanpak | Voorbeeld | Wat de consumer moet doen | Bron |
-|--------|-----------|---------------------------|------|
-| Consumer configureert git | `git config core.symlinks=true` plus Developer Mode of admin. | Developer Mode aanzetten (Windows 10 1703+), git-config zetten, soms admin. | [Git for Windows symbolic links](https://gitforwindows.org/symbolic-links.html) |
-| POSIX-shell vereiste | garrytan/gstack schrijft expliciet: "gstack works on Windows 11 via Git Bash or WSL." Install via bash install-script dat symlinks lokaal maakt. | Git Bash of WSL installeren. Shell-script runnen. Ook hier: nog steeds Developer Mode of admin nodig voor symlink creation. | [garrytan/gstack README](https://github.com/garrytan/gstack) |
-| `git-subdir` source per plugin | De Anthropic-docs documenteren `git-subdir` als sparse clone van een subdirectory in een monorepo. Per plugin-entry in `marketplace.json` zou je kunnen wijzen naar `packages/<plugin>` in onze repo. | Niks. Consumer krijgt een sparse clone van alleen die subdirectory. | [Plugin marketplaces docs, git-subdir](https://code.claude.com/docs/en/plugin-marketplaces) |
-| Materialiseren bij release | Geen publiek voorbeeld in de Claude Code plugin-ecosystem gevonden. Standaardpatroon in JavaScript-monorepos (pnpm, npm workspaces): publish-stap vertaalt interne package-refs naar echte kopieën. | Niks. Consumer ziet een gewone marketplace met echte directories. | Algemene monorepo-patroon; geen specifieke docs-URL in het Claude ecosysteem |
+| # | Aanpak | Voorbeeld | Wat de consumer moet doen | Bron |
+|---|--------|-----------|---------------------------|------|
+| 1 | Consumer configureert git | `git config core.symlinks=true` plus Developer Mode of admin. | Developer Mode aanzetten (Windows 10 1703+), git-config zetten, soms admin. | [Git for Windows symbolic links](https://gitforwindows.org/symbolic-links.html) |
+| 2 | POSIX-shell vereiste | garrytan/gstack schrijft expliciet: "gstack works on Windows 11 via Git Bash or WSL." Install via bash install-script dat symlinks lokaal maakt. | Git Bash of WSL installeren. Shell-script runnen. Ook hier: nog steeds Developer Mode of admin nodig voor symlink creation. | [garrytan/gstack README](https://github.com/garrytan/gstack) |
+| 3 | `git-subdir` source per plugin | De Anthropic-docs documenteren `git-subdir` als sparse clone van een subdirectory in een monorepo. Per plugin-entry in `marketplace.json` zou je kunnen wijzen naar `packages/<plugin>` in onze repo. | Niks. Consumer krijgt een sparse clone van alleen die subdirectory. | [Plugin marketplaces docs, git-subdir](https://code.claude.com/docs/en/plugin-marketplaces) |
+| 4 | Materialiseren bij release | Geen publiek voorbeeld in de Claude Code plugin-ecosystem gevonden. Standaardpatroon in JavaScript-monorepos (pnpm, npm workspaces): publish-stap vertaalt interne package-refs naar echte kopieën. | Niks. Consumer ziet een gewone marketplace met echte directories. | Algemene monorepo-patroon; geen specifieke docs-URL in het Claude ecosysteem |
 
 ### Waarom `git-subdir` niet voldoet
 
 Aantrekkelijk op het eerste gezicht: Anthropic-geïndorste source-type, sparse clone, geen extra infrastructuur. Maar de sparse clone van `packages/<plugin>` pakt alleen die subdirectory mee. De symlinks daarin wijzen met `../../../skills/<skill>` naar paden buiten de sparse clone. Op macOS/Linux blijft dat een symlink naar een pad dat niet bestaat in de checkout. Op Windows blijft de symlink een text file. Beide gevallen zijn stuk.
 
 Om `git-subdir` wel te laten werken zou ik de source moeten herstructureren: elk `packages/<plugin>` moet een zelfstandige directory zijn zonder symlinks naar buiten. Dat is effectief hetzelfde als materialiseren aan de bron, alleen dan permanent in `main`. Dat offert het shared-skill-pattern op dat dual-publishing (individueel plus `leclause` bundle) mogelijk maakt. Trade-off te groot; niet de gewenste richting.
+
+### Kort afgeschreven: CLAUDE_CODE_PLUGIN_SEED_DIR en npm
+
+Twee alternatieven die bovenkomen bij diepere research maar niet in de hoofdtabel horen.
+
+`CLAUDE_CODE_PLUGIN_SEED_DIR` is een environment variable die Claude Code naar een voorgematerialiseerde plugins-directory laat wijzen. Dit is een consumer-side workaround, valt in dezelfde categorie als optie 1: de consumer moet zelf iets configureren en een resolved kopie van de repo klaarzetten (bijvoorbeeld via `cp -rL`). Past niet bij de eis "consumer hoeft niks te doen." Niet gekozen.
+
+Npm distribution is een echt alternatief. Elke plugin publiceren als npm package met een post-install script dat materialized files naar de plugin cache schrijft. Symlinks spelen geen rol meer. Nadelen: npm-account nodig, publish-workflow, versie-drift tussen npm en GitHub. De marketplace-entries zouden `source: npm` gebruiken in plaats van `source: github`. Te ver buiten de huidige architectuur, en voegt een tweede publicatiekanaal toe zonder sterk voordeel boven materialise-at-release. Niet gekozen.
 
 ## Aanbeveling: materialise-at-release
 
@@ -62,6 +70,7 @@ Niet in scope van dit onderzoek, wel om op te volgen:
 
 - Update-frequentie van `release`. Per commit op `main`, per tag, of per handmatige run.
 - Of `release` ook de `.autonomous/`, `docs/`, en andere non-plugin paths moet bevatten. Waarschijnlijk niet; een sparse mirror met alleen `packages/`, `skills/`, `.claude-plugin/`, `README.md` en `LICENSE` is schoner.
+- Consumenten die `release` lokaal hebben uitgecheckt zien elke force-push als een diverged history. Voor een artefact-branch is dat OK (niemand ontwikkelt erop), maar documenteer het gedrag in de eerste release-run zodat geen verwarring ontstaat als een tester dit opmerkt.
 - Eventuele GitHub Action als vervolg op het handmatige script.
 
 ## Bin-scripts assessment
