@@ -20,7 +20,7 @@ Cron logic is mechanical and repetitive. Inlining it in the rover's code blurs t
 
 At rover start, `rover` has already written the loop file. Your job:
 
-1. Compute cron expression. Active phase = `* * * * *`. OBSERVE with `watch_checks >= 1` uses backoff.
+1. Compute cron expression. Active phase = `* * * * *`. STANDBY with `watch_checks >= 1` uses backoff.
 2. `CronCreate` with the project's standard prompt (see below)
 3. Write the returned job id to `cron_job_id` field in the loop file
 
@@ -66,7 +66,7 @@ The `sort -V | tail -1` picks the highest installed version when multiple plugin
 
 ## When to change the cron
 
-**Nothing to do (OBSERVE idle tick):**
+**Nothing to do (STANDBY idle tick):**
 1. Increment `watch_checks` in the loop file
 2. If the new value crosses a backoff threshold, `CronDelete` old job, `CronCreate` with new interval, update `cron_job_id`
 3. Log a one-line tick with timestamp (`date +%H:%M`) including the new `watch_checks` value and the current interval. Silent ticks hide whether the cron is actually running.
@@ -109,11 +109,11 @@ Cron jobs are session-scoped. A new Claude session means the old job id in the l
 4. Update `cron_job_id` in the loop file
 5. Now continue with whatever the phase requires
 
-If the loop's phase is OBSERVE and `watch_checks >= 10`, the loop was already auto-stopped. Do not restore. Log a note that the loop was found in terminal state.
+If the loop's phase is STANDBY and `watch_checks >= 10`, the loop was already auto-stopped. Do not restore. Log a note that the loop was found in terminal state.
 
 ## Stopping on demand
 
-Called by `stop` or when an IMPLEMENT, REVIEW, or STOW phase finishes cleanly with no OBSERVE channels to watch:
+Called by `stop` or when an DRIVE, INSPECT, or STOW phase finishes cleanly with no STANDBY channels to watch:
 
 1. `CronDelete` with the current `cron_job_id`
 2. Set `cron_job_id: stopped` in the loop file

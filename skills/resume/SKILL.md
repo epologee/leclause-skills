@@ -31,7 +31,7 @@ Revive a loop that was paused, auto-stopped, or lost its cron because the Claude
 
 ## Detecting a compacted session
 
-After a context compaction, the conversation summary usually contains phase words (ANALYZE, IMPLEMENT, REVIEW, OBSERVE). If you see those and a loop file, prefer `resume` over manual takeover.
+After a context compaction, the conversation summary usually contains phase words (SURVEY, DRIVE, INSPECT, STANDBY). If you see those and a loop file, prefer `resume` over manual takeover.
 
 ## What it does not do
 

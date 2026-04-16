@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Evidence discipline for autonomous work. Writes Done criteria up front so the rover knows when the mission is actually finished. Gathers evidence against each criterion (run the code, screenshot the UI, curl the endpoint, query the state) and reports what is proven versus still uncertain. Invokable directly as /autonomous:verify on any loop file, or called internally by the rover during ANALYZE and REVIEW.
+description: Evidence discipline for autonomous work. Writes Done criteria up front so the rover knows when the mission is actually finished. Gathers evidence against each criterion (run the code, screenshot the UI, curl the endpoint, query the state) and reports what is proven versus still uncertain. Invokable directly as /autonomous:verify on any loop file, or called internally by the rover during SURVEY and INSPECT.
 user-invocable: true
 argument-hint: "[--propose <loop-file> | <loop-file> | free text]"
 ---
@@ -22,7 +22,7 @@ Without active evidence, the rover coasts on proxies: "CI green," "the code comp
 
 ## Mode 1: propose Done criteria (`--propose`)
 
-Invocation: `/autonomous:verify --propose <loop-file>` or called by rover at end of ANALYZE.
+Invocation: `/autonomous:verify --propose <loop-file>` or called by rover at end of SURVEY.
 
 1. Read the loop file's `## Context` and `## Plan` sections.
 2. Derive 3 to 10 criteria. Each criterion is:
@@ -45,7 +45,7 @@ Vague criteria are how missions drift. The rover catches this up front by insist
 
 ## Mode 2: gather evidence (default)
 
-Invocation: `/autonomous:verify <loop-file>`, or bare `/autonomous:verify` in a session where a loop file is obvious, or called by rover at end of REVIEW.
+Invocation: `/autonomous:verify <loop-file>`, or bare `/autonomous:verify` in a session where a loop file is obvious, or called by rover at end of INSPECT.
 
 1. Read the `## Done criteria` section.
 2. For each criterion, determine the verification tactic:
@@ -79,7 +79,7 @@ Invocation: `/autonomous:verify <loop-file>`, or bare `/autonomous:verify` in a 
 4. Report a summary:
    - Criteria met with evidence
    - Criteria unverified (why, what would be needed to verify)
-   - Criteria failed (what the evidence showed, next IMPLEMENT target)
+   - Criteria failed (what the evidence showed, next DRIVE target)
 
 ## Mode 3: standalone use
 
@@ -132,4 +132,4 @@ Mark these `unverified: <specific reason>` in the Done criteria. Do not claim th
 
 - **`decide`** picks which path to take; `verify` proves the chosen path worked. Complementary.
 - **`pride`** asks "would the user hate this?" (contrarian, smell-finding); `verify` asks "did this do the thing?" (evidence-gathering). Different questions, no overlap. The rover runs both before declaring done.
-- **`rover`** invokes `verify --propose` at end of ANALYZE and `verify` (default) at end of REVIEW. A rover mission without Done criteria is not started; a rover mission without ticked criteria is not finished.
+- **`rover`** invokes `verify --propose` at end of SURVEY and `verify` (default) at end of INSPECT. A rover mission without Done criteria is not started; a rover mission without ticked criteria is not finished.

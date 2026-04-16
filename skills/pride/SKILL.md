@@ -15,7 +15,7 @@ Most of the time, the answer without this check is an unthinking "yes" because C
 
 ## Why this matters inside an autonomous loop
 
-In an ordinary workflow, code review and "sleeping on it" catch the pride-level issues: the one dumb helper, the four duplicate fixes, the `|| true` that swallows a real error. An autonomous loop has none of those. The loop commits, pushes, moves on. Without a pride check, the loop's REVIEW phase validates the happy path against CI and declares success. The rest ships unreviewed.
+In an ordinary workflow, code review and "sleeping on it" catch the pride-level issues: the one dumb helper, the four duplicate fixes, the `|| true` that swallows a real error. An autonomous loop has none of those. The loop commits, pushes, moves on. Without a pride check, the loop's INSPECT phase validates the happy path against CI and declares success. The rest ships unreviewed.
 
 The pride check injects an independent skeptic before the loop transitions to its "done" states. If the loop is good at what it does, the pride check usually finds something real. When it finds nothing, it has to explain what it examined and why nothing was flagged. Vague "looks good" is rejected.
 
@@ -24,9 +24,9 @@ The pride check injects an independent skeptic before the loop transitions to it
 **Auto-triggered by `rover`.** Canonical triggers:
 
 1. Before a push, whether direct-to-trunk or PR-ready. This is the primary gate.
-2. As the second pass in REVIEW, right after `verify`, so pride findings feed the IMPLEMENT-fix loop while the code is still fresh. Pride runs before STOW so its findings can be fixed as real logic changes; STOW is strictly mechanical cleanup and cannot fix what pride flags.
+2. As the second pass in INSPECT, right after `verify`, so pride findings feed the DRIVE-fix loop while the code is still fresh. Pride runs before STOW so its findings can be fixed as real logic changes; STOW is strictly mechanical cleanup and cannot fix what pride flags.
 
-(These two are usually the same commit range. If a loop runs REVIEW, fixes things, then pushes, run pride once before REVIEW and once before the push if additional commits landed.)
+(These two are usually the same commit range. If a loop runs INSPECT, fixes things, then pushes, run pride once before INSPECT and once before the push if additional commits landed.)
 
 **Manually via `/autonomous:pride`:**
 - `/autonomous:pride` reviews the uncommitted changes plus commits on the current branch not yet on the default branch
@@ -104,7 +104,7 @@ Pass the collected diff to the subagent. Large diffs: `git diff --stat "$RANGE"`
 **Inside a running loop (auto-triggered):**
 
 1. Write findings to the loop file's `## Log` section under a `[HH:MM] Pride check findings:` header
-2. Set Phase back to IMPLEMENT if there is anything actionable
+2. Set Phase back to DRIVE if there is anything actionable
 3. Do NOT forward findings to the user mid-loop. Fix them first.
 
 **Invoked manually (`/autonomous:pride`):**

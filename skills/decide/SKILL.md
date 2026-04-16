@@ -45,9 +45,9 @@ Apply these in order. Earlier principles win ties.
 
 When principles conflict, the active phase tips the scale:
 
-- **ANALYZE:** principle 1 (completeness) + 2 (boil the lake) dominate. Understand fully, pick scope generously.
-- **IMPLEMENT:** principle 5 (explicit) + 3 (pragmatic) dominate. Ship code people can read.
-- **REVIEW:** principle 1 (completeness) + 5 (explicit) dominate. Catch what would haunt the implementer.
+- **SURVEY:** principle 1 (completeness) + 2 (boil the lake) dominate. Understand fully, pick scope generously.
+- **DRIVE:** principle 5 (explicit) + 3 (pragmatic) dominate. Ship code people can read.
+- **INSPECT:** principle 1 (completeness) + 5 (explicit) dominate. Catch what would haunt the implementer.
 
 ## Research skills as tools
 
@@ -96,7 +96,7 @@ Every decision you make inside a loop adds a row to the loop file's `## Decision
 ```markdown
 | # | Phase | Decision | Classification | Principle | Rationale |
 |---|-------|----------|----------------|-----------|-----------|
-| 12 | IMPLEMENT | Separate `cron` skill from `rover` | Taste | Explicit > Clever | Audit flagged cron/decay as the messiest section. Splitting makes each piece readable in 30 seconds. |
+| 12 | DRIVE | Separate `cron` skill from `rover` | Taste | Explicit > Clever | Audit flagged cron/decay as the messiest section. Splitting makes each piece readable in 30 seconds. |
 ```
 
 The trail lives on disk, not in conversation context. Future iterations can read it to understand why earlier choices were made.

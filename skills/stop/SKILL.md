@@ -27,7 +27,7 @@ End a loop on purpose, with a recap.
 
    **What shipped.** The end state in plain prose. Number of commits, the headline outcome, where the work now lives (branch, files of note). Compare the current branch against its fork point to list commits: `git merge-base <current> origin/<default>` where default is resolved via `git symbolic-ref refs/remotes/origin/HEAD`. If no remote HEAD is set, skip the commit list with a note rather than guessing. Also note any uncommitted work from `git status --short` and any open PR.
 
-   **Choices and hard parts.** The story of the run. Walk the Decision Audit Trail entries and the Log pivots together: which calls had real trade-offs, where the rover changed course (for example, a `Transition back to ANALYZE` line after user input), what assumption broke and had to be revised. One or two sentences per meaningful moment, not a transcript.
+   **Choices and hard parts.** The story of the run. Walk the Decision Audit Trail entries and the Log pivots together: which calls had real trade-offs, where the rover changed course (for example, a `Transition back to SURVEY` line after user input), what assumption broke and had to be revised. One or two sentences per meaningful moment, not a transcript.
 
    **Review results.** What the `verify` and `pride` passes actually caught. Quote the criteria count and the pride-finding count. Name the commits that addressed each batch of findings. If additional review passes ran (end-user walkthrough, technical plan-vs-diff), summarise their verdicts.
 

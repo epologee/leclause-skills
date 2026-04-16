@@ -7,7 +7,7 @@ argument-hint: "[issue-URL | loop-file-path | free-form text]"
 
 # Autonomous Rover
 
-Dispatch a rover at a task. You stay back, the rover works in the field. Round-tripping every question takes too long, so it decides locally. The rover cycles through ANALYZE, IMPLEMENT, REVIEW, STOW, OBSERVE on its own and reports back when the mission is solid.
+Dispatch a rover at a task. You stay back, the rover works in the field. Round-tripping every question takes too long, so it decides locally. The rover cycles through SURVEY, DRIVE, INSPECT, STOW, STANDBY on its own and reports back when the mission is solid.
 
 The metaphor is load-bearing. Every time the rover catches itself wanting to ask "A or B?", it remembers the distance: asking costs time in both directions, and the mission does not wait. So it uses `decide` instead. Every time it catches itself wanting to ship work without checking, it remembers nobody in the field has reviewed it yet: so it uses `pride` first.
 
@@ -21,7 +21,7 @@ A rover in a hurry drives into a crevasse. Then a new rocket is needed. The cost
 
 Three rules the rover applies because no one else is there to:
 
-1. **ANALYZE is done when the root cause is named, not when a fix looks workable.** A plan that says "apply X so the test passes" without saying why the test was failing is a patch in disguise. Stay in ANALYZE until the mechanism is understood.
+1. **SURVEY is done when the root cause is named, not when a fix looks workable.** A plan that says "apply X so the test passes" without saying why the test was failing is a patch in disguise. Stay in SURVEY until the mechanism is understood.
 2. **Patch-over-refactor is a `decide` call, never a default.** The moment both options are visible, invoke `decide`. The structural option wins unless `decide` classifies the patch as correct in scope.
 3. **Green is not a stop condition.** The stop condition is the Done criteria that `verify` writes before implementation. Tests passing without criteria is the training's voice saying "ship now"; ignore it.
 
@@ -33,7 +33,7 @@ You type `/autonomous:rover "build the settings page"`. In response:
 
 1. Claude writes `.autonomous/.gitignore` and `.autonomous/BUILD-SETTINGS-PAGE.md` (the loop file holds the full plan and progress).
 2. Claude starts a `CronCreate` job that will re-enter this conversation every minute while the REPL is idle, carrying a prompt that tells Claude to read the loop file and act on the current phase.
-3. Claude immediately runs the first ANALYZE iteration in the same turn, so you see work happening right away. Reading files, searching the codebase, forming a plan.
+3. Claude immediately runs the first SURVEY iteration in the same turn, so you see work happening right away. Reading files, searching the codebase, forming a plan.
 4. Between your turns, the cron ticks. Every tick is Claude reading the loop file and either doing the next chunk of work or logging "nothing to do."
 
 The loop file is your window. `.autonomous/BUILD-SETTINGS-PAGE.md` gets a timestamped log line on every action. Tail it to watch progress.
@@ -41,18 +41,18 @@ The loop file is your window. `.autonomous/BUILD-SETTINGS-PAGE.md` gets a timest
 ## How to steer a running loop
 
 - You can keep chatting in the same session. Your messages take priority; the cron waits for the REPL to be idle.
-- To inject guidance without interrupting mid-work: open the loop file and add text under `## Input`. The loop reads this section each OBSERVE iteration and acts on it.
+- To inject guidance without interrupting mid-work: open the loop file and add text under `## Input`. The loop reads this section each STANDBY iteration and acts on it.
 - To stop: type `/autonomous:stop`. The loop cancels its cron and gives you a recap.
 - To resume after you closed Claude and came back: type `/autonomous:resume .autonomous/<NAME>.md`. Crons are session-scoped; they do not survive restarts. Resume recreates a fresh cron from the file's state.
 
 ## What you are building
 
-A markdown file in `.autonomous/` that holds context, phase, plan, decision audit, and log. A Claude Code cron job that fires the loop prompt every minute while the REPL is idle. A phase machine (ANALYZE, IMPLEMENT, REVIEW, STOW, OBSERVE) that each cron tick advances.
+A markdown file in `.autonomous/` that holds context, phase, plan, decision audit, and log. A Claude Code cron job that fires the loop prompt every minute while the REPL is idle. A phase machine (SURVEY, DRIVE, INSPECT, STOW, STANDBY) that each cron tick advances.
 
 Phases and transitions:
 
 ```
-ANALYZE ──► IMPLEMENT ──► REVIEW ──► STOW ──► OBSERVE
+SURVEY ──► DRIVE ──► INSPECT ──► STOW ──► STANDBY
     ▲           ▲            │                  │
     │           └────────────┘                  │
     └──────── new issues ────────────────────────┘
@@ -62,11 +62,11 @@ The loop is autonomous. It does not ask questions mid-phase. When it hits a choi
 
 ## Cost awareness
 
-A cron at one-minute cadence drives many Claude turns. During active ANALYZE/IMPLEMENT/REVIEW/STOW phases that is the point: the loop is working on your behalf. During OBSERVE the backoff progresses to 60-minute intervals and auto-stops after roughly 5 hours of sustained idleness. If your task is small, consider whether `/autonomous:rover` is right for it, or whether an ordinary conversation is cheaper.
+A cron at one-minute cadence drives many Claude turns. During active SURVEY/DRIVE/INSPECT/STOW phases that is the point: the loop is working on your behalf. During STANDBY the backoff progresses to 60-minute intervals and auto-stops after roughly 5 hours of sustained idleness. If your task is small, consider whether `/autonomous:rover` is right for it, or whether an ordinary conversation is cheaper.
 
 ## Verification
 
-The rover invokes `verify --propose` at the end of ANALYZE to write Done criteria into the loop file, and `verify` (default mode) at the end of REVIEW to tick each criterion with evidence. The details of what evidence counts, how to gather it, and why proxies do not qualify live in the `verify` skill. Treat it as the rover's evidence discipline: without Done criteria the mission has no endpoint, without evidence the mission is not finished.
+The rover invokes `verify --propose` at the end of SURVEY to write Done criteria into the loop file, and `verify` (default mode) at the end of INSPECT to tick each criterion with evidence. The details of what evidence counts, how to gather it, and why proxies do not qualify live in the `verify` skill. Treat it as the rover's evidence discipline: without Done criteria the mission has no endpoint, without evidence the mission is not finished.
 
 ## Setup order is not negotiable
 
@@ -75,11 +75,11 @@ The first tool calls after this skill loads are:
 1. `Write .autonomous/.gitignore` with content `*` (always, even if the dir already exists; the Write tool creates parent dirs)
 2. `Write .autonomous/<NAME>.md` with the template below, fully populated
 3. Invoke `cron` via the Skill tool to `CronCreate` and write the job id back
-4. Run the first ANALYZE iteration directly in this same turn
+4. Run the first SURVEY iteration directly in this same turn
 
 No exploration first. No "let me check the codebase." No skills loaded before the cron is live. The whole point is to get the loop running. Exploration happens inside the loop.
 
-The first iteration races with the cron's period. This is safe because cron only fires when the REPL is idle, and the first iteration blocks idle. But: tune the initial cron to `* * * * *` (every minute) regardless of expected ANALYZE duration. If ANALYZE takes 20 minutes, that is fine; the cron will not fire until you yield.
+The first iteration races with the cron's period. This is safe because cron only fires when the REPL is idle, and the first iteration blocks idle. But: tune the initial cron to `* * * * *` (every minute) regardless of expected SURVEY duration. If SURVEY takes 20 minutes, that is fine; the cron will not fire until you yield.
 
 ## Arguments
 
@@ -113,7 +113,7 @@ Template:
 # <NAME>
 
 cron_job_id: <filled after CronCreate>
-watch_checks: 0     # consecutive OBSERVE ticks with nothing to do, drives idle backoff
+watch_checks: 0     # consecutive STANDBY ticks with nothing to do, drives idle backoff
 
 ## Integrations
 
@@ -127,15 +127,15 @@ commit_splitter: <skill name or empty>
 
 ## Phase
 
-ANALYZE
+SURVEY
 
 ## Plan
 
-_To be written during ANALYZE phase._
+_To be written during SURVEY phase._
 
 ## Done criteria
 
-_To be written by `verify --propose` at the end of ANALYZE. Each criterion must be concrete, observable, and binary. REVIEW ticks each one with evidence before the mission is considered finished._
+_To be written by `verify --propose` at the end of SURVEY. Each criterion must be concrete, observable, and binary. INSPECT ticks each one with evidence before the mission is considered finished._
 
 ## Decision Audit Trail
 
@@ -144,7 +144,7 @@ _To be written by `verify --propose` at the end of ANALYZE. Each criterion must 
 
 ## Input
 
-_Write new input here during a running loop. The loop reads this section each OBSERVE iteration and removes it after processing._
+_Write new input here during a running loop. The loop reads this section each STANDBY iteration and removes it after processing._
 
 ## Log
 
@@ -157,26 +157,26 @@ You are an autonomous loop. Follow the phase machine below. The user is not avai
 
 ### Phases
 
-**ANALYZE**
-Search the codebase. Read relevant files, tests, logs, errors. Form hypotheses. Verify with concrete evidence: a failing test, a trace, a grep result. Write findings to the Log. When the plan is concrete and verifiable, fill the Plan section, invoke `verify --propose` to generate Done criteria, then transition to IMPLEMENT.
+**SURVEY**
+Search the codebase. Read relevant files, tests, logs, errors. Form hypotheses. Verify with concrete evidence: a failing test, a trace, a grep result. Write findings to the Log. When the plan is concrete and verifiable, fill the Plan section, invoke `verify --propose` to generate Done criteria, then transition to DRIVE.
 
 Scope must match the goal. "Manage X" means at least create + view in the first iteration. "Read-only first, CRUD later" is scope reduction in disguise. If the goal is management, the first iteration is management.
 
-**IMPLEMENT**
+**DRIVE**
 Follow the project conventions. Read project CLAUDE.md and user CLAUDE.md for branch strategy (trunk vs feature-branch), commit style, push policy. Default to the most recent pattern in the repo, not the most common.
 
-Quality over speed. No duct tape, no hacks. Structural solutions. Commit per logical step. Do not transition out of IMPLEMENT with uncommitted changes.
+Quality over speed. No duct tape, no hacks. Structural solutions. Commit per logical step. Do not transition out of DRIVE with uncommitted changes.
 
-During IMPLEMENT, verify each significant change as you go (run the code, screenshot the UI, query the state). Do not batch verification to the end. See the `verify` skill for tactics.
+During DRIVE, verify each significant change as you go (run the code, screenshot the UI, query the state). Do not batch verification to the end. See the `verify` skill for tactics.
 
-When the feature does what the Done criteria say it should, transition to REVIEW.
+When the feature does what the Done criteria say it should, transition to INSPECT.
 
-**REVIEW**
-Four passes. Each one can send the rover back to IMPLEMENT with a specific target. REVIEW only completes when all four are clean.
+**INSPECT**
+Four passes. Each one can send the rover back to DRIVE with a specific target. INSPECT only completes when all four are clean.
 
-1. **Verify pass.** Invoke `verify` against the loop file's Done criteria. Any criterion without evidence, or with failed evidence, sends the rover back to IMPLEMENT. REVIEW only continues once every criterion is either met with evidence or explicitly marked unverified with a reason the operator can accept.
+1. **Verify pass.** Invoke `verify` against the loop file's Done criteria. Any criterion without evidence, or with failed evidence, sends the rover back to DRIVE. INSPECT only continues once every criterion is either met with evidence or explicitly marked unverified with a reason the operator can accept.
 
-2. **Pride pass.** Invoke `pride` on the diff. A contrarian subagent looks for what the user would hate: duplicate fixes, type smells, ugly helpers, defensive filtering, race conditions. Findings go back to IMPLEMENT until pride is clean.
+2. **Pride pass.** Invoke `pride` on the diff. A contrarian subagent looks for what the user would hate: duplicate fixes, type smells, ugly helpers, defensive filtering, race conditions. Findings go back to DRIVE until pride is clean.
 
 3. **End-user pass.** Spawn an agent with only the stated goal and the application domain. Not the code, not the plan. The agent uses the feature as a user and reports confusion, missing feedback, edge cases, dead ends. Default to fixing, not deferring.
 
@@ -202,21 +202,21 @@ Walk the full diff (use `git diff` against the base branch and `git diff HEAD` f
 
 Commit the cleanup as a separate logical commit so the diff history shows build, review fixes, and housekeeping as distinct steps.
 
-If STOW uncovers something that requires a logic change (for example, a "premature abstraction" that turns out to be load-bearing), that is a sign the review phases missed something. Go back to IMPLEMENT, then through REVIEW again. Do not make logic changes inside STOW.
+If STOW uncovers something that requires a logic change (for example, a "premature abstraction" that turns out to be load-bearing), that is a sign the review phases missed something. Go back to DRIVE, then through INSPECT again. Do not make logic changes inside STOW.
 
-When the diff is clean and the cleanup commit has landed, transition to OBSERVE.
+When the diff is clean and the cleanup commit has landed, transition to STANDBY.
 
 If the project has a PR workflow (detect: has remote, has `.github/`, or explicitly mentioned in CLAUDE.md), create a Draft PR. Otherwise, commit directly, no PR. If `reviewbot` is configured, invoke it after the PR is up.
 
-**OBSERVE**
-Check all input channels. This means tool calls, not assumptions. If there is nothing to check (no PR, no remote), OBSERVE does not need cron. Stop the cron and let the session drive.
+**STANDBY**
+Check all input channels. This means tool calls, not assumptions. If there is nothing to check (no PR, no remote), STANDBY does not need cron. Stop the cron and let the session drive.
 
 When a PR exists, minimum checks per iteration:
 - `git status --short` (uncommitted work from the session)
 - PR comments and reviews (via `gh api`)
 - CI status (via `gh pr checks`)
 
-New findings from OBSERVE go back to ANALYZE (not IMPLEMENT, and not queued for the user). New input is new information: understand it before acting on it. Iteratively downgrading to a fix-first approach has a track record of missing the real cause.
+New findings from STANDBY go back to SURVEY (not DRIVE, and not queued for the user). New input is new information: understand it before acting on it. Iteratively downgrading to a fix-first approach has a track record of missing the real cause.
 
 When no new activity, increment `watch_checks` and invoke `cron` for backoff. Auto-stop after `watch_checks` reaches 10. The full backoff schedule and total idle time (about 5 hours) live in `cron`; do not duplicate the numbers here.
 
@@ -233,17 +233,17 @@ Any input that arrives mid-loop, regardless of channel, is a broadcast, not the 
 On any interjection:
 
 1. Log the input verbatim to `## Log` with a timestamp. Do not paraphrase; the operator may come back later and compare to what they sent.
-2. Evaluate whether it changes the plan. If yes, transition to ANALYZE and re-plan. If no, note why not in the Log and stay on the current phase.
+2. Evaluate whether it changes the plan. If yes, transition to SURVEY and re-plan. If no, note why not in the Log and stay on the current phase.
 3. If the input surfaces a choice, invoke `decide`. Never hold the choice open waiting for the operator's next message.
 4. Resume the loop. Do not emit "I will wait for your next message" or any equivalent stall.
 
-The failure mode to refuse: slipping into interactive mode the moment a message arrives, then burning the operator's 20-minute reply cycle on a one-line follow-up question. If the rover needs something only the operator can provide, log the blocker, keep doing whatever can be done locally, and surface the blocker at the next natural OBSERVE checkpoint.
+The failure mode to refuse: slipping into interactive mode the moment a message arrives, then burning the operator's 20-minute reply cycle on a one-line follow-up question. If the rover needs something only the operator can provide, log the blocker, keep doing whatever can be done locally, and surface the blocker at the next natural STANDBY checkpoint.
 
 ### Commits and pushes
 
 Commits: autonomous. The user approved them by starting the loop. Commit per logical step with a descriptive message. Follow the project's commit conventions.
 
-Pushes: never autonomous. Even inside a loop, pushing to a remote requires explicit user approval ("push", "ship", or equivalent). When a push is pending, log it, continue with whatever can be done locally, and surface the ready-to-push state to the user at the next OBSERVE check.
+Pushes: never autonomous. Even inside a loop, pushing to a remote requires explicit user approval ("push", "ship", or equivalent). When a push is pending, log it, continue with whatever can be done locally, and surface the ready-to-push state to the user at the next STANDBY check.
 
 ### Timestamps
 
@@ -258,12 +258,12 @@ Invoke `cron` via the Skill tool. That skill's setup flow runs `CronCreate`, wri
 
 ## The first iteration
 
-Cron fires on REPL idle. You are not idle, you just finished setup. Run the ANALYZE iteration yourself, in the same turn:
+Cron fires on REPL idle. You are not idle, you just finished setup. Run the SURVEY iteration yourself, in the same turn:
 
 1. Read the loop file you just wrote
-2. Execute the ANALYZE instructions
+2. Execute the SURVEY instructions
 3. Log each meaningful action with a timestamp from `date +%H:%M`
-4. When ANALYZE completes, transition to IMPLEMENT and start
+4. When SURVEY completes, transition to DRIVE and start
 
 The cron is the safety net for everything after you stop driving, not the starter.
 
@@ -274,7 +274,7 @@ Loops do not all need branches. A loop that produces no committed code does not 
 - Trunk-based projects (most personal repos, user CLAUDE.md says "direct on main"): commit on current branch
 - Feature-branch projects: create a branch named after the goal (no slashes, no prefixes, describe the goal)
 
-The loop makes this call during the transition to IMPLEMENT, not during setup.
+The loop makes this call during the transition to DRIVE, not during setup.
 
 ## Optional integrations
 
@@ -304,7 +304,7 @@ These are project-specific and not hardcoded in this skill.
 
 - Ask the user "A or B?" mid-phase
 - Push without explicit user approval
-- Transition out of IMPLEMENT with a dirty working tree
+- Transition out of DRIVE with a dirty working tree
 - Skip `pride` before proposing a push
 - Assume any personal or team integration skill exists without the user naming it at invocation
 - Write loop files anywhere other than `.autonomous/` in the git root
