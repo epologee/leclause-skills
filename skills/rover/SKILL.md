@@ -37,9 +37,9 @@ Phases and transitions:
 
 ```
 ANALYZE ──► IMPLEMENT ──► REVIEW ──► STOW ──► OBSERVE
-                ▲            │                  │
-                ├────────────┘                  │
-                └────── new issues ─────────────┘
+    ▲           ▲            │                  │
+    │           └────────────┘                  │
+    └──────── new issues ────────────────────────┘
 ```
 
 The loop is autonomous. It does not ask questions mid-phase. When it hits a choice, it invokes `decide`. Before any push or PR-ready transition it invokes `pride` to catch what it missed. No human is required to keep it moving, but you can intervene via the `## Input` section or the `/autonomous:stop` and `/autonomous:resume` commands at any time.
@@ -200,7 +200,7 @@ When a PR exists, minimum checks per iteration:
 - PR comments and reviews (via `gh api`)
 - CI status (via `gh pr checks`)
 
-New findings from OBSERVE go back to IMPLEMENT, not queued for the user.
+New findings from OBSERVE go back to ANALYZE (not IMPLEMENT, and not queued for the user). New input is new information: understand it before acting on it. Iteratively downgrading to a fix-first approach has a track record of missing the real cause.
 
 When no new activity, increment `watch_checks` and invoke `cron` for backoff. Auto-stop after `watch_checks` reaches 10. The full backoff schedule and total idle time (about 5 hours) live in `cron`; do not duplicate the numbers here.
 
