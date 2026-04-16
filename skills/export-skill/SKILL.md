@@ -2,7 +2,7 @@
 name: export-skill
 user-invocable: true
 description: Use when the user wants to export/share a skill with others. Thin orchestrator that chains sanitize-skill, optional translate-skill or port-skill, package-skill, and share-skill. For partial workflows, invoke the sub-skills directly.
-argument-hint: "<skill-name> [en|nl|linux|windows]"
+argument-hint: "<skill-name> [en|nl|linux|windows|macos]"
 allowed-tools:
   - Skill
   - Bash(ls *)
@@ -88,6 +88,12 @@ Elke sub-skill is ook zelfstandig user-invocable. Gebruik de sub-skills direct a
 - `/export-skill:share-skill <pad>` om samenvatting + Finder handoff te doen op een bestaande export.
 
 De orchestrator is een gemak voor de meest voorkomende flow: "ik wil deze skill met iemand delen."
+
+### Veelvoorkomende combinaties
+
+- **Port voor eigen gebruik** (niet delen, geen Finder): `/export-skill:port-skill <naam> linux`. Schrijft naar `~/.claude/skills/<naam>-linux/`, geen `/tmp/skill-exports/`, geen package, geen Finder.
+- **Vertaal EN port**: de orchestrator doet maar een transformatie tegelijk. Voor de combinatie chain je handmatig: `sanitize-skill` -> `translate-skill` -> `port-skill` -> `package-skill` -> `share-skill`.
+- **Alleen repackagen** (bestaande geexporteerde dir opnieuw inpakken): `/export-skill:package-skill /tmp/skill-exports/<naam>/`.
 
 ## Validatie vooraf
 

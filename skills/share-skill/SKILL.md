@@ -29,7 +29,7 @@ Enig argument: pad naar een directory met `SKILL.md` of naar een los `*-SKILL.md
 
 1. **Valideer** dat het pad bestaat en een `SKILL.md` bevat (of zelf een `*-SKILL.md` is).
 2. **Lees** de `SKILL.md` om de skill te begrijpen.
-3. **Schrijf samenvatting:** genereer een beknopte samenvatting, in de taal van de skill (niet de doeltaal van een eventuele vertaling). De samenvatting is bedoeld voor collega's, online posts, of een chatbericht.
+3. **Schrijf samenvatting:** genereer een beknopte samenvatting in de taal van de SKILL.md body-tekst die je net las. Dat is voor een normale export de brontaal en voor een vertaalde export de doeltaal; in beide gevallen is het de taal die de ontvanger ziet. De samenvatting is bedoeld voor collega's, online posts, of een chatbericht.
    - Wat de skill doet (1 tot 2 zinnen)
    - Hoe je hem aanroept
    - De belangrijkste features/stappen (beknopte lijst)
@@ -50,27 +50,29 @@ Houd de samenvatting onder 10 regels. Inline formatting met backticks voor comma
 
 ## Rapport template
 
+De laatste regel van de uitvoer moet de laatste regel van de samenvatting zijn. Geen trailing "volgende stap" regel, geen afsluitend kopje, geen meta-tekst na de samenvatting: `/clipboard` kopieert tekst vanaf het laatste antwoord en alles na de samenvatting zou daarin terechtkomen.
+
 ```
 ## Klaar om te delen: {naam}
 
 **Bestand:** {pad}
-**Type:** zip | single-file-md | directory
+**Type:** single-file-md | directory
 
 **Finder geopend op:** {parent-dir}
 
-### Samenvatting (klaar voor /clipboard)
+Sleep het bestand uit Finder naar je chat/mail, of gebruik `/clipboard` om de samenvatting hieronder te plakken.
 
-{de samenvatting zoals gegenereerd}
+---
 
-**Volgende stap:** sleep het bestand uit Finder in je chat/mail, of gebruik /clipboard om de samenvatting te plakken.
+{de samenvatting zoals gegenereerd, eindigend op de laatste inhoudelijke regel}
 ```
 
 ## Compositie
 
 ```
-/export-skill:sanitize-skill say                       # strip PII
+/export-skill:sanitize-skill say                       # strip PII, output /tmp/skill-exports/say/
 /export-skill:package-skill /tmp/skill-exports/say/    # zip of md
-/export-skill:share-skill /tmp/skill-exports/say.zip   # samenvatting + Finder
+/export-skill:share-skill /tmp/skill-exports/say/      # samenvatting + Finder (wijs naar de dir, niet naar de zip)
 ```
 
 Of gebruik de `/export-skill` orchestrator voor de complete chain.
