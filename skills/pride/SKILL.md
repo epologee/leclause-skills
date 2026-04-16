@@ -1,6 +1,6 @@
 ---
 name: pride
-description: Pride check. Spawns a contrarian agent that rides the diff with a skeptical eye and surfaces what the operator would hate but the rover missed. Auto-triggered before any push or PR-ready handoff. Also invocable directly as /autonomous:pride against the current branch diff.
+description: Pride check. Spawns a contrarian agent that reviews a rover artefact with a skeptical eye and surfaces what the operator would hate but the rover missed. Hard gate, runs on every artefact the rover produces (code, docs, prose, research briefs, media, communiqués), not just pushes. Also invocable directly as /autonomous:pride against the current branch diff.
 user-invocable: true
 argument-hint: "[git-range | uncommitted]"
 ---
@@ -23,10 +23,12 @@ The pride check injects an independent skeptic before the loop transitions to it
 
 **Auto-triggered by `rover`.** Canonical triggers:
 
-1. Before a push, whether direct-to-trunk or PR-ready. This is the primary gate.
-2. As the second pass in INSPECT, right after `verify`, so pride findings feed the DRIVE-fix loop while the code is still fresh. Pride runs before STOW so its findings can be fixed as real logic changes; STOW is strictly mechanical cleanup and cannot fix what pride flags.
+1. Before any rover artefact leaves the rover. "Artefact" is read broadly: diffs, commits, PRs, pushes, documentation, READMEs, research briefs, plans, summaries, letters, emails, slide decks, video scripts, generated images, audio, slash-command responses, communiqués, anything the rover produced that a human will read. Pride reviews all of it, not only code.
+2. As the second pass in INSPECT, right after `verify`, so pride findings feed the DRIVE-fix loop while the artefact is still fresh. Pride runs before STOW so its findings can be fixed as real logic or content changes; STOW is strictly mechanical cleanup and cannot fix what pride flags.
 
-(These two are usually the same commit range. If a loop runs INSPECT, fixes things, then pushes, run pride once before INSPECT and once before the push if additional commits landed.)
+(If a loop runs INSPECT, fixes things, then ships more work, run pride once per batch. Every new batch of artefact before handoff gets its own pride pass.)
+
+**There is no exemption for research-only missions.** A loop whose output is a research brief, a plan, an analysis document, or any other prose deliverable gets the same pride pass as a loop that ships code. The artefact IS the diff-equivalent. See "Gathering the artefact" below for how to feed a prose-only deliverable to the contrarian subagent.
 
 **Manually via `/autonomous:pride`:**
 - `/autonomous:pride` reviews the uncommitted changes plus commits on the current branch not yet on the default branch
@@ -35,7 +37,9 @@ The pride check injects an independent skeptic before the loop transitions to it
 
 ## How
 
-Spawn a subagent with no prior context. Give it the diff, the loop's Context section if one exists, and this brief:
+Spawn a subagent with no prior context. Give it the artefact, the loop's Context section if one exists, and the matching brief below.
+
+For code artefacts, give the subagent the diff plus this brief:
 
 > You are reviewing recent code changes with a skeptical eye. You have not seen the implementation decisions, the plan, or the reasoning. Ignore sunk cost.
 >
@@ -54,7 +58,36 @@ Spawn a subagent with no prior context. Give it the diff, the loop's Context sec
 >
 > Be blunt. A finding is better than a compliment. If there is nothing to find, say so explicitly, but try hard first.
 
-## Gathering the diff
+For prose artefacts (research briefs, plans, analysis documents, letters, summaries, PR descriptions, communiqués), give the subagent the artefact plus this brief:
+
+> You are reviewing a written deliverable with a skeptical eye. You have not seen the mission, the sources, or the reasoning. Ignore sunk cost. The author cannot defend themselves; your job is to find what the operator would push back on.
+>
+> For the whole document, find:
+>
+> 1. **Confidence laundering.** Hedged evidence presented as firm conclusion. Phrases like "likely," "appears to," "suggests that" stacked up into a confident claim. Flag each jump from hedge to certainty.
+> 2. **Unsourced claims.** Specific facts, numbers, names, dates, quotes, or URLs without a citation or a verifiable source. Training-data invention is a real risk: product names, conference tracks, speaker lists, locations, dates.
+> 3. **Over-claims.** Statements that go further than the evidence supports. A single example presented as a pattern. A correlation presented as a cause. A possibility presented as a plan.
+> 4. **Ungrounded references.** URLs that were not actually fetched, repos that were not actually read, studies that were not actually cited, people who may not exist. Flag every external reference that could not be verified.
+> 5. **Missing caveats.** Limitations, counter-evidence, alternatives that the author knew about but did not mention. What would a hostile reviewer say is absent?
+> 6. **Scope creep in prose.** Sections that drifted beyond the stated mission. Recommendations that the author was not asked for. Conclusions that assume facts not in evidence.
+> 7. **The question the user would ask.** Read the document as if you are the user who commissioned it. What would make them say "where did you get this?" or "did you actually check?" or "why did you include this?"
+>
+> For each finding: the exact phrase or passage, what you see, why it is a problem, and the concrete fix (strike it, rewrite it, add a source, add a caveat).
+>
+> Be blunt. A finding is better than a compliment. If there is nothing to find, say so explicitly, but try hard first.
+
+## Gathering the artefact
+
+Pride runs on whatever the rover produced. Start by naming the artefact:
+
+1. **Code artefact.** A diff exists. Use the git range logic below to collect it.
+2. **Prose artefact with no committed diff.** A research brief, plan, analysis, letter, or summary that lives as a file in the repo, in `.autonomous/<NAME>.md`, or as a drafted response in the loop file. Feed the full text of that file or section to the subagent as the review target.
+3. **Mixed.** The rover produced both code and prose. Run pride twice with the appropriate brief for each, or give the subagent both payloads with a clear separator and both briefs.
+4. **Generated media (images, audio, video, slides).** Describe the artefact in words (filename, purpose, summary of contents, any claims embedded in captions or voice-over), feed that description to the subagent with the prose brief, and run pride on the source text of any embedded claims.
+
+If the rover cannot identify an artefact to hand to pride, there is nothing to hand off either. The pride gate is not satisfied by absence of output; it is only satisfied by a reviewed artefact.
+
+### Gathering the diff
 
 The skill argument (`$1` as the skill tool passes it) determines the range:
 
@@ -133,6 +166,10 @@ If the subagent returns a vague "looks good," reject and re-run with stronger pr
 | "I already thought about this" | You thought about the happy path |
 | "The PR description covers it" | Descriptions sell, they do not review |
 | "This is good enough for v1" | Haste projection. See `decide` |
+| "There is no diff, so nothing to review" | The artefact is the review target, not the diff |
+| "It is just research, pride does not apply" | Research briefs are where confidence laundering lives. Apply it harder. |
+| "I will run pride after the push" | Pride runs before. After is too late. |
+| "The operator will catch it on review" | That is exactly the review the rover exists to stand in for |
 
 ## Token awareness
 
