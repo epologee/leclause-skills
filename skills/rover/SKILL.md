@@ -1,8 +1,8 @@
 ---
 name: rover
-description: Dispatch a rover at a task. You stay back, the rover works in the field. The distance means it has to decide autonomously, the decide framework picks the path, the pride skill checks the work, and the rover only reports done when the mission is solid. Accepts a GitHub issue URL, a loop file path to resume, or free-form text describing the mission.
+description: Dispatch a rover at a task. You stay back, the rover works in the field. The distance means it decides autonomously: `decide` picks the path, `verify` writes the Done criteria and proves each one with evidence, `pride` catches what the user would hate, and the rover cycles SURVEY → DRIVE → INSPECT → STOW → STANDBY until the mission is solid. Hastens slowly; haste skips understanding. Accepts a GitHub issue URL, a loop file path to resume, or free-form text describing the mission.
 user-invocable: true
-argument-hint: "[issue-URL | loop-file-path | free-form text]"
+argument-hint: "standing by for mission parameters..."
 ---
 
 # Autonomous Rover

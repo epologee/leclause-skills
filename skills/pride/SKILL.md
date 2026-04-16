@@ -1,6 +1,6 @@
 ---
 name: pride
-description: Pride check. Spawns a contrarian agent that reviews the current work critically and finds what the user would notice but you missed. Auto-triggered by loop before any push or PR-ready transition. Also invocable directly as /autonomous:pride against the current branch diff.
+description: Pride check. Spawns a contrarian agent that rides the diff with a skeptical eye and surfaces what the operator would hate but the rover missed. Auto-triggered before any push or PR-ready handoff. Also invocable directly as /autonomous:pride against the current branch diff.
 user-invocable: true
 argument-hint: "[git-range | uncommitted]"
 ---

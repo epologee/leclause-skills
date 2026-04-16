@@ -1,6 +1,6 @@
 ---
 name: cron
-description: Cron scheduling machine for autonomous loops. Handles CronCreate, CronDelete, exponential backoff during idle phases, auto-stop after sustained idleness, and cron restoration after session restart. Not user-invocable, loaded by loop and resume.
+description: Uplink cadence machine for the rover. Handles CronCreate, CronDelete, exponential backoff when the field goes quiet, auto-stop after sustained standby, and cron restoration after a session restart. Not user-invocable; loaded by rover, resume, and stop.
 user-invocable: false
 ---
 

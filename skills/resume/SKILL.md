@@ -1,8 +1,7 @@
 ---
 name: resume
-description: Resume a stopped or expired autonomous loop. Reads the loop file, restores the cron via cron, summarizes current state, and kicks off the next iteration. Invocable as /autonomous:resume with a loop file path.
-user-invocable: true
-argument-hint: "<loop-file-path>"
+description: Bring a stalled rover back online. Reads the loop file, relights the cron via cron, summarises where the traverse left off, and fires the next iteration. Not user-invocable directly; reached via the rover entry point with a loop file path.
+user-invocable: false
 ---
 
 # Autonomy Resume

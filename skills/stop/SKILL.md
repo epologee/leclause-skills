@@ -1,8 +1,7 @@
 ---
 name: stop
-description: Cleanly stop a running autonomous loop. Deletes the cron, writes a final log entry, and produces a recap of what happened. Invocable as /autonomous:stop with an optional loop file path.
-user-invocable: true
-argument-hint: "[loop-file-path]"
+description: End a rover mission on purpose. Cuts the cron, writes a final log entry, and transmits a communiqué home covering mission, ship state, hard parts, review verdicts, and what the operator can pick up next. Not user-invocable directly; reached via the rover entry point.
+user-invocable: false
 ---
 
 # Autonomy Stop

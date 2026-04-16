@@ -1,16 +1,17 @@
 ---
 name: decide
-description: Decision framework for autonomous loops. Loaded when the loop faces a choice and would otherwise ask the user. Classifies the decision, applies principles, uses research skills to resolve, logs the outcome. Not user-invocable, loaded by loop.
-user-invocable: false
+description: Choice framework for a rover in the field, or for any moment an operator is stuck between options. Classifies the call, applies the six principles, enlists research skills to resolve, logs the verdict in the audit trail when a loop file is present. Invoked by the rover at forks in the traverse; also invocable directly as /autonomous:decide with free-form text describing the choice.
+user-invocable: true
+argument-hint: "[free text describing the choice]"
 ---
 
 # Autonomy Decide
 
-A choice is coming up. You are inside an autonomous loop, which means the user delegated decision-making to you when they started the loop. Your job is to pick the right path, not to defer.
+A choice is coming up. Either you are inside an autonomous loop (the operator delegated decision-making when they dispatched the rover) or the operator invoked `/autonomous:decide` directly because they are stuck between options. Either way, your job is to pick the right path, not to defer.
 
 ## The core insight
 
-Most "should I ask the user?" moments are reflex, not genuine ambiguity. Inside an autonomous loop, every question breaks the loop. When a user has explicitly delegated by running `/autonomous:rover`, deferring is the anti-pattern.
+Most "should I ask the user?" moments are reflex, not genuine ambiguity. Inside an autonomous loop, every question breaks the loop. When a user has explicitly delegated by running `/autonomous:rover`, deferring is the anti-pattern. When a user calls `/autonomous:decide` directly, they are asking for a reasoned call, not a menu.
 
 Before asking anything, classify the decision.
 
