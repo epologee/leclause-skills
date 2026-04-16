@@ -74,13 +74,13 @@ The first iteration races with the cron's period. This is safe because cron only
 | `.autonomous/<name>.md` | Resume. Delegate to `resume`. |
 | Free-form text | Use the text directly as context. |
 
-Free-form text may also describe optional integrations. Parse phrases like:
+Free-form text may also describe optional integrations. Parse phrases where the user names a specific skill with a role, and record it as an integration:
 
-- "when you are done, send me a message via /afk" -> `notify_on_done: /afk`
-- "use /review-bot-party for reviews" -> `reviewbot: /review-bot-party`
-- "split commits with /commit-all-the-things" -> `commit_splitter: /commit-all-the-things`
+- A notifier skill to message after the loop ends: `notify_on_done: <skill>`
+- A review-bot skill to run after a PR goes up: `reviewbot: <skill>`
+- A commit-splitter skill to run before a push: `commit_splitter: <skill>`
 
-For each parsed integration, verify the skill or binary exists before recording it. Use the `has_skill` helper from `decide`. When a user-mentioned integration is not installed, do not silently skip: log a loud line to the loop file so the user notices on any later read. Example: `[HH:MM] Setup: user mentioned /afk but it is not installed. Integration disabled.`
+For each parsed integration, verify the skill or binary exists before recording it. Use the `has_skill` helper from `decide`. When a user-mentioned integration is not installed, do not silently skip: log a loud line to the loop file so the user notices on any later read. Example: `[HH:MM] Setup: user mentioned <skill> but it is not installed. Integration disabled.`
 
 ## Writing the loop file
 
@@ -89,7 +89,7 @@ Choose a name: ALL-CAPS, hyphens, no spaces. Describe the goal, not the mechanis
 ### Canonical names
 
 - **Skill references** inside a loop file use the bare skill directory name: `rover`, `cron`, `decide`, `pride`, `verify`, `resume`, `stop`. Never the slash form (`/autonomous:rover`).
-- **Optional integration values** use the slash form users type: `/afk`, `/review-bot-party`, `/commit-all-the-things`. That is what `has_skill` and Skill-tool invocations match on.
+- **Optional integration values** use the slash form users type at invocation. That is what `has_skill` and Skill-tool invocations match on.
 
 Template:
 
@@ -264,13 +264,13 @@ The loop makes this call during the transition to IMPLEMENT, not during setup.
 
 A loop runs without any of these. They are conveniences the user plugs in at invocation time. Only use if detected at setup:
 
-- **notify_on_done.** After auto-stop or explicit stop, if a notifier skill is configured and installed, invoke it with a brief summary. Examples commonly used: `/afk` (personal Telegram), a team's Slack-posting skill, or any user-provided notifier. The plugin itself ships none of these.
-- **reviewbot.** After creating a PR, if a review-bot skill is configured and installed, invoke it. Examples: a personal `/review-bot-party`, a team's review orchestrator.
-- **commit_splitter.** If the loop produced uncommitted changes spanning multiple concerns and a commit-splitter skill is configured and installed, invoke it before the push. Example: `/commit-all-the-things`.
+- **notify_on_done.** After auto-stop or explicit stop, if a notifier skill is configured and installed, invoke it with a brief summary. The plugin itself ships none of these.
+- **reviewbot.** After creating a PR, if a review-bot skill is configured and installed, invoke it.
+- **commit_splitter.** If the loop produced uncommitted changes spanning multiple concerns and a commit-splitter skill is configured and installed, invoke it before the push.
 
 If a user mentions an integration at setup that turns out not to be installed, log a loud line at that time (see "Parsing" above). Do not fail silently when running.
 
-These examples are illustrations, not defaults. An external user reading this skill should not assume any of those names exist. The contract is "any skill the user has installed and named in their invocation," not "these specific slash commands."
+The contract is "any skill the user has installed and named in their invocation," not a fixed list owned by this plugin.
 
 ## Project conventions
 
@@ -290,7 +290,7 @@ These are project-specific and not hardcoded in this skill.
 - Push without explicit user approval
 - Transition out of IMPLEMENT with a dirty working tree
 - Skip `pride` before proposing a push
-- Assume `/afk`, `/touche`, `/retake`, `/review-bot-party`, `/screenshots`, or any team/personal skill exists
+- Assume any personal or team integration skill exists without the user naming it at invocation
 - Write loop files anywhere other than `.autonomous/` in the git root
 
 ## Resuming or stopping
