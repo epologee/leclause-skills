@@ -1,5 +1,5 @@
 {
   "name": "how-plugins-work",
   "description": "Explains how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work in practice.",
-  "version": "1.0.5"
+  "version": "1.0.6"
 }
