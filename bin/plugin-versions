@@ -29,15 +29,22 @@ plugin_names() {
   jq -r '.plugins[].name' "$MARKETPLACE_FILE" | sort
 }
 
-# Echoes the plugin's owned paths on one line, space-separated, safe for expansion.
-# Plugin names and path segments do not contain spaces in this repo.
+# Echoes every path whose history belongs to this plugin, space-separated.
+# Includes the current packages/<plugin>/ tree and, for monotonic versioning
+# across the symlink-to-flat flatten, every historical top-level
+# skills/<skill>/ path for each skill this plugin currently owns. Works for
+# single-skill plugins (one entry) and multi-skill plugins like autonomous,
+# export-skill, recursion (one entry per skill).
 paths_for() {
   local name="$1"
-  if [ -d "skills/$name" ]; then
-    echo "packages/$name skills/$name"
-  else
-    echo "packages/$name"
-  fi
+  local paths="packages/$name"
+  local skill_dir skill_name
+  for skill_dir in packages/"$name"/skills/*/; do
+    [ -d "$skill_dir" ] || continue
+    skill_name=$(basename "$skill_dir")
+    paths="$paths skills/$skill_name"
+  done
+  echo "$paths"
 }
 
 count_commits() {

@@ -1,5 +1,5 @@
 {
   "name": "gurus",
   "description": "Opinionated code review panel with 8 expert perspectives (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot).",
-  "version": "1.0.4"
+  "version": "1.0.5"
 }

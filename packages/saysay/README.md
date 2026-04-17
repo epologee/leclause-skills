@@ -14,11 +14,11 @@ Exit speech mode.
 
 ## Requirements
 
-macOS. Speech mode needs the macOS `say` binary plus two scripts shipped in `skills/saysay/` at the repo root. Symlink them into your PATH:
+macOS. Speech mode needs the macOS `say` binary plus two scripts shipped with the plugin. Symlink them into your PATH:
 
 ```bash
-ln -s "$(pwd)/skills/saysay/saysay" /usr/local/bin/saysay
-ln -s "$(pwd)/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
+ln -s "$(pwd)/packages/saysay/skills/saysay/saysay" /usr/local/bin/saysay
+ln -s "$(pwd)/packages/saysay/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
 ```
 
 ## Phonetic mappings

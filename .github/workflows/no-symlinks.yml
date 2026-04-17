@@ -1,0 +1,15 @@
+name: no-symlinks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refuse symlinks in index or on disk
+        run: bin/check-no-symlinks
+      - name: Verify plugin versions are in sync
+        run: bin/plugin-versions --check
