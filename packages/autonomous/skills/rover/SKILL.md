@@ -253,7 +253,10 @@ When the diff is clean and the cleanup commit has landed, transition to STANDBY.
 If the project has a PR workflow (detect: has remote, has `.github/`, or explicitly mentioned in CLAUDE.md), create a Draft PR. Otherwise, commit directly, no PR. If `reviewbot` is configured, invoke it after the PR is up.
 
 **STANDBY**
-Check all input channels. This means tool calls, not assumptions. If there is nothing to check (no PR, no remote), STANDBY does not need cron. Stop the cron and let the session drive.
+
+The mission is complete but the rover stays in orbit. STANDBY keeps the cron alive so the rover can absorb new input, catch crashed bash sessions during active work, and transition back to SURVEY when the operator sends a follow-up.
+
+The cron's safety-net role is scoped to transient failures during active phases: a failed bash command, a timed-out tool call, or an interrupted edit that leaves the session stuck mid-turn. The cron fires on REPL-idle and re-reads the loop file, which restarts the phase machine from its last logged state. That safety net is not meant as an eternal watch post: sustained idleness means the mission is truly done, and the cron has a hard cap to stop token burn.
 
 When a PR exists, minimum checks per iteration:
 - `git status --short` (uncommitted work from the session)
@@ -264,7 +267,7 @@ When a PR exists, minimum checks per iteration:
 
 New findings from STANDBY go back to SURVEY (not DRIVE, and not queued for the user). New input is new information: understand it before acting on it. Iteratively downgrading to a fix-first approach has a track record of missing the real cause.
 
-When no new activity, increment `watch_checks` and invoke `cron` for backoff. Auto-stop after `watch_checks` reaches 10. The full backoff schedule and total idle time (about 5 hours) live in `cron`; do not duplicate the numbers here.
+When no new activity, increment `watch_checks` and invoke `cron` for backoff. Each idle iteration bumps the interval until the hard cap at `watch_checks` 10. The full schedule (and total idle time, about 5 hours) lives in `cron`; do not duplicate the numbers here. When the cap fires: CronDelete, log `STANDBY: auto-stopped after 10 idle checks. /autonomous:resume to relight.`, and invoke `notify_on_done` if configured. The loop file stays; only the cron dies. Past this point the safety net is gone: a fresh interjection or `/autonomous:resume` relights the cron (Interjections section below covers the interjection path).
 
 ### Decisions
 
@@ -279,9 +282,10 @@ Any input that arrives mid-loop, regardless of channel, is a broadcast, not the 
 On any interjection:
 
 1. Log the input verbatim to `## Log` with a timestamp. Do not paraphrase; the operator may come back later and compare to what they sent.
-2. Evaluate whether it changes the plan. If yes, transition to SURVEY and re-plan. If no, note why not in the Log and stay on the current phase.
-3. If the input surfaces a choice, invoke `decide`. Never hold the choice open waiting for the operator's next message.
-4. Resume the loop. Do not emit "I will wait for your next message" or any equivalent stall.
+2. **If the cron is stopped (auto-stop or manual), relight it.** Invoke `cron` to `CronCreate` at `* * * * *`, reset `watch_checks: 0`, update `cron_job_id` in the loop file. New input is proof the operator is present; idle-backoff resets.
+3. Evaluate whether it changes the plan. If yes, transition to SURVEY and re-plan. If no, note why not in the Log and stay on the current phase.
+4. If the input surfaces a choice, invoke `decide`. Never hold the choice open waiting for the operator's next message.
+5. Resume the loop. Do not emit "I will wait for your next message" or any equivalent stall.
 
 The failure mode to refuse: slipping into interactive mode the moment a message arrives, then burning the operator's 20-minute reply cycle on a one-line follow-up question. If the rover needs something only the operator can provide, log the blocker, keep doing whatever can be done locally, and surface the blocker at the next natural STANDBY checkpoint.
 
