@@ -1,5 +1,5 @@
 {
   "name": "testing-philosophy",
   "description": "TDD principles, Cucumber/Gherkin conventions, flaky test handling, and test suite health. Red-Green-Refactor workflow.",
-  "version": "1.0.4"
+  "version": "1.0.5"
 }

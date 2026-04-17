@@ -1,5 +1,5 @@
 {
   "name": "rebase-latest-default",
   "description": "Rebase current branch on the latest default branch (local or remote) with staleness check and automatic conflict resolution.",
-  "version": "1.0.5"
+  "version": "1.0.6"
 }

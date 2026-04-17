@@ -1,5 +1,5 @@
 {
   "name": "screen-recording",
   "description": "Automated screen recordings and demo videos of browser-based features using Playwright video recording.",
-  "version": "1.0.4"
+  "version": "1.0.5"
 }

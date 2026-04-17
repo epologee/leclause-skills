@@ -1,5 +1,5 @@
 {
   "name": "rename-suggestion",
   "description": "Generate a descriptive session name based on conversation context and copy the rename command to clipboard.",
-  "version": "1.0.4"
+  "version": "1.0.5"
 }

@@ -1,5 +1,5 @@
 {
   "name": "self-improvement",
   "description": "Update CLAUDE.md and skills based on user feedback. Detects duplication, determines optimal location, extracts large sections into skills.",
-  "version": "1.0.5"
+  "version": "1.0.6"
 }
