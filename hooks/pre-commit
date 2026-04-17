@@ -38,13 +38,25 @@ if [ -n "$missing" ]; then
 fi
 
 # Keep CLAUDE.md byte-identical to README.md. Claude Code reads CLAUDE.md
-# for project context; marketplace visitors read README.md. Same content,
-# two audiences. When README changes, mirror it so the two never drift.
-if git diff --cached --name-only | grep -qx "README.md"; then
-  if ! cmp -s README.md CLAUDE.md; then
+# for project context; marketplace visitors read README.md. README is the
+# source of truth. Staged README changes mirror automatically; any other
+# drift is a hard fail so edits to CLAUDE.md alone cannot slip past.
+if ! cmp -s README.md CLAUDE.md; then
+  readme_staged=0
+  claude_staged=0
+  git diff --cached --name-only | grep -qx "README.md" && readme_staged=1
+  git diff --cached --name-only | grep -qx "CLAUDE.md" && claude_staged=1
+
+  if [ $readme_staged -eq 1 ] && [ $claude_staged -eq 0 ]; then
     cp README.md CLAUDE.md
     git add CLAUDE.md
     echo "Synced CLAUDE.md from staged README.md." >&2
+  else
+    echo "ERROR: README.md and CLAUDE.md have drifted."
+    echo ""
+    echo "README.md is the source of truth. Edit README.md, stage only that"
+    echo "file, and pre-commit will mirror the content into CLAUDE.md."
+    exit 1
   fi
 fi
 
