@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Refuse symlinks in index or on disk
         run: bin/check-no-symlinks
       - name: Verify plugin versions are in sync
