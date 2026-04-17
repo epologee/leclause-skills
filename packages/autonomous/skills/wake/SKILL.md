@@ -1,10 +1,10 @@
 ---
-name: resume
+name: wake
 description: Bring a stalled rover back online. Reads the loop file, relights the cron via cron, summarises where the traverse left off, and fires the next iteration. Not user-invocable directly; reached via the rover entry point with a loop file path.
 user-invocable: false
 ---
 
-# Autonomy Resume
+# Autonomy Wake
 
 Revive a loop that was paused, auto-stopped, or lost its cron because the Claude session ended.
 
@@ -30,14 +30,14 @@ Revive a loop that was paused, auto-stopped, or lost its cron because the Claude
 
 ## Detecting a compacted session
 
-After a context compaction, the conversation summary usually contains phase words (SURVEY, DRIVE, INSPECT, STANDBY). If you see those and a loop file, prefer `resume` over manual takeover.
+After a context compaction, the conversation summary usually contains phase words (SURVEY, DRIVE, INSPECT, STANDBY). If you see those and a loop file, prefer `wake` over manual takeover.
 
 ## What it does not do
 
 - Does not modify the loop's Plan or Context. Those are the loop's memory.
-- Does not push anything. Resume is local.
+- Does not push anything. Wake is local.
 - Does not take over work the cron was going to do. Hand it back to the loop.
 
-## After resume
+## After wake
 
 The cron is live and will drive from here. If the user is present, they can add notes to the `## Input` section or let the cron tick by itself.

@@ -1,6 +1,6 @@
 ---
 name: rover
-description: Dispatch a rover at a task. You stay back, the rover works in the field. The distance means it decides autonomously: `decide` picks the path, `verify` writes the Done criteria and proves each one with evidence, `pride` catches what the user would hate, and the rover cycles SURVEY → DRIVE → INSPECT → STOW → STANDBY until the mission is solid. Hastens slowly; haste skips understanding. Accepts a GitHub issue URL, a loop file path to resume, or free-form text describing the mission.
+description: Dispatch a rover at a task. You stay back, the rover works in the field. The distance means it decides autonomously: `decide` picks the path, `verify` writes the Done criteria and proves each one with evidence, `pride` catches what the user would hate, and the rover cycles SURVEY → DRIVE → INSPECT → STOW → STANDBY until the mission is solid. Hastens slowly; haste skips understanding. Accepts a GitHub issue URL, a loop file path to wake, or free-form text describing the mission.
 user-invocable: true
 argument-hint: "standing by for mission parameters..."
 ---
@@ -71,7 +71,7 @@ The loop file is your window. `.autonomous/BUILD-SETTINGS-PAGE.md` gets a timest
 - You can keep chatting in the same session. Your messages take priority; the cron waits for the REPL to be idle.
 - To inject guidance without interrupting mid-work: open the loop file and add text under `## Input`. The loop reads this section each STANDBY iteration and acts on it.
 - To stop: type `/autonomous:stop`. The loop cancels its cron and gives you a recap.
-- To resume after you closed Claude and came back: type `/autonomous:resume .autonomous/<NAME>.md`. Crons are session-scoped; they do not survive restarts. Resume recreates a fresh cron from the file's state.
+- To resume after you closed Claude and came back: type `/autonomous:wake .autonomous/<NAME>.md`. Crons are session-scoped; they do not survive restarts. Wake recreates a fresh cron from the file's state.
 
 ## What you are building
 
@@ -86,7 +86,7 @@ SURVEY ──► DRIVE ──► INSPECT ──► STOW ──► STANDBY
     └──────── new issues ────────────────────────┘
 ```
 
-The loop is autonomous. It does not ask questions mid-phase. When it hits a choice, it invokes `decide`. Before any artefact leaves the rover (push, PR, handoff communiqué, research brief, generated doc, media, or any other deliverable), it invokes `pride` to catch what it missed. No human is required to keep it moving, but you can intervene via the `## Input` section or the `/autonomous:stop` and `/autonomous:resume` commands at any time.
+The loop is autonomous. It does not ask questions mid-phase. When it hits a choice, it invokes `decide`. Before any artefact leaves the rover (push, PR, handoff communiqué, research brief, generated doc, media, or any other deliverable), it invokes `pride` to catch what it missed. No human is required to keep it moving, but you can intervene via the `## Input` section or the `/autonomous:stop` and `/autonomous:wake` commands at any time.
 
 ## Cost awareness
 
@@ -115,7 +115,7 @@ The first iteration races with the cron's period. This is safe because cron only
 |----------|---------|
 | (none) | Use the current conversation as context. Distill to 2-3 sentences. |
 | `https://github.com/.../issues/N` | Run `gh issue view`, use title + body as context. |
-| `.autonomous/<name>.md` | Resume. Delegate to `resume`. |
+| `.autonomous/<name>.md` | Wake. Delegate to `wake`. |
 | Free-form text | Use the text directly as context. |
 
 Free-form text may also describe optional integrations. Parse phrases where the user names a specific skill with a role, and record it as an integration:
@@ -132,7 +132,7 @@ Choose a name: ALL-CAPS, hyphens, no spaces. Describe the goal, not the mechanis
 
 ### Canonical names
 
-- **Skill references** inside a loop file use the bare skill directory name: `rover`, `cron`, `decide`, `pride`, `verify`, `resume`, `stop`. Never the slash form (`/autonomous:rover`).
+- **Skill references** inside a loop file use the bare skill directory name: `rover`, `cron`, `decide`, `pride`, `verify`, `wake`, `stop`. Never the slash form (`/autonomous:rover`).
 - **Optional integration values** use the slash form users type at invocation. That is what `has_skill` and Skill-tool invocations match on.
 
 Template:
@@ -359,6 +359,6 @@ These are project-specific and not hardcoded in this skill.
 - Silently produce a research-only or document-only deliverable for an action-verb dispatch (build, ship, fix, port, install, implement). The Plan-vs-Dispatch check runs at four gates (setup, SURVEY end, DRIVE entry, INSPECT entry); if any triggers, surface to operator instead of proceeding
 - Rewrite the Dispatch block. The operator's verbatim invocation is source of truth, not a draft
 
-## Resuming or stopping
+## Waking or stopping
 
-A running loop is resumed with `/autonomous:resume <file>` and stopped with `/autonomous:stop <file>`. The loop itself does not handle these; they are separate skills. See `resume` and `stop`.
+A running loop is woken with `/autonomous:wake <file>` and stopped with `/autonomous:stop <file>`. The loop itself does not handle these; they are separate skills. See `wake` and `stop`.

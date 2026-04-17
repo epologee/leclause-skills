@@ -1,5 +1,5 @@
 ---
-name: help
+name: rover-help
 description: Rover briefing. Explains what the autonomous Rover does and how to dispatch, steer, and stop one. Read this when you are about to send a Rover out for the first time, or when you forgot which command does what.
 user-invocable: true
 ---
@@ -39,7 +39,7 @@ Welcome to Mission Control. This is the short version of what the Rover does and
 ```
 /autonomous:rover "<mission brief>"
 /autonomous:rover https://github.com/owner/repo/issues/N
-/autonomous:rover .autonomous/<NAME>.md         # resume an existing mission
+/autonomous:rover .autonomous/<NAME>.md         # wake an existing mission
 ```
 
 On dispatch, the Rover writes `.autonomous/<NAME>.md`, the mission file that holds context, plan, Done criteria, decision audit, and a timestamped log. Then it sets up a Claude Code cron that fires the loop every minute while the REPL is idle and runs the first SURVEY iteration in the same turn.
@@ -78,11 +78,11 @@ SURVEY ──► DRIVE ──► INSPECT ──► STOW ──► STANDBY
 
 | Command | What it does |
 |---------|--------------|
-| `/autonomous:rover` | Dispatch a Rover. Accepts mission brief, issue URL, or mission file to resume. |
+| `/autonomous:rover` | Dispatch a Rover. Accepts mission brief, issue URL, or mission file to wake. |
 | `/autonomous:verify` | Standalone evidence check. Propose Done criteria, or tick them off with evidence. |
 | `/autonomous:pride` | Contrarian review of the current branch diff. Finds what the operator would hate. |
 | `/autonomous:decide` | Choice framework. Use when you are stuck between options, inside a Rover or not. |
-| `/autonomous:help` | This briefing. |
+| `/autonomous:rover-help` | This briefing. |
 
 ## What the Rover will never do on its own
 

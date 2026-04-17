@@ -10,9 +10,9 @@ No hard dependencies on personal or team skills. Optional integrations (notifier
 
 Entry point. Accepts a GitHub issue URL, a loop file path to resume, or free-form mission text. Writes `.autonomous/<NAME>.md` (the loop file) and starts a `CronCreate` job that re-enters the conversation each minute while the REPL is idle.
 
-### `/autonomous:resume <loop-file-path>`
+### `/autonomous:wake <loop-file-path>`
 
-Resume a stopped or expired loop. Reads the file, restores the cron via `cron`, summarizes current state, kicks off the next iteration.
+Wake a stopped or expired loop. Reads the file, restores the cron via `cron`, summarizes current state, kicks off the next iteration.
 
 ### `/autonomous:stop [loop-file-path]`
 

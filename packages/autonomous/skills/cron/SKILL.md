@@ -1,6 +1,6 @@
 ---
 name: cron
-description: Uplink cadence machine for the rover. Handles CronCreate, CronDelete, exponential backoff when the field goes quiet, auto-stop after sustained standby, and cron restoration after a session restart. Not user-invocable; loaded by rover, resume, and stop.
+description: Uplink cadence machine for the rover. Handles CronCreate, CronDelete, exponential backoff when the field goes quiet, auto-stop after sustained standby, and cron restoration after a session restart. Not user-invocable; loaded by rover, wake, and stop.
 user-invocable: false
 ---
 
@@ -13,7 +13,7 @@ The cron machine behind an autonomous loop. Its job: keep the loop firing at an 
 Cron logic is mechanical and repetitive. Inlining it in the rover's code blurs the core flow. Separating it means:
 
 - `rover` reads like an intent document, not a scheduler
-- `resume` reuses the exact same restore logic
+- `wake` reuses the exact same restore logic
 - Backoff and auto-stop policy lives in one place
 
 ## Setup (new loop)
@@ -127,7 +127,7 @@ The loop file itself is never deleted. It is history.
 
 **CronCreate fails.** Session might be in a weird state. Retry once. If still failing:
 
-1. Log a loud error line to the loop file: `[HH:MM] CronCreate failed after retry. Loop has no cron. User must drive manually or run /autonomous:resume.`
+1. Log a loud error line to the loop file: `[HH:MM] CronCreate failed after retry. Loop has no cron. User must drive manually or run /autonomous:wake.`
 2. If `notify_on_done` is configured and its skill is installed, invoke it with the failure.
 3. Leave `cron_job_id: failed` in the loop file as a durable marker.
 

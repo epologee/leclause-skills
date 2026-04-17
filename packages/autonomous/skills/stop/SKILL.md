@@ -39,8 +39,8 @@ End a loop on purpose, with a recap.
 
 - Does not delete the loop file. The file is history.
 - Does not push, merge, or clean up commits. Those require explicit instructions.
-- Does not restart the loop. Use `/autonomous:resume` for that.
+- Does not restart the loop. Use `/autonomous:wake` for that.
 
 ## After stop
 
-The cron is gone. The loop file stays. Any future `/autonomous:resume <file>` will bring it back with a fresh cron.
+The cron is gone. The loop file stays. Any future `/autonomous:wake <file>` will bring it back with a fresh cron.
