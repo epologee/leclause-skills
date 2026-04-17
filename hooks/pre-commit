@@ -37,21 +37,23 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 
-# Block symlinks anywhere in the git index. This repo is symlink-free so
-# that Windows consumers can clone with core.symlinks=false and still get
-# working files. A symlink in the index also means two paths point at the
-# same content, which makes "which file am I editing?" ambiguous whenever
-# plugins get updated.
-tracked_symlinks=$(git ls-files -s | awk '$1 == "120000" {print $4}')
-if [ -n "$tracked_symlinks" ]; then
-  echo "ERROR: symlinks detected in git index. This repo must stay symlink-free."
-  echo ""
-  echo "$tracked_symlinks" | sed 's/^/  - /'
-  echo ""
-  echo "Replace each symlink with real file content. If you need to share"
-  echo "content between locations, copy it instead of symlinking. Windows"
-  echo "consumers clone with core.symlinks=false by default, which turns"
-  echo "symlinks into text files and breaks plugin loading."
+# Keep CLAUDE.md byte-identical to README.md. Claude Code reads CLAUDE.md
+# for project context; marketplace visitors read README.md. Same content,
+# two audiences. When README changes, mirror it so the two never drift.
+if git diff --cached --name-only | grep -qx "README.md"; then
+  if ! cmp -s README.md CLAUDE.md; then
+    cp README.md CLAUDE.md
+    git add CLAUDE.md
+    echo "Synced CLAUDE.md from staged README.md." >&2
+  fi
+fi
+
+# Block symlinks anywhere in the repo. This repo is symlink-free so that
+# Windows consumers can clone with core.symlinks=false and still get working
+# files. A symlink in the index also means two paths point at the same
+# content, which makes "which file am I editing?" ambiguous when plugins get
+# updated. Shared check so hook and CI cannot drift.
+if ! bin/check-no-symlinks; then
   exit 1
 fi
 

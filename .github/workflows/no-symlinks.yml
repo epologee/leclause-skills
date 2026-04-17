@@ -9,23 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Refuse symlinks in tracked files
-        run: |
-          tracked_symlinks=$(git ls-files -s | awk '$1 == "120000" {print $4}')
-          if [ -n "$tracked_symlinks" ]; then
-            echo "ERROR: symlinks detected in git index. This repo must stay symlink-free."
-            echo ""
-            echo "$tracked_symlinks" | sed 's/^/  - /'
-            echo ""
-            echo "Windows consumers clone with core.symlinks=false by default,"
-            echo "which turns symlinks into text files and breaks plugin loading."
-            exit 1
-          fi
-      - name: Refuse symlinks on disk
-        run: |
-          on_disk=$(find . -type l -not -path './.git/*' -not -path './.autonomous/*')
-          if [ -n "$on_disk" ]; then
-            echo "ERROR: symlinks present in working tree."
-            echo "$on_disk" | sed 's/^/  - /'
-            exit 1
-          fi
+      - name: Refuse symlinks in index or on disk
+        run: bin/check-no-symlinks
+      - name: Verify plugin versions are in sync
+        run: bin/plugin-versions --check

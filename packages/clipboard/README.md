@@ -16,10 +16,10 @@ Copies as Slack rich text via `pbcopy-html`, preserving bold, italic, code spans
 
 macOS. Plain text mode uses the built-in `pbcopy`.
 
-Rich text mode requires `pbcopy-html`, a Swift script shipped in `skills/clipboard/` at the repo root. Symlink it into your PATH:
+Rich text mode requires `pbcopy-html`, a Swift script shipped with the plugin. Symlink it into your PATH:
 
 ```bash
-ln -s "$(pwd)/skills/clipboard/pbcopy-html.swift" /usr/local/bin/pbcopy-html
+ln -s "$(pwd)/packages/clipboard/skills/clipboard/pbcopy-html.swift" /usr/local/bin/pbcopy-html
 ```
 
 ## Installation
