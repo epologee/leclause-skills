@@ -6,23 +6,14 @@ I typically prompt in Dutch but write English code, so these skills are a mix of
 
 ## Install
 
-macOS and Linux:
+Same command on macOS, Linux, and Windows:
 
 ```bash
 claude plugins marketplace add epologee/leclause-skills
-claude plugins install <skill-name>@leclause
+claude plugins install <plugin-name>@leclause
 ```
 
-Windows:
-
-```bash
-claude plugins marketplace add epologee/leclause-skills@release
-claude plugins install <skill-name>@leclause
-```
-
-In both blocks, the second command's `@leclause` is the marketplace alias that the first command sets up (from `.claude-plugin/marketplace.json`'s `name` field), not a branch ref. The first command is where you choose the branch: default branch for macOS/Linux, `@release` for Windows.
-
-The `@release` branch carries the same plugins as `main` but with every symlink replaced by its target content. Git for Windows defaults to `core.symlinks=false` and turns symlinks into text files on clone; the release branch sidesteps that. See [`docs/release-workflow.md`](docs/release-workflow.md) for how the release branch is built and kept in sync with main.
+The `@leclause` suffix in the second command is the marketplace alias that the first command registers (from `.claude-plugin/marketplace.json`'s `name` field), not a branch ref. Every skill lives at its final location under `packages/<plugin>/skills/<skill>/`, so Windows consumers with the default `core.symlinks=false` get working directories out of the box.
 
 ## Skills
 
@@ -55,21 +46,21 @@ Some skills require macOS-specific tools:
 
 ### clipboard
 
-Rich text mode (`/clipboard slack`) requires `pbcopy-html`, a Swift script included in `skills/clipboard/`:
+Rich text mode (`/clipboard slack`) requires `pbcopy-html`, a Swift script shipped with the plugin:
 
 ```bash
-ln -s "$(pwd)/skills/clipboard/pbcopy-html.swift" /usr/local/bin/pbcopy-html
+ln -s "$(pwd)/packages/clipboard/skills/clipboard/pbcopy-html.swift" /usr/local/bin/pbcopy-html
 ```
 
 Plain text mode uses the built-in `pbcopy` and works out of the box on macOS.
 
 ### saysay
 
-Speech mode requires macOS `say` and two scripts included in `skills/saysay/`:
+Speech mode requires macOS `say` and two scripts shipped with the plugin:
 
 ```bash
-ln -s "$(pwd)/skills/saysay/saysay" /usr/local/bin/saysay
-ln -s "$(pwd)/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
+ln -s "$(pwd)/packages/saysay/skills/saysay/saysay" /usr/local/bin/saysay
+ln -s "$(pwd)/packages/saysay/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
 ```
 
 Phonetic mappings are stored per user in `~/.local/share/saysay/phonetics.json` (XDG).
@@ -96,17 +87,15 @@ Bonsai falls back to `claude` if the var is not set.
 
 ## Authoring a new plugin
 
-The two rules that keep plugins working on Mac and Windows from day one:
+Two rules that keep plugins portable across Mac, Linux, and Windows:
 
-1. **Consumer-facing scripts under `packages/<plugin>/bin/` must use a portable shebang.** Only `#!/usr/bin/env node` and `#!/usr/bin/env python3` are accepted. The pre-commit hook rejects anything else and tells you what to port to. Operator-only scripts under repo-root `bin/` can use any shebang.
+1. **No symlinks anywhere in the repo.** Pre-commit and CI reject them. Git for Windows defaults to `core.symlinks=false` and turns symlinks into text files on clone; a symlinked skill silently disappears. Every skill lives in exactly one place: `packages/<plugin>/skills/<skill>/`.
 
-2. **Push to `main` and CI republishes `release` automatically.** The `release-branch` GitHub Action runs `bin/marketplace-release --write` on every push to `main`. Windows consumers catch up without any manual step. Run the script by hand only when debugging or publishing outside the normal flow; see [`docs/release-workflow.md`](docs/release-workflow.md).
-
-Symlinks inside the plugin tree (for example, sharing a skill from the repo's top-level `skills/` directory) are fine on `main`. The release branch materialises them so Windows consumers never see a symlink.
+2. **Consumer-facing scripts under `packages/<plugin>/bin/` must use a portable shebang.** Only `#!/usr/bin/env node` and `#!/usr/bin/env python3` are accepted. The pre-commit hook rejects anything else and tells you what to port to. Operator-only scripts under repo-root `bin/` can use any shebang.
 
 ## Plugin versioning
 
-Every plugin's version in `packages/<name>/.claude-plugin/plugin.json` follows the format `1.0.{commits}`, where `commits` is the number of commits that touched `packages/<name>/` or `skills/<name>/`. Versions bump automatically via the repo's pre-commit hook.
+Every plugin's version in `packages/<name>/.claude-plugin/plugin.json` follows the format `1.0.{commits}`, where `commits` is the number of commits that touched `packages/<name>/` (historical commits to the retired `skills/<name>/` path still count). Versions bump automatically via the repo's pre-commit hook.
 
 Recovery after rebase or manual edits:
 

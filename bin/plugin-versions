@@ -29,15 +29,13 @@ plugin_names() {
   jq -r '.plugins[].name' "$MARKETPLACE_FILE" | sort
 }
 
-# Echoes the plugin's owned paths on one line, space-separated, safe for expansion.
-# Plugin names and path segments do not contain spaces in this repo.
+# Echoes the plugin's owned path. Every skill lives under packages/<plugin>/;
+# historical commits to the retired top-level skills/ directory still count
+# via git's rev-list because the path is part of the commit history even
+# though the directory is gone.
 paths_for() {
   local name="$1"
-  if [ -d "skills/$name" ]; then
-    echo "packages/$name skills/$name"
-  else
-    echo "packages/$name"
-  fi
+  echo "packages/$name skills/$name"
 }
 
 count_commits() {

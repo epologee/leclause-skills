@@ -49,8 +49,9 @@ if [ -n "$tracked_symlinks" ]; then
   echo "$tracked_symlinks" | sed 's/^/  - /'
   echo ""
   echo "Replace each symlink with real file content. If you need to share"
-  echo "content between locations, copy it and add a sync check instead of"
-  echo "a symlink. See docs/windows-compat-investigation.md for rationale."
+  echo "content between locations, copy it instead of symlinking. Windows"
+  echo "consumers clone with core.symlinks=false by default, which turns"
+  echo "symlinks into text files and breaks plugin loading."
   exit 1
 fi
 
