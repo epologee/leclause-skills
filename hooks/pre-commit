@@ -20,7 +20,8 @@ fi
 
 missing=""
 
-for skill_dir in skills/*/; do
+for skill_dir in packages/*/skills/*/; do
+  [ -d "$skill_dir" ] || continue
   skill_name=$(basename "$skill_dir")
   if ! grep -qF "$skill_name" "$readme"; then
     missing="$missing  - $skill_name\n"
@@ -33,6 +34,23 @@ if [ -n "$missing" ]; then
   printf "$missing"
   echo ""
   echo "Add a description for each skill to README.md before committing."
+  exit 1
+fi
+
+# Block symlinks anywhere in the git index. This repo is symlink-free so
+# that Windows consumers can clone with core.symlinks=false and still get
+# working files. A symlink in the index also means two paths point at the
+# same content, which makes "which file am I editing?" ambiguous whenever
+# plugins get updated.
+tracked_symlinks=$(git ls-files -s | awk '$1 == "120000" {print $4}')
+if [ -n "$tracked_symlinks" ]; then
+  echo "ERROR: symlinks detected in git index. This repo must stay symlink-free."
+  echo ""
+  echo "$tracked_symlinks" | sed 's/^/  - /'
+  echo ""
+  echo "Replace each symlink with real file content. If you need to share"
+  echo "content between locations, copy it and add a sync check instead of"
+  echo "a symlink. See docs/windows-compat-investigation.md for rationale."
   exit 1
 fi
 
@@ -89,16 +107,12 @@ if [ -x "$plugin_versions_script" ]; then
 fi
 
 # After a commit on main that changed plugin content, nudge the operator to
-# push so the release-branch GitHub Action republishes for Windows consumers.
-# Silent on other branches (Action only triggers on main) and silent when the
-# staged diff did not touch packages/ or skills/ (nothing for consumers to
-# catch up with).
+# push. Main is the single install target for every OS now that the repo is
+# symlink-free; Windows consumers get the update as soon as main moves.
 current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
 if [ "$current_branch" = "main" ]; then
-  if git diff --cached --name-only --diff-filter=ACMR | grep -qE '^(packages|skills)/'; then
+  if git diff --cached --name-only --diff-filter=ACMR | grep -qE '^packages/'; then
     echo "" >&2
-    echo "Push this to main so the release-branch GitHub Action republishes" >&2
-    echo "for Windows consumers. Run bin/marketplace-release --write locally" >&2
-    echo "only if CI is down or you are debugging the pipeline." >&2
+    echo "Push this to main so consumers (every OS) can pick up the update." >&2
   fi
 fi
