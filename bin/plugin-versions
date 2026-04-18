@@ -30,11 +30,13 @@ plugin_names() {
 }
 
 # Echoes every path whose history belongs to this plugin, space-separated.
-# Includes the current packages/<plugin>/ tree and, for monotonic versioning
-# across the symlink-to-flat flatten, every historical top-level
-# skills/<skill>/ path for each skill this plugin currently owns. Works for
-# single-skill plugins (one entry) and multi-skill plugins like autonomous,
-# export-skill, recursion (one entry per skill).
+# Includes the current packages/<plugin>/ tree, every historical top-level
+# skills/<skill>/ path for each skill this plugin currently owns (for monotonic
+# versioning across the symlink-to-flat flatten), and the predecessor paths of
+# any current SKILL.md discovered via `git log --follow` together with any
+# SKILL.md being removed in the current staged diff. Without that union, a
+# same-commit skill rename (delete skills/<old> + add skills/<new>) silently
+# dropped the retired path's history from the count and needed a force-bump.
 paths_for() {
   local name="$1"
   local paths="packages/$name"
@@ -44,7 +46,37 @@ paths_for() {
     skill_name=$(basename "$skill_dir")
     paths="$paths skills/$skill_name"
   done
+  local past
+  while IFS= read -r past; do
+    [ -n "$past" ] || continue
+    case " $paths " in
+      *" $past "*) ;;
+      *) paths="$paths $past" ;;
+    esac
+  done < <(retired_paths_for "$name")
   echo "$paths"
+}
+
+# Emits directories that once held a SKILL.md for this plugin but no longer do.
+# Two sources: (1) `git log --follow` on each current SKILL.md, which exposes
+# prior paths of a renamed skill, and (2) the currently-staged deletion set,
+# which covers pre-commit runs where HEAD does not yet know about the rename.
+retired_paths_for() {
+  local name="$1"
+  local skill_md
+  {
+    for skill_md in packages/"$name"/skills/*/SKILL.md; do
+      [ -f "$skill_md" ] || continue
+      git log --follow --format= --name-only -- "$skill_md" 2>/dev/null
+    done
+    git diff --cached --diff-filter=D --name-only 2>/dev/null
+  } | awk -v n="$name" '
+      /\/SKILL\.md$/ {
+        sub(/\/SKILL\.md$/, "");
+        if ($0 ~ "^skills/[^/]+$") print;
+        else if ($0 ~ ("^packages/" n "/skills/[^/]+$")) print;
+      }
+    ' | sort -u
 }
 
 count_commits() {
