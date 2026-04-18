@@ -17,50 +17,58 @@ The `@leclause` suffix in the second command is the marketplace alias that the f
 
 ## Skills
 
-| Plugin | Command | Auto | Hooks | Description |
-|--------|---------|:----:|:-----:|-------------|
-| **autonomous** | `/autonomous:rover` | | | Dispatch a rover at a task. You stay back, the rover works in the field; the distance means it decides autonomously. Ships with eight skills: `rover` (entry), `rover-help` (briefing), `cron` (scheduling + backoff), `decide` (choice framework, also standalone), `pride` (contrarian review), `verify` (evidence discipline and Done criteria), `wake`, and `stop`. No hard deps on personal or team skills. |
-| **bonsai** | `/bonsai` | | | Worktree lifecycle manager: create a worktree + Claude session in a new iTerm2 pane, or prune worktrees with safety checks. Requires macOS + iTerm2. |
-| **clipboard** | `/clipboard` | | | Copy the core content of the last answer to the clipboard. `/clipboard slack` for rich text. |
-| **commit-all-the-things** | `/commit-all-the-things` | | | Commit all uncommitted changes in the working tree, grouped into logical commits with descriptive messages. |
-| **dont-do-that** | ❌ | | ✅ | Eight guardrail hooks that push back on common AI reflexes: shifting blame, stopping prematurely, delegating verification, and em-dashes in prose. See [dont-do-that](packages/dont-do-that/README.md). |
-| **export-skill** | `/export-skill` | | | Export a skill for sharing. Orchestrator that chains five sub-skills, each also user-invocable on its own: `sanitize` (PII + security), `translate` (en/nl), `port` (linux/windows/macos), `package` (zip or single-file md), `share` (clipboard summary + Finder handoff). |
-| **eye-of-the-beholder** | `/eye-of-the-beholder` | ✅ | | Catches cramped text, missing margins, and disproportionate spacing in visual layouts (screen, print, responsive). |
-| **ground** | `/ground` | ✅ | | Verify Claude's recent output with external sources when you challenge accuracy. |
-| **gurus** | `/gurus` | | | Opinionated code review panel with 8 expert perspectives (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). |
-| **how-plugins-work** | `/how-plugins-work` | ✅ | | Living document explaining how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work. |
-| **inspiratie** | `/inspiratie` | ✅ | | Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. |
-| **rebase-latest-default** | `/rebase-latest-default` | | | Rebase current branch on the latest default branch (local or remote) with staleness check and automatic conflict resolution. |
-| **recap** | `/recap` | | | Structured status overview of the current session: what we're doing, where we are, what's next. |
-| **recursion** | `/recursion` | | | Nightly workflow-improvement loop. Orchestrator manages schedule, state, focus, reject. Ships with an internal `research` sub-skill that runs parallel friction and external discovery agents, synthesizes findings, and writes atomic improvement plans. |
-| **rename-suggestion** | `/rename-suggestion` | | | Suggest a descriptive session name based on conversation context. |
-| **saysay** | `/saysay` | | | Claude speaks every response aloud. `/saysay off` to exit. |
-| **screen-recording** | `/screen-recording` | ✅ | | Automated screen recordings and demo videos of browser-based features. |
-| **self-improvement** | `/self-improvement` | | | Update CLAUDE.md and skills based on feedback. Detects duplication and extracts large sections into skills. |
-| **testing-philosophy** | ❌ | ✅ | | Opinionated testing guide covering TDD workflow, Cucumber/Gherkin, flaky test diagnosis, and test suite health. |
-| **whywhy** | `/whywhy [n]` | ✅ | | Drill N layers deep into a question or goal (default 7), then analyze the chain for a better direction. |
+| Plugin | Command | Auto | Hooks | Platform | Description |
+|--------|---------|:----:|:-----:|:--------:|-------------|
+| **autonomous** | `/autonomous:rover` | | | | Dispatch a rover at a task. You stay back, the rover works in the field; the distance means it decides autonomously. Ships with eight skills: `rover` (entry), `rover-help` (briefing), `cron` (scheduling + backoff), `decide` (choice framework, also standalone), `pride` (contrarian review), `verify` (evidence discipline and Done criteria), `wake`, and `stop`. No hard deps on personal or team skills. |
+| **bonsai** | `/bonsai` | | | macOS | Worktree lifecycle manager: create a worktree + Claude session in a new iTerm2 pane, or prune worktrees with safety checks. Requires macOS + iTerm2. |
+| **clipboard** | `/clipboard` | | | macOS | Copy the core content of the last answer to the clipboard via the `clipboard-copy` helper. `/clipboard slack` for rich text. |
+| **commit-all-the-things** | `/commit-all-the-things` | | | | Commit all uncommitted changes in the working tree, grouped into logical commits with descriptive messages. |
+| **dont-do-that** | ❌ | | ✅ | | Eight guardrail hooks that push back on common AI reflexes: shifting blame, stopping prematurely, delegating verification, and em-dashes in prose. See [dont-do-that](packages/dont-do-that/README.md). |
+| **export-skill** | `/export-skill` | | | macOS | Export a skill for sharing. Orchestrator that chains five sub-skills, each also user-invocable on its own: `sanitize` (PII + security), `translate` (en/nl), `port` (linux/windows/macos), `package` (zip or single-file md), `share` (clipboard summary + Finder handoff). The `share` sub-skill is macOS-only; the others run anywhere. |
+| **eye-of-the-beholder** | `/eye-of-the-beholder` | ✅ | | | Catches cramped text, missing margins, and disproportionate spacing in visual layouts (screen, print, responsive). |
+| **ground** | `/ground` | ✅ | | | Verify Claude's recent output with external sources when you challenge accuracy. |
+| **gurus** | `/gurus` | | | | Opinionated code review panel with 8 expert perspectives (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). |
+| **how-plugins-work** | `/how-plugins-work` | ✅ | | | Living document explaining how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work. |
+| **inspiratie** | `/inspiratie` | ✅ | | | Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. |
+| **rebase-latest-default** | `/rebase-latest-default` | | | | Rebase current branch on the latest default branch (local or remote) with staleness check and automatic conflict resolution. |
+| **recap** | `/recap` | | | | Structured status overview of the current session: what we're doing, where we are, what's next. |
+| **recursion** | `/recursion` | | | | Nightly workflow-improvement loop. Orchestrator manages schedule, state, focus, reject. Ships with an internal `research` sub-skill that runs parallel friction and external discovery agents, synthesizes findings, and writes atomic improvement plans. |
+| **rename-suggestion** | `/rename-suggestion` | | | macOS | Suggest a descriptive session name based on conversation context. Copies the command via `clipboard-copy`, which is macOS-only; on other platforms the ghost-text suggestion still works but the clipboard step is skipped. |
+| **saysay** | `/saysay` | | | macOS | Claude speaks every response aloud. `/saysay off` to exit. |
+| **screen-recording** | `/screen-recording` | ✅ | | | Automated screen recordings and demo videos of browser-based features. |
+| **self-improvement** | `/self-improvement` | | | | Update CLAUDE.md and skills based on feedback. Detects duplication and extracts large sections into skills. |
+| **testing-philosophy** | ❌ | ✅ | | | Opinionated testing guide covering TDD workflow, Cucumber/Gherkin, flaky test diagnosis, and test suite health. |
+| **whywhy** | `/whywhy [n]` | ✅ | | | Drill N layers deep into a question or goal (default 7), then analyze the chain for a better direction. |
+
+**Auto column:** skills with a check in this column self-activate when Claude matches the skill's `description` frontmatter against the conversation context. No hook is involved, no separate frontmatter flag; Claude reads the description and decides whether the skill fits the current task. **Platform column** is blank for cross-platform skills; a value names the only platform the skill has been built and tested against.
 
 ## Platform notes
 
-Some skills require macOS-specific tools:
+Some skills ship helper binaries that must live on your `$PATH`. Install them with `cp -f` from the plugin cache into `/usr/local/bin/` (or anywhere else on `$PATH`). Symlinks would reintroduce the Windows breakage the marketplace is symlink-free to avoid, so every install step below is a copy.
+
+Re-run the `cp -f` commands after each `claude plugins update <plugin>@leclause` so the installed binaries stay in sync with the updated plugin.
 
 ### clipboard
 
-Rich text mode (`/clipboard slack`) requires `pbcopy-html`, a Swift script shipped with the plugin:
+The `clipboard-copy` helper (shipped as a Node script at `packages/clipboard/bin/clipboard-copy`) is invoked by skill code directly via its path in the plugin cache, so no install step is needed for plain clipboard copies.
+
+Rich text mode (`/clipboard slack`) drives `pbcopy-html`, a Swift script that `clipboard-copy --html` runs from its neighbouring `skills/clipboard/` directory. Copy it into your PATH if you want to invoke it directly from a shell:
 
 ```bash
-ln -s "$(pwd)/packages/clipboard/skills/clipboard/pbcopy-html.swift" /usr/local/bin/pbcopy-html
+SRC=$(ls -1dt "$HOME/.claude/plugins/cache/leclause/clipboard/"*/ | head -1)
+cp -f "${SRC}packages/clipboard/skills/clipboard/pbcopy-html.swift" /usr/local/bin/pbcopy-html
 ```
 
-Plain text mode uses the built-in `pbcopy` and works out of the box on macOS.
+Plain text mode goes through `pbcopy` directly, no install needed.
 
 ### saysay
 
-Speech mode requires macOS `say` and two scripts shipped with the plugin:
+Speech mode requires the macOS `say` binary plus two scripts shipped with the plugin:
 
 ```bash
-ln -s "$(pwd)/packages/saysay/skills/saysay/saysay" /usr/local/bin/saysay
-ln -s "$(pwd)/packages/saysay/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
+SRC=$(ls -1dt "$HOME/.claude/plugins/cache/leclause/saysay/"*/ | head -1)
+cp -f "${SRC}packages/saysay/skills/saysay/saysay" /usr/local/bin/saysay
+cp -f "${SRC}packages/saysay/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
 ```
 
 Phonetic mappings are stored per user in `~/.local/share/saysay/phonetics.json` (XDG).
