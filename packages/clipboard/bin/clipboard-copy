@@ -1,0 +1,36 @@
+#!/usr/bin/env node
+
+const { spawnSync } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+
+if (process.platform !== 'darwin') {
+  process.stderr.write('clipboard-copy: macOS only (depends on pbcopy / pbcopy-html).\n');
+  process.exit(1);
+}
+
+const args = process.argv.slice(2);
+const html = args.includes('--html');
+const unknown = args.filter(a => a !== '--html');
+if (unknown.length > 0) {
+  process.stderr.write(`clipboard-copy: unknown argument "${unknown[0]}". Usage: clipboard-copy [--html]\n`);
+  process.exit(2);
+}
+
+const stdin = fs.readFileSync(0);
+if (stdin.length === 0) {
+  process.stderr.write('clipboard-copy: empty stdin.\n');
+  process.exit(3);
+}
+
+const binDir = path.dirname(fs.realpathSync(__filename));
+const swiftScript = path.join(binDir, '..', 'skills', 'clipboard', 'pbcopy-html.swift');
+
+const cmd = html ? swiftScript : 'pbcopy';
+const result = spawnSync(cmd, [], { input: stdin, stdio: ['pipe', 'inherit', 'inherit'] });
+
+if (result.error) {
+  process.stderr.write(`clipboard-copy: failed to invoke ${cmd}: ${result.error.message}\n`);
+  process.exit(4);
+}
+process.exit(result.status ?? 0);
