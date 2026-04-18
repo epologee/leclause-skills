@@ -1,30 +1,29 @@
 ---
 name: clipboard
 user-invocable: true
-description: Use when the user types /clipboard to copy the core content of the last answer to the macOS clipboard via pbcopy. Formats output based on content type. Supports /clipboard slack for rich text.
+description: Use when the user types /clipboard to copy the core content of the last answer to the macOS clipboard via the clipboard-copy helper. Formats output based on content type. Supports /clipboard slack for rich text.
 allowed-tools:
-  - Bash(pbcopy *)
-  - Bash(*pbcopy-html*)
+  - Bash(*clipboard-copy*)
 effort: low
 disable-model-invocation: true
 ---
 
 # Clipboard
 
-Kopieer de kern van je laatste antwoord naar het macOS clipboard via `pbcopy`. Geen bevestiging, geen uitleg. Gewoon kopiëren.
+Kopieer de kern van je laatste antwoord naar het macOS clipboard via `clipboard-copy` (de helper die `pbcopy` en `pbcopy-html` onder water aanroept). Geen bevestiging, geen uitleg. Gewoon kopiëren.
 
 ## Argumenten
 
 | Argument | Effect |
 |----------|--------|
-| *(geen)* | Plain text via `pbcopy` (standaard) |
-| `slack` | Rich text (HTML) via `pbcopy-html` (inline code, bold, en lijsten worden correct gerenderd bij plakken in Slack). Tabellen worden geconverteerd naar bold-label lijsten (Slack ondersteunt geen HTML tables) |
+| *(geen)* | Plain text via `clipboard-copy` (wraps `pbcopy`) |
+| `slack` | Rich text (HTML) via `clipboard-copy --html` (wraps `pbcopy-html`). Inline code, bold, en lijsten worden correct gerenderd bij plakken in Slack. Tabellen worden geconverteerd naar ASCII in een `<pre>` blok (Slack ondersteunt geen HTML tables) |
 
 ## Workflow
 
 1. **Identificeer de kern** van je laatste inhoudelijke antwoord, de bruikbare content, niet de meta-communicatie eromheen. Als het laatste antwoord zelf een clipboard-actie, login, of andere meta-operatie was, kijk verder terug naar het laatste antwoord met daadwerkelijke content
 2. **Bepaal het content type** (zie tabel)
-3. **Check het argument**: `slack` → genereer HTML en gebruik `pbcopy-html` (zie sectie "Slack modus"). Geen argument → plain text via `pbcopy`
+3. **Check het argument**: `slack` → genereer HTML en gebruik `clipboard-copy --html` (zie sectie "Slack modus"). Geen argument → plain text via `clipboard-copy`
 4. **Format en kopieer**
 5. **Bevestig kort** wat er gekopieerd is (type + eerste paar woorden)
 
@@ -85,7 +84,7 @@ Claude Code output bevat vaak:
 Gebruik een heredoc om formatting-problemen te voorkomen:
 
 ```bash
-pbcopy <<'CLIPBOARD'
+clipboard-copy <<'CLIPBOARD'
 [content here]
 CLIPBOARD
 ```
@@ -94,19 +93,19 @@ CLIPBOARD
 
 ### Slack modus
 
-Wanneer het argument `slack` is meegegeven, genereer HTML in plaats van plain text en gebruik `pbcopy-html`:
+Wanneer het argument `slack` is meegegeven, genereer HTML in plaats van plain text en roep `clipboard-copy --html`:
 
 ```bash
-pbcopy-html <<'CLIPBOARD'
+clipboard-copy --html <<'CLIPBOARD'
 [HTML content here]
 CLIPBOARD
 ```
 
-`pbcopy-html` zet de HTML als rich text op het clipboard (via `NSPasteboard`). Slack pikt dit op en rendert formatting correct. Daarnaast wordt een plain text fallback (HTML tags gestript) meegestuurd voor apps die geen rich text ondersteunen.
+`clipboard-copy --html` stuurt de HTML door `pbcopy-html.swift`, dat het als rich text op het clipboard zet (via `NSPasteboard`). Slack pikt dit op en rendert formatting correct. Daarnaast wordt een plain text fallback (HTML tags gestript) meegestuurd voor apps die geen rich text ondersteunen.
 
 #### Markdown -> HTML conversie
 
-Converteer de content naar HTML voordat je het aan `pbcopy-html` geeft:
+Converteer de content naar HTML voordat je het aan `clipboard-copy --html` geeft:
 
 | Markdown | HTML |
 |----------|------|
@@ -151,7 +150,7 @@ De job is goed uitgevoerd. Alle platforms uit `PLATFORM_TIMEOUTS` zijn **volledi
 
 Wordt:
 ```bash
-pbcopy-html <<'CLIPBOARD'
+clipboard-copy --html <<'CLIPBOARD'
 De job is goed uitgevoerd. Alle platforms uit <code>PLATFORM_TIMEOUTS</code> zijn <b>volledig</b> backfilled.
 CLIPBOARD
 ```
