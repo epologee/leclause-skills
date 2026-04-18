@@ -73,8 +73,12 @@ retired_paths_for() {
   } | awk -v n="$name" '
       /\/SKILL\.md$/ {
         sub(/\/SKILL\.md$/, "");
-        if ($0 ~ "^skills/[^/]+$") print;
-        else if ($0 ~ ("^packages/" n "/skills/[^/]+$")) print;
+        if ($0 ~ "^skills/[^/]+$") { print; next }
+        pfx = "packages/" n "/skills/"
+        if (index($0, pfx) == 1) {
+          rest = substr($0, length(pfx) + 1)
+          if (rest ~ "^[^/]+$") print
+        }
       }
     ' | sort -u
 }

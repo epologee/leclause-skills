@@ -1,5 +1,5 @@
 {
   "name": "clipboard",
   "description": "Copy core content of the last answer to the macOS clipboard via pbcopy. Supports plain text and Slack rich text.",
-  "version": "1.0.7"
+  "version": "1.0.8"
 }

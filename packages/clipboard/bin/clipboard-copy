@@ -30,7 +30,15 @@ const cmd = html ? swiftScript : 'pbcopy';
 const result = spawnSync(cmd, [], { input: stdin, stdio: ['pipe', 'inherit', 'inherit'] });
 
 if (result.error) {
-  process.stderr.write(`clipboard-copy: failed to invoke ${cmd}: ${result.error.message}\n`);
+  if (result.error.code === 'ENOENT' && html) {
+    process.stderr.write(`clipboard-copy: swift not found at ${swiftScript}. On macOS, install the Xcode command line tools: xcode-select --install\n`);
+  } else {
+    process.stderr.write(`clipboard-copy: failed to invoke ${cmd}: ${result.error.message}\n`);
+  }
   process.exit(4);
+}
+if (result.signal) {
+  process.stderr.write(`clipboard-copy: ${cmd} died from signal ${result.signal}\n`);
+  process.exit(5);
 }
 process.exit(result.status ?? 0);

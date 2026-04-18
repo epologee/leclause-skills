@@ -33,7 +33,7 @@ The `@leclause` suffix in the second command is the marketplace alias that the f
 | **rebase-latest-default** | `/rebase-latest-default` | | | | Rebase current branch on the latest default branch (local or remote) with staleness check and automatic conflict resolution. |
 | **recap** | `/recap` | | | | Structured status overview of the current session: what we're doing, where we are, what's next. |
 | **recursion** | `/recursion` | | | | Nightly workflow-improvement loop. Orchestrator manages schedule, state, focus, reject. Ships with an internal `research` sub-skill that runs parallel friction and external discovery agents, synthesizes findings, and writes atomic improvement plans. |
-| **rename-suggestion** | `/rename-suggestion` | | | macOS | Suggest a descriptive session name based on conversation context. Copies the command via `clipboard-copy`, which is macOS-only; on other platforms the ghost-text suggestion still works but the clipboard step is skipped. |
+| **rename-suggestion** | `/rename-suggestion` | | | | Suggest a descriptive session name based on conversation context. Portable; the macOS-only `clipboard-copy` helper is invoked when present, and on other platforms the ghost-text suggestion still works without the clipboard step. |
 | **saysay** | `/saysay` | | | macOS | Claude speaks every response aloud. `/saysay off` to exit. |
 | **screen-recording** | `/screen-recording` | ✅ | | | Automated screen recordings and demo videos of browser-based features. |
 | **self-improvement** | `/self-improvement` | | | | Update CLAUDE.md and skills based on feedback. Detects duplication and extracts large sections into skills. |
@@ -44,19 +44,19 @@ The `@leclause` suffix in the second command is the marketplace alias that the f
 
 ## Platform notes
 
-Some skills ship helper binaries that must live on your `$PATH`. Install them with `cp -f` from the plugin cache into `/usr/local/bin/` (or anywhere else on `$PATH`). Symlinks would reintroduce the Windows breakage the marketplace is symlink-free to avoid, so every install step below is a copy.
+Some skills ship helper binaries that must live on your `$PATH`. Install them with `cp -f` from the active plugin install into `/usr/local/bin/` (or anywhere else on `$PATH`). Symlinks would reintroduce the Windows breakage the marketplace is symlink-free to avoid, so every install step below is a copy.
 
-Re-run the `cp -f` commands after each `claude plugins update <plugin>@leclause` so the installed binaries stay in sync with the updated plugin.
+The authoritative source for "which plugin version is active right now" is `~/.claude/plugins/installed_plugins.json`. Each install step below resolves the install path from that file via `jq`, so it always picks the version Claude Code is currently loading rather than the newest directory in the cache. Re-run the `cp -f` commands after each `claude plugins update <plugin>@leclause` so the installed binaries match the updated plugin.
 
 ### clipboard
 
 The `clipboard-copy` helper (shipped as a Node script at `packages/clipboard/bin/clipboard-copy`) is invoked by skill code directly via its path in the plugin cache, so no install step is needed for plain clipboard copies.
 
-Rich text mode (`/clipboard slack`) drives `pbcopy-html`, a Swift script that `clipboard-copy --html` runs from its neighbouring `skills/clipboard/` directory. Copy it into your PATH if you want to invoke it directly from a shell:
+Rich text mode (`/clipboard slack`) drives `pbcopy-html`, a Swift script that `clipboard-copy --html` runs from its neighbouring `skills/clipboard/` directory. Copy it onto your `$PATH` if you want to invoke `pbcopy-html` directly from a shell:
 
 ```bash
-SRC=$(ls -1dt "$HOME/.claude/plugins/cache/leclause/clipboard/"*/ | head -1)
-cp -f "${SRC}packages/clipboard/skills/clipboard/pbcopy-html.swift" /usr/local/bin/pbcopy-html
+SRC=$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)
+cp -f "$SRC/packages/clipboard/skills/clipboard/pbcopy-html.swift" /usr/local/bin/pbcopy-html
 ```
 
 Plain text mode goes through `pbcopy` directly, no install needed.
@@ -66,9 +66,9 @@ Plain text mode goes through `pbcopy` directly, no install needed.
 Speech mode requires the macOS `say` binary plus two scripts shipped with the plugin:
 
 ```bash
-SRC=$(ls -1dt "$HOME/.claude/plugins/cache/leclause/saysay/"*/ | head -1)
-cp -f "${SRC}packages/saysay/skills/saysay/saysay" /usr/local/bin/saysay
-cp -f "${SRC}packages/saysay/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
+SRC=$(jq -r '.plugins["saysay@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)
+cp -f "$SRC/packages/saysay/skills/saysay/saysay" /usr/local/bin/saysay
+cp -f "$SRC/packages/saysay/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
 ```
 
 Phonetic mappings are stored per user in `~/.local/share/saysay/phonetics.json` (XDG).
