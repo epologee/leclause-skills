@@ -27,15 +27,17 @@ Genereer een korte, beschrijvende sessienaam op basis van de conversatiecontext.
 
 3. **Validatie:** als de conversatie geen identificeerbaar kernonderwerp heeft (sessie te kort, te generiek, of uitsluitend over onderwerpen die niet onderscheidend zijn zoals "Claude configureren"), produceer geen verzonnen naam. Gebruik dan in stap 4 de placeholder `/rename <beschrijvende-naam>` en meld in één zin welke informatie ontbreekt om een passende naam te genereren.
 
-4. **Kopieer het volledige `/rename <naam>` command naar het clipboard** via de `clipboard-copy` helper uit de `clipboard@leclause` plugin (macOS-only). Source `clipboard-paths.sh` om het pad te resolven; de helper schrijft zijn eigen stderr met de exacte remedie als de plugin ontbreekt of de cache achterloopt:
+4. **Kopieer het volledige `/rename <naam>` command naar het clipboard** via de `clipboard-copy` helper uit de `clipboard@leclause` plugin (macOS-only). Resolve de plugin eerst, source daarna `clipboard-paths.sh`; beide bronnen van falen (plugin niet geïnstalleerd; of wel geïnstalleerd maar de cache is oud) krijgen elk een duidelijke stderr-regel:
    ```bash
-   . "$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/clipboard-paths.sh"
-   if CLIPBOARD_COPY=$(resolve_clipboard_copy); then
+   IP=$(jq -r '.plugins["clipboard@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
+   if [ -z "$IP" ]; then
+     echo "rename-suggestion: clipboard@leclause is not installed; skipping clipboard step. Run: claude plugins install clipboard@leclause to enable." >&2
+   elif . "$IP/bin/clipboard-paths.sh" && CLIPBOARD_COPY=$(resolve_clipboard_copy); then
      printf '/rename <naam>\n' | "$CLIPBOARD_COPY"
    fi
    ```
 
-   Wanneer de resolver faalt (plugin niet geïnstalleerd of oude cache zonder `bin/clipboard-copy`) blijft de originele foutmelding uit `resolve_clipboard_copy` op stderr staan en wordt de clipboard-stap overgeslagen. De ghost-text suggestie werkt nog steeds, omdat de `/rename` regel ook in de output staat.
+   De clipboard-stap wordt overgeslagen wanneer de resolver faalt; de ghost-text suggestie werkt nog steeds omdat de `/rename` regel ook in de output staat.
 
 5. **Toon het rename command als allerlaatste regel:**
    ```

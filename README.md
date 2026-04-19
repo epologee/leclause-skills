@@ -31,7 +31,7 @@ The `@leclause` suffix in the second command is the marketplace alias that the f
 | **how-plugins-work** | `/how-plugins-work` | ✅ | | | Living document explaining how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work. |
 | **inspiratie** | `/inspiratie` | ✅ | | | Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. |
 | **rebase-latest-default** | `/rebase-latest-default` | | | | Rebase current branch on the latest default branch (local or remote) with staleness check and automatic conflict resolution. |
-| **recap** | `/recap` | | | | Structured status overview of the current session: what we're doing, where we are, what's next. |
+| **recap** | `/recap` | | | | Structured status overview of the current session: what we are doing, where we are, what is next. |
 | **recursion** | `/recursion` | | | | Nightly workflow-improvement loop. Orchestrator manages schedule, state, focus, reject. Ships with an internal `research` sub-skill that runs parallel friction and external discovery agents, synthesizes findings, and writes atomic improvement plans. |
 | **rename-suggestion** | `/rename-suggestion` | | | | Suggest a descriptive session name based on conversation context. Portable; the macOS-only `clipboard-copy` helper is invoked when present, and on other platforms the ghost-text suggestion still works without the clipboard step. |
 | **saysay** | `/saysay` | | | macOS | Claude speaks every response aloud. `/saysay off` to exit. |
@@ -96,4 +96,3 @@ export CLAUDE_CLI=my-wrapper
 ```
 
 Bonsai falls back to `claude` if the var is not set.
-

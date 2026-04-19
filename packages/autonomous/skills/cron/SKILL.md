@@ -52,16 +52,19 @@ Replace `<FILENAME>` with the actual file.
 **Locating the binary.** Resolve via `installed_plugins.json`, which is the authoritative source for the active install path (the same lookup `clipboard` and `rename-suggestion` use):
 
 ```bash
-RC=$(jq -r '.plugins["autonomous@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json)/bin/relative-cron
-if [ ! -x "$RC" ]; then
-  echo "cron: $RC not found. Run: claude plugins update autonomous@leclause" >&2
+IP=$(jq -r '.plugins["autonomous@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
+if [ -z "$IP" ]; then
+  echo "cron: autonomous@leclause not installed or installed_plugins.json missing. Run: claude plugins install autonomous@leclause" >&2
+  CRON="*/${minutes} * * * *"
+elif [ ! -x "$IP/bin/relative-cron" ]; then
+  echo "cron: $IP/bin/relative-cron not found. Run: claude plugins update autonomous@leclause" >&2
   CRON="*/${minutes} * * * *"
 else
-  CRON=$("$RC" "$minutes")
+  CRON=$("$IP/bin/relative-cron" "$minutes")
 fi
 ```
 
-The `jq` lookup returns the version Claude Code is currently loading, which matches the skill invoking this helper. No mtime-ordering, no pattern-sort heuristics.
+The `jq` lookup returns the version Claude Code is currently loading, which matches the skill invoking this helper. No mtime-ordering, no pattern-sort heuristics. Both failure paths name the exact remedy so the operator does not have to diagnose.
 
 ## When to change the cron
 

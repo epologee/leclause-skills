@@ -1,5 +1,5 @@
 {
   "name": "autonomous",
   "description": "Dispatch a rover at a task. You stay back, the rover works in the field; the distance means it must decide autonomously. A decide framework picks the path, a pride check catches blind spots, and the rover only reports done when the mission is solid. No hard dependencies on personal or team skills.",
-  "version": "1.0.26"
+  "version": "1.0.27"
 }
