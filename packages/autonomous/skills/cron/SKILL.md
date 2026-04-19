@@ -49,20 +49,19 @@ Replace `<FILENAME>` with the actual file.
 
 `relative-cron` is shipped in `bin/` of this plugin. It handles a quirk of cron expressions: `*/N` is not "fire every N minutes from now" but "fire on every minute divisible by N". So `*/20` fires at `:00`, `:20`, `:40`, regardless of when you set it up. If you write `*/20` at `:19`, the next fire is in 1 minute, not 20. For idle backoff where the goal is "wait N minutes before the next check," short intervals (≤ 10) are fine with `*/N` but longer intervals need an explicit target minute: `<current + N> * * * *`. `relative-cron` returns the right form for each case.
 
-**Locating the binary.** SKILL.md files are markdown, not scripts, so `$0` resolves to whatever shell launched Bash (usually `-zsh` or `/bin/bash`). Do not use `$(dirname "$0")`. Resolve via the plugin cache layout instead:
+**Locating the binary.** Resolve via `installed_plugins.json`, which is the authoritative source for the active install path (the same lookup `clipboard` and `rename-suggestion` use):
 
 ```bash
-# Plugins install under ~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/
-RC=$(compgen -G "$HOME/.claude/plugins/cache/*/autonomous/*/bin/relative-cron" | sort -V | tail -1)
-if [ -z "$RC" ] || [ ! -x "$RC" ]; then
-  echo "cron: relative-cron binary not found, using */N fallback" >&2
+RC=$(jq -r '.plugins["autonomous@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json)/bin/relative-cron
+if [ ! -x "$RC" ]; then
+  echo "cron: $RC not found. Run: claude plugins update autonomous@leclause" >&2
   CRON="*/${minutes} * * * *"
 else
   CRON=$("$RC" "$minutes")
 fi
 ```
 
-The `sort -V | tail -1` picks the highest installed version when multiple plugin versions coexist in the cache.
+The `jq` lookup returns the version Claude Code is currently loading, which matches the skill invoking this helper. No mtime-ordering, no pattern-sort heuristics.
 
 ## When to change the cron
 
@@ -154,7 +153,7 @@ On systems without `flock` (macOS by default), fall back to `mkdir` lock or atom
 
 ## Reference: relative-cron
 
-Shipped at `packages/autonomous/bin/relative-cron`. Usage:
+Source: `packages/autonomous/bin/relative-cron` (ships as `$installPath/bin/relative-cron` in the install cache). Usage:
 
 ```bash
 relative-cron 20     # -> "47 * * * *" (when now is :27)
