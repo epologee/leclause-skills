@@ -26,7 +26,7 @@ Deze drie namen zijn volledig onafhankelijk van elkaar. Claude Code combineert z
 | `claude plugin install` | `<plugin>@<marketplace>` | `claude plugin install how-plugins-work@leclause` |
 | `settings.json` enabledPlugins | `"<plugin>@<marketplace>": true` | `"how-plugins-work@leclause": true` |
 | `installed_plugins.json` key | `"<plugin>@<marketplace>"` | `"how-plugins-work@leclause": [...]` |
-| Plugin cache pad | `cache/<marketplace>/<plugin>/<version>/skills/<skill>/` | `cache/leclause/how-plugins-work/1.0.2/skills/how-plugins-work/` |
+| Plugin cache pad | `cache/<marketplace>/<plugin>/<version>/skills/<skill>/` | `cache/leclause/how-plugins-work/<version>/skills/how-plugins-work/` |
 | `skill-budget` SOURCE kolom | `<plugin>` | `how-plugins-work` |
 | `skill-budget` NAME kolom | `<skill>` | `how-plugins-work` |
 | System-reminder skill list | `<plugin>:<skill>` | `how-plugins-work:how-plugins-work` |
@@ -55,33 +55,6 @@ Twee **verschillende plugins** in dezelfde marketplace mogen wel een skill met d
 ### Tussen marketplaces
 
 `superpowers@claude-plugins-official` en `superpowers@leclause` kunnen naast elkaar bestaan (verschillende sleutels). Maar `Skill("superpowers:brainstorming")` bevat geen marketplace, dus als beide een `brainstorming` skill hebben, is de resolutie onvoorspelbaar. Vermijd plugin-namen die al bestaan in andere geinstalleerde marketplaces.
-
-## Dual-publishing: individueel en gebundeld
-
-Een skill kan in twee plugins tegelijk voorkomen: individueel (`ship-it@leclause`) en als onderdeel van een bundel (`leclause@leclause`). Beide symlinken naar dezelfde `skills/ship-it/SKILL.md` source.
-
-```
-packages/ship-it/skills/ship-it      -> skills/ship-it   (individueel)
-packages/leclause/skills/ship-it     -> skills/ship-it   (bundel)
-```
-
-**Beide mogen tegelijk enabled zijn.** Hoewel de system-reminder de skill dan dubbel toont (`ship-it:ship-it` en `leclause:ship-it`), is er geen functioneel conflict: de content is identiek omdat beide symlinken naar hetzelfde bronbestand. Claude Code pikt er een, het maakt niet uit welke.
-
-**De enige kosten zijn context-budget.** `skill-budget` telt de skill dubbel (CRUFT sectie detecteert dit). Oplossing: geef de individuele variant `disable-model-invocation: true` en houd de bundel actief, of andersom. Dan betaal je geen dubbele context-kosten maar behoud je de installatie-flexibiliteit.
-
-### Gebruiksscenario
-
-| Gebruiker | Installeert | Invocatie | Enable/disable |
-|-----------|-------------|-----------|----------------|
-| Poweruser | Individuele plugins | `/ship-it` (bare) | Per skill via enabledPlugins |
-| Nieuwe gebruiker | `leclause@leclause` bundel | `/leclause:ship-it` | Alles-of-niets |
-
-### Operationele kosten
-
-- De bundel-plugin bumpt bij elke wijziging aan elke skill
-- `packages/leclause/skills/` heeft een symlink per skill
-- Elke nieuwe skill vereist een symlink in de bundel EN een nieuw individueel package
-- De pre-commit hook moet de bundel-versie bumpen bij elke skill-wijziging
 
 ## SKILL.md frontmatter
 
@@ -116,21 +89,9 @@ Een skill kan het session model NIET veranderen. Het model dat de user koos bij 
 
 ## Symlinks en cross-platform
 
-Symlinks zijn het vehikel waarmee de leclause marketplace skills deelt tussen plugins: `packages/<plugin>/skills/<skill>` verwijst met `../../../skills/<skill>` naar de canonieke source. Officiële Anthropic docs bevestigen dat Claude Code symlinks niet dereferences tijdens install:
+De leclause marketplace is symlink-free. Elke skill leeft op één plek onder `packages/<plugin>/skills/<skill>/`, zonder shared-source via symlinks. Pre-commit en CI weigeren symlinks in de repo. De reden is Windows: Git for Windows heeft `core.symlinks=false` als default, dus bij clone worden symlinks omgezet naar text-files met het doelpad als inhoud, en de runtime resolution in Claude Code faalt. Een symlink-vrije layout werkt op macOS, Linux en Windows zonder extra consumer-setup.
 
-> Symlinks are preserved in the cache rather than dereferenced, and they resolve to their target at runtime.
-
-Bron: [Plugins reference, Plugin caching and file resolution](https://code.claude.com/docs/en/plugins-reference).
-
-Op macOS/Linux werkt dit direct. Op Windows breekt het één laag eerder: Git for Windows heeft `core.symlinks=false` als default, dus bij git clone worden symlinks geconverteerd naar text files die het doelpad als inhoud hebben. Wat in de plugin cache belandt is dan geen symlink meer maar een text file, en de runtime resolution faalt.
-
-**`git-subdir` lost dit niet op.** De sparse clone pakt alleen de subdirectory van een plugin mee, en onze symlinks wijzen met `../../../skills/` naar paden buiten de sparse clone. Voor elke consument (macOS, Linux, Windows) levert dat dangling symlinks of text files op.
-
-**`rsync -aL` produceert een gematerialiseerde kopie.** Empirisch getest tegen een lokale marketplace source: `rsync -aL --exclude=.git` van de repo naar een build-directory vervangt elke symlink door de echte directory-inhoud. `claude plugins install` op die build-directory landt in de cache zonder één symlink over. Dit is de structurele aanpak voor Windows-consumers: `main` blijft symlinks gebruiken, een release-branch bevat gematerialiseerde directories, en `marketplace.json` pinnen plugin sources op die branch.
-
-**`CLAUDE_CODE_PLUGIN_SEED_DIR`** is een consumer-side alternatief: een env variable die Claude Code naar een voorgematerialiseerde plugins-directory laat wijzen. Elke consument moet zelf zijn seed dir klaarzetten en bijhouden. Schaalt niet naar meerdere Windows-gebruikers.
-
-Zie `docs/windows-compat-investigation.md` in de leclause-skills repo voor de volledige analyse, inclusief afgewezen alternatieven en de bin-script impact.
+Anthropic docs beschrijven wel dat Claude Code symlinks in de install cache bewaart ([Plugins reference, Plugin caching and file resolution](https://code.claude.com/docs/en/plugins-reference)), maar dat vereist dat de symlinks de clone überhaupt overleven. De drie alternatieven die in een eerder experiment zijn verkend (`git-subdir`, `rsync -aL` materialisatie via release branch, `CLAUDE_CODE_PLUGIN_SEED_DIR`) bleken allemaal meer consumer-setup te vereisen dan een vlakke, symlink-vrije layout. De repo is daarop afgestemd.
 
 ## Versioning
 
@@ -197,6 +158,6 @@ Never advise the user to prefix or de-prefix a slash command without having run 
 
 - Oorspronkelijk experiment: `hpw@leclause` (korte plugin naam, 2026-04-06)
 - Hernoemd naar: `how-plugins-work@leclause` (plugin = skill naam, 2026-04-07)
-- Cache-layout + installPath-verificatie: 2026-04-19 (tegen `autonomous@leclause` 1.0.23; een eerdere verificatie tegen `clipboard@leclause` 1.0.5 leek te suggereren dat `bin/` niet zou shippen, maar dat pakte een pre-bin versie van die plugin; `bin/` ships wel voor plugins die het in de source hebben)
+- Cache-layout + installPath-verificatie: 2026-04-19 (tegen `autonomous@leclause` 1.0.23)
 - Claude Code versie: 2.1.92
 - Marketplace: leclause (local directory)
