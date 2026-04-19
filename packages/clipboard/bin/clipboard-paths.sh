@@ -9,6 +9,7 @@
 # validation and the human-readable errors are de-duplicated here.
 
 resolve_clipboard_copy() {
+  local ip cmd
   ip=$(jq -r '.plugins["clipboard@leclause"][0].installPath // empty' "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null)
   if [ -z "$ip" ]; then
     echo "clipboard-paths: 'clipboard@leclause' is not installed. Run: claude plugins install clipboard@leclause" >&2
