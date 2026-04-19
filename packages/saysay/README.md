@@ -14,12 +14,15 @@ Exit speech mode.
 
 ## Requirements
 
-macOS. Speech mode needs the macOS `say` binary plus two scripts shipped with the plugin. Symlink them into your PATH:
+macOS. Speech mode needs the macOS `say` binary plus two scripts shipped with the plugin. The marketplace is symlink-free to keep Windows consumers working, so install the scripts with `cp -f`:
 
 ```bash
-ln -s "$(pwd)/packages/saysay/skills/saysay/saysay" /usr/local/bin/saysay
-ln -s "$(pwd)/packages/saysay/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
+SRC=$(jq -r '.plugins["saysay@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)
+cp -f "$SRC/packages/saysay/skills/saysay/saysay" /usr/local/bin/saysay
+cp -f "$SRC/packages/saysay/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
 ```
+
+Re-run after each `claude plugins update saysay@leclause` so the installed copies match the updated plugin.
 
 ## Phonetic mappings
 
