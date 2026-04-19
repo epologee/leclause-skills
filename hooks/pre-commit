@@ -23,7 +23,7 @@ missing=""
 for skill_dir in packages/*/skills/*/; do
   [ -d "$skill_dir" ] || continue
   skill_name=$(basename "$skill_dir")
-  if ! grep -qF "$skill_name" "$readme"; then
+  if ! grep -qFw "$skill_name" "$readme"; then
     missing="$missing  - $skill_name\n"
   fi
 done
@@ -31,7 +31,7 @@ done
 if [ -n "$missing" ]; then
   echo "ERROR: Skills missing from README.md:"
   echo ""
-  printf "$missing"
+  printf '%b' "$missing"
   echo ""
   echo "Add a description for each skill to README.md before committing."
   exit 1
@@ -58,6 +58,9 @@ fi
 # Runs BEFORE plugin-versions so a rejected commit does not leave a bumped
 # plugin.json in the working tree.
 staged_files=$(git diff --cached --name-only --diff-filter=ACM)
+old_ifs=$IFS
+IFS='
+'
 for staged_file in $staged_files; do
   case "$staged_file" in
     packages/*/bin/*)
@@ -87,6 +90,7 @@ for staged_file in $staged_files; do
       ;;
   esac
 done
+IFS=$old_ifs
 
 plugin_versions_script="bin/plugin-versions"
 if [ -x "$plugin_versions_script" ]; then
