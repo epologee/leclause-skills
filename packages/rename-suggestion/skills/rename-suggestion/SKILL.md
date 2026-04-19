@@ -27,13 +27,16 @@ Genereer een korte, beschrijvende sessienaam op basis van de conversatiecontext.
 
 3. **Validatie:** als de conversatie geen identificeerbaar kernonderwerp heeft (sessie te kort, te generiek, of uitsluitend over onderwerpen die niet onderscheidend zijn zoals "Claude configureren"), produceer geen verzonnen naam. Gebruik dan in stap 4 de placeholder `/rename <beschrijvende-naam>` en meld in één zin welke informatie ontbreekt om een passende naam te genereren.
 
-4. **Kopieer het volledige `/rename <naam>` command naar het clipboard** via de `clipboard-copy` helper uit de `clipboard@leclause` plugin (macOS-only). De helper staat niet op `$PATH`; los het pad op via `jq` tegen `installed_plugins.json`, dat is dezelfde authoritative source als de root README install-story:
+4. **Kopieer het volledige `/rename <naam>` command naar het clipboard** via de `clipboard-copy` helper uit de `clipboard@leclause` plugin (macOS-only). Source `clipboard-paths.sh` om het pad te resolven en een nette foutmelding te krijgen als de plugin ontbreekt of de cache achterloopt:
    ```bash
-   CLIPBOARD_COPY=$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/clipboard-copy
-   printf '/rename <naam>\n' | "$CLIPBOARD_COPY"
+   . "$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/clipboard-paths.sh"
+   CLIPBOARD_COPY=$(resolve_clipboard_copy) || { echo "(clipboard step skipped; ghost-text suggestion still works below)" >&2; CLIPBOARD_COPY=""; }
+   if [ -n "$CLIPBOARD_COPY" ]; then
+     printf '/rename <naam>\n' | "$CLIPBOARD_COPY"
+   fi
    ```
 
-   Dit vereist dat de `clipboard` plugin ook geïnstalleerd is; op systemen zonder die plugin of op non-macOS exit `clipboard-copy` non-zero met een duidelijke melding. De skill kan dan doorgaan naar stap 5 zonder clipboard-stap; de ghost-text suggestie werkt nog steeds omdat de `/rename` regel ook in de output staat.
+   Op systemen zonder de `clipboard` plugin of op non-macOS is `CLIPBOARD_COPY` leeg en wordt de clipboard-stap overgeslagen; de ghost-text suggestie werkt nog steeds omdat de `/rename` regel ook in de output staat.
 
 5. **Toon het rename command als allerlaatste regel:**
    ```

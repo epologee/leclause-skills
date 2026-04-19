@@ -80,14 +80,15 @@ Claude Code output bevat vaak:
 
 ## Kopiëren
 
-`clipboard-copy` staat niet op `$PATH`; resolve het pad via `jq` tegen `installed_plugins.json` (de authoritative bron voor de actieve install), dat werkt in elk heredoc-blok. De helper woont in `bin/` van de geïnstalleerde plugin.
+`clipboard-copy` staat niet op `$PATH`. Elk code-blok source't `bin/clipboard-paths.sh` uit de clipboard plugin (via de `jq`-lookup in `installed_plugins.json`) en roept `resolve_clipboard_copy`. Die functie valideert dat de plugin geïnstalleerd is en dat de binary bestaat, en meldt anders met een bruikbare tip ("run `claude plugins install ...`" of "`claude plugins update ...`"). Geen bash "No such file or directory" meer als de cache achterloopt.
 
 ### Standaard (plain text)
 
 Gebruik een heredoc om formatting-problemen te voorkomen:
 
 ```bash
-CLIPBOARD_COPY=$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/clipboard-copy
+. "$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/clipboard-paths.sh"
+CLIPBOARD_COPY=$(resolve_clipboard_copy) || exit 1
 "$CLIPBOARD_COPY" <<'CLIPBOARD'
 [content here]
 CLIPBOARD
@@ -100,7 +101,8 @@ CLIPBOARD
 Wanneer het argument `slack` is meegegeven, genereer HTML in plaats van plain text en roep `clipboard-copy --html`:
 
 ```bash
-CLIPBOARD_COPY=$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/clipboard-copy
+. "$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/clipboard-paths.sh"
+CLIPBOARD_COPY=$(resolve_clipboard_copy) || exit 1
 "$CLIPBOARD_COPY" --html <<'CLIPBOARD'
 [HTML content here]
 CLIPBOARD
@@ -155,7 +157,8 @@ De job is goed uitgevoerd. Alle platforms uit `PLATFORM_TIMEOUTS` zijn **volledi
 
 Wordt:
 ```bash
-CLIPBOARD_COPY=$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/clipboard-copy
+. "$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/clipboard-paths.sh"
+CLIPBOARD_COPY=$(resolve_clipboard_copy) || exit 1
 "$CLIPBOARD_COPY" --html <<'CLIPBOARD'
 De job is goed uitgevoerd. Alle platforms uit <code>PLATFORM_TIMEOUTS</code> zijn <b>volledig</b> backfilled.
 CLIPBOARD
