@@ -8,7 +8,7 @@ Two rules that keep plugins portable across Mac, Linux, and Windows:
 
 1. **No symlinks anywhere in the repo.** Pre-commit and CI reject them. Git for Windows defaults to `core.symlinks=false` and turns symlinks into text files on clone; a symlinked skill silently disappears. Every skill lives in exactly one place: `packages/<plugin>/skills/<skill>/`.
 
-2. **Consumer-facing scripts under `packages/<plugin>/bin/` must use a portable shebang.** Only `#!/usr/bin/env node` and `#!/usr/bin/env python3` are accepted. The pre-commit hook rejects anything else and tells you what to port to. Operator-only scripts under repo-root `bin/` can use any shebang.
+2. **Consumer-facing scripts must live under `packages/<plugin>/skills/<skill>/` and use a portable shebang.** Claude Code only ships the `.claude-plugin/` directory, the plugin-level `README.md`, and the `skills/` tree into the install cache; anything under `packages/<plugin>/bin/` is dev-time only and will not reach consumers. Helper scripts that skill code calls at runtime therefore belong inside the skill directory. Portable shebang: prefer `#!/usr/bin/env node` or `#!/usr/bin/env python3` so the script runs on macOS, Linux, and Windows. The pre-commit hook rejects non-portable shebangs under `packages/<plugin>/bin/`; scripts under `packages/<plugin>/skills/` are not hook-checked and may use a non-portable interpreter when the skill is deliberately platform-scoped (for example the macOS-only `saysay` scripts). Operator-only scripts under repo-root `bin/` can use any shebang.
 
 ## Plugin versioning
 

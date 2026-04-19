@@ -1,5 +1,5 @@
 {
   "name": "saysay",
   "description": "Speech mode via macOS say command. Claude speaks output aloud after every response, translating screen content to spoken language.",
-  "version": "1.0.7"
+  "version": "1.0.8"
 }

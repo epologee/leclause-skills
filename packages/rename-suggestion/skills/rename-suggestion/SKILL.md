@@ -29,7 +29,7 @@ Genereer een korte, beschrijvende sessienaam op basis van de conversatiecontext.
 
 4. **Kopieer het volledige `/rename <naam>` command naar het clipboard** via de `clipboard-copy` helper uit de `clipboard@leclause` plugin (macOS-only). De helper staat niet op `$PATH`; los het pad op via `jq` tegen `installed_plugins.json`, dat is dezelfde authoritative source als de root README install-story:
    ```bash
-   CLIPBOARD_COPY=$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/packages/clipboard/bin/clipboard-copy
+   CLIPBOARD_COPY=$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/skills/clipboard/clipboard-copy
    printf '/rename <naam>\n' | "$CLIPBOARD_COPY"
    ```
 

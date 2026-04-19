@@ -14,13 +14,13 @@ Copies as Slack rich text via `pbcopy-html`, preserving bold, italic, code spans
 
 ## Requirements
 
-macOS. Plain text mode uses the built-in `pbcopy` and works out of the box; the skill itself calls the `clipboard-copy` helper (`packages/clipboard/bin/clipboard-copy`) from the plugin cache, so no install step is needed.
+macOS. Plain text mode uses the built-in `pbcopy` and works out of the box; the skill itself calls the `clipboard-copy` helper that ships inside `skills/clipboard/` of the installed plugin, so no install step is needed.
 
 Rich text mode (`/clipboard slack`) drives `pbcopy-html`, a Swift script shipped with the plugin. Copy it onto your `$PATH` if you want to invoke `pbcopy-html` directly from a shell; `clipboard-copy --html` already resolves it relative to its own location. The marketplace is symlink-free to keep Windows consumers working, so install with `cp -f`:
 
 ```bash
 SRC=$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)
-cp -f "$SRC/packages/clipboard/skills/clipboard/pbcopy-html.swift" /usr/local/bin/pbcopy-html
+cp -f "$SRC/skills/clipboard/pbcopy-html.swift" /usr/local/bin/pbcopy-html
 ```
 
 Re-run after each `claude plugins update clipboard@leclause` so the installed copy matches the updated plugin.

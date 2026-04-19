@@ -23,8 +23,8 @@ if (stdin.length === 0) {
   process.exit(3);
 }
 
-const binDir = path.dirname(fs.realpathSync(__filename));
-const swiftScript = path.join(binDir, '..', 'skills', 'clipboard', 'pbcopy-html.swift');
+const scriptDir = path.dirname(fs.realpathSync(__filename));
+const swiftScript = path.join(scriptDir, 'pbcopy-html.swift');
 
 if (html && !fs.existsSync(swiftScript)) {
   process.stderr.write(`clipboard-copy: pbcopy-html.swift not found at ${swiftScript}. The helper expects it next to this script in the plugin cache.\n`);

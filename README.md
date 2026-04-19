@@ -50,13 +50,13 @@ The authoritative source for "which plugin version is active right now" is `~/.c
 
 ### clipboard
 
-The `clipboard-copy` helper (shipped as a Node script at `packages/clipboard/bin/clipboard-copy`) is invoked by skill code directly via its path in the plugin cache, so no install step is needed for plain clipboard copies.
+The `clipboard-copy` helper ships as a Node script at `skills/clipboard/clipboard-copy` inside the plugin, so it lands in the install cache and skill code invokes it via a `jq`-resolved path. No install step is needed for plain clipboard copies.
 
 Rich text mode (`/clipboard slack`) drives `pbcopy-html`, a Swift script that `clipboard-copy --html` runs from its neighbouring `skills/clipboard/` directory. Copy it onto your `$PATH` if you want to invoke `pbcopy-html` directly from a shell:
 
 ```bash
 SRC=$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)
-cp -f "$SRC/packages/clipboard/skills/clipboard/pbcopy-html.swift" /usr/local/bin/pbcopy-html
+cp -f "$SRC/skills/clipboard/pbcopy-html.swift" /usr/local/bin/pbcopy-html
 ```
 
 Plain text mode goes through `pbcopy` directly, no install needed.
@@ -67,8 +67,8 @@ Speech mode requires the macOS `say` binary plus two scripts shipped with the pl
 
 ```bash
 SRC=$(jq -r '.plugins["saysay@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)
-cp -f "$SRC/packages/saysay/skills/saysay/saysay" /usr/local/bin/saysay
-cp -f "$SRC/packages/saysay/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
+cp -f "$SRC/skills/saysay/saysay" /usr/local/bin/saysay
+cp -f "$SRC/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
 ```
 
 Phonetic mappings are stored per user in `~/.local/share/saysay/phonetics.json` (XDG).

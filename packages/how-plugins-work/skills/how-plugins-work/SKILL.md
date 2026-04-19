@@ -136,6 +136,42 @@ Zie `docs/windows-compat-investigation.md` in de leclause-skills repo voor de vo
 
 De `version` field in `plugin.json` wordt automatisch bijgewerkt door de leclause pre-commit hook. Het format is `1.0.{commits}` waar `{commits}` het aantal commits is dat `packages/<name>/` of `skills/<name>/` heeft geraakt.
 
+## Wat landt er in de plugin cache
+
+Claude Code installeert een plugin uit het repo-subpad dat in `marketplace.json` is opgegeven (meestal `packages/<plugin>/`), maar **verhuist in de cache alleen `.claude-plugin/` en `skills/`**. Bestanden buiten die twee dirs (bijvoorbeeld `packages/<plugin>/bin/`, `packages/<plugin>/README.md`, of willekeurige andere subdirs van de repo) komen niet mee. Empirisch getest tegen `clipboard@leclause` in versie 1.0.5:
+
+```
+$HOME/.claude/plugins/cache/leclause/clipboard/1.0.5/
+├── .claude-plugin/
+│   └── plugin.json
+├── README.md            (wel meegenomen: dit is de plugin-level README, geen repo-root)
+└── skills/
+    └── clipboard/
+        └── ...
+```
+
+Geen `packages/` subdir, geen `bin/` subdir. De pre-commit regel in CLAUDE.md over portable shebangs in `packages/<plugin>/bin/` is dus een repo-time constraint voor scripts die operators lokaal gebruiken of die via een aparte install-step bij consumers landen; het zegt niets over wat Claude Code zelf meepakt.
+
+**Gevolg voor helper-scripts:** een script dat door skill-code moet worden aangeroepen moet onder `skills/<skill>/` leven om mee te gaan naar consumers. Alles onder `packages/<plugin>/bin/` is dev-time only, en een skill die zo'n binary aanroept breekt stil bij elke consumer.
+
+## Het pad naar de actieve install
+
+De authoritative bron voor "welke versie draait nu" is `~/.claude/plugins/installed_plugins.json`:
+
+```bash
+jq -r '.plugins["<plugin>@<marketplace>"][0].installPath' ~/.claude/plugins/installed_plugins.json
+```
+
+Dat pad is de **plugin-root in de cache**, niet een repo-root. Het bevat `.claude-plugin/`, `skills/`, en de plugin-level `README.md`. Concrete pad-templates:
+
+| Target | Correct pad | Fout pad (krijg je niet) |
+|--------|-------------|--------------------------|
+| Skill resource | `$installPath/skills/<skill>/<file>` | `$installPath/packages/<plugin>/skills/<skill>/<file>` |
+| Plugin manifest | `$installPath/.claude-plugin/plugin.json` | (geen andere) |
+| bin-script | bestaat niet in de cache | `$installPath/packages/<plugin>/bin/<script>` en `$installPath/bin/<script>` |
+
+De `ls -1dt ... | head -1` truc tegen `~/.claude/plugins/cache/<marketplace>/<plugin>/` wijst hetzelfde pad aan maar leunt op mtime-ordening en daardoor niet stabiel; de `jq` lookup werkt deterministisch.
+
 ## Troubleshooting: "Unknown command: /xyz"
 
 Observed symptom: user types `/rover` (or `/autonomous:rover`) and Claude Code replies `Unknown command`. Diagnose and fix. Do not narrate steps for the user to execute; Claude has shell access and can run the same commands. Dictating install commands is condescending when Claude can just install.
@@ -160,5 +196,6 @@ Never advise the user to prefix or de-prefix a slash command without having run 
 
 - Oorspronkelijk experiment: `hpw@leclause` (korte plugin naam, 2026-04-06)
 - Hernoemd naar: `how-plugins-work@leclause` (plugin = skill naam, 2026-04-07)
+- Cache-layout + installPath-verificatie: 2026-04-19 (tegen `clipboard@leclause` 1.0.5)
 - Claude Code versie: 2.1.92
 - Marketplace: leclause (local directory)

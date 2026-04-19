@@ -3,6 +3,7 @@ name: clipboard
 user-invocable: true
 description: Use when the user types /clipboard to copy the core content of the last answer to the macOS clipboard via the clipboard-copy helper. Formats output based on content type. Supports /clipboard slack for rich text.
 allowed-tools:
+  - Bash(jq *)
   - Bash(*clipboard-copy*)
 effort: low
 disable-model-invocation: true
@@ -79,12 +80,15 @@ Claude Code output bevat vaak:
 
 ## Kopiëren
 
+`clipboard-copy` staat niet op `$PATH`; resolve het pad via `jq` tegen `installed_plugins.json` (de authoritative bron voor de actieve install), dat werkt in elk heredoc-blok. De helper woont naast deze SKILL.md in `skills/clipboard/`.
+
 ### Standaard (plain text)
 
 Gebruik een heredoc om formatting-problemen te voorkomen:
 
 ```bash
-clipboard-copy <<'CLIPBOARD'
+CLIPBOARD_COPY=$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/skills/clipboard/clipboard-copy
+"$CLIPBOARD_COPY" <<'CLIPBOARD'
 [content here]
 CLIPBOARD
 ```
@@ -96,7 +100,8 @@ CLIPBOARD
 Wanneer het argument `slack` is meegegeven, genereer HTML in plaats van plain text en roep `clipboard-copy --html`:
 
 ```bash
-clipboard-copy --html <<'CLIPBOARD'
+CLIPBOARD_COPY=$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/skills/clipboard/clipboard-copy
+"$CLIPBOARD_COPY" --html <<'CLIPBOARD'
 [HTML content here]
 CLIPBOARD
 ```
@@ -150,7 +155,8 @@ De job is goed uitgevoerd. Alle platforms uit `PLATFORM_TIMEOUTS` zijn **volledi
 
 Wordt:
 ```bash
-clipboard-copy --html <<'CLIPBOARD'
+CLIPBOARD_COPY=$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/skills/clipboard/clipboard-copy
+"$CLIPBOARD_COPY" --html <<'CLIPBOARD'
 De job is goed uitgevoerd. Alle platforms uit <code>PLATFORM_TIMEOUTS</code> zijn <b>volledig</b> backfilled.
 CLIPBOARD
 ```
