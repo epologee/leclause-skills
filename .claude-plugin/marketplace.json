@@ -44,12 +44,12 @@
     },
     {
       "name": "gurus",
-      "description": "Opinionated code review panel with 8 expert perspectives (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot).",
+      "description": "Opinionated code review panel with 8 expert perspectives (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). Useful when a single reviewer voice would miss trade-offs that another tradition would flag immediately.",
       "source": "./packages/gurus"
     },
     {
       "name": "inspiratie",
-      "description": "Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. Dutch-language skill.",
+      "description": "Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. Forces external perspectives before committing to one path.",
       "source": "./packages/inspiratie"
     },
     {
@@ -59,7 +59,7 @@
     },
     {
       "name": "recap",
-      "description": "Structured status overview of the current session: what we're doing, where we are, what's next.",
+      "description": "Structured status overview of the current session: what we are doing, where we are, what is next. Useful when returning to a session after idle time, after compaction, or after a long stretch of repetitive background output.",
       "source": "./packages/recap"
     },
     {
@@ -84,7 +84,7 @@
     },
     {
       "name": "self-improvement",
-      "description": "Update CLAUDE.md and skills based on user feedback. Detects duplication, determines optimal location, extracts large sections into skills.",
+      "description": "Update CLAUDE.md and skills based on user feedback. Detects duplication, determines optimal location for new instructions, and extracts large sections into standalone skills when CLAUDE.md gets too long.",
       "source": "./packages/self-improvement"
     },
     {
