@@ -50,7 +50,7 @@ The authoritative source for "which plugin version is active right now" is `~/.c
 
 ### clipboard
 
-The `clipboard-copy` helper ships as a Node script at `skills/clipboard/clipboard-copy` inside the plugin, so it lands in the install cache and skill code invokes it via a `jq`-resolved path. No install step is needed for plain clipboard copies.
+The `clipboard-copy` helper ships as a Node script at `bin/clipboard-copy` inside the plugin, so it lands in the install cache and skill code invokes it via a `jq`-resolved path. No install step is needed for plain clipboard copies.
 
 Rich text mode (`/clipboard slack`) drives `pbcopy-html`, a Swift script that `clipboard-copy --html` runs from its neighbouring `skills/clipboard/` directory. Copy it onto your `$PATH` if you want to invoke `pbcopy-html` directly from a shell:
 

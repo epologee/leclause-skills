@@ -138,21 +138,22 @@ De `version` field in `plugin.json` wordt automatisch bijgewerkt door de leclaus
 
 ## Wat landt er in de plugin cache
 
-Claude Code installeert een plugin uit het repo-subpad dat in `marketplace.json` is opgegeven (meestal `packages/<plugin>/`), maar **verhuist in de cache alleen `.claude-plugin/` en `skills/`**. Bestanden buiten die twee dirs (bijvoorbeeld `packages/<plugin>/bin/`, `packages/<plugin>/README.md`, of willekeurige andere subdirs van de repo) komen niet mee. Empirisch getest tegen `clipboard@leclause` in versie 1.0.5:
+Claude Code installeert een plugin uit het repo-subpad dat in `marketplace.json` is opgegeven (meestal `packages/<plugin>/`) en dropt de volledige inhoud van dat subpad in de cache. Dat betekent: `.claude-plugin/`, `skills/`, de plugin-level `README.md`, **en** `bin/` landen allemaal mee. Bestanden buiten het subpad (bijvoorbeeld de repo-root `README.md` of de repo-root `bin/`) komen niet mee, want de plugin source start bij `packages/<plugin>/`, niet bij de repo-root.
+
+Empirisch getest tegen `autonomous@leclause` in versie 1.0.23:
 
 ```
-$HOME/.claude/plugins/cache/leclause/clipboard/1.0.5/
+$HOME/.claude/plugins/cache/leclause/autonomous/1.0.23/
 ├── .claude-plugin/
 │   └── plugin.json
-├── README.md            (wel meegenomen: dit is de plugin-level README, geen repo-root)
+├── README.md            (plugin-level, niet repo-root)
+├── bin/
+│   └── relative-cron    (consumer-facing helper)
 └── skills/
-    └── clipboard/
-        └── ...
+    └── <skill>/...
 ```
 
-Geen `packages/` subdir, geen `bin/` subdir. De pre-commit regel in CLAUDE.md over portable shebangs in `packages/<plugin>/bin/` is dus een repo-time constraint voor scripts die operators lokaal gebruiken of die via een aparte install-step bij consumers landen; het zegt niets over wat Claude Code zelf meepakt.
-
-**Gevolg voor helper-scripts:** een script dat door skill-code moet worden aangeroepen moet onder `skills/<skill>/` leven om mee te gaan naar consumers. Alles onder `packages/<plugin>/bin/` is dev-time only, en een skill die zo'n binary aanroept breekt stil bij elke consumer.
+Oudere cache-versies van dezelfde plugin kunnen een andere layout hebben, afhankelijk van wat er in de repo stond op het moment van die installatie. Een cache-inspectie tegen een oude versie bewijst niets over de huidige source-layout; test tegen een fresh `claude plugins update`.
 
 ## Het pad naar de actieve install
 
@@ -162,15 +163,15 @@ De authoritative bron voor "welke versie draait nu" is `~/.claude/plugins/instal
 jq -r '.plugins["<plugin>@<marketplace>"][0].installPath' ~/.claude/plugins/installed_plugins.json
 ```
 
-Dat pad is de **plugin-root in de cache**, niet een repo-root. Het bevat `.claude-plugin/`, `skills/`, en de plugin-level `README.md`. Concrete pad-templates:
+Dat pad is de **plugin-root in de cache**, niet de repo-root. Het bevat `.claude-plugin/`, `skills/`, `bin/` (als de plugin source die heeft) en de plugin-level `README.md`. Concrete pad-templates:
 
-| Target | Correct pad | Fout pad (krijg je niet) |
-|--------|-------------|--------------------------|
+| Target | Correct pad | Fout pad |
+|--------|-------------|----------|
 | Skill resource | `$installPath/skills/<skill>/<file>` | `$installPath/packages/<plugin>/skills/<skill>/<file>` |
+| Bin-script | `$installPath/bin/<script>` | `$installPath/packages/<plugin>/bin/<script>` |
 | Plugin manifest | `$installPath/.claude-plugin/plugin.json` | (geen andere) |
-| bin-script | bestaat niet in de cache | `$installPath/packages/<plugin>/bin/<script>` en `$installPath/bin/<script>` |
 
-De `ls -1dt ... | head -1` truc tegen `~/.claude/plugins/cache/<marketplace>/<plugin>/` wijst hetzelfde pad aan maar leunt op mtime-ordening en daardoor niet stabiel; de `jq` lookup werkt deterministisch.
+De `packages/<plugin>/`-prefix bestaat alleen in de source-repo, niet in de cache. De `ls -1dt ... | head -1` truc tegen `~/.claude/plugins/cache/<marketplace>/<plugin>/` wijst hetzelfde pad aan maar leunt op mtime-ordening en is daardoor niet stabiel; de `jq` lookup werkt deterministisch.
 
 ## Troubleshooting: "Unknown command: /xyz"
 
@@ -196,6 +197,6 @@ Never advise the user to prefix or de-prefix a slash command without having run 
 
 - Oorspronkelijk experiment: `hpw@leclause` (korte plugin naam, 2026-04-06)
 - Hernoemd naar: `how-plugins-work@leclause` (plugin = skill naam, 2026-04-07)
-- Cache-layout + installPath-verificatie: 2026-04-19 (tegen `clipboard@leclause` 1.0.5)
+- Cache-layout + installPath-verificatie: 2026-04-19 (tegen `autonomous@leclause` 1.0.23; een eerdere verificatie tegen `clipboard@leclause` 1.0.5 leek te suggereren dat `bin/` niet zou shippen, maar dat pakte een pre-bin versie van die plugin; `bin/` ships wel voor plugins die het in de source hebben)
 - Claude Code versie: 2.1.92
 - Marketplace: leclause (local directory)
