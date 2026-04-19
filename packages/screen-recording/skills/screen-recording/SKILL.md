@@ -1,7 +1,8 @@
 ---
 name: screen-recording
 user-invocable: true
-description: Use when creating automated screen recordings, demo videos, or visual documentation of browser-based features
+disable-model-invocation: true
+description: Use when creating automated screen recordings, demo videos, or visual documentation of browser-based features. Requires a global `npm install -g playwright` before the first run.
 ---
 
 # Screen Recording

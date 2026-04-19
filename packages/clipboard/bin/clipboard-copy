@@ -26,12 +26,17 @@ if (stdin.length === 0) {
 const binDir = path.dirname(fs.realpathSync(__filename));
 const swiftScript = path.join(binDir, '..', 'skills', 'clipboard', 'pbcopy-html.swift');
 
+if (html && !fs.existsSync(swiftScript)) {
+  process.stderr.write(`clipboard-copy: pbcopy-html.swift not found at ${swiftScript}. The helper expects it next to this script in the plugin cache.\n`);
+  process.exit(6);
+}
+
 const cmd = html ? swiftScript : 'pbcopy';
 const result = spawnSync(cmd, [], { input: stdin, stdio: ['pipe', 'inherit', 'inherit'] });
 
 if (result.error) {
   if (result.error.code === 'ENOENT' && html) {
-    process.stderr.write(`clipboard-copy: swift not found at ${swiftScript}. On macOS, install the Xcode command line tools: xcode-select --install\n`);
+    process.stderr.write(`clipboard-copy: swift interpreter not found. Install the Xcode command line tools on macOS: xcode-select --install\n`);
   } else {
     process.stderr.write(`clipboard-copy: failed to invoke ${cmd}: ${result.error.message}\n`);
   }
