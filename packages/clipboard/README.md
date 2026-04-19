@@ -6,11 +6,11 @@ Copy the core content of the last assistant answer to the macOS clipboard. Plain
 
 ### `/clipboard`
 
-Copies the relevant content of the last answer to the clipboard as plain text via `pbcopy`. The skill picks the core content (code block, summary, answer body) rather than the full response wrapper.
+Copies the relevant content of the last answer to the clipboard as plain text via the `clipboard-copy` helper (which wraps `pbcopy`). The skill picks the core content (code block, summary, answer body) rather than the full response wrapper.
 
 ### `/clipboard slack`
 
-Copies as Slack rich text via `pbcopy-html`, preserving bold, italic, code spans, and code blocks when pasted into Slack.
+Copies as Slack rich text via `clipboard-copy --html` (which wraps `pbcopy-html`), preserving bold, italic, code spans, and code blocks when pasted into Slack.
 
 ## Requirements
 

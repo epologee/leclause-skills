@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 
 if (process.platform !== 'darwin') {
-  process.stderr.write('clipboard-copy: macOS only (depends on pbcopy / pbcopy-html).\n');
+  process.stderr.write('clipboard-copy: macOS only (depends on pbcopy / pbcopy-html.swift).\n');
   process.exit(1);
 }
 
@@ -32,7 +32,7 @@ if (html && !fs.existsSync(swiftScript)) {
 }
 
 const cmd = html ? swiftScript : 'pbcopy';
-const result = spawnSync(cmd, [], { input: stdin, stdio: ['pipe', 'inherit', 'inherit'] });
+const result = spawnSync(cmd, [], { input: stdin, stdio: ['pipe', 'ignore', 'inherit'] });
 
 if (result.error) {
   if (result.error.code === 'ENOENT' && html) {

@@ -35,12 +35,14 @@ The `@leclause` suffix in the second command is the marketplace alias that the f
 | **recursion** | `/recursion` | | | | Nightly workflow-improvement loop. Orchestrator manages schedule, state, focus, reject. Ships with an internal `research` sub-skill that runs parallel friction and external discovery agents, synthesizes findings, and writes atomic improvement plans. |
 | **rename-suggestion** | `/rename-suggestion` | | | | Suggest a descriptive session name based on conversation context. Portable; the macOS-only `clipboard-copy` helper is invoked when present, and on other platforms the ghost-text suggestion still works without the clipboard step. |
 | **saysay** | `/saysay` | | | macOS | Claude speaks every response aloud. `/saysay off` to exit. |
-| **screen-recording** | `/screen-recording` | | | | Automated screen recordings and demo videos of browser-based features. Not auto-activated: requires a global `npm install -g playwright` first, and self-activation on description match without that dependency would fail silently. |
+| **screen-recording** | `/screen-recording` | | | | Automated screen recordings and demo videos of browser-based features. |
 | **self-improvement** | `/self-improvement` | | | | Update CLAUDE.md and skills based on feedback. Detects duplication and extracts large sections into skills. |
 | **testing-philosophy** | ❌ | ✅ | | | Opinionated testing guide covering TDD workflow, Cucumber/Gherkin, flaky test diagnosis, and test suite health. |
 | **whywhy** | `/whywhy [n]` | ✅ | | | Drill N layers deep into a question or goal (default 7), then analyze the chain for a better direction. |
 
-**Auto column:** skills with a check in this column self-activate when Claude matches the skill's `description` frontmatter against the conversation context. No hook is involved, no separate frontmatter flag; Claude reads the description and decides whether the skill fits the current task. **Platform column** is blank for cross-platform skills; a value names the only platform the skill has been built and tested against.
+**Auto column:** skills with a check in this column self-activate when Claude matches the skill's `description` frontmatter against the conversation context. No hook is involved, no separate frontmatter flag; Claude reads the description and decides whether the skill fits the current task.
+
+**Platform column:** blank for cross-platform skills; a value names the only platform the skill has been built and tested against.
 
 ## Platform notes
 
@@ -80,6 +82,8 @@ Requires [Playwright](https://playwright.dev/) installed globally:
 ```bash
 npm install -g playwright
 ```
+
+The skill is not auto-activated: self-activation on description match without that dependency would fail silently, so `/screen-recording` must be invoked explicitly after the install.
 
 ### bonsai
 

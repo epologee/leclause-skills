@@ -94,7 +94,7 @@ CLIPBOARD_COPY=$(resolve_clipboard_copy) || exit 1
 CLIPBOARD
 ```
 
-**Let op:** Bij content met single quotes, gebruik `<<"CLIPBOARD"` (dubbele quotes) of escape. Kies de heredoc-variant die het minste escaping vereist voor de specifieke content.
+**Let op:** `<<'CLIPBOARD'` (single quotes) is literal; variabelen, command substitution en backticks worden niet ge-expand. Dit is meestal wat je wilt. Gebruik alleen `<<"CLIPBOARD"` (dubbele quotes) wanneer je expliciet `$VAR`, `$(...)` of backticks wilt laten uitvoeren; dan moet content met letterlijke `$`, `` ` `` of `\` geescaped worden. Kies de heredoc-variant die het minste escaping vereist voor de specifieke content.
 
 ### Slack modus
 
