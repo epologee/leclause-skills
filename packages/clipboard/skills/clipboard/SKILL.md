@@ -80,14 +80,19 @@ Claude Code output bevat vaak:
 
 ## Kopiëren
 
-`clipboard-copy` staat niet op `$PATH`. Elk code-blok source't `bin/clipboard-paths.sh` uit de clipboard plugin (via de `jq`-lookup in `installed_plugins.json`) en roept `resolve_clipboard_copy`. Die functie valideert dat de plugin geïnstalleerd is en dat de binary bestaat, en meldt anders met een bruikbare tip ("run `claude plugins install ...`" of "`claude plugins update ...`"). Geen bash "No such file or directory" meer als de cache achterloopt.
+`clipboard-copy` staat niet op `$PATH`. Elk code-blok resolved eerst het installPath van clipboard via `jq` tegen `installed_plugins.json`, bail-out als dat leeg is met een concrete install-tip, source dan `bin/clipboard-paths.sh`, en roept `resolve_clipboard_copy`. Die functie valideert dat de binary bestaat en meldt anders met een update-tip. Geen bash "No such file or directory" meer, noch bij een niet-geïnstalleerde plugin noch bij een stale cache.
 
 ### Standaard (plain text)
 
 Gebruik een heredoc om formatting-problemen te voorkomen:
 
 ```bash
-. "$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/clipboard-paths.sh"
+IP=$(jq -r '.plugins["clipboard@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
+if [ -z "$IP" ]; then
+  echo "clipboard: clipboard@leclause is not installed or installed_plugins.json is missing. Run: claude plugins install clipboard@leclause" >&2
+  exit 1
+fi
+. "$IP/bin/clipboard-paths.sh"
 CLIPBOARD_COPY=$(resolve_clipboard_copy) || exit 1
 "$CLIPBOARD_COPY" <<'CLIPBOARD'
 [content here]
@@ -101,7 +106,12 @@ CLIPBOARD
 Wanneer het argument `slack` is meegegeven, genereer HTML in plaats van plain text en roep `clipboard-copy --html`:
 
 ```bash
-. "$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/clipboard-paths.sh"
+IP=$(jq -r '.plugins["clipboard@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
+if [ -z "$IP" ]; then
+  echo "clipboard: clipboard@leclause is not installed or installed_plugins.json is missing. Run: claude plugins install clipboard@leclause" >&2
+  exit 1
+fi
+. "$IP/bin/clipboard-paths.sh"
 CLIPBOARD_COPY=$(resolve_clipboard_copy) || exit 1
 "$CLIPBOARD_COPY" --html <<'CLIPBOARD'
 [HTML content here]
@@ -157,7 +167,12 @@ De job is goed uitgevoerd. Alle platforms uit `PLATFORM_TIMEOUTS` zijn **volledi
 
 Wordt:
 ```bash
-. "$(jq -r '.plugins["clipboard@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/clipboard-paths.sh"
+IP=$(jq -r '.plugins["clipboard@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
+if [ -z "$IP" ]; then
+  echo "clipboard: clipboard@leclause is not installed or installed_plugins.json is missing. Run: claude plugins install clipboard@leclause" >&2
+  exit 1
+fi
+. "$IP/bin/clipboard-paths.sh"
 CLIPBOARD_COPY=$(resolve_clipboard_copy) || exit 1
 "$CLIPBOARD_COPY" --html <<'CLIPBOARD'
 De job is goed uitgevoerd. Alle platforms uit <code>PLATFORM_TIMEOUTS</code> zijn <b>volledig</b> backfilled.
