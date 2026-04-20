@@ -114,6 +114,8 @@ Elk van deze patronen signaleert een onvolledig tokensysteem. De fix is zelden "
 
 **2. WCAG contrast math.** Voor elke gebruikte tekstkleur op elke gebruikte achtergrond, bereken de ratio. Je hoeft niet te turen; de wiskunde geeft het definitieve antwoord.
 
+Voor de AA/AAA drempel-tabel in het Engels, inclusief de argumentatie achter 4.5:1 en 3:1, zie impeccable's `reference/color-and-contrast.md`. De formule hieronder blijft hier omdat observationeel werk vaak ter plekke een ratio moet berekenen zonder tool-wissel.
+
 WCAG 2.1 SC 1.4.3 formule:
 
 ```
@@ -179,6 +181,8 @@ Een transitie kan er goed uitzien op één frame maar onder de motorkap uit sync
 **2. Sync-audit.** Voor een flow waar meerdere elementen samen moeten bewegen: lijst expliciet op wat wel en wat niet transitioneert. Een element dat een inline `style:width` krijgt zonder `transition` regel erop is een snapping element. Dat is het ene snelle controlepatroon dat je zelf via `grep -n "style:" --include="*.svelte"` kunt draaien.
 
 **3. Compositor-only properties.** Transform en opacity worden door de compositor geanimeerd zonder layout. Width, top, left, padding, margin zijn layout-properties en triggeren reflow per frame. Voor kleine elementen is dat fine. Voor rijen van 5+ items of bij parallelle transities kan het janken. `contain: layout` op animerende children isoleert de reflow tot hun eigen box. `will-change: transform` (niet `will-change: width`, dat is een anti-pattern per MDN) promoot de strip naar een eigen layer.
+
+De normatieve regel "transform en opacity only" voor animaties staat ook in impeccable's `reference/motion-design.md`. Wat hier blijft: de observationele diagnose (reflow-check op rijen, `contain: layout` als tactisch fix, `will-change: width` als specifieke anti-pattern) omdat die gaan over hoe je een bestaand probleem herkent, niet over welke regel je volgt tijdens het bouwen.
 
 ### Zelf opnemen en dissecten
 
@@ -275,6 +279,16 @@ for (let n = 0; n < 50; n++) {
 **Apple HIG / Material Design / Lucide (icon grids):** Elk icoon heeft twee bounding boxes. Een outer canvas en een inner "live area". Primaire content blijft binnen de live area, secundaire content mag tot de outer, nooit daarbuiten. Material: 24x24 canvas, 20x20 live area, 2 dp padding rondom. Lucide: 24x24 canvas, 22x22 live area, stroke-width 2 centered (wat de feitelijke rand nog een halve stroke naar buiten duwt). Apple SF Symbols: inner icon-grid box plus outer bounding box. Een icoon dat de outer raakt voelt out-of-place.
 
 **Bjango / Spiekermann (optical adjustments):** Mathematisch identieke vormen zijn optisch ongelijk. Cirkels moeten overshooten baseline en x-height. Scherpe punten van driehoeken moeten buiten de bounding box steken. Verticale lijnen moeten dikker lijken dan horizontale om gelijk te wegen. Het is geen illusie die gefixt moet worden, het is hoe ogen werken.
+
+## Werkverdeling met art-director en impeccable
+
+Eye-of-the-beholder is diagnostisch. Het kijkt naar wat er IS en vergelijkt dat met intentie. Twee zuster-skills zijn verantwoordelijk voor andere momenten in de keten.
+
+**art-director** (zelfde plugin, sister-skill) werkt upstream. Voordat er CSS bestaat: definieer brand (wie zijn we), visuele taal (hoe klinken we visueel), en design-system-architectuur (hoe schaalt dit). Levert `brand.md`, `visual-language.md`, en een `design-system/` skeleton. Wanneer eye-of-the-beholder observeert dat een hue niet past of een spacing niet ritmeert, hoort de onderliggende standaard in art-director's artefacten te staan, niet in elke reviewer's hoofd.
+
+**impeccable** (externe plugin) gebruikt de standaard tijdens het bouwen. Per feature. Bevat de normatieve regels in `reference/color-and-contrast.md`, `motion-design.md`, `typography.md`, `spatial-design.md`, en andere. Eye-of-the-beholder verwijst naar impeccable voor de regels; impeccable verwijst naar art-director's artefacten voor de concrete brand-keuzes binnen die regels.
+
+De keten in tijd: art-director eenmalig (bij nieuw product, brand refresh, eerste DS-foundation), impeccable per feature tijdens bouwen, eye-of-the-beholder per wijziging achteraf om visueel te verifieren. Wanneer eye-of-the-beholder een probleem signaleert dat niet in een losse view zit maar systeembreed voorkomt (bijv. een ongecoordineerde spacing-schaal), is dat een signaal dat art-director werk onvolledig of ontbrekend is.
 
 ## Veelvoorkomende blinde vlekken
 
