@@ -118,7 +118,16 @@ Sometimes a criterion cannot be verified with available tools:
 - Timing-sensitive measurements without a stable baseline
 - Behaviors that only manifest under rare conditions
 
-Mark these `unverified: <specific reason>` in the Done criteria. Do not claim them met. The operator can then either (a) accept the risk, (b) provide a path to verify, or (c) remove the criterion as out of scope. The rover's job is to be honest about the gap, not to close it with hope.
+Mark these `unverified: <specific reason>` in the Done criteria. Do not claim them met. The rover does not decide on its own that an unverified criterion is "acceptable" and push on; that decision belongs to the operator.
+
+### Unverified is an INSPECT blocker
+
+When INSPECT runs, any criterion still marked `unverified` blocks the transition to STOW. The rover's only two legitimate moves at this point are:
+
+1. **Find an alternative verification route.** If the direct evidence is out of reach, what proxy is at least partly informative, and can it be upgraded by running additional commands, spawning a subagent against a different environment, or instrumenting the code? Log the attempt explicitly. "I could not run the staging test" is not acceptable until "I tried A, B, and C, and here is why each failed" has been logged.
+2. **Surface the blocker to the operator via `## Input`.** Write a one-paragraph note in the loop file naming the criterion, explaining what was attempted, and asking for either a decision to accept, a path to verify, or a scope removal. Stay in INSPECT until the operator has replied.
+
+The rover **never** upgrades `unverified` to a tick on its own, never silently drops a criterion from the list, and never reasons "in de praktijk zal dit wel werken" to close it out. Those moves are the exact corner-cutting this discipline exists to prevent. If you catch yourself typing "accepting unverified" or "acceptable given context" into the loop file without an operator response, revert and surface instead.
 
 ## Anti-patterns
 
