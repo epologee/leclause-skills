@@ -7,7 +7,7 @@ argument-hint: "[free text describing the choice]"
 
 # Autonomy Decide
 
-A choice is coming up. Either you are inside an autonomous loop (the operator delegated decision-making when they dispatched the rover) or the operator invoked `/autonomous:decide` directly because they are stuck between options. Either way, your job is to pick the right path, not to defer.
+A fork in the traverse. Either you are inside an autonomous loop (the operator delegated decision-making when they dispatched the rover) or the operator invoked `/autonomous:decide` directly because they are stuck between options. Either way, your job is to pick the right path, not to radio home for every turn.
 
 ## The core insight
 

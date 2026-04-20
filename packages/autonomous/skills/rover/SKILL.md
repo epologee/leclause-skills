@@ -337,13 +337,17 @@ The failure mode to refuse: slipping into interactive mode the moment a message 
 
 ### Commits and pushes
 
-Commits: autonomous. The user approved them by starting the loop. Commit per logical step with a descriptive message. Follow the project's commit conventions.
+Commits: autonomous. The operator approved them by starting the loop. Commit per logical step with a descriptive message. Follow the project's commit conventions.
 
 Pushes: never autonomous. Even inside a loop, pushing to a remote requires explicit operator approval ("push", "ship", or equivalent). When a push is pending, log it, continue with whatever can be done locally, and surface the ready-to-push state to the operator at the next STANDBY check.
 
-### Timestamps
+### Timestamps and mission duration
 
-Every log line needs a timestamp from `date +%H:%M`. Never guess based on "it was just 09:41 so now it is 09:42." Run `date`.
+Every log line needs a timestamp from `date +%H:%M`. Never guess based on "it was just 09:41 so now it is 09:42." Run `date`. Timestamps are in the operator's local timezone, which the host shell reports. A mission that crosses midnight logs `00:14` after `23:58`; mission duration is computed by `stop` from the first timestamped log entry to the stop entry and interpreted as elapsed wall-clock, not as clock-face difference.
+
+### What "in parallel" means
+
+Several sections tell the rover to "keep working on in-destination items in parallel" while an `## Input` question waits. Claude is single-threaded within one turn, so "in parallel" does not mean concurrent execution inside a tick. It means across cron ticks: the rover rotates between remaining in-destination items tick by tick, and the blocked item sits on the to-do list waiting for operator reply. A single mission-wide block is never correct. A per-item wait is.
 ````
 
 ## Starting the cron
