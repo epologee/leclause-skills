@@ -30,11 +30,11 @@ End a loop on purpose, with a recap.
 
    | Mission duration | Traverse prose | Conclusion | Next actions |
    |------------------|----------------|------------|--------------|
-   | Under 2 hours | 2 to 4 paragraphs | 1 paragraph | Bulleted |
-   | 2 to 12 hours | 5 to 8 paragraphs | 1 to 2 paragraphs | Bulleted |
-   | Over 12 hours | 8 to 15 paragraphs with sub-landmarks | 2 to 3 paragraphs | Bulleted |
+   | `< 2 hours` | at least 1 paragraph per landmark | 1 paragraph | Bulleted |
+   | `2h ≤ duration < 12h` | at least 1 paragraph per landmark, plus a scene-setting opener | 1 to 2 paragraphs | Bulleted |
+   | `≥ 12 hours` | at least 1 paragraph per landmark, sub-landmarks for multi-beat ones | 2 to 3 paragraphs | Bulleted |
 
-   Short mission with a long communiqué is padding; long mission with a short communiqué erases the traverse. Use the scale as a floor-and-ceiling, not a target: if a 24-hour mission genuinely happened in three landmark beats, do not inflate it to ten.
+   The shape rule is "at least one paragraph per landmark" at every duration; the table sets the expected minimum context beyond that. A short mission with a long communiqué is padding; a long mission that genuinely had three landmark beats does not need ten paragraphs of prose invented to fill a range.
 
    ### Shape of the communiqué
 

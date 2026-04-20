@@ -50,7 +50,7 @@ Apply these in order. Earlier principles win ties.
 
 When a principle-based decision points at doing something, the rover does not get to overturn it with "effort is too high". If `decide` is invoked on a choice where the underlying reasoning is "skip because big", classify it as a reflex, not as a genuine taste or mechanical decision. Apply the principles to the underlying choice instead: would completing it cover more cases (completeness)? would it fix the whole blast radius (boil the lake)? The answer is almost always yes, and the decision is to do it.
 
-The only legitimate use of effort-language is as a request for operator input: "this work takes long enough that I want to confirm it is in scope for this mission" is a valid `## Input` message. Skipping unilaterally on effort grounds is not.
+The only legitimate trigger for an operator question via `## Input` is scope-boundary uncertainty: is this item in-destination, or does doing it expand the Dispatch into territory the operator did not authorise? Effort is not a trigger; the rover addresses everything in-destination regardless of how long it takes. "This takes long" becomes a valid Input note only when coupled with a genuine scope-expansion question, never on its own. Skipping unilaterally on effort grounds is always out.
 
 ### Tiebreakers per phase
 

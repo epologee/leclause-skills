@@ -152,7 +152,12 @@ Pass the collected diff to the subagent. Large diffs: `git diff --stat "$RANGE"`
 
 Every finding is either **fixed** in a follow-up DRIVE cycle or **rejected** with a written reason that names a concrete fact (not a feeling). "Bewuste keuze" without pointing at where that choice was made is not a reason. "Out of scope" without a sentence explaining which scope-boundary applies is not a reason.
 
-Count the buckets in the last pride pass. If the rover is about to reject more than **30%** of them, that is evidence the rover is protecting itself rather than reviewing itself. Stop, run pride a second time with a different subagent and a stricter brief ("the author keeps rejecting findings; tell me which rejects are hollow and which ones are real"), and reconcile the two reports before moving on. Log both runs in the loop file.
+Count the findings in the last pride pass. Two triggers for the second-pass gate, either is enough:
+
+- **Ratio trigger:** the rover is about to reject more than 30% of the findings (strict greater-than, so 3 of 10 passes, 4 of 10 does not).
+- **Small-N trigger:** the pass had two or fewer findings and the rover is about to reject any of them. Rejecting one of two is 50%, rejecting one of one is 100%; both are too suspect to resolve without a second reader.
+
+When either trigger fires, stop and run pride a second time with a different subagent and a stricter brief ("the author keeps rejecting findings; tell me which rejects are hollow and which ones are real"), then reconcile the two reports before moving on. Log both runs in the loop file.
 
 A reject is only final after the second-run subagent independently agrees, or after the operator acknowledges the reject in `## Input`. The rover does not get to retire a finding unilaterally.
 
