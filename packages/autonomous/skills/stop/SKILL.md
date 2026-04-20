@@ -32,7 +32,11 @@ End a loop on purpose, with a recap.
 
    **How to try it.** Concrete next actions the operator can run to see the result for themselves. File paths to open, commands to execute, URLs to visit. Pull straight from the Done criteria's evidence lines where possible; those were designed to be verifiable.
 
+   **Not done.** Mandatory, even when it is empty. Every Done criterion that is not ticked with evidence, every pride finding that was rejected with a reason, every side-observation that was deferred to a follow-up: each gets a bullet here with one sentence of context and one sentence naming the fate (operator-accepted reject, scope-moved-to-issue-N, explicit deferral with cause). No soft collectives like "small nits" or "polish items"; each remaining item is a concrete bullet the operator can count. If the section is genuinely empty, write the literal sentence `Nothing remains. Every Done criterion is ticked, every pride finding resolved.` and only that sentence.
+
    **What is next for you.** The human-only actions: push or merge waiting for go, follow-up tickets, manual smoke-tests the rover could not perform. If nothing is left, say so explicitly. Close with the loop file path and the phase at stop so the operator can find the full log if they want it.
+
+The banned closing language from `pride` applies to this communiqué verbatim. Phrases like "mostly done", "roughly complete", "corners cut", "good enough for now", "kleine puntjes over", "polish for later", "almost there" are rejected by the pride pass on the drafted communiqué; rewrite the prose, do not smuggle the feeling past the banned-word list with a synonym. If the communiqué would honestly read that way, the rover is not in a state to stop; transition back to DRIVE and close each item first.
 6. If `notify_on_done` is set in the loop file, check installation via the `has_skill` helper. If installed, invoke it with the recap. If missing, log a loud line: `[HH:MM] Stop: notify_on_done=<X> is not installed, skipping notification.`
 
 ## What it does not do
