@@ -69,15 +69,26 @@ Use once per loop at most. When a genuinely structural choice is in front of you
 **Fallback: `/brainstorming`** if present.
 When the decision is creative rather than technical (naming, framing, scope), brainstorming works better than the research skills above.
 
-**Detection.** Before invoking any of these, check they exist. A robust helper:
+**Detection.** Before invoking any of these, check they exist. Use `installed_plugins.json` as the source of truth; cache directories can hold stale versions of plugins that are no longer installed.
 
 ```bash
 has_skill() {
   local name="$1"
-  # Check plugin caches (compgen handles zero/multi matches correctly)
-  if compgen -G "$HOME/.claude/plugins/cache/*/$name" > /dev/null; then return 0; fi
-  if compgen -G "$HOME/.claude/plugins/cache/*/*/skills/$name" > /dev/null; then return 0; fi
-  # Check user-level skills
+  local inst="$HOME/.claude/plugins/installed_plugins.json"
+  # Installed plugin whose bare name matches (keys look like "name@marketplace").
+  if [ -r "$inst" ] && jq -e --arg n "$name" \
+       '.plugins | keys[] | select(startswith($n + "@"))' \
+       "$inst" >/dev/null 2>&1; then
+    return 0
+  fi
+  # Skill directory inside any currently-installed plugin.
+  if [ -r "$inst" ]; then
+    local ip
+    while IFS= read -r ip; do
+      [ -n "$ip" ] && [ -d "$ip/skills/$name" ] && return 0
+    done < <(jq -r '.plugins[][] | .installPath // empty' "$inst" 2>/dev/null)
+  fi
+  # User-level skills live outside the plugin cache.
   [ -e "$HOME/.claude/skills/$name" ]
 }
 ```
