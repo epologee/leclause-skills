@@ -1,6 +1,6 @@
 # dont-do-that
 
-Eight guardrail hooks that push back on common AI reflexes. Each hook either blocks a tool call or blocks the Stop event, forcing Claude to course-correct instead of barreling past the issue.
+Nine guardrail hooks that push back on common AI reflexes. Each hook either blocks a tool call, blocks the Stop event, or surfaces additional context at the moment a mistake is likely, forcing Claude to course-correct instead of barreling past the issue.
 
 ## Hooks
 
@@ -8,6 +8,9 @@ Eight guardrail hooks that push back on common AI reflexes. Each hook either blo
 
 **block-followup-without-issue**
 Blocks `gh api` commands that contain "follow-up", "wordt opgepakt", "buiten scope", or similar deferral language in the body, unless the body starts with "Bewust uitgesteld:" (deliberately deferred). Prevents Claude from punting work to imaginary future PRs.
+
+**commit-message-rule-rotator**
+Non-blocking. On every `git commit` Bash call, parses the subject from the `-m` flag or HEREDOC body and surfaces one commit-message rule as additional context. Activity-word starts (Fix, Improve, Update, Change, Refactor, Add, Extract, Move, Remove, Rename, Drop, Create, Clear) and trigger-as-reason phrasing (Address review/feedback/findings, Apply PR comments, Fix review comments) deterministically surface the specific rule about those patterns; any other subject rotates through fourteen rules so the reminder stays fresh instead of fading into background noise. Store the rotation index at `$HOME/.claude/var/commit-rule-index` or override via the `CLAUDE_COMMIT_RULE_INDEX_FILE` env var for tests.
 
 ### PostToolUse (Edit, Write)
 
@@ -42,7 +45,7 @@ Blocks Stop when the last significant event was a failed tool call. Forces analy
 
 ## Disabling individual hooks
 
-All eight hooks are enabled when the plugin is installed. To disable one without removing the plugin, override it in your user `settings.json`:
+All nine hooks are enabled when the plugin is installed. To disable one without removing the plugin, override it in your user `settings.json`:
 
 ```json
 {
