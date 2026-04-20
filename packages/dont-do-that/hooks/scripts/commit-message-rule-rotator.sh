@@ -51,7 +51,7 @@ elif [[ -n "$subject" ]] && [[ "$subject" =~ $activity_regex ]]; then
   selected_rule="[1/14] ${rules[0]} Your subject starts with '$first_word'."
 else
   shopt -u nocasematch
-  weighted=(0 1 4 0 6 1 2 3 0 5 6 7 4 1 10 8 9 11 12 13)
+  rule_rotation_slots=(0 1 4 0 6 1 2 3 0 5 6 7 4 1 10 8 9 11 12 13)
   index_file="${CLAUDE_COMMIT_RULE_INDEX_FILE:-$HOME/.claude/var/commit-rule-index}"
   mkdir -p "$(dirname "$index_file")"
   current=0
@@ -59,8 +59,8 @@ else
     current=$(cat "$index_file")
     current=${current:-0}
   fi
-  pos=$((current % ${#weighted[@]}))
-  rule_idx=${weighted[$pos]}
+  pos=$((current % ${#rule_rotation_slots[@]}))
+  rule_idx=${rule_rotation_slots[$pos]}
   echo $((current + 1)) > "$index_file"
   selected_rule="[$((rule_idx + 1))/14] ${rules[$rule_idx]}"
 fi
