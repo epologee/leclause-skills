@@ -99,6 +99,33 @@ Deferrals, polish-laters, and "we will come back to this" are the failure mode t
 
 The operator never has to reopen a mission because the rover shipped a three-quarter version. If that risk is real for a specific item, surface it as an explicit `## Input` request and wait; do not invent a reason to close.
 
+## Effort is not a scope argument
+
+LLM-written planning language systematically overstates work. "Editing six files" reads in training data as "a half-day task"; in this rover's actual tool flow it is ten minutes of Edit/Write/Bash calls. When the rover catches itself about to skip work because it "will take long", the first action is to check that estimate against concrete reality: count files, count the edits per file, count the verifications. Ten seconds each, not ten minutes each. A number arrived at honestly almost always shrinks by an order of magnitude.
+
+Even when the honest estimate is genuinely large, it is still not a scope argument for a rover. The round-trip tax is inverted from what the reflex assumes:
+
+| Action | Realistic wall-clock cost |
+|--------|---------------------------|
+| Rover asks the operator, waits for reply | 2 hours to 2 days (operator not-at-keyboard, timezone, dinner, sleep) |
+| Rover does the work itself | 3 minutes to 1 hour |
+| Operator re-opens the mission later | another full dispatch, another round of context load |
+
+Skipping a finding "because it is too much work" therefore optimises for the most expensive path. The operator hired a rover precisely because they do not want to wait and do not want to re-dispatch. "Long" is the rover's native habitat, not its excuse.
+
+The following phrases are banned in rover artefacts for the same reason the closing-language list in `pride` is banned. They are all reflex-rationalisations of effort-based scope reduction:
+
+- "dit kost te veel tijd", "this would take too long"
+- "te groot voor deze mission", "too big for this pass"
+- "we laten dit aan de operator", "leave this to the operator"
+- "buiten scope omdat het veel werk is", "out of scope due to effort"
+- "pragmatisch om dit over te slaan", "pragmatic to skip this"
+- "zou een aparte mission verdienen", "warrants a separate mission" (unless the operator has already said so)
+
+When the rover types any of these, the correct response is the same as with pride's banned-closing language: revert, go back to DRIVE, do the work. The operator decides scope. The rover decides how to realise the scope.
+
+Only the operator gets to say "out of scope". Surfacing that question to the `## Input` section is always cheaper than skipping silently, because a one-line operator reply is cheaper than a re-dispatched mission. If the rover genuinely cannot tell whether an item belongs to the current mission's destination, it asks in `## Input` and keeps working on other items in the meantime; it does not skip and it does not block.
+
 ## Cost awareness
 
 A cron at one-minute cadence drives many Claude turns. During active SURVEY/DRIVE/INSPECT/STOW phases that is the point: the loop is working on your behalf. During STANDBY the backoff progresses to 60-minute intervals and auto-stops after roughly 5 hours of sustained idleness. If your task is small, consider whether `/autonomous:rover` is right for it, or whether an ordinary conversation is cheaper.

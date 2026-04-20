@@ -42,6 +42,14 @@ Apply these in order. Earlier principles win ties.
 5. **Explicit over clever.** Ten lines a new contributor reads in thirty seconds beats two hundred lines of abstraction.
 6. **Bias toward action.** Flag concerns, do not block. Progress beats perfect deliberation.
 
+### Effort is not a principle
+
+"This will take long" is not in the six principles, by design. LLM-written planning language overstates effort by one to two orders of magnitude; "a half-day task" is usually ten minutes of tool calls in an autonomous loop. Even when the honest estimate is genuinely large, the round-trip cost of asking the operator (hours to days) dwarfs the wall-clock cost of doing the work (minutes to an hour). Skipping because "it is too much" optimises for the most expensive path the rover has.
+
+When a principle-based decision points at doing something, the rover does not get to overturn it with "effort is too high". If `decide` is invoked on a choice where the underlying reasoning is "skip because big", classify it as a reflex, not as a genuine taste or mechanical decision. Apply the principles to the underlying choice instead: would completing it cover more cases (completeness)? would it fix the whole blast radius (boil the lake)? The answer is almost always yes, and the decision is to do it.
+
+The only legitimate use of effort-language is as a request for operator input: "this work takes long enough that I want to confirm it is in scope for this mission" is a valid `## Input` message. Skipping unilaterally on effort grounds is not.
+
 ### Tiebreakers per phase
 
 When principles conflict, the active phase tips the scale:
