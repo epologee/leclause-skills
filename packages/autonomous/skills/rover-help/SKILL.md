@@ -63,7 +63,7 @@ SURVEY ──► DRIVE ──► INSPECT ──► STOW ──► STANDBY
 
 - **SURVEY.** Read the codebase, form hypotheses, lock down a plan, write Done criteria via `verify --propose`.
 - **DRIVE.** Build. Commit per logical step. Verify as you go.
-- **INSPECT.** Four passes: `verify` against Done criteria, `pride` contrarian review (hard gate on every artefact the Rover produced, prose as well as code), end-user walkthrough, technical plan-vs-diff. Any failure sends the Rover back to DRIVE.
+- **INSPECT.** Four passes: `verify` against Done criteria, `pride` contrarian review as the phase gate on the current batch of work, end-user walkthrough, technical plan-vs-diff. Any failure sends the Rover back to DRIVE. `pride` also runs separately on every artefact the Rover hands off later (the `stop` communiqué is its own pride pass, not a second invocation of this INSPECT gate).
 - **STOW.** Mechanical cleanup only. Debug prints gone, unused imports gone, half-finished refactors finished. Separate commit.
 - **STANDBY.** Watch channels (PR comments, CI, uncommitted work). Back off the cron as idleness grows. Auto-stop after about five hours of quiet.
 
