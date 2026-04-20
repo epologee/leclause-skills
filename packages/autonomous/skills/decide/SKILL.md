@@ -11,9 +11,9 @@ A fork in the traverse. Either you are inside an autonomous loop (the operator d
 
 ## The core insight
 
-Most "should I ask the operator?" moments are reflex, not genuine ambiguity. Inside an autonomous loop, every question breaks the loop. When the operator has explicitly delegated by running `/autonomous:rover`, deferring is the anti-pattern. When the operator calls `/autonomous:decide` directly, they are asking for a reasoned call, not a menu.
+Most "should I ask the operator?" moments are reflex, not genuine ambiguity. Inside an autonomous loop there is no "ask the operator" move at all. The operator dispatched the rover and does not take questions mid-mission. When the operator calls `/autonomous:decide` directly, they are asking for a reasoned call, not a menu.
 
-Before asking anything, classify the decision.
+Classify the decision, then make it. The rover does not round-trip to the operator for any fork it hits.
 
 ## Decision classification
 
@@ -21,13 +21,13 @@ Before asking anything, classify the decision.
 
 Examples: run tests before commit, use the same formatter config as the rest of the repo, follow an existing pattern when one is established.
 
-**Taste.** Reasonable people could disagree. Pick the recommended option, log it, continue. Surface at the final gate only if many taste decisions pile up.
+**Taste.** Reasonable people could disagree. Pick the recommended option, log it, continue. If many taste decisions pile up, summarise the notable ones in the stop communiqué so the operator can read them at the end; never interrupt the mission to list them.
 
 Examples: two library options with different tradeoffs, naming a new module, ordering of fields in a serializer, ASCII vs unicode box drawing.
 
-**Scope-expansion** is *not* Taste. A choice about how to realise the mission's destination is Taste and the rover resolves it unilaterally. A choice about whether an item expands the destination into territory the Dispatch did not cover is operator-only: log the question, post it to `## Input`, keep driving on the items that are clearly in-destination. The rover resolves means, the operator resolves ends.
+**Scope-expansion** is *not* a separate escalation class. The rover resolves scope questions the same way it resolves every other fork: it applies the principles and picks a path. If the item appears to expand the destination, the rover still addresses it; branches, CI, and the PR review that follows the mission catch any true overreach before it lands in shared state. There is no operator-only class of decision inside an autonomous loop.
 
-**User Challenge.** Both your research AND the direction from the original invocation disagree on something the operator explicitly specified. This is rare. Stop here. Log + notify operator. Do not decide.
+**User Challenge.** Both your research AND the direction from the original invocation disagree on something the operator explicitly specified. Inside a rover mission this does not pause the loop. Log the conflict in the Decision Audit Trail, pick the path that most faithfully respects the operator's original invocation verbs, document the tension in the Log, and keep driving. The communiqué that `stop` emits at the end is where the operator reads about it.
 
 Examples: the operator asked for feature X, research shows feature X will break something important the operator also cares about.
 
@@ -50,7 +50,7 @@ Apply these in order. Earlier principles win ties.
 
 When a principle-based decision points at doing something, the rover does not get to overturn it with "effort is too high". If `decide` is invoked on a choice where the underlying reasoning is "skip because big", classify it as a reflex, not as a genuine taste or mechanical decision. Apply the principles to the underlying choice instead: would completing it cover more cases (completeness)? would it fix the whole blast radius (boil the lake)? The answer is almost always yes, and the decision is to do it.
 
-The only legitimate trigger for an operator question via `## Input` is scope-boundary uncertainty: is this item in-destination, or does doing it expand the Dispatch into territory the operator did not authorise? Effort is not a trigger; the rover addresses everything in-destination regardless of how long it takes. "This takes long" becomes a valid Input note only when coupled with a genuine scope-expansion question, never on its own. Skipping unilaterally on effort grounds is always out.
+There is no legitimate trigger for an operator question via `## Input`. The rover does not write to `## Input`; the rover does not ask the operator anything mid-mission. Scope-boundary uncertainty is resolved by the rover applying the six principles and addressing the item. Effort is never a trigger for anything: the rover addresses everything in its remit regardless of how long it takes. Skipping is always out.
 
 ### Tiebreakers per phase
 
@@ -123,15 +123,13 @@ Every decision you make inside a loop adds a row to the loop file's `## Decision
 
 The trail lives on disk, not in conversation context. Future iterations can read it to understand why earlier choices were made.
 
-## When to escalate
+## There is no escalation path
 
-Escalate the choice to the operator via `## Input` only when:
+Inside a rover mission there is no channel back to the operator. The rover does not escalate. Not for User Challenges, not for failed-convergence decisions, not for scope discoveries. If the decision is hard, the rover applies the principles and picks; if three attempts have not converged, the rover picks the path that most faithfully respects the Dispatch's original verbs and drives; if the scope turns out to be wrong, the rover logs the discovery, adjusts the Plan, and keeps driving toward the best realisation of the Dispatch it can produce.
 
-- The decision is a genuine **User Challenge** (see above)
-- Three attempts at a decision have failed with no convergence
-- You discover the original scope was wrong at a fundamental level (not just harder than expected)
+A poorly-informed choice is worse than a well-researched one, so `decide` invests in research (`/whywhy`, `/ground`, `/inspiratie`, `/gurus`) before picking. But a well-researched choice is always better than a pause: the tooling (branches, CI, linting, pride, verify, the PR review that follows the mission) catches bad calls, and the operator reads the Decision Audit Trail at the end.
 
-A poorly-informed choice is worse than surfacing the question. But surfacing a question that the principles already resolve is worse than making the choice. The bar for escalation is high in both directions, and escalation never means "not do"; the rover keeps addressing in-destination items in parallel while the Input question waits.
+Outside a rover mission, when `/autonomous:decide` is invoked directly, the user is present and can respond to questions in real time. Even then, prefer a reasoned call: they invoked this skill because they wanted one.
 
 ## Anti-patterns to catch in yourself
 

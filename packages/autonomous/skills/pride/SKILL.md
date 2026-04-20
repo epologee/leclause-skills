@@ -19,6 +19,8 @@ In an ordinary workflow, code review and "sleeping on it" catch the pride-level 
 
 The pride check injects an independent skeptic before the loop transitions to its "done" states. If the loop is good at what it does, the pride check usually finds something real. When it finds nothing, it has to explain what it examined and why nothing was flagged. Vague "looks good" is rejected.
 
+**Pride is not a deferral engine.** Its purpose is to verify that everything is done, not to produce a list of things the rover can defer to "later" or "follow-up". When pride finds something, the rover goes back to DRIVE and fixes it. There is no "log and ship" for any finding. There is no "we will address this in a follow-up". There is no operator-accept path for rejecting findings. Either the rover fixes it, or a second contrarian pass confirms it was a non-issue. Pride's output drives the loop back into work, not toward the exit.
+
 ## When to run
 
 **Auto-triggered by `rover`.** Canonical triggers:
@@ -136,21 +138,23 @@ Pass the collected diff to the subagent. Large diffs: `git diff --stat "$RANGE"`
 
 ## What to do with findings
 
+Pride is not a deferral mechanism. Its output is a list of things to fix, not a list to route around. There is no "log and ship" path. Every finding gets one of two fates inside the current mission: fixed, or rejected with concrete evidence of non-issue via the reject-ratio second-pass gate below.
+
 **Inside a running loop (auto-triggered):**
 
 1. Write findings to the loop file's `## Log` section under a `[HH:MM] Pride check findings:` header
 2. Set Phase back to DRIVE if there is anything actionable
-3. Do NOT forward findings to the operator mid-loop. Fix them first.
+3. Do NOT forward findings to the operator mid-loop. The operator is not consulted mid-mission; the rover fixes everything before the next handoff.
 
 **Invoked manually (`/autonomous:pride`):**
 
 1. Print findings to the conversation
-2. Ask the operator if they want you to fix them now
-3. No auto-fix without user confirmation when run manually
+2. Fix every finding before returning. Pride is not a report-generating skill; it is a check that closes the gap between "looks done" and "actually done". Manual invocation means the user wants the work fixed, not a menu of what could be fixed.
+3. If the fix requires an external-action gate (push, deploy, merge), complete all local fixes and surface the push-ready state to the user at the end. Never ask mid-fix whether to continue.
 
 ### Reject-ratio gate
 
-Every finding is either **fixed** in a follow-up DRIVE cycle or **rejected** with a written reason that names a concrete fact (not a feeling). "Bewuste keuze" without pointing at where that choice was made is not a reason. "Out of scope" without a sentence explaining which scope-boundary applies is not a reason.
+Every finding is either **fixed** in a follow-up DRIVE cycle or **rejected** with a written reason that names a concrete fact (not a feeling). "Bewuste keuze" without pointing at where that choice was made is not a reason. "Out of scope" is never a reason at all inside an autonomous rover: the rover does not down-scope.
 
 Count the findings in the last pride pass. Two triggers for the second-pass gate, either is enough:
 
@@ -159,7 +163,7 @@ Count the findings in the last pride pass. Two triggers for the second-pass gate
 
 When either trigger fires, stop and run pride a second time with a different subagent and a stricter brief ("the author keeps rejecting findings; tell me which rejects are hollow and which ones are real"), then reconcile the two reports before moving on. Log both runs in the loop file.
 
-A reject is only final after the second-run subagent independently agrees (concrete-evidence-of-non-issue, per `rover`'s category-2 definition), or after the operator acknowledges the reject in `## Input` (operator-accept, same definition). The rover does not get to retire a finding unilaterally.
+A reject is only final after the second-run subagent independently agrees (concrete-evidence-of-non-issue, per `rover`'s category-2 definition). There is no operator-accept path: the operator is not consulted mid-mission. If the second pass says the finding is real, the rover fixes it. The rover does not retire a finding unilaterally, and the operator is not consulted to retire one either.
 
 ### Banned closing language
 
@@ -173,7 +177,7 @@ The following phrases are evidence the rover is handing off half-finished work. 
 - "will follow up later", "later polish", "polish-for-later"
 - "not quite there", "not fully done", "almost done"
 
-The pattern these share: an acknowledgement that the work is not complete, paired with a suggestion that completion is optional. Pride rejects that combination. Either the work is complete or it is not; if it is not, every remaining item becomes a tracked finding with one of two fates (fix now, or explicit operator-accepted reject) before anything ships.
+The pattern these share: an acknowledgement that the work is not complete, paired with a suggestion that completion is optional. Pride rejects that combination. Either the work is complete or it is not; if it is not, every remaining item becomes a tracked finding with one of two fates (fix now, or reject with concrete evidence of non-issue via the second-pass gate) before anything ships.
 
 ## What counts as "nothing found"
 
