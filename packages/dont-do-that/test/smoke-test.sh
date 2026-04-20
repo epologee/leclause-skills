@@ -161,94 +161,222 @@ assert_passes "verification: mutex skips" \
 
 # --- commit-message-rule-rotator ---
 
-assert_outputs() {
+assert_denies() {
   local description="$1"
   local script="$2"
   local input="$3"
-  local expected="$4"
-  local output
-  output=$(echo "$input" | bash "${HOOKS_DIR}/${script}" 2>/dev/null)
-  if echo "$output" | grep -qF -- "$expected"; then
-    PASS=$((PASS + 1))
-  else
-    echo "FAIL [expected '${expected}']: ${description}"
-    echo "  output: ${output:-<empty>}"
+  local expected_stderr="${4:-}"
+  local stderr_file stderr_content exit_code
+  stderr_file=$(mktemp)
+  echo "$input" | bash "${HOOKS_DIR}/${script}" >/dev/null 2>"$stderr_file"
+  exit_code=$?
+  stderr_content=$(cat "$stderr_file")
+  rm -f "$stderr_file"
+  if [ "$exit_code" -ne 2 ]; then
+    echo "FAIL [deny expected exit 2]: ${description}"
+    echo "  exit: ${exit_code}"
+    echo "  stderr: ${stderr_content:-<empty>}"
     FAIL=$((FAIL + 1))
+    return
   fi
+  if [ -n "$expected_stderr" ] && ! echo "$stderr_content" | grep -qF -- "$expected_stderr"; then
+    echo "FAIL [expected stderr '${expected_stderr}']: ${description}"
+    echo "  stderr: ${stderr_content}"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  PASS=$((PASS + 1))
 }
 
-assert_silent() {
+assert_allows() {
   local description="$1"
   local script="$2"
   local input="$3"
-  local output
-  output=$(echo "$input" | bash "${HOOKS_DIR}/${script}" 2>/dev/null)
-  if [ -z "$output" ]; then
-    PASS=$((PASS + 1))
-  else
-    echo "FAIL [silent expected]: ${description}"
-    echo "  output: ${output}"
+  local stderr_file stderr_content exit_code
+  stderr_file=$(mktemp)
+  echo "$input" | bash "${HOOKS_DIR}/${script}" >/dev/null 2>"$stderr_file"
+  exit_code=$?
+  stderr_content=$(cat "$stderr_file")
+  rm -f "$stderr_file"
+  if [ "$exit_code" -ne 0 ]; then
+    echo "FAIL [allow expected exit 0]: ${description}"
+    echo "  exit: ${exit_code}"
+    echo "  stderr: ${stderr_content:-<empty>}"
     FAIL=$((FAIL + 1))
+    return
   fi
+  PASS=$((PASS + 1))
 }
 
 cmd() {
   echo "{\"tool_input\":{\"command\":\"${1}\"}}"
 }
 
-# Deterministic rotation index file so tests do not touch real state.
-TMP_INDEX=$(mktemp)
-export CLAUDE_COMMIT_RULE_INDEX_FILE="$TMP_INDEX"
+run_hook() {
+  local expected_exit="${2:-2}"
+  local actual_exit
+  echo "$1" | bash "${HOOKS_DIR}/commit-message-rule-rotator.sh" >/dev/null 2>/dev/null
+  actual_exit=$?
+  if [ "$actual_exit" -ne "$expected_exit" ]; then
+    echo "FAIL [run_hook: expected exit ${expected_exit}, got ${actual_exit}]"
+    echo "  input: ${1}"
+    FAIL=$((FAIL + 1))
+  fi
+}
 
-assert_silent "rotator: non-commit passes silent" \
+TMP_STATE=$(mktemp)
+export CLAUDE_COMMIT_RULE_STATE_FILE="$TMP_STATE"
+
+reset_state() { : > "$TMP_STATE"; }
+
+reset_state
+assert_allows "rotator: non-commit passes silent" \
   commit-message-rule-rotator.sh "$(cmd "git status")"
 
-assert_silent "rotator: gh commit (not git) passes silent" \
+reset_state
+assert_allows "rotator: gh pr create passes silent" \
   commit-message-rule-rotator.sh "$(cmd "gh pr create")"
 
-assert_outputs "rotator: activity-word Add surfaces rule 1" \
+reset_state
+assert_denies "rotator: activity-word Add denies with rule 1" \
   commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Add authentication middleware\\\"")" \
-  "[1/14]"
+  "Rule [1/14]"
 
-assert_outputs "rotator: activity-word Fix highlights first word" \
+reset_state
+assert_denies "rotator: activity-word Fix denies with rule 1" \
   commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Fix the typo\\\"")" \
-  "starts with 'Fix'"
+  "Rule [1/14]"
 
-assert_outputs "rotator: trigger-as-reason Address findings surfaces rule 2" \
+reset_state
+assert_denies "rotator: activity-word with matching ack but no rewrite still denies" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Fix typo\\\" # ack-rule1")" \
+  "subject still violates this rule"
+
+reset_state
+run_hook "$(cmd "git commit -m \\\"Fix typo\\\"")"
+assert_allows "rotator: activity-word rewrite with ack-rule1 passes" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Use policy on the read path\\\" # ack-rule1")"
+
+reset_state
+assert_denies "rotator: trigger Address findings denies with rule 2" \
   commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Address pride findings\\\"")" \
-  "[2/14]"
+  "Rule [2/14]"
 
-assert_outputs "rotator: trigger-as-reason Apply PR comments surfaces rule 2" \
+reset_state
+assert_denies "rotator: trigger Apply PR comments denies with rule 2" \
   commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Apply PR comments\\\"")" \
-  "[2/14]"
+  "Rule [2/14]"
 
-assert_outputs "rotator: Fix review rendering bug stays on activity rule (review is domain noun, Fix is activity word)" \
-  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Fix review rendering bug\\\"")" \
-  "[1/14]"
+reset_state
+run_hook "$(cmd "git commit -m \\\"Address pride findings\\\"")"
+assert_allows "rotator: trigger rewrite with ack-rule2 passes" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Use policy on the read path\\\" # ack-rule2")"
 
-assert_outputs "rotator: -am extracts subject after combined flags" \
+reset_state
+assert_denies "rotator: clean subject fresh state surfaces rule 3" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Use policy on the read path\\\"")" \
+  "Rule [3/14]"
+
+reset_state
+run_hook "$(cmd "git commit -m \\\"Use policy on the read path\\\"")"
+assert_allows "rotator: clean subject with ack-rule3 passes" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Use policy on the read path\\\" # ack-rule3")"
+
+reset_state
+run_hook "$(cmd "git commit -m \\\"Use policy on the read path\\\"")"
+assert_denies "rotator: wrong ack number still denies pending rule" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Use policy on the read path\\\" # ack-rule9")" \
+  "Rule [3/14]"
+
+reset_state
+assert_denies "rotator: -am extracts subject for violation" \
   commit-message-rule-rotator.sh "$(cmd "git commit -am \\\"Add logging\\\"")" \
-  "starts with 'Add'"
+  "Rule [1/14]"
 
-assert_outputs "rotator: --message= extracts subject after equals sign" \
+reset_state
+assert_denies "rotator: --message= extracts subject for violation" \
   commit-message-rule-rotator.sh "$(cmd "git commit --message=\\\"Fix typo\\\"")" \
-  "starts with 'Fix'"
+  "Rule [1/14]"
 
-echo 0 > "$TMP_INDEX"
-assert_outputs "rotator: clean subject at index 0 surfaces a rule" \
-  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Use policy scope on the read path\\\"")" \
-  "[1/14]"
+reset_state
+run_hook "$(cmd "git commit -m \\\"Use policy on the read path\\\"")"
+assert_denies "rotator: ack inside quoted subject is stripped, still denies" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"subject with # ack-rule3 inside\\\"")" \
+  "Rule [3/14]"
 
-assert_outputs "rotator: second clean subject rotates to a different rule" \
-  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Require session context on the create path\\\"")" \
-  "[2/14]"
+reset_state
+run_hook "$(cmd "git commit -m \\\"Use policy on the read path\\\"")"
+run_hook "$(cmd "git commit -m \\\"Use policy on the read path\\\" # ack-rule3")" 0
+assert_denies "rotator: rotation advances after pass to rule 4" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Require session context on create\\\"")" \
+  "Rule [4/14]"
 
-assert_outputs "rotator: subject echoed back in reminder" \
+reset_state
+run_hook "$(cmd "git commit -m \\\"Fix typo\\\"")"
+run_hook "$(cmd "git commit -m \\\"Use policy on the read path\\\" # ack-rule1")" 0
+assert_denies "rotator: violation pass does not advance rotation, next clean subject still hits rule 3" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Require session context on create\\\"")" \
+  "Rule [3/14]"
+
+reset_state
+assert_denies "rotator: subject is echoed in deny message" \
   commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Raise CalculationError on missing total key\\\"")" \
   "Raise CalculationError on missing total key"
 
-rm -f "$TMP_INDEX"
-unset CLAUDE_COMMIT_RULE_INDEX_FILE
+reset_state
+assert_denies "rotator: editor-mode git commit without subject denies with instruction" \
+  commit-message-rule-rotator.sh "$(cmd "git commit")" \
+  "pass the subject inline"
+
+reset_state
+printf 'garbage\nmore garbage\nnot a number\n' > "$TMP_STATE"
+assert_denies "rotator: corrupt state file resets to defaults and denies with rotation rule 3" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Use policy on the read path\\\"")" \
+  "Rule [3/14]"
+
+reset_state
+printf '99\n99\n99\n' > "$TMP_STATE"
+assert_denies "rotator: out-of-range state indices are clamped and hook falls back to rotation rule 3" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Use policy on the read path\\\"")" \
+  "Rule [3/14]"
+
+reset_state
+printf '2\n0\n-5\n' > "$TMP_STATE"
+assert_denies "rotator: pending_violation_idx outside {-1,0,1} is clamped to -1" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Use policy on the read path\\\"")" \
+  "Rule [3/14]"
+
+reset_state
+run_hook "$(cmd "git commit -m \\\"Use policy on the read path\\\"")"
+assert_denies "rotator: ack token without leading whitespace does not count as ack" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Use policy\\\"bogus#ack-rule3")" \
+  "Rule [3/14]"
+
+reset_state
+run_hook "$(cmd "git commit -m \\\"Use policy on the read path\\\"")"
+heredoc_body_cmd=$(cat <<'INNER_CMD'
+git commit -m "$(cat <<'EOF'
+Clean subject
+# ack-rule3
+EOF
+)"
+INNER_CMD
+)
+heredoc_body_json=$(jq -cn --arg cmd "$heredoc_body_cmd" '{tool_input:{command:$cmd}}')
+assert_denies "rotator: ack inside heredoc body is stripped, does not count as ack" \
+  commit-message-rule-rotator.sh "$heredoc_body_json" \
+  "Rule [3/14]"
+
+reset_state
+run_hook "$(cmd "git commit -m \\\"Use policy on the read path\\\"")"
+run_hook "$(cmd "git commit -m \\\"Fix typo\\\"")"
+run_hook "$(cmd "git commit -m \\\"Use policy on the read path\\\" # ack-rule1")" 0
+assert_denies "rotator: violation + rewrite preserves pending rotation rule 3" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Use policy on the read path\\\"")" \
+  "Rule [3/14]"
+
+rm -f "$TMP_STATE"
+unset CLAUDE_COMMIT_RULE_STATE_FILE
 
 # --- Summary ---
 

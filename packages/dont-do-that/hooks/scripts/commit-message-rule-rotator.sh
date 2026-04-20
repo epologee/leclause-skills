@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+trap 'echo "commit-message-rule-rotator: internal error, denying commit to surface the bug. Inspect the hook script." >&2; exit 2' ERR
 
 input=$(cat)
 command=$(echo "$input" | jq -r '.tool_input.command // empty')
@@ -37,45 +38,184 @@ rules=(
   "Amend is banned except to strip unpushed secrets or PII. Use a new commit to make follow-up corrections."
 )
 
+rotation_reminder_slots=(2 3 4 5 6 7 8 9 10 11 12 13)
+
 activity_regex='^(Fix|Improve|Update|Change|Refactor|Add|Extract|Move|Remove|Rename|Drop|Create|Clear)[[:space:]]'
 trigger_regex='^(Address|Apply)[[:space:]]+.*(review|feedback|findings|comments|pride)'
 
-selected_rule=""
+violation_idx=-1
 shopt -s nocasematch
 if [[ -n "$subject" ]] && [[ "$subject" =~ $trigger_regex ]]; then
-  shopt -u nocasematch
-  selected_rule="[2/14] ${rules[1]} Your subject references the trigger: '$subject'."
+  violation_idx=1
 elif [[ -n "$subject" ]] && [[ "$subject" =~ $activity_regex ]]; then
-  shopt -u nocasematch
-  first_word="${BASH_REMATCH[1]}"
-  selected_rule="[1/14] ${rules[0]} Your subject starts with '$first_word'."
-else
-  shopt -u nocasematch
-  rule_rotation_slots=(0 1 4 0 6 1 2 3 0 5 6 7 4 1 10 8 9 11 12 13)
-  index_file="${CLAUDE_COMMIT_RULE_INDEX_FILE:-$HOME/.claude/var/commit-rule-index}"
-  mkdir -p "$(dirname "$index_file")"
-  current=0
-  if [[ -f "$index_file" ]]; then
-    current=$(cat "$index_file")
-    current=${current:-0}
-  fi
-  pos=$((current % ${#rule_rotation_slots[@]}))
-  rule_idx=${rule_rotation_slots[$pos]}
-  echo $((current + 1)) > "$index_file"
-  selected_rule="[$((rule_idx + 1))/14] ${rules[$rule_idx]}"
+  violation_idx=0
 fi
+shopt -u nocasematch
 
-if [[ -n "$subject" ]]; then
-  message=$(printf '=== commit rule reminder ===\nSubject: "%s"\nRule: %s\n============================' "$subject" "$selected_rule")
-else
-  message=$(printf '=== commit rule reminder ===\nRule: %s\n============================' "$selected_rule")
-fi
-
-jq -n --arg msg "$message" '{
-  "hookSpecificOutput": {
-    "hookEventName": "PreToolUse",
-    "additionalContext": $msg
+command_no_heredoc=$(echo "$command" | awk '
+  BEGIN { in_heredoc=0; marker="" }
+  in_heredoc {
+    trimmed = $0
+    sub(/^[[:space:]]+/, "", trimmed)
+    if (trimmed == marker) {
+      in_heredoc = 0
+      marker = ""
+    }
+    next
   }
-}'
+  {
+    if (match($0, /<<-?[[:space:]]*['\''"]?[A-Za-z_][A-Za-z0-9_]*['\''"]?/)) {
+      tok = substr($0, RSTART, RLENGTH)
+      sub(/<<-?[[:space:]]*['\''"]?/, "", tok)
+      sub(/['\''"]?$/, "", tok)
+      marker = tok
+      in_heredoc = 1
+    }
+    print
+  }
+' || true)
 
-exit 0
+command_stripped=$(echo "$command_no_heredoc" | sed -E $'s/"[^"]*"//g; s/\x27[^\x27]*\x27//g' || true)
+
+ack_idx=-1
+if [[ "$command_stripped" =~ (^|[[:space:]])\#[[:space:]]*ack-rule([0-9]+) ]]; then
+  ack_num="${BASH_REMATCH[2]}"
+  ack_idx=$((ack_num - 1))
+fi
+
+state_file="${CLAUDE_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/commit-rule-state}"
+mkdir -p "$(dirname "$state_file")"
+
+read_line() {
+  local lineno="$1"
+  local default="$2"
+  local value
+  value=$(sed -n "${lineno}p" "$state_file" 2>/dev/null || true)
+  if [[ "$value" =~ ^-?[0-9]+$ ]]; then
+    echo "$value"
+  else
+    echo "$default"
+  fi
+}
+
+pending_violation_idx=-1
+pending_rotation_idx=-1
+rotation_pos=0
+if [[ -f "$state_file" ]]; then
+  pending_violation_idx=$(read_line 1 -1)
+  pending_rotation_idx=$(read_line 2 -1)
+  rotation_pos=$(read_line 3 0)
+fi
+
+if [[ "$pending_violation_idx" -ne -1 ]] && [[ "$pending_violation_idx" -ne 0 ]] && [[ "$pending_violation_idx" -ne 1 ]]; then
+  pending_violation_idx=-1
+fi
+
+if [[ "$pending_rotation_idx" -ne -1 ]]; then
+  in_rotation=0
+  for slot in "${rotation_reminder_slots[@]}"; do
+    if [[ "$slot" -eq "$pending_rotation_idx" ]]; then
+      in_rotation=1
+      break
+    fi
+  done
+  if [[ "$in_rotation" -eq 0 ]]; then
+    pending_rotation_idx=-1
+  fi
+fi
+
+if [[ "$rotation_pos" -lt 0 ]] || [[ "$rotation_pos" -ge "${#rotation_reminder_slots[@]}" ]]; then
+  rotation_pos=0
+fi
+
+write_state() {
+  local pv="$1"
+  local pr="$2"
+  local rp="$3"
+  local tmp="${state_file}.tmp.$$"
+  printf '%d\n%d\n%d\n' "$pv" "$pr" "$rp" > "$tmp"
+  mv "$tmp" "$state_file"
+}
+
+emit_deny() {
+  local selected_idx="$1"
+  local reason_line="$2"
+  local action_line="$3"
+  local pv="$4"
+  local pr="$5"
+  local rp="$6"
+  local rule_num=$((selected_idx + 1))
+  local rule_text="${rules[$selected_idx]}"
+  {
+    echo "=== commit rule block ==="
+    if [[ -n "$subject" ]]; then
+      echo "Subject: \"$subject\""
+    fi
+    echo "Rule [$rule_num/14]: $rule_text"
+    echo ""
+    echo "$reason_line"
+    echo ""
+    echo "$action_line"
+    echo "==========================="
+  } >&2
+  write_state "$pv" "$pr" "$rp"
+  exit 2
+}
+
+if [[ -z "$subject" ]]; then
+  {
+    echo "=== commit rule block ==="
+    echo "Rule inspection skipped: no subject could be parsed from the command."
+    echo ""
+    echo "Editor-mode commits (no -m, no --message, no HEREDOC) hide the subject from this hook, so rules 1 and 2 (activity-word start, trigger-as-reason phrasing) cannot be checked."
+    echo ""
+    echo "Required: pass the subject inline, e.g. git commit -m \"Your subject\"."
+    echo "==========================="
+  } >&2
+  exit 2
+fi
+
+if [[ "$violation_idx" -ge 0 ]]; then
+  if [[ "$ack_idx" -eq "$violation_idx" ]]; then
+    emit_deny "$violation_idx" \
+      "The '#ack-rule$((violation_idx + 1))' is present, but the subject still violates this rule." \
+      "Required: rewrite the subject so it no longer violates, keep the ack, then re-run." \
+      "$violation_idx" "$pending_rotation_idx" "$rotation_pos"
+  else
+    emit_deny "$violation_idx" \
+      "The subject violates this rule." \
+      "Required: rewrite the subject so it no longer violates, then add '# ack-rule$((violation_idx + 1))' as a trailing bash comment." \
+      "$violation_idx" "$pending_rotation_idx" "$rotation_pos"
+  fi
+fi
+
+if [[ "$pending_violation_idx" -ge 0 ]]; then
+  if [[ "$ack_idx" -eq "$pending_violation_idx" ]]; then
+    write_state -1 "$pending_rotation_idx" "$rotation_pos"
+    exit 0
+  else
+    emit_deny "$pending_violation_idx" \
+      "The subject is clean now, but the '#ack-rule$((pending_violation_idx + 1))' bash comment is missing." \
+      "Required: add '# ack-rule$((pending_violation_idx + 1))' as a trailing bash comment to confirm you read the rule." \
+      "$pending_violation_idx" "$pending_rotation_idx" "$rotation_pos"
+  fi
+fi
+
+if [[ "$pending_rotation_idx" -lt 0 ]]; then
+  selected_idx="${rotation_reminder_slots[$rotation_pos]}"
+  emit_deny "$selected_idx" \
+    "Subject is clean. This is a rotating thematic reminder, not a violation." \
+    "Required: add '# ack-rule$((selected_idx + 1))' as a trailing bash comment to confirm you read the rule, then re-run." \
+    "-1" "$selected_idx" "$rotation_pos"
+fi
+
+if [[ "$ack_idx" -eq "$pending_rotation_idx" ]]; then
+  new_pos=$(( (rotation_pos + 1) % ${#rotation_reminder_slots[@]} ))
+  write_state "-1" "-1" "$new_pos"
+  exit 0
+fi
+
+emit_deny "$pending_rotation_idx" \
+  "Subject is clean, but the '#ack-rule$((pending_rotation_idx + 1))' bash comment is missing." \
+  "Required: add '# ack-rule$((pending_rotation_idx + 1))' as a trailing bash comment to confirm you read the rule." \
+  "-1" "$pending_rotation_idx" "$rotation_pos"
