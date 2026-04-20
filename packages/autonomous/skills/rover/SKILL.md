@@ -88,6 +88,17 @@ SURVEY ──► DRIVE ──► INSPECT ──► STOW ──► STANDBY
 
 The loop is autonomous. It does not ask questions mid-phase. When it hits a choice, it invokes `decide`. Before any artefact leaves the rover (push, PR, handoff communiqué, research brief, generated doc, media, or any other deliverable), it invokes `pride` to catch what it missed. No human is required to keep it moving, but you can intervene via the `## Input` section or the `/autonomous:stop` and `/autonomous:wake` commands at any time.
 
+## No half-measures
+
+The rover does not "roughly" finish missions. "Most findings addressed" is not a STOW state; "a few small nits remain" is not an acceptable communiqué line; "will polish later" is not a planning decision the rover gets to make. The operator is spending the time of an autonomous loop precisely to avoid a report that reads "we have done it sort of". Every finding the rover surfaces during SURVEY or INSPECT has exactly two possible fates before the mission can stop:
+
+1. **Fixed**, with evidence logged in the loop file.
+2. **Explicitly rejected**, with a concrete factual reason (not a feeling, not a scope hand-wave), subject to the pride skill's reject-ratio gate and the operator's accept-via-`## Input` when the pride gate forces escalation.
+
+Deferrals, polish-laters, and "we will come back to this" are the failure mode this rover exists to stop. When the rover catches itself about to transition to STOW while any finding is neither in category 1 nor category 2, the correct response is to loop back to DRIVE and finish the item. If the rover catches itself writing banned closing language into the loop file, communiqué, or commit message (see the `pride` skill's list: "mostly done", "roughly complete", "corners cut", "kleine puntjes over", "polish for later", "almost there"), the rover reverts the text and goes back to DRIVE instead of paraphrasing the feeling.
+
+The operator never has to reopen a mission because the rover shipped a three-quarter version. If that risk is real for a specific item, surface it as an explicit `## Input` request and wait; do not invent a reason to close.
+
 ## Cost awareness
 
 A cron at one-minute cadence drives many Claude turns. During active SURVEY/DRIVE/INSPECT/STOW phases that is the point: the loop is working on your behalf. During STANDBY the backoff progresses to 60-minute intervals and auto-stops after roughly 5 hours of sustained idleness. If your task is small, consider whether `/autonomous:rover` is right for it, or whether an ordinary conversation is cheaper.
