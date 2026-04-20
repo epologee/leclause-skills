@@ -9,9 +9,9 @@ if [[ ! "$command" =~ git[[:space:]]+commit ]]; then
 fi
 
 subject=""
-dashm=$(echo "$command" | grep -oE -- $'-m[[:space:]]+("[^"]*"|\x27[^\x27]*\x27)' | head -1 || true)
+dashm=$(echo "$command" | grep -oE -- $'(-[a-zA-Z]*m|--message)[[:space:]=]+("[^"]*"|\x27[^\x27]*\x27)' | head -1 || true)
 if [[ -n "$dashm" ]]; then
-  subject=$(echo "$dashm" | sed -E $'s/^-m[[:space:]]+["\x27]//;s/["\x27]$//')
+  subject=$(echo "$dashm" | sed -E $'s/^(-[a-zA-Z]*m|--message)[[:space:]=]+["\x27]//;s/["\x27]$//')
 fi
 if [[ -z "$subject" ]]; then
   heredoc=$(echo "$command" | awk '/<<-?[[:space:]]*['\''"]?[A-Z]+['\''"]?/{flag=1; next} flag && NF {print; exit}' || true)
@@ -38,15 +38,19 @@ rules=(
 )
 
 activity_regex='^(Fix|Improve|Update|Change|Refactor|Add|Extract|Move|Remove|Rename|Drop|Create|Clear)[[:space:]]'
-trigger_regex='(Address|Fix|Apply)[[:space:]]+(PR|pr)?[[:space:]]*(review|feedback|findings|pride|pr_comments|pr comments)'
+trigger_regex='^(Address|Apply)[[:space:]]+.*(review|feedback|findings|comments|pride)'
 
 selected_rule=""
+shopt -s nocasematch
 if [[ -n "$subject" ]] && [[ "$subject" =~ $trigger_regex ]]; then
+  shopt -u nocasematch
   selected_rule="[2/14] ${rules[1]} Your subject references the trigger: '$subject'."
 elif [[ -n "$subject" ]] && [[ "$subject" =~ $activity_regex ]]; then
+  shopt -u nocasematch
   first_word="${BASH_REMATCH[1]}"
   selected_rule="[1/14] ${rules[0]} Your subject starts with '$first_word'."
 else
+  shopt -u nocasematch
   weighted=(0 1 4 0 6 1 2 3 0 5 6 7 4 1 10 8 9 11 12 13)
   index_file="${CLAUDE_COMMIT_RULE_INDEX_FILE:-$HOME/.claude/var/commit-rule-index}"
   mkdir -p "$(dirname "$index_file")"

@@ -218,9 +218,21 @@ assert_outputs "rotator: trigger-as-reason Address findings surfaces rule 2" \
   commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Address pride findings\\\"")" \
   "[2/14]"
 
-assert_outputs "rotator: trigger-as-reason Fix review comments surfaces rule 2" \
-  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Fix review comments from reviewer\\\"")" \
+assert_outputs "rotator: trigger-as-reason Apply PR comments surfaces rule 2" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Apply PR comments\\\"")" \
   "[2/14]"
+
+assert_outputs "rotator: Fix review rendering bug stays on activity rule (review is domain noun, Fix is activity word)" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -m \\\"Fix review rendering bug\\\"")" \
+  "[1/14]"
+
+assert_outputs "rotator: -am extracts subject after combined flags" \
+  commit-message-rule-rotator.sh "$(cmd "git commit -am \\\"Add logging\\\"")" \
+  "starts with 'Add'"
+
+assert_outputs "rotator: --message= extracts subject after equals sign" \
+  commit-message-rule-rotator.sh "$(cmd "git commit --message=\\\"Fix typo\\\"")" \
+  "starts with 'Fix'"
 
 echo 0 > "$TMP_INDEX"
 assert_outputs "rotator: clean subject at index 0 surfaces a rule" \
