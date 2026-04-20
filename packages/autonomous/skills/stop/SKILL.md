@@ -1,6 +1,6 @@
 ---
 name: stop
-description: End a rover mission on purpose. Cuts the cron, writes a final log entry, and transmits a communiqué home covering mission, ship state, hard parts, review verdicts, and what the operator can pick up next. Not user-invocable directly; reached via the rover entry point.
+description: End a rover mission on purpose. Cuts the cron, writes a final log entry, and transmits a mission report home: a length-scaled narrative of the traverse, a qualitative conclusion, a listing of what did not land, and the concrete operator-only next actions. Not user-invocable directly; reached via the rover entry point.
 user-invocable: false
 ---
 
@@ -20,23 +20,35 @@ End a loop on purpose, with a recap.
 2. Read `cron_job_id` from the file. Invoke `cron` via the Skill tool to `CronDelete` that id.
 3. Set `cron_job_id: stopped` in the loop file.
 4. Append a final log entry with a timestamp from `date +%H:%M`: `[HH:MM] Stopped by user. Phase at stop: <PHASE>.`
-5. Produce a communiqué to the conversation. The communiqué is itself a rover artefact, so run `pride` on the drafted text before transmitting it (log the pride findings in the loop file, fix them or explicitly accept them with a written reason, then send the final version). Not a data dump: a rover's report back home. Enough story for the operator to understand what happened without re-reading the log. Six sections, one paragraph each, in this order:
+5. Produce a communiqué to the conversation. The communiqué is itself a rover artefact, so run `pride` on the drafted text before transmitting it (log the pride findings in the loop file, fix them or explicitly accept them with a written reason, then send the final version).
 
-   **Mission.** Restate the goal from the Context section in one sentence. What was the rover sent out to do.
+   Not a data dump, not a form with six bullet-headers. A **mission report** written as prose: the operator comes back to the TUI and wants to read a story of the traverse, not grep through section titles. The goal is that after reading, the operator knows where the rover went, what it found, what it changed along the way, and what the next move is, without having to re-read the loop file or ask "are you proud of this?"
 
-   **What shipped.** The end state in plain prose. Number of commits, the headline outcome, where the work now lives (branch, files of note). Compare the current branch against its fork point to list commits: `git merge-base <current> origin/<default>` where default is resolved via `git symbolic-ref refs/remotes/origin/HEAD`. If no remote HEAD is set, skip the commit list with a note rather than guessing. Also note any uncommitted work from `git status --short` and any open PR.
+   ### Length matches the mission
 
-   **Choices and hard parts.** The story of the run. Walk the Decision Audit Trail entries and the Log pivots together: which calls had real trade-offs, where the rover changed course (for example, a `Transition back to SURVEY` line after user input), what assumption broke and had to be revised. One or two sentences per meaningful moment, not a transcript.
+   Compute mission duration from the Log: first timestamped entry to the stop timestamp. Scale the communiqué by that duration, with the shape of the story preserved in each size:
 
-   **Review results.** What the `verify` and `pride` passes actually caught. Quote the criteria count and the pride-finding count. Name the commits that addressed each batch of findings. If additional review passes ran (end-user walkthrough, technical plan-vs-diff), summarise their verdicts.
+   | Mission duration | Traverse prose | Conclusion | Next actions |
+   |------------------|----------------|------------|--------------|
+   | Under 2 hours | 2 to 4 paragraphs | 1 paragraph | Bulleted |
+   | 2 to 12 hours | 5 to 8 paragraphs | 1 to 2 paragraphs | Bulleted |
+   | Over 12 hours | 8 to 15 paragraphs with sub-landmarks | 2 to 3 paragraphs | Bulleted |
 
-   **How to try it.** Concrete next actions the operator can run to see the result for themselves. File paths to open, commands to execute, URLs to visit. Pull straight from the Done criteria's evidence lines where possible; those were designed to be verifiable.
+   Short mission with a long communiqué is padding; long mission with a short communiqué erases the traverse. Use the scale as a floor-and-ceiling, not a target: if a 24-hour mission genuinely happened in three landmark beats, do not inflate it to ten.
+
+   ### Shape of the communiqué
+
+   **Traverse (prose).** The journey in chronological order, told as landmarks and what the rover did at each: the initial read of the terrain during SURVEY, the decision points that the Decision Audit Trail captured, the pivots where an assumption broke and the rover re-planned (mark these explicitly, they are the most interesting parts of the story), the INSPECT passes and what they caught, the STOW cleanup. Decision entries from the audit trail are woven into the prose as supporting detail, not listed separately. Pride findings and their fates belong in-line: "the review surfaced X, which turned out to be Y, and was fixed in commit Z" reads better than a dedicated review-results section. Pull concrete artefacts in where they carry the story: commit SHAs for landmark changes, file paths for the hardest edits, command outputs that changed the rover's mind. Avoid the temptation to summarise; summaries are what the operator is trying to avoid by reading this at all.
+
+   **Qualitative conclusion (prose).** One or more paragraphs, length-scaled, that give the operator a read on how the mission actually went. What is the rover confident about, and what is it less confident about and why? Where was the work easy, where was it hard, and did the final form address the hard parts cleanly or did compromises land? Was the original Dispatch the right framing, in hindsight? This is the section where the operator finds "am I proud of this?" answered in advance; the rover writes an honest self-assessment here so the operator does not have to extract one.
+
+   The banned closing language from `pride` still applies: "mostly done", "roughly complete", "corners cut", "good enough for now", "kleine puntjes over", "polish for later", "almost there". Any of those in the conclusion means the rover is not in a state to stop. Transition back to DRIVE and close each item before reopening the report.
 
    **Not done.** Mandatory, even when it is empty. Every Done criterion that is not ticked with evidence, every pride finding that was rejected with a reason, every side-observation that was deferred to a follow-up: each gets a bullet here with one sentence of context and one sentence naming the fate (operator-accepted reject, scope-moved-to-issue-N, explicit deferral with cause). No soft collectives like "small nits" or "polish items"; each remaining item is a concrete bullet the operator can count. If the section is genuinely empty, write the literal sentence `Nothing remains. Every Done criterion is ticked, every pride finding resolved.` and only that sentence.
 
-   **What is next for you.** The human-only actions: push or merge waiting for go, follow-up tickets, manual smoke-tests the rover could not perform. If nothing is left, say so explicitly. Close with the loop file path and the phase at stop so the operator can find the full log if they want it.
+   **Next actions for you.** A bulleted list of concrete operator moves, each a one-liner. These are **only** actions the rover cannot perform itself: push, merge, deploy, notify a stakeholder, review a specific design trade-off where operator judgement was required, pick between two options that the rover explicitly flagged as User Challenge. **Never** "try it out", "verify it works", "test the feature", "check that the UI looks right", "see if it does what you wanted". The rover has already done verification during INSPECT; asking the operator to redo that work duplicates effort and contradicts the Done-criteria evidence. If the rover could not verify something and wants the operator to do it, it belongs in **Not done** as an explicit unverified criterion, not in next actions dressed as a casual smoke-test request.
 
-The banned closing language from `pride` applies to this communiqué verbatim. Phrases like "mostly done", "roughly complete", "corners cut", "good enough for now", "kleine puntjes over", "polish for later", "almost there" are rejected by the pride pass on the drafted communiqué; rewrite the prose, do not smuggle the feeling past the banned-word list with a synonym. If the communiqué would honestly read that way, the rover is not in a state to stop; transition back to DRIVE and close each item first.
+   Close the communiqué with the loop file path and the phase at stop, on its own line, so the operator can find the full log if they want it.
 6. If `notify_on_done` is set in the loop file, check installation via the `has_skill` helper. If installed, invoke it with the recap. If missing, log a loud line: `[HH:MM] Stop: notify_on_done=<X> is not installed, skipping notification.`
 
 ## What it does not do
