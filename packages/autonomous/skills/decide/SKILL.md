@@ -25,6 +25,8 @@ Examples: run tests before commit, use the same formatter config as the rest of 
 
 Examples: two library options with different tradeoffs, naming a new module, ordering of fields in a serializer, ASCII vs unicode box drawing.
 
+**Scope-expansion** is *not* Taste. A choice about how to realise the mission's destination is Taste and the rover resolves it unilaterally. A choice about whether an item expands the destination into territory the Dispatch did not cover is operator-only: log the question, post it to `## Input`, keep driving on the items that are clearly in-destination. The rover resolves means, the operator resolves ends.
+
 **User Challenge.** Both your research AND the direction from the original invocation disagree on something the user explicitly specified. This is rare. Stop here. Log + notify user. Do not decide.
 
 Examples: user asked for feature X, research shows feature X will break something important that the user also cares about.

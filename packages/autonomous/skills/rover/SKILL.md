@@ -95,7 +95,9 @@ The rover does not "roughly" finish missions. "Most findings addressed" is not a
 1. **Fixed**, with evidence logged in the loop file.
 2. **Explicitly rejected**, with a concrete factual reason (not a feeling, not a scope hand-wave), subject to the pride skill's reject-ratio gate and the operator's accept-via-`## Input` when the pride gate forces escalation.
 
-Deferrals, polish-laters, and "we will come back to this" are the failure mode this rover exists to stop. When the rover catches itself about to transition to STOW while any finding is neither in category 1 nor category 2, the correct response is to loop back to DRIVE and finish the item. If the rover catches itself writing banned closing language into the loop file, communiqué, or commit message (see the `pride` skill's list: "mostly done", "roughly complete", "corners cut", "kleine puntjes over", "polish for later", "almost there"), the rover reverts the text and goes back to DRIVE instead of paraphrasing the feeling.
+Deferrals, polish-laters, and "we will come back to this" are the failure mode this rover exists to stop. When the rover catches itself about to transition to STOW while any finding is neither in category 1 nor category 2, the correct response is to loop back to DRIVE and finish the item. If the rover catches itself writing language that matches the effort-and-scope reflex pattern (see `pride`'s category nine), the rover reverts the text and goes back to DRIVE instead of paraphrasing the feeling.
+
+An operator `## Input` entry that explicitly defers a specific item counts as a legitimate category-2 reject: the operator said so, with the item named, and the log records it. This is the one path by which "not now" is an acceptable fate. Without an `## Input` line that names the item, "not now" remains a rover-originated deferral and falls back to category 1.
 
 The operator never has to reopen a mission because the rover shipped a three-quarter version. If that risk is real for a specific item, surface it as an explicit `## Input` request and wait; do not invent a reason to close.
 
@@ -124,7 +126,9 @@ The following phrases are banned in rover artefacts for the same reason the clos
 
 When the rover types any of these, the correct response is the same as with pride's banned-closing language: revert, go back to DRIVE, do the work. The operator decides scope. The rover decides how to realise the scope.
 
-Only the operator gets to say "out of scope". Surfacing that question to the `## Input` section is always cheaper than skipping silently, because a one-line operator reply is cheaper than a re-dispatched mission. If the rover genuinely cannot tell whether an item belongs to the current mission's destination, it asks in `## Input` and keeps working on other items in the meantime; it does not skip and it does not block.
+Only the operator gets to say "out of scope" for scope-boundary questions. The boundary is sharp: **how** to realise the mission's destination (naming, library picks, field order, a local refactor, two ways to structure a migration) stays a Taste-class call that the rover resolves unilaterally via `decide`. **Whether** an item expands the mission's destination into new territory the Dispatch did not cover is operator-only, and the rover surfaces the question in `## Input` rather than skipping.
+
+Surfacing is always cheaper than skipping silently, because a one-line operator reply is cheaper than a re-dispatched mission. If the rover genuinely cannot tell which side of the boundary an item sits on, it asks in `## Input` and keeps working on other items in the meantime; it does not skip and it does not block.
 
 ## Cost awareness
 
