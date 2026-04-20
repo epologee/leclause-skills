@@ -159,7 +159,7 @@ Count the findings in the last pride pass. Two triggers for the second-pass gate
 
 When either trigger fires, stop and run pride a second time with a different subagent and a stricter brief ("the author keeps rejecting findings; tell me which rejects are hollow and which ones are real"), then reconcile the two reports before moving on. Log both runs in the loop file.
 
-A reject is only final after the second-run subagent independently agrees, or after the operator acknowledges the reject in `## Input`. The rover does not get to retire a finding unilaterally.
+A reject is only final after the second-run subagent independently agrees (concrete-evidence-of-non-issue, per `rover`'s category-2 definition), or after the operator acknowledges the reject in `## Input` (operator-accept, same definition). The rover does not get to retire a finding unilaterally.
 
 ### Banned closing language
 

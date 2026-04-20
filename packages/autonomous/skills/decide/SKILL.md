@@ -123,15 +123,15 @@ Every decision you make inside a loop adds a row to the loop file's `## Decision
 
 The trail lives on disk, not in conversation context. Future iterations can read it to understand why earlier choices were made.
 
-## When to stop
+## When to escalate
 
-Stop and notify the user only when:
+Escalate the choice to the operator via `## Input` only when:
 
 - The decision is a genuine **User Challenge** (see above)
 - Three attempts at a decision have failed with no convergence
 - You discover the original scope was wrong at a fundamental level (not just harder than expected)
 
-Bad work is worse than no work. But pre-emptive stopping is worse than a thoughtful call. The bar is high.
+A poorly-informed choice is worse than surfacing the question. But surfacing a question that the principles already resolve is worse than making the choice. The bar for escalation is high in both directions, and escalation never means "not do"; the rover keeps addressing in-destination items in parallel while the Input question waits.
 
 ## Anti-patterns to catch in yourself
 

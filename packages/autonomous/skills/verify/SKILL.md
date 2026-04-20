@@ -118,7 +118,7 @@ Sometimes a criterion cannot be verified with available tools:
 - Timing-sensitive measurements without a stable baseline
 - Behaviors that only manifest under rare conditions
 
-Mark these `unverified: <specific reason>` in the Done criteria. Do not claim them met. The rover does not decide on its own that an unverified criterion is "acceptable" and push on; that decision belongs to the operator.
+Mark these `unverified: <specific reason>` in the Done criteria. Do not claim them met. The rover does not decide on its own that an unverified criterion is "acceptable" and push on; that decision belongs to the operator. This is the same category-2 contract that `rover`'s "No half-measures" section defines: a finding leaves the list only with operator accept via `## Input` or concrete evidence of non-issue; a Done criterion is one instance of that rule.
 
 ### Unverified blocks STOW, not INSPECT activity
 
