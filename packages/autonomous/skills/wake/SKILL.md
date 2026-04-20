@@ -16,7 +16,7 @@ Revive a loop that was paused, auto-stopped, or lost its cron because the Claude
 
 ## What it does
 
-1. Read the loop file at the argument path. If no argument, list candidates from `.autonomous/*.md` and ask which to resume.
+1. Read the loop file at the argument path. Wake is invoked only via the rover entry point, which always passes a path; if a run lands here without one, treat that as a caller bug and surface the missing argument to the operator rather than guessing which loop to revive.
 2. Check liveness of the recorded `cron_job_id`. Use `CronList` if available via the Skill/Tool interface. A `cron_job_id` of `stopped` or `failed` is a durable terminal marker and means the loop needs a fresh cron regardless of file age.
 3. If the loop file records a branch (under `## Context` or similar), verify the current branch matches or offer to switch. If no branch was recorded, continue on the current branch.
 4. Invoke `cron` via the Skill tool to restore: `CronCreate` at the interval matching `watch_checks`, write the new `cron_job_id` into the file.
@@ -40,4 +40,4 @@ After a context compaction, the conversation summary usually contains phase word
 
 ## After wake
 
-The cron is live and will drive from here. If the user is present, they can add notes to the `## Input` section or let the cron tick by itself.
+The cron is live and will drive from here. If the operator is present, they can add notes to the `## Input` section or let the cron tick by itself.

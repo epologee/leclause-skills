@@ -140,12 +140,12 @@ Pass the collected diff to the subagent. Large diffs: `git diff --stat "$RANGE"`
 
 1. Write findings to the loop file's `## Log` section under a `[HH:MM] Pride check findings:` header
 2. Set Phase back to DRIVE if there is anything actionable
-3. Do NOT forward findings to the user mid-loop. Fix them first.
+3. Do NOT forward findings to the operator mid-loop. Fix them first.
 
 **Invoked manually (`/autonomous:pride`):**
 
 1. Print findings to the conversation
-2. Ask the user if they want you to fix them now
+2. Ask the operator if they want you to fix them now
 3. No auto-fix without user confirmation when run manually
 
 ### Reject-ratio gate

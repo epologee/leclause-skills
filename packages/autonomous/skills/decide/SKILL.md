@@ -11,7 +11,7 @@ A choice is coming up. Either you are inside an autonomous loop (the operator de
 
 ## The core insight
 
-Most "should I ask the user?" moments are reflex, not genuine ambiguity. Inside an autonomous loop, every question breaks the loop. When a user has explicitly delegated by running `/autonomous:rover`, deferring is the anti-pattern. When a user calls `/autonomous:decide` directly, they are asking for a reasoned call, not a menu.
+Most "should I ask the operator?" moments are reflex, not genuine ambiguity. Inside an autonomous loop, every question breaks the loop. When the operator has explicitly delegated by running `/autonomous:rover`, deferring is the anti-pattern. When the operator calls `/autonomous:decide` directly, they are asking for a reasoned call, not a menu.
 
 Before asking anything, classify the decision.
 
@@ -27,9 +27,9 @@ Examples: two library options with different tradeoffs, naming a new module, ord
 
 **Scope-expansion** is *not* Taste. A choice about how to realise the mission's destination is Taste and the rover resolves it unilaterally. A choice about whether an item expands the destination into territory the Dispatch did not cover is operator-only: log the question, post it to `## Input`, keep driving on the items that are clearly in-destination. The rover resolves means, the operator resolves ends.
 
-**User Challenge.** Both your research AND the direction from the original invocation disagree on something the user explicitly specified. This is rare. Stop here. Log + notify user. Do not decide.
+**User Challenge.** Both your research AND the direction from the original invocation disagree on something the operator explicitly specified. This is rare. Stop here. Log + notify operator. Do not decide.
 
-Examples: user asked for feature X, research shows feature X will break something important that the user also cares about.
+Examples: the operator asked for feature X, research shows feature X will break something important the operator also cares about.
 
 ## The six principles
 
@@ -109,7 +109,7 @@ If a skill is missing, log it to the loop file's Log section (one line, not sile
 [HH:MM] Decide: /whywhy not installed, falling back to principles-only for this decision
 ```
 
-Silent fallbacks hide broken setups. A logged fallback stays visible to the user when they re-read the loop file.
+Silent fallbacks hide broken setups. A logged fallback stays visible to the operator when they re-read the loop file.
 
 ## Decision audit trail
 
@@ -137,9 +137,9 @@ A poorly-informed choice is worse than surfacing the question. But surfacing a q
 
 | Thought | What it actually is | Do instead |
 |---------|---------------------|------------|
-| "Let me check with the user first" | Compliance reflex | Pick, log, proceed |
+| "Let me check with the operator first" | Compliance reflex | Pick, log, proceed |
 | "The simplest thing for now" | Haste projection | Pick the structural option |
-| "I'll leave it to the user to decide the name" | Deferral | Name it, user corrects if needed |
+| "I'll leave it to the operator to decide the name" | Deferral | Name it, operator corrects if needed |
 | "Both options seem valid, escalating" | False Taste | Apply principles, pick the recommended one |
 | "Let me just do A and if it does not work try B" | Iterative downgrading | Understand why A might not work before starting |
 
@@ -151,4 +151,4 @@ When you have decided, write to the loop file:
 2. Log the timestamp and decision to `## Log` (one line)
 3. Continue the workflow
 
-Do not write prose explaining the decision to the user. The audit trail is the explanation.
+Do not write prose explaining the decision to the operator. The audit trail is the explanation.

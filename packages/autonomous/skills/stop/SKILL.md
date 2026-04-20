@@ -10,13 +10,13 @@ End a loop on purpose, with a recap.
 
 ## When to use
 
-- The work is done and the user is ready to review
+- The work is done and the operator is ready to review
 - The loop is in a broken state (wrong branch, wrong scope, wrong file) and restarting cleanly is easier than fixing
-- The user wants the loop off
+- The operator wants the loop off
 
 ## What it does
 
-1. Locate the loop file. If an argument is given, use it. If not, list `.autonomous/*.md` candidates in the conversation and ask which to stop. This is the one place where asking is correct: stop is a user-invoked destructive action, and the user is present.
+1. Locate the loop file. If an argument is given, use it. If not, list `.autonomous/*.md` candidates in the conversation and ask which to stop. This is the one place where asking is correct: stop is an operator-invoked destructive action, and the operator is present.
 2. Read `cron_job_id` from the file. Invoke `cron` via the Skill tool to `CronDelete` that id.
 3. Set `cron_job_id: stopped` in the loop file.
 4. Append a final log entry with a timestamp from `date +%H:%M`: `[HH:MM] Stopped by user. Phase at stop: <PHASE>.`
@@ -42,7 +42,7 @@ End a loop on purpose, with a recap.
 
    **Qualitative conclusion (prose).** One or more paragraphs, length-scaled, that give the operator a read on how the mission actually went. What is the rover confident about, and what is it less confident about and why? Where was the work easy, where was it hard, and did the final form address the hard parts cleanly or did compromises land? Was the original Dispatch the right framing, in hindsight? This is the section where the operator finds "am I proud of this?" answered in advance; the rover writes an honest self-assessment here so the operator does not have to extract one.
 
-   The banned closing language from `pride` still applies: "mostly done", "roughly complete", "corners cut", "good enough for now", "kleine puntjes over", "polish for later", "almost there". Any of those in the conclusion means the rover is not in a state to stop. Transition back to DRIVE and close each item before reopening the report.
+   `pride`'s category 8 (effort-and-scope reflex) applies to the conclusion paragraph verbatim. Any wording that the reflex-pattern detector flags means the rover is not in a state to stop. Transition back to DRIVE, close each item, then re-draft the communiqué.
 
    **Not done.** Mandatory, even when it is empty. Every Done criterion that is not ticked with evidence, every pride finding that was rejected with a reason, every side-observation that was deferred to a follow-up: each gets a bullet here with one sentence of context and one sentence naming the fate (operator-accepted reject, scope-moved-to-issue-N, explicit deferral with cause). No soft collectives like "small nits" or "polish items"; each remaining item is a concrete bullet the operator can count. If the section is genuinely empty, write the literal sentence `Nothing remains. Every Done criterion is ticked, every pride finding resolved.` and only that sentence.
 

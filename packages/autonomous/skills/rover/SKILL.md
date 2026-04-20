@@ -164,13 +164,13 @@ The first iteration races with the cron's period. This is safe because cron only
 | `.autonomous/<name>.md` | Wake. Delegate to `wake`. |
 | Free-form text | Use the text directly as context. |
 
-Free-form text may also describe optional integrations. Parse phrases where the user names a specific skill with a role, and record it as an integration:
+Free-form text may also describe optional integrations. Parse phrases where the operator names a specific skill with a role, and record it as an integration:
 
 - A notifier skill to message after the loop ends: `notify_on_done: <skill>`
 - A review-bot skill to run after a PR goes up: `reviewbot: <skill>`
 - A commit-splitter skill to run before a push: `commit_splitter: <skill>`
 
-For each parsed integration, verify the skill or binary exists before recording it. Use the `has_skill` helper from `decide`. When a user-mentioned integration is not installed, do not silently skip: log a loud line to the loop file so the user notices on any later read. Example: `[HH:MM] Setup: user mentioned <skill> but it is not installed. Integration disabled.`
+For each parsed integration, verify the skill or binary exists before recording it. Use the `has_skill` helper from `decide`. When an operator-mentioned integration is not installed, do not silently skip: log a loud line to the loop file so the operator notices on any later read. Example: `[HH:MM] Setup: operator mentioned <skill> but it is not installed. Integration disabled.`
 
 ## Writing the loop file
 
@@ -201,7 +201,7 @@ commit_splitter: <skill name or empty>
 
 ## Context
 
-<2 to 5 paragraphs. What is the task. Why. What is known. What is in scope and out. Any constraints from the user. Any optional integrations and how to use them. Context is your interpretation; the Dispatch block above is source of truth.>
+<2 to 5 paragraphs. What is the task. Why. What is known. What is in scope and out. Any constraints from the operator. Any optional integrations and how to use them. Context is your interpretation; the Dispatch block above is source of truth.>
 
 ## Phase
 
@@ -311,15 +311,15 @@ When a PR exists, minimum checks per iteration:
 
 **Token economy.** Delegate the polling itself to a Sonnet subagent (Agent tool with `model: "sonnet"`). Brief it to run the three commands and return the raw output, nothing interpreted. Comparing yesterday's snapshot against today's, deciding what is new, judging whether a finding warrants a transition to SURVEY: that reasoning happens in the main loop on the session model. The subagent is a hand, not a head.
 
-New findings from STANDBY go back to SURVEY (not DRIVE, and not queued for the user). New input is new information: understand it before acting on it. Iteratively downgrading to a fix-first approach has a track record of missing the real cause.
+New findings from STANDBY go back to SURVEY (not DRIVE, and not queued for the operator). New input is new information: understand it before acting on it. Iteratively downgrading to a fix-first approach has a track record of missing the real cause.
 
-When no new activity, increment `watch_checks` and invoke `cron` for backoff. Each idle iteration bumps the interval until the hard cap at `watch_checks` 10. The full schedule (and total idle time, about 5 hours) lives in `cron`; do not duplicate the numbers here. When the cap fires: CronDelete, log `STANDBY: auto-stopped after 10 idle checks. /autonomous:resume to relight.`, and invoke `notify_on_done` if configured. The loop file stays; only the cron dies. Past this point the safety net is gone: a fresh interjection or `/autonomous:resume` relights the cron (Interjections section below covers the interjection path).
+When no new activity, increment `watch_checks` and invoke `cron` for backoff. Each idle iteration bumps the interval until the hard cap at `watch_checks` 10. The full schedule (and total idle time, about 5 hours) lives in `cron`; do not duplicate the numbers here. When the cap fires: CronDelete, log `STANDBY: auto-stopped after 10 idle checks. /autonomous:wake <loop-file> to relight.`, and invoke `notify_on_done` if configured. The loop file stays; only the cron dies. Past this point the safety net is gone: a fresh interjection or `/autonomous:wake <loop-file>` relights the cron (Interjections section below covers the interjection path).
 
 ### Decisions
 
-Any time you catch yourself about to ask the user "A or B?": invoke `decide`. It will classify, apply principles, run research skills if helpful, and return a path. It writes the decision to the audit trail.
+Any time you catch yourself about to ask the operator "A or B?": invoke `decide`. It will classify, apply principles, run research skills if helpful, and return a path. It writes the decision to the audit trail.
 
-Never ask mid-phase. The invocation of `/autonomous:rover` is the user's blanket approval for autonomous decisions.
+Never ask mid-phase. The invocation of `/autonomous:rover` is the operator's blanket approval for autonomous decisions.
 
 ### Interjections
 
@@ -339,7 +339,7 @@ The failure mode to refuse: slipping into interactive mode the moment a message 
 
 Commits: autonomous. The user approved them by starting the loop. Commit per logical step with a descriptive message. Follow the project's commit conventions.
 
-Pushes: never autonomous. Even inside a loop, pushing to a remote requires explicit user approval ("push", "ship", or equivalent). When a push is pending, log it, continue with whatever can be done locally, and surface the ready-to-push state to the user at the next STANDBY check.
+Pushes: never autonomous. Even inside a loop, pushing to a remote requires explicit operator approval ("push", "ship", or equivalent). When a push is pending, log it, continue with whatever can be done locally, and surface the ready-to-push state to the operator at the next STANDBY check.
 
 ### Timestamps
 
@@ -374,7 +374,7 @@ The loop makes this call during the transition to DRIVE, not during setup.
 
 ## Optional integrations
 
-A loop runs without any of these. They are conveniences the user plugs in at invocation time. Only use if detected at setup:
+A loop runs without any of these. They are conveniences the operator plugs in at invocation time. Only use if detected at setup:
 
 - **notify_on_done.** After auto-stop or explicit stop, if a notifier skill is configured and installed, invoke it with a brief summary. The plugin itself ships none of these.
 - **reviewbot.** After creating a PR, if a review-bot skill is configured and installed, invoke it.
@@ -382,7 +382,7 @@ A loop runs without any of these. They are conveniences the user plugs in at inv
 
 If a user mentions an integration at setup that turns out not to be installed, log a loud line at that time (see "Parsing" above). Do not fail silently when running.
 
-The contract is "any skill the user has installed and named in their invocation," not a fixed list owned by this plugin.
+The contract is "any skill the operator has installed and named in their invocation," not a fixed list owned by this plugin.
 
 ## Project conventions
 
@@ -398,13 +398,13 @@ These are project-specific and not hardcoded in this skill.
 
 ## What the loop should never do
 
-- Ask the user "A or B?" mid-phase
+- Ask the operator "A or B?" mid-phase
 - Push without explicit user approval
 - Transition out of DRIVE with a dirty working tree
 - Hand off any artefact (code, docs, prose, research brief, media, communiqué, anything) without a pride pass logged in the loop file for that artefact
 - Treat "there is no diff" as an excuse to skip pride; the produced artefact is the review target
 - Type "🏁", "mission complete", or any equivalent closing language without a pride log entry on record
-- Assume any personal or team integration skill exists without the user naming it at invocation
+- Assume any personal or team integration skill exists without the operator naming it at invocation
 - Write loop files anywhere other than `.autonomous/` in the git root
 - Silently produce a research-only or document-only deliverable for an action-verb dispatch (build, ship, fix, port, install, implement). The Plan-vs-Dispatch check runs at four gates (setup, SURVEY end, DRIVE entry, INSPECT entry); if any triggers, surface to operator instead of proceeding
 - Rewrite the Dispatch block. The operator's verbatim invocation is source of truth, not a draft
