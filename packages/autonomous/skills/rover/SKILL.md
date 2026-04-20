@@ -294,6 +294,8 @@ The mission is complete but the rover stays in orbit. STANDBY keeps the cron ali
 
 The cron's safety-net role is scoped to transient failures during active phases: a failed bash command, a timed-out tool call, or an interrupted edit that leaves the session stuck mid-turn. The cron fires on REPL-idle and re-reads the loop file, which restarts the phase machine from its last logged state. That safety net is not meant as an eternal watch post: sustained idleness means the mission is truly done, and the cron has a hard cap to stop token burn.
 
+**Entry check: any listeners?** The first thing STANDBY does on entry is decide whether to stay. Listeners are concrete signals that can change what the rover cares about: an open PR with reviews or CI the rover is watching, CI jobs still running, or uncommitted work in the tree. Zero listeners means nothing to wait for: invoke `stop` via the Skill tool to cut the cron, log the final entry, and transmit the communiqué. Keep STANDBY-with-cron only when at least one listener is live; otherwise the backoff loop is watching nothing. New input later relights the loop via `/autonomous:wake` either way.
+
 When a PR exists, minimum checks per iteration:
 - `git status --short` (uncommitted work from the session)
 - PR comments and reviews (via `gh api`)
