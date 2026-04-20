@@ -146,6 +146,28 @@ Pass the collected diff to the subagent. Large diffs: `git diff --stat "$RANGE"`
 2. Ask the user if they want you to fix them now
 3. No auto-fix without user confirmation when run manually
 
+### Reject-ratio gate
+
+Every finding is either **fixed** in a follow-up DRIVE cycle or **rejected** with a written reason that names a concrete fact (not a feeling). "Bewuste keuze" without pointing at where that choice was made is not a reason. "Out of scope" without a sentence explaining which scope-boundary applies is not a reason.
+
+Count the buckets in the last pride pass. If the rover is about to reject more than **30%** of them, that is evidence the rover is protecting itself rather than reviewing itself. Stop, run pride a second time with a different subagent and a stricter brief ("the author keeps rejecting findings; tell me which rejects are hollow and which ones are real"), and reconcile the two reports before moving on. Log both runs in the loop file.
+
+A reject is only final after the second-run subagent independently agrees, or after the operator acknowledges the reject in `## Input`. The rover does not get to retire a finding unilaterally.
+
+### Banned closing language
+
+The following phrases are evidence the rover is handing off half-finished work. Any of them in an artefact, a communiqué, a commit message, or a mid-loop status line sends the rover back to DRIVE, no exceptions:
+
+- "mostly works", "mostly done", "largely addressed", "grotendeels"
+- "roughly done", "roughly complete", "a rough pass"
+- "corners cut", "some corners", "hier en daar corners"
+- "good enough for now", "good enough for v1", "good enough for this pass"
+- "nits remaining", "kleine puntjes over", "small issues remain"
+- "will follow up later", "later polish", "polish-for-later"
+- "not quite there", "not fully done", "almost done"
+
+The pattern these share: an acknowledgement that the work is not complete, paired with a suggestion that completion is optional. Pride rejects that combination. Either the work is complete or it is not; if it is not, every remaining item becomes a tracked finding with one of two fates (fix now, or explicit operator-accepted reject) before anything ships.
+
 ## What counts as "nothing found"
 
 Genuinely clean work exists. But "I checked and it looks fine" is not a review. If the subagent returns "nothing found," require it to list:
