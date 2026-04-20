@@ -41,11 +41,11 @@ activity_regex='^(Fix|Improve|Update|Change|Refactor|Add|Extract|Move|Remove|Ren
 trigger_regex='(Address|Fix|Apply)[[:space:]]+(PR|pr)?[[:space:]]*(review|feedback|findings|pride|pr_comments|pr comments)'
 
 selected_rule=""
-if [[ -n "$subject" ]] && [[ "$subject" =~ $activity_regex ]]; then
+if [[ -n "$subject" ]] && [[ "$subject" =~ $trigger_regex ]]; then
+  selected_rule="[2/14] ${rules[1]} Your subject references the trigger: '$subject'."
+elif [[ -n "$subject" ]] && [[ "$subject" =~ $activity_regex ]]; then
   first_word="${BASH_REMATCH[1]}"
   selected_rule="[1/14] ${rules[0]} Your subject starts with '$first_word'."
-elif [[ -n "$subject" ]] && [[ "$subject" =~ $trigger_regex ]]; then
-  selected_rule="[2/14] ${rules[1]} Your subject references the trigger: '$subject'."
 else
   weighted=(0 1 4 0 6 1 2 3 0 5 6 7 4 1 10 8 9 11 12 13)
   index_file="${CLAUDE_COMMIT_RULE_INDEX_FILE:-$HOME/.claude/var/commit-rule-index}"
