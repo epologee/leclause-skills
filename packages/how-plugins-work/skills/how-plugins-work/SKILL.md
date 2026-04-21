@@ -138,7 +138,9 @@ Drie trappen, van lichtst naar zwaarst:
 
 `claude plugin marketplace add ./` (met trailing slash of met expliciet pad) herpuntert een bestaande marketplace alias naar het lokale pad, mits `marketplace.json`'s `name` hetzelfde alias claimt. Concreet: een `marketplace.json` met `"name": "leclause"` in de lokale repo, gecombineerd met een bestaande `leclause` GitHub-marketplace, betekent dat `claude plugin marketplace add ./` de alias silent overschrijft naar de lokale directory. Daarna trekt `claude plugin update <plugin>@leclause` uit de lokale werkkopie in plaats van de remote. Nuttig voor end-to-end testen van plugin wijzigingen zonder eerst te pushen.
 
-**Gotcha:** om terug te vallen op de remote marketplace moet de path-based entry expliciet verwijderd worden met `claude plugin marketplace remove leclause` en opnieuw toegevoegd via de `owner/repo` form.
+**Gotcha 1: cascade-uninstall bij marketplace remove.** `claude plugin marketplace remove <alias>` verwijdert niet alleen de marketplace-configuratie, het uninstallt ook elke plugin die via dat alias was geïnstalleerd. Empirisch getest in Claude Code 2.1.92: een leclause marketplace met 18 geïnstalleerde plugins crashte naar 0 na één `remove`. Bij het opnieuw toevoegen van de marketplace worden de plugins niet automatisch teruggezet; elk plugin moet expliciet met `claude plugin install <plugin>@<alias>` worden heringeroepen. Voor een lokale dev-sessie waar je wisselt tussen path-based en remote-based marketplace met hetzelfde alias: dit is een re-install van elk plugin dat van dat alias komt, niet slechts een config-wijziging.
+
+**Gotcha 2: terugvallen op remote.** Om van path-based terug naar remote te gaan moet het alias eerst expliciet worden verwijderd (`claude plugin marketplace remove leclause`) en opnieuw toegevoegd via de `owner/repo` form (`claude plugin marketplace add epologee/leclause-skills`). Reken dan in op gotcha 1 en bereid een re-install batch voor van alle plugins die je van de remote-versie wilt hebben.
 
 ## Symlinks en cross-platform
 
