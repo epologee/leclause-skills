@@ -132,16 +132,34 @@ A cron at one-minute cadence drives many Claude turns. During active SURVEY/DRIV
 
 The rover invokes `verify --propose` at the end of SURVEY to write Done criteria into the loop file, and `verify` (default mode) at the end of INSPECT to tick each criterion with evidence. The details of what evidence counts, how to gather it, and why proxies do not qualify live in the `verify` skill. Treat it as the rover's evidence discipline: without Done criteria the mission has no endpoint, without evidence the mission is not finished.
 
+## Kickoff is the one question moment
+
+The rover runs without asking the operator mid-mission. Once setup step 1 has fired its first tool call, "No user-feedback during a rover action. Forbidden." (top of this skill) is absolute again. Before that first tool call, the rover has exactly one window to ask the operator a question or a short batch of questions, and only when the mission parameters contain a human choice that `decide` and `pride` cannot stand in for.
+
+Use this window for things like:
+
+- reversibility gaps the setup check surfaces (dirty working tree, wrong branch, or no git repo, see step 1 below)
+- a genuinely human choice in the brief that is not a technical call (a product-feel decision, a tone question, a who-does-this-reach call)
+- an integration the operator named that is not installed
+
+Do not use it for technical choices. If two implementation paths are open, that is a `decide` job, not a kickoff question. The window closes the moment setup step 1 calls its first tool; after that the rover owns every fork.
+
 ## Setup order is not negotiable
 
 The first tool calls after this skill loads are:
 
-1. `Write .autonomous/.gitignore` with content `*` (always, even if the dir already exists; the Write tool creates parent dirs)
-2. `Write .autonomous/<NAME>.md` with the template below, fully populated
-3. Invoke `cron` via the Skill tool to `CronCreate` and write the job id back
-4. Run the first SURVEY iteration directly in this same turn
+1. Reversibility check, then branch. A mission must stay reversible: the operator should be able to say "no, this is not it, try again" and drop the whole thing without losing other work. Before any write, run `git status --short`, `git rev-parse --abbrev-ref HEAD`, and `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null` (fall back to testing `main` then `master` if `origin/HEAD` is absent) to answer one question: can we throw this mission away cleanly later? Four cases block "yes", each with a concrete offer, not a blank question:
+   - No `.git` in cwd, or a repo with zero commits. Offer once: "There is no git repo here yet (or no commits yet). Shall I run `git init` and place an empty initial commit on `main` so we start from a clean slate, or do you want to set it up differently?" If the operator approves, run `git init -b main` (or `git commit --allow-empty -m "Initial commit"` when `.git` exists without commits), then continue.
+   - Working tree has uncommitted changes. Ask once, with the obvious options explicit: "The working tree has uncommitted changes; if we leave them unrecorded, rolling the mission back will drag them along. Should I commit them, stash them, or do you want to handle them first?"
+   - Current branch is not the repo's default branch. Ask once: "We are on `<branch>` instead of `<default>`. Should this mission run here, or switch back to `<default>` first?"
+   - Current branch matches the mission goal already. Stay on it; no new branch.
+   When these are resolved, create the mission branch: `git checkout -b <kebab-goal-name>`. Kebab-case version of the loop-file name, no slashes, no prefixes, no rover or space-mission words (`fix-stale-cache`, `build-auth-page`, `investigate-slow-queries`). Record the chosen branch (or the operator's alternative arrangement) in the loop file's `branch:` field.
+2. `Write .autonomous/.gitignore` with content `*` (always, even if the dir already exists; the Write tool creates parent dirs)
+3. `Write .autonomous/<NAME>.md` with the template below, fully populated
+4. Invoke `cron` via the Skill tool to `CronCreate` and write the job id back
+5. Run the first SURVEY iteration directly in this same turn
 
-No exploration first. No "let me check the codebase." No skills loaded before the cron is live. The whole point is to get the loop running. Exploration happens inside the loop.
+No exploration first. No "let me check the codebase." No skills loaded before the cron is live. The whole point is to get the loop running on its own branch so the work stays reversible. Exploration happens inside the loop.
 
 The first iteration races with the cron's period. This is safe because cron only fires when the REPL is idle, and the first iteration blocks idle. But: tune the initial cron to `* * * * *` (every minute) regardless of expected SURVEY duration. If SURVEY takes 20 minutes, that is fine; the cron will not fire until you yield.
 
@@ -175,6 +193,7 @@ Template:
 ````markdown
 # <NAME>
 
+branch: <kebab-case mission branch, or "none (not a git repo)">
 cron_job_id: <filled after CronCreate>
 watch_checks: 0     # consecutive STANDBY ticks with nothing to do, drives idle backoff
 
@@ -242,7 +261,7 @@ Run the check at three moments:
 Do not silently slide from "ship X" to "write a doc about X", not at setup, not at SURVEY end, not at DRIVE entry, not at INSPECT entry. Four gates, same question: are we delivering what the Dispatch asked for?
 
 **DRIVE**
-Follow the project conventions. Read project CLAUDE.md and user CLAUDE.md for branch strategy (trunk vs feature-branch), commit style, push policy. Default to the most recent pattern in the repo, not the most common.
+The mission branch was created at setup; stay on it. Read project CLAUDE.md and user CLAUDE.md for commit style and push policy, and default to the most recent pattern in the repo, not the most common. Do not rebase, fast-forward, or otherwise reshape the branch during the mission; it exists to absorb every commit so the operator can drop the whole branch and start over if the mission is not it.
 
 Quality over speed. No duct tape, no hacks. Structural solutions. Commit per logical step. Do not transition out of DRIVE with uncommitted changes.
 
@@ -360,12 +379,9 @@ The cron is the safety net for everything after you stop driving, not the starte
 
 ## Branch strategy
 
-Loops do not all need branches. A loop that produces no committed code does not need a branch. A loop that will commit code:
+The mission branch is created during setup (see step 1). The rover stays on that branch for the whole traverse, commits logical steps onto it, and never rebases or force-pushes it. Dropping the branch is how the operator reverses the mission, so the branch has to absorb every commit intact.
 
-- Trunk-based projects (most personal repos, user CLAUDE.md says "direct on main"): commit on current branch
-- Feature-branch projects: create a branch named after the goal (no slashes, no prefixes, describe the goal)
-
-The loop makes this call during the transition to DRIVE, not during setup.
+Trunk-based or feature-branch workflow is not a per-mission decision inside the rover; every rover mission gets its own branch regardless of the surrounding project convention. If the team merges it back via PR, fast-forward, or squash, that is the operator's call after the mission ends.
 
 ## Optional integrations
 
@@ -383,7 +399,6 @@ The contract is "any skill the operator has installed and named in their invocat
 
 The loop reads both user CLAUDE.md and project CLAUDE.md before any code change. It adapts to:
 
-- Trunk vs feature-branch
 - Commit style
 - Push approval policy
 - Test requirements

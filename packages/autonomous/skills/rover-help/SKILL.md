@@ -43,7 +43,7 @@ Welcome to Mission Control. This is the short version of what the Rover does and
 
 The mission brief is free-form text. A GitHub URL pasted on its own counts as text: the Rover does not fetch remote content autonomously. If the issue body or PR diff is part of the mission, the operator pastes it into the brief.
 
-On dispatch, the Rover writes `.autonomous/<NAME>.md`, the mission file that holds context, plan, Done criteria, decision audit, and a timestamped log. Then it sets up a Claude Code cron that fires the loop every minute while the REPL is idle and runs the first SURVEY iteration in the same turn.
+On dispatch, the Rover first runs a short reversibility check (is there a git repo with commits, is the working tree clean, is the current branch the default one) and asks once if any of those cannot be answered "yes" on its own; that is the only moment in the whole mission where the Rover asks anything. When the check is resolved it creates a mission branch named after the goal, writes `.autonomous/<NAME>.md` (the mission file holding context, plan, Done criteria, decision audit, and a timestamped log), sets up a Claude Code cron that fires the loop every minute while the REPL is idle, and runs the first SURVEY iteration in the same turn.
 
 The mission file is your window. Tail it to watch the traverse.
 
