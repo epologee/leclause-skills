@@ -132,9 +132,9 @@ A cron at one-minute cadence drives many Claude turns. During active SURVEY/DRIV
 
 The rover invokes `verify --propose` at the end of SURVEY to write Done criteria into the loop file, and `verify` (default mode) at the end of INSPECT to tick each criterion with evidence. The details of what evidence counts, how to gather it, and why proxies do not qualify live in the `verify` skill. Treat it as the rover's evidence discipline: without Done criteria the mission has no endpoint, without evidence the mission is not finished.
 
-## Kickoff is the one question moment
+## Prelaunch is the one question window
 
-The rover runs without asking the operator mid-mission. Once setup step 1 has fired its first tool call, "No user-feedback during a rover action. Forbidden." (top of this skill) is absolute again. Before that first tool call, the rover has exactly one window to ask the operator a question or a short batch of questions, and only when the mission parameters contain a human choice that `decide` and `pride` cannot stand in for.
+The rover runs without asking the operator mid-mission. Once setup step 1 has fired its first tool call, the rover has launched and "No user-feedback during a rover action. Forbidden." (top of this skill) is absolute again. Before that first tool call, during prelaunch, the rover has exactly one window to ask the operator a question or a short batch of questions, and only when the mission parameters contain a human choice that `decide` and `pride` cannot stand in for.
 
 Use this window for things like:
 
@@ -142,7 +142,7 @@ Use this window for things like:
 - a genuinely human choice in the brief that is not a technical call (a product-feel decision, a tone question, a who-does-this-reach call)
 - an integration the operator named that is not installed
 
-Do not use it for technical choices. If two implementation paths are open, that is a `decide` job, not a kickoff question. The window closes the moment setup step 1 calls its first tool; after that the rover owns every fork.
+Do not use it for technical choices. If two implementation paths are open, that is a `decide` job, not a prelaunch question. The window closes the moment setup step 1 calls its first tool; after that the rover owns every fork.
 
 ## Setup order is not negotiable
 
