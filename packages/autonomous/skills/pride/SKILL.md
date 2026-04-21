@@ -39,7 +39,7 @@ The pride check injects an independent skeptic before the loop transitions to it
 
 ## How
 
-Spawn a subagent with no prior context. Give it the artefact, the loop's Context section if one exists, and the matching brief below.
+Spawn a Sonnet subagent (Agent tool with `model: "sonnet"`) with no prior context. Give it the artefact, the loop's Context section if one exists, and the matching brief below.
 
 For code artefacts, give the subagent the diff plus this brief:
 
