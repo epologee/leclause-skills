@@ -50,7 +50,7 @@ als scope, tenzij de user expliciet om een diff-review vraagt.
 
 ### Stap 2: Acht agents parallel dispatchen
 
-Eén message met 8 parallelle `Agent` calls (`subagent_type: "sonnet-max"`). Die subagent wordt met de plugin meegeshipt in `packages/gurus/agents/sonnet-max.md` en draait op Sonnet met max effort. De agents reviewen alleen, ze wijzigen NIETS.
+Eén message met 8 parallelle `Agent` calls (`subagent_type: "gurus:sonnet-max"`). Die subagent wordt met de plugin meegeshipt in `packages/gurus/agents/sonnet-max.md` en draait op Sonnet met max effort. De agents reviewen alleen, ze wijzigen NIETS.
 
 **Prompt template per agent** (vul in per guru):
 
