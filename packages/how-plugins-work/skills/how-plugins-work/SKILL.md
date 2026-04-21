@@ -33,6 +33,9 @@ Deze drie namen zijn volledig onafhankelijk van elkaar. Claude Code combineert z
 | TUI autocomplete | `/<plugin>:<skill>` | `/how-plugins-work:how-plugins-work` |
 | Skill tool invocatie | `Skill("<plugin>:<skill>")` of bare `Skill("<skill>")` | `Skill("how-plugins-work")` |
 | Slash command (bare) | `/<skill>` (als uniek) | `/how-plugins-work` |
+| `claude agents` | `<plugin>:<name> · <model>` | `gurus:sonnet-max · sonnet` |
+| Agent tool invocatie | `subagent_type: "<plugin>:<name>"` | `subagent_type: "gurus:sonnet-max"` |
+| Plugin-shipped agent source | `packages/<plugin>/agents/<name>.md` | `packages/gurus/agents/sonnet-max.md` |
 
 ### Observaties
 
@@ -86,6 +89,56 @@ Een skill kan het session model NIET veranderen. Het model dat de user koos bij 
 - Het session model reserveren voor reasoning, terwijl mechanisch werk goedkoper draait
 
 **Vuistregel:** session model = head, subagent = hand. Geef subagents het werk dat geen interpretatie vereist (commands runnen, files lezen en raw teruggeven, gh-scrapes doen). Houd interpretatie en beslissingen op de session model.
+
+**Effort kan niet per invocatie.** De Agent tool accepteert alleen `model` inline, geen `effort`. De enige route om een subagent op `effort: max` (of welk niveau dan ook) te draaien is via een plugin-shipped of user-level agent definitie met het `effort` frontmatter veld. Zie "Plugin-shipped subagents" hieronder.
+
+## Plugin-shipped subagents
+
+Naast skills kan een plugin ook subagent-definities shippen onder `packages/<plugin>/agents/<name>.md`. Dit is tegelijk de enige manier om een vooraf-geconfigureerde `model` + `effort` combinatie beschikbaar te maken voor runtime spawn, omdat de Agent tool alleen `model` inline accepteert.
+
+### Frontmatter
+
+Ondersteund: `name`, `description`, `model` (`sonnet`/`opus`/`haiku`), `effort` (`low`/`medium`/`high`/`xhigh`/`max`). Voor security redenen genegeerd wanneer de agent uit een plugin komt: `hooks`, `mcpServers`, `permissionMode`. Wie die velden nodig heeft, kopieert de agent definitie naar `~/.claude/agents/` of `.claude/agents/`.
+
+Voorbeeld (empirisch werkend in de leclause marketplace):
+
+```markdown
+---
+name: sonnet-max
+description: Generic subagent pinned to Sonnet at maximum effort.
+model: sonnet
+effort: max
+---
+
+Execute the invoker's prompt and return the result.
+```
+
+### Invocatie
+
+Plugin-shipped agents volgen dezelfde `<plugin>:<name>` namespace als skills. Aanroep via de `Agent`/`Task` tool met `subagent_type: "<plugin>:<name>"`. Voor de voorbeeld-agent in `packages/gurus/agents/sonnet-max.md`: `subagent_type: "gurus:sonnet-max"`.
+
+**Bare name werkt NIET.** In tegenstelling tot skills, waar `/how-plugins-work` als bare slash command resolves wanneer uniek, vereist de Agent tool altijd de namespaced vorm voor plugin-shipped agents. Empirische bevestiging in Claude Code 2.1.92: `subagent_type: "sonnet-max"` faalt, `subagent_type: "gurus:sonnet-max"` werkt.
+
+### Verificatie zonder push
+
+Drie trappen, van lichtst naar zwaarst:
+
+1. **`claude agents`.** Toont alle geladen agents in het `<plugin>:<name> · <model>` formaat. Draait tegen de huidige install cache; werkt dus pas na een geslaagde `claude plugin update`.
+2. **`claude --plugin-dir ./packages/<plugin> agents`.** Laadt de lokale plugin voor één CLI-sessie zonder de install cache te muteren. Snelst om een wijziging te testen voordat commit/install. Let op: de `--plugin-dir` flag is globaal; `claude agents --plugin-dir X` faalt met `unknown option`, `claude --plugin-dir X agents` werkt.
+3. **Live spawn test via `claude -p`.**
+
+   ```bash
+   claude -p --allow-dangerously-skip-permissions --output-format json \
+     "Use the Task tool with subagent_type '<plugin>:<name>'. Ask for the string PING_42."
+   ```
+
+   De JSON output bevat een `modelUsage` sectie met het geconfigureerde model als aparte key (bijv. `claude-sonnet-4-6`). Twee modellen in `modelUsage` (sessie + subagent) is het sterkste bewijs dat de subagent echt gespawnd is met het gewenste model. De `effort` waarde is niet zichtbaar in `modelUsage` of elders in de CLI output; daarvoor rust het op een documentatie-aanname.
+
+### Lokale marketplace voor persistent installeren zonder push
+
+`claude plugin marketplace add ./` (met trailing slash of met expliciet pad) herpuntert een bestaande marketplace alias naar het lokale pad, mits `marketplace.json`'s `name` hetzelfde alias claimt. Concreet: een `marketplace.json` met `"name": "leclause"` in de lokale repo, gecombineerd met een bestaande `leclause` GitHub-marketplace, betekent dat `claude plugin marketplace add ./` de alias silent overschrijft naar de lokale directory. Daarna trekt `claude plugin update <plugin>@leclause` uit de lokale werkkopie in plaats van de remote. Nuttig voor end-to-end testen van plugin wijzigingen zonder eerst te pushen.
+
+**Gotcha:** om terug te vallen op de remote marketplace moet de path-based entry expliciet verwijderd worden met `claude plugin marketplace remove leclause` en opnieuw toegevoegd via de `owner/repo` form.
 
 ## Symlinks en cross-platform
 
