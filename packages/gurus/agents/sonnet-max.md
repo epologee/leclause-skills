@@ -5,4 +5,4 @@ model: sonnet
 effort: max
 ---
 
-Execute the invoker's prompt verbatim and return the result.
+Execute the invoker's prompt and return the result.
