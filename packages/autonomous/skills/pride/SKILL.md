@@ -138,7 +138,7 @@ Pass the collected diff to the subagent. Large diffs: `git diff --stat "$RANGE"`
 
 ## What to do with findings
 
-Pride is not a deferral mechanism. Its output is a list of things to fix, not a list to route around. There is no "log and ship" path. Every finding gets one of two fates inside the current mission: fixed, or rejected with concrete evidence of non-issue via the reject-ratio second-pass gate below.
+Pride is not a deferral mechanism. Its output is a list of things to fix, not a list to route around. There is no "log and ship" path. Every finding gets one of two fates inside the current mission: fixed, or rejected with concrete evidence of non-issue via the second-pass gate below.
 
 **Inside a running loop (auto-triggered):**
 
@@ -152,18 +152,15 @@ Pride is not a deferral mechanism. Its output is a list of things to fix, not a 
 2. Fix every finding before returning. Pride is not a report-generating skill; it is a check that closes the gap between "looks done" and "actually done". Manual invocation means the user wants the work fixed, not a menu of what could be fixed.
 3. If the fix requires an external-action gate (push, deploy, merge), complete all local fixes and surface the push-ready state to the user at the end. Never ask mid-fix whether to continue.
 
-### Reject-ratio gate
+### Every reject gets a second pass
 
-Every finding is either **fixed** in a follow-up DRIVE cycle or **rejected** with a written reason that names a concrete fact (not a feeling). "Bewuste keuze" without pointing at where that choice was made is not a reason. "Out of scope" is never a reason at all inside an autonomous rover: the rover does not down-scope.
+Every finding is either **fixed** in a follow-up DRIVE cycle or **rejected** with a written reason that names a concrete fact (not a feeling). "Bewuste keuze" without pointing at where that choice was made is not a reason. "Out of scope" is never a reason at all inside an autonomous rover: the rover does not down-scope. Neither is "pre-existing" or "not introduced by this mission": authorship and timing are not scope boundaries, see `rover`'s "Origin is not a scope argument".
 
-Count the findings in the last pride pass. Two triggers for the second-pass gate, either is enough:
+The principle: rejects are the suspect move. The rover built the work, so it has every incentive to wave a finding away; a second reader who did not build it is the cheapest correction. A threshold-based gate ("run pass 2 only when rejects exceed N%") quietly contradicts this principle by admitting a band where rejects pass unreviewed. Any ratio above zero is arbitrary and defensible only by feel, and the feel is systematically wrong: empirically, even "low" reject rates produce plenty of hollow rejects once a second pass looks.
 
-- **Ratio trigger:** the rover is about to reject more than 30% of the findings (strict greater-than, so 3 of 10 passes, 4 of 10 does not).
-- **Small-N trigger:** the pass had two or fewer findings and the rover is about to reject any of them. Rejecting one of two is 50%, rejecting one of one is 100%; both are too suspect to resolve without a second reader.
+So the rule is flat: **any reject triggers a second pride pass** before it is final. Run pride a second time with a different subagent and a stricter brief ("the author rejected the following findings; tell me which rejects are hollow and which ones are real"), reconcile the two reports, log both runs in the loop file. A reject is only final after the second-run subagent independently agrees (concrete-evidence-of-non-issue, per `rover`'s category-2 definition). If the second pass says the finding is real, the rover fixes it.
 
-When either trigger fires, stop and run pride a second time with a different subagent and a stricter brief ("the author keeps rejecting findings; tell me which rejects are hollow and which ones are real"), then reconcile the two reports before moving on. Log both runs in the loop file.
-
-A reject is only final after the second-run subagent independently agrees (concrete-evidence-of-non-issue, per `rover`'s category-2 definition). There is no operator-accept path: the operator is not consulted mid-mission. If the second pass says the finding is real, the rover fixes it. The rover does not retire a finding unilaterally, and the operator is not consulted to retire one either.
+There is no operator-accept path: the operator is not consulted mid-mission. The rover does not retire a finding unilaterally, and the operator is not consulted to retire one either. If there are no rejects in a pass, no second pass is needed; the expensive case is reject-heavy work, and that is exactly the case where the check earns its keep.
 
 ### Banned closing language
 
