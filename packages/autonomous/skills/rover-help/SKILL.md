@@ -38,9 +38,10 @@ Welcome to Mission Control. This is the short version of what the Rover does and
 
 ```
 /autonomous:rover "<mission brief>"
-/autonomous:rover https://github.com/owner/repo/issues/N
 /autonomous:rover .autonomous/<NAME>.md         # wake an existing mission
 ```
+
+The mission brief is free-form text. A GitHub URL pasted on its own counts as text: the Rover does not fetch remote content autonomously. If the issue body or PR diff is part of the mission, the operator pastes it into the brief.
 
 On dispatch, the Rover writes `.autonomous/<NAME>.md`, the mission file that holds context, plan, Done criteria, decision audit, and a timestamped log. Then it sets up a Claude Code cron that fires the loop every minute while the REPL is idle and runs the first SURVEY iteration in the same turn.
 
@@ -78,7 +79,7 @@ SURVEY ──► DRIVE ──► INSPECT ──► STOW ──► STANDBY
 
 | Command | What it does |
 |---------|--------------|
-| `/autonomous:rover` | Dispatch a Rover. Accepts mission brief, issue URL, or mission file to wake. |
+| `/autonomous:rover` | Dispatch a Rover. Accepts a free-form mission brief or a mission file to wake. |
 | `/autonomous:verify` | Standalone evidence check. Propose Done criteria, or tick them off with evidence. |
 | `/autonomous:pride` | Contrarian review of the current branch diff. Finds what the operator would hate. |
 | `/autonomous:decide` | Choice framework. Use when you are stuck between options, inside a Rover or not. |

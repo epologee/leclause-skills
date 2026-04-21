@@ -6,9 +6,9 @@ No hard dependencies on personal or team skills. Optional integrations (notifier
 
 ## User-invocable skills
 
-### `/autonomous:rover [issue-URL | loop-file-path | free-form text]`
+### `/autonomous:rover [loop-file-path | free-form text]`
 
-Entry point. Accepts a GitHub issue URL, a loop file path to resume, or free-form mission text. Writes `.autonomous/<NAME>.md` (the loop file) and starts a `CronCreate` job that re-enters the conversation each minute while the REPL is idle.
+Entry point. Accepts a loop file path to resume or free-form mission text (a description, a pasted issue body, a GitHub URL the operator wants the rover to address). Writes `.autonomous/<NAME>.md` (the loop file) and starts a `CronCreate` job that re-enters the conversation each minute while the REPL is idle. The rover does not fetch remote content on its own; if an issue body or PR diff is part of the mission, the operator pastes it into the invocation.
 
 ### `/autonomous:wake <loop-file-path>`
 

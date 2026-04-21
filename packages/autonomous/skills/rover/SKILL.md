@@ -1,6 +1,6 @@
 ---
 name: rover
-description: Dispatch a rover at a task. You stay back, the rover works in the field. The distance means it decides autonomously: `decide` picks the path, `verify` writes the Done criteria and proves each one with evidence, `pride` catches what the user would hate, and the rover cycles SURVEY → DRIVE → INSPECT → STOW → STANDBY until the mission is solid. Hastens slowly; haste skips understanding. Accepts a GitHub issue URL, a loop file path to wake, or free-form text describing the mission.
+description: Dispatch a rover at a task. You stay back, the rover works in the field. The distance means it decides autonomously: `decide` picks the path, `verify` writes the Done criteria and proves each one with evidence, `pride` catches what the user would hate, and the rover cycles SURVEY → DRIVE → INSPECT → STOW → STANDBY until the mission is solid. Hastens slowly; haste skips understanding. Accepts a loop file path to wake, or free-form text (a GitHub URL, a description, anything) describing the mission.
 user-invocable: true
 argument-hint: "standing by for mission parameters..."
 ---
@@ -150,9 +150,8 @@ The first iteration races with the cron's period. This is safe because cron only
 | Argument | Meaning |
 |----------|---------|
 | (none) | Use the current conversation as context. Distill to 2-3 sentences. |
-| `https://github.com/.../issues/N` | Run `gh issue view`, use title + body as context. |
 | `.autonomous/<name>.md` | Wake. Delegate to `wake`. |
-| Free-form text | Use the text directly as context. |
+| Free-form text | Use the text directly as context. A bare GitHub URL falls in this category: paste it into the Dispatch verbatim. The rover never fetches remote content on its own; if issue body or PR diff is needed as context, the operator includes it in the invocation. |
 
 Free-form text may also describe optional integrations. Parse phrases where the operator names a specific skill with a role, and record it as an integration:
 
