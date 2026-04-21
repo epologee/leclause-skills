@@ -50,7 +50,7 @@ als scope, tenzij de user expliciet om een diff-review vraagt.
 
 ### Stap 2: Acht agents parallel dispatchen
 
-Eén message met 8 parallelle `Agent` calls (`subagent_type: "general-purpose"`). De agents reviewen alleen, ze wijzigen NIETS.
+Eén message met 8 parallelle `Agent` calls (`subagent_type: "general-purpose"`, `model: "sonnet"`). De agents reviewen alleen, ze wijzigen NIETS.
 
 **Prompt template per agent** (vul in per guru):
 
