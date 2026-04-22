@@ -158,3 +158,7 @@ Wanneer de suite failures heeft, is het enige juiste antwoord: fixen. Niet deplo
 - git stash om te bewijzen dat het "niet van jou" is -> Verkeerde richting. Onderzoek de failure, niet de oorsprong.
 
 **Bij CI-failures die onverwacht breken:** Wanneer je ontdekt dat je wijzigingen specs breken op plekken die je niet had verwacht, is dat een signaal dat er meer onverwachte breakages kunnen zijn. Draai in die situatie de volledige suite voordat je de fix commit. Zeker niet amenden op een vorige commit voordat je weet dat het hele plaatje klopt.
+
+## Mass-verwijderen van tests is een SMELL bij refactors
+
+Wanneer een refactor een API leegmaakt, blijven de gedragingen die de oude tests documenteerden bestaan, alleen ergens anders. De tests moeten daarom mee migreren, niet geschrapt worden. Concreet: verwijder geen reeks tests zonder per testgeval aan te wijzen waar het gedrag nu gedekt is (andere unit-file, cucumber scenario, Playwright script, explicit `it.todo` met verwijzing). Kun je die mapping niet leggen? Dat is geen reden om te dunnen, dat is een blocker: het gedrag is of weg zonder vervanging (regressie), of ongedekt geworden (gat in het veiligheidsnet). Tienregels-diff-groter van je refactor is beter dan een test-crash later. Telt zelfs voor één test wanneer die het enige stuk documentatie is van een gedrag; geldt hard voor elk verwijderingspatroon van meer dan een paar cases tegelijk.
