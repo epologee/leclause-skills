@@ -142,6 +142,38 @@ Drie trappen, van lichtst naar zwaarst:
 
 **Gotcha 2: terugvallen op remote.** Om van path-based terug naar remote te gaan moet het alias eerst expliciet worden verwijderd (`claude plugin marketplace remove leclause`) en opnieuw toegevoegd via de `owner/repo` form (`claude plugin marketplace add epologee/leclause-skills`). Reken dan in op gotcha 1 en bereid een re-install batch voor van alle plugins die je van de remote-versie wilt hebben.
 
+## Env-vars uit settings.json lezen
+
+De `env` sectie van `~/.claude/settings.json` exporteert variabelen naar child bash-processes die Claude Code spawnt. Die waarden zijn **niet zichtbaar in Claude's conversation context**. Een skill die gedrag wil conditioneren op een env-var moet de waarde via bash opvragen. Claude "weet" de waarde niet uit zichzelf en gokt.
+
+Twee antipatronen die vaak in combinatie voorkomen:
+
+1. **Impliciete check.** SKILL.md schrijft "als `VAR` niet gezet is, doe X" zonder een voorgeschreven bash-stap die de waarde opvraagt. Claude moet dan zelf inzien dat een check nodig is, en gokt meestal naar "unset".
+2. **Passieve code-fence.** SKILL.md zet de actie-bash in een ```bash-block zonder imperatieve label. Claude kan het lezen als voorbeeld en slaat de uitvoering over.
+
+**Patroon:** één expliciete "RUN THIS FIRST"-stap die bash-check én actie combineert en een marker-output print waar de volgende stap op vertakt. Geen conditie-regel elders in de markdown die leunt op impliciete kennis over een env-waarde.
+
+```bash
+# First action of every invocation:
+state="${VAR:-unset}"
+[ "$state" = "on" ] && do_the_thing &
+echo "state=$state"
+```
+
+Daarna een beslistabel gedreven door `state`, niet door markdown-proza:
+
+| `state` | Volgende actie |
+|---------|----------------|
+| `on` | Gewoon verder; geen reveal |
+| `off` | Gewoon verder; geen reveal |
+| `unset` | Append eenmalige reveal-PS aan einde |
+
+**First-run reveal via de env-var zelf.** Een elegante mute zonder state-file op disk: `on`/`off` beide onderdrukken de hint, afwezig toont 'm eens. Alleen robuust als stap 1 de waarde hard uitleest; anders valt de elegantie weg en wordt de hint willekeurig wel/niet getoond.
+
+Empirisch geobserveerd in whywhy v1.0.10 (2026-04-22): reveal-PS verscheen bij een user met `WHYWHY_JINGLE=on` sinds 3 dagen in settings, terwijl de jingle niet speelde. Beide symptomen van Claude die de env-waarde niet had uitgelezen: de reveal-conditie gokte naar "unset", en de afplay-fence werd niet uitgevoerd.
+
+**Sessie-lifetime voetnoot.** Env-updates in `settings.json` worden pas door nieuwe Claude Code sessies gezien. Een sessie die vóór een settings-commit startte, houdt de oude waarden tot restart. Bij vreemde diagnostiek ("var staat op on maar skill gedraagt zich unset"), vergelijk de sessie-starttijd met de commit die de var toevoegde vóór je de skill zelf de schuld geeft.
+
 ## Symlinks en cross-platform
 
 De leclause marketplace is symlink-free. Elke skill leeft op één plek onder `packages/<plugin>/skills/<skill>/`, zonder shared-source via symlinks. Pre-commit en CI weigeren symlinks in de repo. De reden is Windows: Git for Windows heeft `core.symlinks=false` als default, dus bij clone worden symlinks omgezet naar text-files met het doelpad als inhoud, en de runtime resolution in Claude Code faalt. Een symlink-vrije layout werkt op macOS, Linux en Windows zonder extra consumer-setup.
