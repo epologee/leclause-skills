@@ -54,6 +54,8 @@ Wanneer je een screenshot bekijkt (zelf genomen of aangeleverd), stel deze vrage
 
 3. **Zoek het ritme.** Zijn de afstanden tussen herhalende elementen (secties, kaarten, regels) consistent? Wordt het ritme ergens gebroken?
 
+   **Interne ritmiek is een apart oordeel.** Perimeter-padding meten ("content staat 32px van de rand") is niet hetzelfde als sibling-gaps meten. Loop binnen de container langs elk visueel blok (titel, paragraaf, tabel, lijst, citaat, signature, footer) en benoem de verticale ruimte tussen elk aangrenzend paar. Raken twee blokken elkaar? Is de gap kleiner dan de line-height van de body-font? Zijn de gaps onderling consistent? Een kaart met royale buitenmarges maar geplette interne blokken leest niet als document; het leest als gedumpte tekst in een doos. Dit is "collapsed padding": de buitenrand is in orde, de binnenhuishouding niet. Margin-collapse door de container-padding heen is een bekend mechanisme (eerste kind-margin collapseert door parent-padding-top als de parent geen border/padding/inline-content heeft boven het kind); als je dit vermoedt, check met DevTools of fix met `display: flow-root` / een expliciete border-top.
+
 4. **Zoek de vreemde eend.** Is er een element dat net anders is dan de rest? Iets dat bijna hetzelfde is maar niet helemaal? Dat is waarschijnlijk een bug, geen variatie.
 
 5. **Benoem elke aanraking.** Welke elementen raken elkaar? Welke elementen raken een rand? Welke elementen vallen buiten hun container? Lijst ze op. Voor elk: is dit intentioneel? Een border die de container raakt is meestal bewust. Tekst die de paginarand raakt is dat bijna nooit. Bewuste aanrakingen zijn expliciet (bijv. een `bleed` class), onbewuste zijn bugs.
@@ -78,10 +80,19 @@ Wanneer je een screenshot bekijkt (zelf genomen of aangeleverd), stel deze vrage
 
 **Dan pas meten en fixen:**
 
+**Meten én oordelen is één handeling, niet twee.** Een pixel-waarde opschrijven is geen voltooide observatie; pas wanneer die waarde is getoetst aan een standaard of ratio, is de bevinding compleet. "Er zit 20px padding" is een halve zin. "20px padding op 14px body-font = 1.4x, onder de 2.5x drempel voor comfortabele document-leesruimte" is een bevinding. De scan eindigt pas wanneer elke gemeten waarde een uitgesproken oordeel heeft: goed, krap, ruim, faalt.
+
+**Default ratios om tegen te toetsen:**
+- Padding/gutter rond body-tekst: minimaal 2.5x body-font size. Onder die drempel voelt het krap, ook als het niet plakt.
+- Document-metafoor canvases (email-body, card-as-paper, editor-surface): Tschichold 1:1:2:3 (binnen:boven:buiten:onder) als startpunt. Web-style 16-24px rondom kwalificeert niet; een document wil 2-3rem+ ruimte rondom de tekst.
+- Sectie-gap vs interne gap: minimaal 2x verschil om hiërarchie te leveren. "14px vs 5px = 2.8:1" werkt; "14px vs 10px = 1.4:1" is ambigu.
+- Aangrenzende surface-niveaus: minimaal 1.07x luminance ratio (zie kleur-sectie).
+
 Druk problemen uit als verhoudingen, niet als pixels:
 - "De titel zit op 0px van de bovenkant, maar de body font is 12px. Daar hoort minimaal 2.5x fontgrootte (~30px) te zitten."
 - "De sectie-gap is 14px maar de interne gap is 5px. Dat is een 2.8:1 ratio, helder genoeg."
 - "Dit is een geprint A4-vel. Tschichold's ratio 1:1:2:3 geeft bij 1.5cm basis: boven 1.5cm, binnen 1.5cm, buiten 3cm, onder 4.5cm."
+- "Email-body kaartje heeft 20/24px padding op 14px body-font = 1.4x/1.7x. Onder 2.5x drempel, en ver onder Tschichold voor document-canvas. Krap."
 
 ## Kleur: dezelfde discipline, andere as
 
@@ -297,6 +308,8 @@ De keten in tijd: art-director eenmalig (bij nieuw product, brand refresh, eerst
 | `padding: 0.6rem 0` schrijven | De 0 is nul ruimte links/rechts. Lees elke waarde. |
 | Element buiten de hoofdcontainer plaatsen | Dat element erft geen padding. Het heeft eigen spacing nodig. |
 | Naar het midden kijken, niet naar de randen | Het midden ziet er altijd goed uit. De fouten zitten aan de randen. |
+| Alleen perimeter-padding meten, niet sibling-gaps | Container heeft 32px rondom, maar paragraaf raakt tabel eronder. Collapsed padding. Loop expliciet langs elk sibling-paar binnen de container. |
+| `:host` / container padding doorgezogen door margin-collapse | Eerste kind-margin-top collapseert door parent-padding-top als de parent geen border/padding-tussen-ruimte heeft. Fix met `display: flow-root` of expliciete border-top. |
 | "Past het?" als evaluatiecriterium | Fit is niet kwaliteit. Iets kan passen en er tegelijk lelijk uitzien. |
 | Een fix doen en stoppen | Elke fix triggert een rescan van alle vier de randen. |
 | CSS lezen als bewijs | CSS beschrijft intentie, niet resultaat. De screenshot is de waarheid. |
