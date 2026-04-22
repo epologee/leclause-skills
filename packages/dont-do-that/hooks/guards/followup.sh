@@ -8,10 +8,10 @@ guard_followup() {
   local input="$1"
   local command
   command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
-  case "$command" in
-    *gh*api*body*) ;;
-    *) return 0 ;;
-  esac
+  # Match the pre-refactor gate: 'gh api' with at least one space, and the
+  # literal word 'body' somewhere (the --field body=... or -f body=... arg).
+  [[ "$command" =~ gh[[:space:]]+api ]] || return 0
+  [[ "$command" =~ body ]] || return 0
 
   local body_lower
   body_lower=$(echo "$command" | tr '[:upper:]' '[:lower:]')

@@ -30,18 +30,30 @@ case "$EVENT" in
     ;;
 
   Stop)
-    # false-claims and tool-error maintain their own line-tracking state
-    # and intentionally run even when a previous Stop fire blocked. The
-    # other four guards skip on the stop_hook_active mutex to avoid
-    # re-blocking on the same text across consecutive fires.
+    # false-claims and tool-error run in subshells so that an emit + exit in
+    # one of them does not prevent the other from updating its own
+    # /tmp/.claude-<guard>-<sid> state on the same fire. Pre-refactor they
+    # were separate processes with independent lifecycles; preserve that by
+    # subshelling here. First non-empty output wins, in hooks.json order
+    # (false-claims before tool-error).
     source "$DIR/guards/false-claims.sh"
     source "$DIR/guards/tool-error.sh"
-    guard_false_claims "$INPUT"
-    guard_tool_error "$INPUT"
 
+    FC_OUTPUT=$( guard_false_claims "$INPUT" )
+    TE_OUTPUT=$( guard_tool_error "$INPUT" )
+
+    if [ -n "$FC_OUTPUT" ]; then
+      echo "$FC_OUTPUT"
+      exit 0
+    fi
+    if [ -n "$TE_OUTPUT" ]; then
+      echo "$TE_OUTPUT"
+      exit 0
+    fi
+
+    # Mutex-respecting guards. If a prior Stop fire already blocked, skip
+    # these to avoid re-blocking on the same text across consecutive fires.
     if ! dd_stop_active "$INPUT"; then
-      # Cache first (matches historical hooks.json ordering), then the
-      # premature-vs-compliance mutex pair, then verify.
       source "$DIR/guards/cache.sh"
       source "$DIR/guards/premature.sh"
       source "$DIR/guards/verify.sh"
