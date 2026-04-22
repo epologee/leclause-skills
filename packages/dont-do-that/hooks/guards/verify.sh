@@ -24,11 +24,11 @@ guard_verify() {
   action=$(grep -ciE "(refresh de (pagina|browser)|herlaad de (pagina|browser)|probeer (het |de pagina |opnieuw)?(te |eens)?|restart de (server|app)|herstart de (server|app)|try (refreshing|reloading|again|it)|reload the (page|browser))" <<< "$filtered")
 
   if [ "$claim" -gt 0 ] 2>/dev/null; then
-    dd_emit_block verify "Onbewezen claim. Verifieer zelf (screenshot/curl/test/grep), begin met 'Geverifieerd:'."
+    dd_emit_block verify "Onbewezen claim. Verifieer zelf, start met 'Geverifieerd:'."
   elif [ "$check" -gt 0 ] 2>/dev/null; then
-    dd_emit_block verify "Verificatie delegeren. Doe het zelf, begin met 'Geverifieerd:'."
+    dd_emit_block verify "Verificatie delegeren. Doe zelf, start met 'Geverifieerd:'."
   elif [ "$action" -gt 0 ] 2>/dev/null; then
-    dd_emit_block verify "User een actie vragen is delegeren. Doe het zelf, begin met 'Geverifieerd:'."
+    dd_emit_block verify "Actie-delegatie. Doe zelf, start met 'Geverifieerd:'."
   fi
   return 0
 }
