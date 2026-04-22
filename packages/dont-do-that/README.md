@@ -27,7 +27,7 @@ Surfaces additional context when em-dash (U+2014) or en-dash (U+2013) appears in
 
 ### Stop
 
-**`pre-existing`** (false-claims) , `hooks/guards/false-claims.sh`
+**`pre-existing`** (false-claims) in `hooks/guards/false-claims.sh`
 Blocks Stop when the recent assistant text relativizes a test or error as already existing before the current change. Also runs when `stop_hook_active` is true (keeps its own per-session line tracker). Pass condition: fix the failure, or formulate it as parallel work in the same directory when there is concrete evidence of a parallel session.
 
 **`cache`** in `hooks/guards/cache.sh`
@@ -39,10 +39,10 @@ Blocks Stop when the last assistant message ends with a confirmation question ("
 **`premature`** in `hooks/guards/premature.sh`
 Blocks Stop when the last assistant message does not end with a question AND does not end with 🏁 (finish) or 🚦 (waiting on external go) plus a substantive sentence (≥40 non-space non-emoji chars with a sentence terminator). Catches Claude Code tool chains that truncate before the chain-of-thought is complete, and bare emoji free passes. Mutually exclusive with `compliance` by condition. Pass condition: end with 🏁 + real sentence when work is done, or 🚦 + real sentence when waiting on an external go, or keep writing.
 
-**`verify`** (verification-delegation) , `hooks/guards/verify.sh`
+**`verify`** (verification-delegation) in `hooks/guards/verify.sh`
 Blocks Stop when the assistant delegates verification to the user ("zou moeten werken", "check of het werkt", "refresh de pagina") instead of verifying itself. Meta-references (backticks, quoted strings, table cells) are stripped before matching. Pass condition: prefix the conclusion with `Geverifieerd:` after actually running verification (screenshot, curl, test, grep).
 
-**`tool-error`** (nudge-after-tool-error) , `hooks/guards/tool-error.sh`
+**`tool-error`** (nudge-after-tool-error) in `hooks/guards/tool-error.sh`
 Blocks Stop when the last significant event in the transcript was a failed tool call. Also runs when `stop_hook_active` is true. Maximum two nudges per session (hard cap), with LINE_FILE tracking so we only fire on new errors. Pass condition: analyse the error and retry instead of giving up.
 
 ## Installation
