@@ -2,44 +2,48 @@
 
 Nine guardrail hooks that push back on common AI reflexes. Each hook either blocks a tool call, blocks the Stop event, or surfaces additional context at the moment a mistake is likely, forcing Claude to course-correct instead of barreling past the issue.
 
-## Hooks
+## Architecture
+
+One dispatcher, `hooks/dispatch.sh`, is registered against PreToolUse (Bash matcher), PostToolUse (Edit|Write|Bash matcher), and Stop. The dispatcher reads stdin once, extracts `hook_event_name`, and routes to the matching guard set. Guards live under `hooks/guards/` as sourced functions, shared helpers under `hooks/lib/common.sh`. No external script runs per guard.
+
+Every user-visible hook message begins with the mnemonic prefix `[dont-do-that/<code>] `. The code is a stable short identifier that maps to the guard listed below. The message itself is a single actionable line. When you want the full rule behind a code, read this file or `hooks/guards/<code>.sh`.
+
+## Codes and guards
 
 ### PreToolUse (Bash)
 
-**block-followup-without-issue**
-Blocks `gh api` commands that contain "follow-up", "wordt opgepakt", "buiten scope", or similar deferral language in the body, unless the body starts with "Bewust uitgesteld:" (deliberately deferred). Prevents Claude from punting work to imaginary future PRs.
+**`followup`** in `hooks/guards/followup.sh`
+Denies `gh api` commands whose body contains deferral language ("follow-up", "wordt opgepakt", "buiten scope", "in een volgende pr", and similar) unless the body starts with `Bewust uitgesteld:`. Pass condition: prefix the body with `Bewust uitgesteld:` to claim an explicit deferral, or rewrite the body without deferral language.
 
-**commit-message-rule-rotator**
-Blocking. On every `git commit` Bash call, parses the subject from a `-m`, `-am`, `--message` or `--message=` flag, or from the first non-empty HEREDOC line, and selects one of fourteen commit-message rules. Rules 1 and 2 fire deterministically on activity-word starts (Fix, Improve, Update, Change, Refactor, Add, Extract, Move, Remove, Rename, Drop, Create, Clear) and trigger-as-reason phrasing (Address review/feedback/findings, Apply PR comments, Fix review comments). Rules 3 through 14 enter a rotation that advances only on a successful pass, so each thematic reminder gets one turn before the rotation wraps.
+**`commit-rule`** in `hooks/guards/commit-rule.sh`
+On every `git commit` Bash call, parses the subject from `-m`, `-am`, `--message`, `--message=`, or the first non-empty HEREDOC line, and selects one of fourteen commit-message rules. Rules 1 and 2 fire on activity-word starts (Fix, Improve, Update, Change, Refactor, Add, Extract, Move, Remove, Rename, Drop, Create, Clear) and trigger-as-reason phrasing (Address review/feedback/findings/pride, Apply PR comments). Rules 3 through 14 are served in rotation; the rotation advances only on a passing ack. Pass condition: rewrite the subject if it violated, and add `# ack-rule<N>` as a trailing bash comment to confirm you read the rule. The full fourteen-rule text lives in `_DD_RULES` inside `hooks/guards/commit-rule.sh`.
 
-The hook exits 2 with a stderr explanation naming the selected rule and the required ack token `# ack-rule<N>` (lowercase, case-sensitive) that must appear in a subsequent `git commit` command as a trailing bash comment to pass. HEREDOC bodies and quoted strings are stripped before ack detection, so an ack token buried inside the commit message itself does not count. For violation rules the ack alone is not a bypass: the subject must also no longer violate. Editor-mode commits (no `-m`, no `--message`, no HEREDOC subject) are denied with an instruction to pass the subject inline so rules 1 and 2 can be inspected. If multiple `# ack-rule<N>` tokens appear in one command, the first one wins.
+HEREDOC bodies and quoted strings are stripped before ack detection so an ack token buried inside the commit message itself does not count. Editor-mode commits (no inline subject) are denied with an instruction to pass the subject via `-m` so rules 1 and 2 can be checked. State lives at `$HOME/.claude/var/commit-rule-state`, three lines (pending violation index, pending rotation index, rotation position), written atomically. Path overridable via `CLAUDE_COMMIT_RULE_STATE_FILE` for tests.
 
-Violation pending and rotation pending are tracked as independent state fields, so an intervening violation never erases a pending rotation rule. State is stored at `$HOME/.claude/var/commit-rule-state` (three lines: pending violation index, pending rotation index, rotation position) and written atomically via a temp-file rename. The path is overridable via the `CLAUDE_COMMIT_RULE_STATE_FILE` env var for tests.
+### PostToolUse (Edit, Write, Bash)
 
-### PostToolUse (Edit, Write)
-
-**block-inline-dashes**
-Warns when em-dash or en-dash characters appear in `.md`, `.txt`, or `.mdx` files outside of code blocks or bullet points. Forces rewrites with commas, periods, or parentheses.
+**`dash`** in `hooks/guards/dash.sh`
+Surfaces additional context when em-dash (U+2014) or en-dash (U+2013) appears in `.md`, `.txt`, or `.mdx` files outside of fenced code blocks, in any persisted file content, or in a Bash command (clipboard, pipes). Chat is not checked. Does not block, only surfaces a rewrite instruction.
 
 ### Stop
 
-**false-claims-guard**
-Blocks Stop when the recent assistant text relativizes a test or error as already existing before the current change. Forces a fix or a factual defense.
+**`pre-existing`** (false-claims) , `hooks/guards/false-claims.sh`
+Blocks Stop when the recent assistant text relativizes a test or error as already existing before the current change. Also runs when `stop_hook_active` is true (keeps its own per-session line tracker). Pass condition: fix the failure, or formulate it as parallel work in the same directory when there is concrete evidence of a parallel session.
 
-**cache-excuse-guard**
-Blocks Stop when the recent assistant text blames cache for a problem on localhost. On a dev server, cache is rarely the real cause. Forces investigation of the actual root cause.
+**`cache`** in `hooks/guards/cache.sh`
+Blocks Stop when the recent assistant text blames cache for a problem on localhost. On a dev server, cache is rarely the real cause. Pass condition: investigate and name the actual root cause.
 
-**compliance-reflex-guard**
-Blocks Stop when the last assistant message ends with a confirmation question ("wil je dat ik...?", "shall I...?") despite a clear user instruction. Claude can pass with a 🧭 (compass) prefix for genuine new questions or pre-emptive forward-looking statements.
+**`compliance`** in `hooks/guards/compliance.sh`
+Blocks Stop when the last assistant message ends with a confirmation question ("Wil je dat ik...?", "Shall I...?", "Moet ik...?") despite a clear user instruction. Pass condition: continue the work and stop asking, or prefix the question with 🧭 for a genuine new direction.
 
-**premature-interruption-guard**
-Blocks Stop when the last assistant message does NOT end with a question, as a stop-gap against Claude Code tool chains that occasionally truncate before a chain-of-thought is complete. Claude can pass by ending the message with 🏁 (finish flag) when work is genuinely done. Mutually exclusive with compliance-reflex-guard by condition: that hook handles the "ends with ?" case, this one handles everything else.
+**`premature`** in `hooks/guards/premature.sh`
+Blocks Stop when the last assistant message does not end with a question AND does not end with 🏁 (finish) or 🚦 (waiting on external go) plus a substantive sentence (≥40 non-space non-emoji chars with a sentence terminator). Catches Claude Code tool chains that truncate before the chain-of-thought is complete, and bare emoji free passes. Mutually exclusive with `compliance` by condition. Pass condition: end with 🏁 + real sentence when work is done, or 🚦 + real sentence when waiting on an external go, or keep writing.
 
-**verification-delegation-guard**
-Blocks Stop when the assistant delegates verification to the user ("zou moeten werken", "check of het werkt", "refresh de pagina") instead of verifying itself. Claude can pass by prefixing the conclusion with "Geverifieerd:" after actually running verification (screenshot, curl, test, grep). Filters meta-references (backtick-quoted strings, table cells) to reduce false positives when discussing the hook itself.
+**`verify`** (verification-delegation) , `hooks/guards/verify.sh`
+Blocks Stop when the assistant delegates verification to the user ("zou moeten werken", "check of het werkt", "refresh de pagina") instead of verifying itself. Meta-references (backticks, quoted strings, table cells) are stripped before matching. Pass condition: prefix the conclusion with `Geverifieerd:` after actually running verification (screenshot, curl, test, grep).
 
-**nudge-after-tool-error**
-Blocks Stop when the last significant event was a failed tool call. Forces analysis and retry instead of giving up. Maximum two nudges per session to prevent infinite loops.
+**`tool-error`** (nudge-after-tool-error) , `hooks/guards/tool-error.sh`
+Blocks Stop when the last significant event in the transcript was a failed tool call. Also runs when `stop_hook_active` is true. Maximum two nudges per session (hard cap), with LINE_FILE tracking so we only fire on new errors. Pass condition: analyse the error and retry instead of giving up.
 
 ## Installation
 
@@ -47,25 +51,9 @@ Blocks Stop when the last significant event was a failed tool call. Forces analy
 /plugin install dont-do-that@leclause
 ```
 
-## Disabling individual hooks
+## Disabling individual guards
 
-All nine hooks are enabled when the plugin is installed. To disable one without removing the plugin, override it in your user `settings.json`:
-
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          { "type": "command", "command": "" }
-        ]
-      }
-    ]
-  }
-}
-```
-
-Or uninstall the plugin entirely if you want none of them:
+The dispatcher always runs, but individual guards fire based on the message content. To silence one guard without removing the plugin, edit `hooks/dispatch.sh` in your install and comment out the matching `source` / `guard_<name>` line. To silence the plugin entirely, uninstall:
 
 ```bash
 /plugin uninstall dont-do-that@leclause
@@ -73,8 +61,16 @@ Or uninstall the plugin entirely if you want none of them:
 
 ## Known quirk
 
-These hooks scan assistant transcripts for trigger phrases. Documenting or discussing the hooks themselves can trigger them (meta false positives). If you are editing the scripts or writing docs about them, expect occasional Stop blocks.
+These hooks scan assistant transcripts for trigger phrases. Documenting or discussing the hooks themselves can trigger them (meta false positives). If you are editing the scripts or writing docs about them, expect occasional Stop blocks. The WIP escape hatch 🚧 in your assistant text skips Stop guards while you work on the hook system.
 
 ## Language
 
-All hooks match both Dutch and English trigger phrases.
+Trigger patterns match both Dutch and English phrasing. Messages are in Dutch.
+
+## Tests
+
+```bash
+bash packages/dont-do-that/test/smoke-test.sh
+```
+
+The smoke test drives every trigger case through `hooks/dispatch.sh` with an explicit `hook_event_name`, matching the real runtime path. Exit 0 on all pass.
