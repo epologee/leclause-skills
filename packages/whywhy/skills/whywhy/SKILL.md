@@ -32,22 +32,6 @@ Voorbeelden:
 
 ## Workflow
 
-### 0. Jingle (opt-in gimmick)
-
-Drie-staats op basis van `WHYWHY_JINGLE` in de `env` sectie van `~/.claude/settings.json`:
-
-| Waarde | Gedrag |
-|--------|--------|
-| `on` | Speel de jingle in de achtergrond af. Wacht niet tot het klaar is, begin meteen met de analyse. |
-| `off` | Stil. Geen reveal, geen audio. |
-| onset (first run) | Stil, maar onthul de gimmick één keer aan het eind van je antwoord. |
-
-```bash
-[ "${WHYWHY_JINGLE:-}" = "on" ] && command -v afplay >/dev/null 2>&1 && afplay "${CLAUDE_SKILL_DIR}/why_why.mp3" &
-```
-
-**First-run reveal.** Als `WHYWHY_JINGLE` niet gezet is (leeg, niet `on` of `off`), voeg aan het einde van je antwoord een korte PS toe dat er een verborgen "Why, why" jingle beschikbaar is, te activeren door `"WHYWHY_JINGLE": "on"` toe te voegen aan de `env` sectie in `~/.claude/settings.json`, of `"off"` om de hint te dempen. Geen flag file op disk, de aan of uit waarde in settings is zelf de mute. Zodra de user kiest (on of off), komt de hint niet meer terug.
-
 ### 1. Formuleer laag 0
 
 Neem de vraag, het doel, of de stelling die de user meegeeft als laag 0.
