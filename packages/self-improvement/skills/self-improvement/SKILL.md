@@ -6,17 +6,29 @@ description: Use when user gives feedback on Claude behavior, says "remember thi
 
 # Self-Improvement
 
-Update CLAUDE.md bestanden en skills op basis van user feedback. Detecteert duplicatie, bepaalt optimale locatie (user/repo/subproject niveau), kan grote CLAUDE.md secties extraheren naar skills, en maakt nieuwe skills via TDD approach.
+Update skills, hook reasons, en CLAUDE.md-bestanden op basis van user feedback. Skills en hook reasons zijn de default-targets wanneer feedback ontstaat in hun context; CLAUDE.md is een laatste redmiddel voor skill-onafhankelijk gedrag. Detecteert duplicatie, bepaalt optimale locatie, kan CLAUDE.md-secties extraheren naar skills, en maakt nieuwe skills via TDD approach.
+
+## STOP: eerst deze vraag beantwoorden
+
+**Voordat je iets scant of edit: ontstaat deze feedback uit een skill die net gedraaid heeft of genoemd wordt?** Zo ja, dan is de skill source de default target, niet CLAUDE.md. CLAUDE.md als default is het verkeerde antwoord. Het falende patroon is: feedback gaat over wat `/eye-of-the-beholder` (of welke skill dan ook) had moeten vangen, en een CLAUDE.md-regel wordt voorgesteld. CLAUDE.md wint niet van skill content in de context waar de skill draait; de skill wel.
+
+Signalen dat dit skill-level feedback is:
+- De user noemt een skill letterlijk ("waarom vangt `/name` X niet").
+- De feedback gaat over de kwaliteit of volledigheid van wat een skill leverde.
+- De user heeft `/self-improvement` getriggerd na een skill-output, niet na een general-behavior observatie.
+
+Bij elk van deze signalen: ga rechtstreeks naar "Skill-gerelateerde feedback: skill content first" hieronder. Sla de CLAUDE.md-scan over tenzij je expliciet hebt vastgesteld dat de feedback skill-onafhankelijk is.
 
 ## Triggers
 
 Activeer wanneer de gebruiker:
-- Feedback geeft over Claude's gedrag ("doe dit voortaan anders")
-- Een conventie uitspreekt ("we doen het altijd zo")
-- Zegt "onthoud dit" of "dit moet in m'n CLAUDE"
-- Een patroon corrigeert dat zich herhaalt
 - Een skill wil aanpassen of verbeteren
 - Een nieuwe skill wil maken
+- Feedback geeft over Claude's gedrag tijdens of over een skill-invocatie
+- Feedback geeft over Claude's algemene gedrag ("doe dit voortaan anders")
+- Een patroon corrigeert dat zich herhaalt
+- Een conventie uitspreekt ("we doen het altijd zo")
+- Zegt "onthoud dit" of "dit moet in m'n CLAUDE"
 - Een CLAUDE.md sectie te groot/complex vindt
 - Vraagt om instructies te consolideren over projecten
 
@@ -61,23 +73,79 @@ Wanneer feedback gaat over Claude's gedrag rond een hook (misbruik van escape ha
 2. **Daarna:** Skill in de plugin, alleen als de workflow te complex is voor een hook reason en het patroon breder is dan één hook fire.
 3. **Laatste redmiddel:** CLAUDE.md, alleen voor persoonlijke projecten, nooit voor marketplace plugins.
 
+## Skill-gerelateerde feedback: skill content first
+
+Wanneer feedback ontstaat tijdens (of over) een specifieke skill invocatie, is de **skill content** de juiste plek om te verbeteren, NIET CLAUDE.md. De skill bevat de instructies die de user wil aanscherpen; die instructies landen alleen in Claude's context wanneer de skill draait. Een CLAUDE.md-regel schieten op een skill-probleem mist het doel: de skill wint in zijn eigen context.
+
+Signalen dat feedback skill-level is:
+- De user noemt de skill bij naam ("/eye-of-the-beholder vangt X niet", "waarom doet /inspiratie Y niet").
+- De observatie beschrijft een gat in wat een skill zou moeten vangen, niet een patroon in Claude's default-gedrag.
+- De feedback citeert skill-taal letterlijk.
+
+**Volgorde van interventies bij skill-feedback:**
+
+1. **Eerst:** Localiseer de skill source. Plugin-skills leven onder `~/github.com/<owner>/<plugin-repo>/packages/<plugin>/skills/<name>/` of vergelijkbare plugin-source. De `~/.claude/plugins/cache/` is een cache en geen werkplek.
+2. **Scherp de skill aan.** Als het principe er al staat maar niet wordt gevolgd, maak het explicieter: koppel meten aan oordeel, voeg een checkpoint toe, geef een concreet tegenvoorbeeld uit de huidige situatie.
+3. **CLAUDE.md alleen als het gedrag skill-onafhankelijk is.** Alleen wanneer de feedback over Claude's algemene werkwijze gaat (bijv. "pas skills altijd volledig toe"), niet over een specifieke skill's inhoud.
+
+Als de source niet lokaal staat, zoek het remote via de plugin cache (`git config --get remote.origin.url` in `~/.claude/plugins/marketplaces/<owner>/`). Vraag de user niet om de repo te clonen; kijk eerst of een sibling-org onder `~/github.com/` het heeft.
+
+### Rationalizations die naar CLAUDE.md drijven (niet doen)
+
+| Excuus | Realiteit |
+|--------|-----------|
+| "Dit is algemene Claude-gedrag dus CLAUDE.md" | Nee: de user triggerde het tijdens een skill. Het probleem is dat de skill de regel niet afdwong. |
+| "De skill staat in een cache, ik kan niet bij de bron" | De source staat onder `~/github.com/<owner>/<plugin-repo>/`. Zoek het, clone het niet opnieuw. |
+| "CLAUDE.md is sneller bereikbaar" | Sneller bereikbaar lost het probleem niet op. CLAUDE.md bereikt Claude niet op het moment dat de skill draait. |
+| "Het principe staat al in de skill, dus daar kan niks bij" | Als het principe er staat maar niet wordt gevolgd, is het te zwak geformuleerd. Aanscherpen. Zie "/self-improvement betekent ALTIJD een wijziging". |
+| "CLAUDE.md is een bredere vangst" | Breder is niet doel-treffender. De specifieke skill-context wint in zijn eigen runtime. |
+| "User zal het waarschijnlijk wel weer in CLAUDE.md willen" | Dat is een gok, niet een observatie. Lees de feedback: noemt hij een skill? Dan skill. |
+
+### Red flags die je moet herkennen
+
+Als je jezelf betrapt op een van deze gedachten tijdens /self-improvement, stop en ga naar de skill source:
+
+- "Laat ik eerst even `~/.claude/README.md` lezen" terwijl de feedback een skill-naam noemt
+- "Ik voeg een rule toe aan Werkwijze" zonder eerst de genoemde skill te hebben opgezocht
+- "De scan begint met Glob op CLAUDE.md" voordat je hebt vastgesteld dat het CLAUDE.md-feedback is
+- Een Edit-call op `~/.claude/README.md` voorbereiden terwijl je nog geen skill source hebt gelokaliseerd
+
+Default route voor skill-feedback: `find ~/github.com -type d -name "<skill-name>" -path "*/skills/*"` om de source te vinden, dan Edit daar.
+
 ## Workflow
 
 ```dot
 digraph self_improvement {
-  "User uiting ontvangen" -> "CLAUDE.md of Skill?"
-  "CLAUDE.md of Skill?" -> "Scan alle CLAUDE.md" [label="CLAUDE.md"]
-  "CLAUDE.md of Skill?" -> "Scan skills" [label="Skill"]
+  "User uiting ontvangen" -> "Skill-feedback?"
+  "Skill-feedback?" -> "Localiseer skill source" [label="ja (default)"]
+  "Skill-feedback?" -> "Hook-feedback?" [label="nee"]
+  "Hook-feedback?" -> "Open hook script" [label="ja"]
+  "Hook-feedback?" -> "CLAUDE.md-feedback?" [label="nee"]
+  "CLAUDE.md-feedback?" -> "Scan alle CLAUDE.md" [label="ja"]
+  "CLAUDE.md-feedback?" -> "Overweeg nieuwe skill" [label="nee"]
+  "Localiseer skill source" -> "Scherp skill aan"
+  "Open hook script" -> "Scherp hook reason aan"
   "Scan alle CLAUDE.md" -> "Check duplicatie"
-  "Scan skills" -> "Check duplicatie"
   "Check duplicatie" -> "Bepaal beste locatie"
   "Bepaal beste locatie" -> "Bepaal taal"
+  "Scherp skill aan" -> "Bepaal taal"
+  "Scherp hook reason aan" -> "Bepaal taal"
   "Bepaal taal" -> "Apply edit direct"
   "Apply edit direct" -> "Toon wat toegepast is"
 }
 ```
 
-### Stap 1: Scan
+### Stap 0: Classificeer de feedback
+
+Voordat je iets scant: welk type is dit?
+
+1. **Skill-feedback** (user noemt skill-naam, feedback gaat over skill-output kwaliteit, `/self-improvement` getriggerd direct na skill-invocatie): skip Stap 1, ga naar "Skill-gerelateerde feedback: skill content first" boven. Localiseer de skill source en edit daar.
+2. **Hook-feedback** (gedrag rond een hook, escape-hatch misbruik, onduidelijke hook reason): skip Stap 1, ga naar "Hook-gerelateerde feedback: hook reason first".
+3. **CLAUDE.md-feedback** (algemene Claude-werkwijze, skill-onafhankelijk patroon, conventies): door naar Stap 1.
+
+Bij twijfel tussen (1) en (3): default naar skill. De skill wint in zijn eigen runtime; CLAUDE.md niet.
+
+### Stap 1: Scan (alleen voor CLAUDE.md-feedback)
 
 Gebruik Glob tool (niet find/bash):
 
