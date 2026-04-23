@@ -12,6 +12,8 @@ allowed-tools:
 
 # Software Guru Panel
 
+> **Preflight.** Deze skill dispatcht acht parallelle `gurus:sonnet-max` agents. Die agent bestaat vanaf plugin-versie 1.0.8. Wanneer de dispatch faalt met "unknown subagent_type: gurus:sonnet-max", draai `claude plugins update gurus@leclause` en probeer opnieuw.
+
 Acht opinionated engineers reviewen je code en zoeken consensus over wat beter moet. Wanneer 6+/8 het eens zijn, wordt een actieplan gemaakt. De waarde zit in de spanning tussen hun perspectieven: consensus ondanks fundamenteel verschillende stijlen is een sterk signaal.
 
 ## Scope bepalen
@@ -103,7 +105,7 @@ Gebruik dit formaat:
 ## Guru Panel Review
 
 ### Gereviewd
-[Branch of scope] — [X bestanden, Y regels diff]
+[Branch of scope], [X bestanden, Y regels totaal als scope volledige codebase is; Y regels diff wanneer user expliciet een diff-scope vroeg]
 
 ---
 

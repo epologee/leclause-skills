@@ -6,6 +6,8 @@ description: Vijf advisors vallen een idee, beslissing of plan vanuit vijf hoeke
 
 # Council of Five Advisors
 
+> **Preflight.** Deze skill dispatcht elf `gurus:sonnet-max` agents in twee parallelle rondes plus een chairman. Die agent bestaat vanaf plugin-versie 1.0.8. Wanneer de dispatch faalt met "unknown subagent_type: gurus:sonnet-max", draai `claude plugins update gurus@leclause` en probeer opnieuw.
+
 Claude is standaard een YES-MAN. Deze skill bouwt een tegengewicht in. Vijf adversariële agents kijken naar jouw vraag vanuit vijf fundamenteel verschillende hoeken, lezen elkaars werk blind, en een chairman maakt er één verdict van. Geen diplomatie, geen "het hangt ervan af". De lens is het antwoord.
 
 Pattern gebaseerd op Ole Lehmann's "board of advisors" skill, zelf geïnspireerd op parallel LLM-critique patronen die o.a. Andrej Karpathy bepleit. Single-vendor variant: alle vijf advisors plus de chairman draaien op `gurus:sonnet-max`.
@@ -102,22 +104,28 @@ Opnieuw vijf parallelle `Agent` calls met `subagent_type: "gurus:sonnet-max"`. V
 
 **Peer review prompt:**
 
+Elke advisor krijgt zijn eigen variant van dit prompt, met zijn eigen letter uit de mapping expliciet genoemd als uitgesloten. Concreet voorbeeld: als Pre-mortem in stap 3 letter C kreeg, staan in het prompt voor Pre-mortem alleen A, B, D en E als reviews. Het prompt vermeldt die mapping inline zodat de orchestrator niet hoeft te vertrouwen op externe state.
+
 ```
-Je bent advisor [NAAM] uit een board of advisors. Je hebt eerder een eigen review geschreven vanuit je lens. Nu lees je de anonieme reviews van de vier andere advisors en beoordeel je ze.
+Je bent advisor [NAAM] uit een board of advisors. Je hebt eerder een eigen review geschreven vanuit je lens, die hieronder niet opgenomen is: jouw letter in de anonieme shuffle was [OWN_LETTER] en die is bewust uitgesloten. Je leest nu de vier overgebleven anonieme reviews en beoordeelt ze.
 
 ## De oorspronkelijke situatie
 
 [BRIEF]
 
-## De vier anonieme reviews
+## De vier anonieme reviews (jouw eigen letter [OWN_LETTER] is weggelaten)
 
-### Review [LETTER]
+### Review [LETTER_1]
 [INHOUD]
 
-### Review [LETTER]
+### Review [LETTER_2]
 [INHOUD]
 
-[... etc]
+### Review [LETTER_3]
+[INHOUD]
+
+### Review [LETTER_4]
+[INHOUD]
 
 ## Wat je doet
 
@@ -226,7 +234,7 @@ Presenteer het chairman-verdict prominent, gevolgd door de vijf originele review
 [... etc voor alle vijf]
 
 <details>
-<summary>Peer review rankings</summary>
+<summary>Peer review rangschikking</summary>
 
 Per advisor (bij naam): welke review zij top-1 en bottom-1 kozen (letter en bijbehorende lens-naam uit de mapping), plus de één-zin toelichting per keuze. Geen aggregatie of ranking-score; de individuele oordelen zijn het signaal.
 

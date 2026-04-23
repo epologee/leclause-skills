@@ -4,7 +4,13 @@ user-invocable: true
 description: Orchestrator die tussen de guru-panels kiest. `gurus:software` voor code review door acht engineering-personas. `gurus:council` voor abstracte beslissingen door vijf adversariële lenzen plus chairman-synthese. Gebruik deze skill wanneer je /gurus hebt getypt zonder suffix en nog niet weet welk panel bij de vraag past.
 allowed-tools:
   - Skill
+  - Bash(git diff *)
+  - Bash(git log *)
+  - Bash(git status *)
+  - Bash(git branch *)
 ---
+
+> **Preflight.** De sub-skills dispatchen via `gurus:sonnet-max`. Die agent bestaat vanaf plugin-versie 1.0.8. Wanneer de dispatch faalt met "unknown subagent_type: gurus:sonnet-max", draai `claude plugins update gurus@leclause` en probeer opnieuw.
 
 # Gurus Orchestrator
 
@@ -19,7 +25,7 @@ Deze orchestrator kiest welk panel past bij de vraag.
 
 ### Impliciet signaal uit context
 
-Lees eerst de context voordat je de user iets vraagt:
+Lees eerst de context voordat je de user iets vraagt. Naast de conversatie mag je `git status`, `git log`, en `git diff` aanroepen om recente code-activiteit te checken; de frontmatter staat dat toe.
 
 - **Software** is het juiste panel wanneer:
   - De conversatie een diff, code change, of codebase review bespreekt
@@ -27,6 +33,7 @@ Lees eerst de context voordat je de user iets vraagt:
   - Er recent commits zijn gezet en de vraag voelt als "is dit goed?"
   - De user woorden gebruikt als "review", "refactor", "smell", "structure"
   - De user een technische correctheidsvraag stelt ("doet deze regex X?", "klopt deze query?"); dit is geen beslissing maar een code-vraag en valt onder software
+  - De user een code-snippet plakt. Pass dat snippet als expliciete scope via `args`, zodat de software-skill niet per ongeluk de hele codebase scant
 
 - **Council** is het juiste panel wanneer:
   - De vraag een afweging of beslissing is ("moet ik X of Y?"), geen vraag over code-correctheid
@@ -35,6 +42,10 @@ Lees eerst de context voordat je de user iets vraagt:
   - De vraag bevat geen concrete technische correctheidsvraag
 
 **Tiebreaker wanneer beide signalen vuren.** Een "should I use a service object here?" mengt een beslissingsvorm ("should I") met code-context. In dat geval: default naar **software**, want de code is de grond van waarheid; noem in de proposal-regel dat council ook past en geef de override expliciet.
+
+Voorbeeld tiebreaker-proposal:
+
+> Je vraagt of je een service object moet gebruiken, en je hebt code in context. Twee panels passen. Ik routeer naar **software** (code als grond van waarheid). Typ `council` om in plaats daarvan een design-beslissings-review te krijgen.
 
 ### Default en override
 
@@ -58,17 +69,11 @@ Stel deze vraag **één keer**. Het antwoord van de user is bindend; niet opnieu
 
 ## Dispatch
 
-Na routing: roep het gekozen panel aan via de Skill tool.
+Na routing: roep het gekozen panel aan via de Skill tool. Voor software gebruik je `skill="gurus:software"`; voor council `skill="gurus:council"`. De `args` bevatten de concrete vraag of scope die de user aanlevert.
 
-```
-Skill(skill="gurus:software", args="<de oorspronkelijke vraag van de user>")
-```
+**Wanneer de user `/gurus:gurus` typte zonder begeleidende tekst**, is er geen letterlijke vraag om door te geven. Synthetiseer dan een één-zin samenvatting van het lopende onderwerp uit de conversatie (eventueel verrijkt met de output van `git status` of `git log -1`) en pass die als `args`. Houd de samenvatting neutraal; geen framing die het panel naar een bepaald oordeel stuurt.
 
-of
-
-```
-Skill(skill="gurus:council", args="<de oorspronkelijke vraag van de user>")
-```
+**Wanneer de user een code-snippet plakte**, pass dat snippet als expliciete scope in `args` zodat `gurus:software` niet de volledige codebase scant maar enkel het snippet (en eventueel het omringende bestand dat de user erbij noemde).
 
 De sub-skills nemen het over. Deze orchestrator doet geen review zelf.
 
