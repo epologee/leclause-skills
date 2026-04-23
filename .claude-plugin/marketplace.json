@@ -44,7 +44,7 @@
     },
     {
       "name": "gurus",
-      "description": "Opinionated code review panel with 8 expert perspectives (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). Useful when a single reviewer voice would miss trade-offs that another tradition would flag immediately.",
+      "description": "Opinionated panels that challenge a decision from multiple perspectives. Three user-invocable skills: gurus:software (eight-persona code review), gurus:council (five-advisor critical thinking with anonymised peer review and chairman synthesis), gurus:gurus (orchestrator that routes by context). All voices share the gurus:sonnet-max subagent.",
       "source": "./packages/gurus"
     },
     {
