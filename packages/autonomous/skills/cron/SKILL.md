@@ -18,7 +18,7 @@ Cron logic is mechanical and repetitive. Inlining it in the rover's code blurs t
 
 ## Setup (new loop)
 
-`rover` calls this skill in its setup step 2, between the reversibility check and the loop-file write. The loop file typically does not exist yet; the cron is going live first so the Write in step 4 lands under an active safety net. During `wake` restore the file does exist. Your job:
+`rover` calls this skill as its setup step 1, before the reversibility check and before any file writes. The loop file does not exist yet; the cron is going live first so every subsequent setup step (git operations, .gitignore write, loop-file template write) lands under an active safety net. During `wake` restore the file does exist. Your job:
 
 1. Compute cron expression. Active phase = `* * * * *`. STANDBY with `watch_checks >= 1` uses backoff.
 2. `CronCreate` with the project's standard prompt (see below)

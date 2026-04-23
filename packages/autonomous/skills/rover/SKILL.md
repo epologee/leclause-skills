@@ -153,32 +153,34 @@ The rover invokes `verify --propose` at the end of SURVEY to write Done criteria
 
 ## Prelaunch is the one question window
 
-The rover runs without asking the operator mid-mission. Once setup step 1 has fired its first tool call, the rover has launched and "No user-feedback during a rover action. Forbidden." (top of this skill) is absolute again. Before that first tool call, during prelaunch, the rover has exactly one window to ask the operator a question or a short batch of questions, and only when the mission parameters contain a human choice that `decide` and `pride` cannot stand in for.
+The rover runs without asking the operator mid-mission. Prelaunch is the interval between this skill loading and the mission branch coming into being in setup step 2; that is the rover's one window to ask the operator a question or a short batch of questions, and only when the mission parameters contain a human choice that `decide` and `pride` cannot stand in for. Once the mission branch exists the rover has launched and "No user-feedback during a rover action. Forbidden." (top of this skill) is absolute again.
+
+Note that setup step 1 (CronCreate) fires before prelaunch closes. It is not an operator-visible action and does not consume the window; the reversibility questions in step 2 are still prelaunch.
 
 Use this window for things like:
 
-- reversibility gaps the setup check surfaces (dirty working tree, wrong branch, or no git repo, see step 1 below)
+- reversibility gaps the setup check surfaces (dirty working tree, wrong branch, or no git repo, see step 2 below)
 - a genuinely human choice in the brief that is not a technical call (a product-feel decision, a tone question, a who-does-this-reach call)
 - an integration the operator named that is not installed
 
-Do not use it for technical choices. If two implementation paths are open, that is a `decide` job, not a prelaunch question. The window closes the moment setup step 1 calls its first tool; after that the rover owns every fork.
+Do not use it for technical choices. If two implementation paths are open, that is a `decide` job, not a prelaunch question. The window closes the moment the mission branch is created; after that the rover owns every fork.
 
 ## Setup order is not negotiable
 
 The first tool calls after this skill loads are:
 
-1. Reversibility check, then branch. A mission must stay reversible: the operator should be able to say "no, this is not it, try again" and drop the whole thing without losing other work. Before any write, run `git status --short`, `git rev-parse --abbrev-ref HEAD`, and `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null` (fall back to testing `main` then `master` if `origin/HEAD` is absent) to answer one question: can we throw this mission away cleanly later? Four cases block "yes", each with a concrete offer, not a blank question:
+1. Invoke `cron` via the Skill tool to `CronCreate`. Pass `.autonomous/<NAME>.md` as the loop-file path (derive `<NAME>` from the Dispatch the same way step 4 does: ALL-CAPS, hyphens, no spaces, goal not mechanism; no tool call needed for this, it comes out of reading the Dispatch text). The loop file does not have to exist yet; the cron prompt's Read is a no-op when the file is missing, and the next tick picks up once the file lands. Hold the returned job id in-session to write into the loop file in step 4. Cron goes first because setup has several generation-horizon hazards (the big template write in step 4 is the worst), and the cron has to be the safety net during those hazards, not a consequence of surviving them. If the reversibility check in step 2 ends the mission (operator refuses, branch cannot be created), invoke `cron` again with `CronDelete` on the returned id before stopping so the cron does not outlive the abort.
+2. Reversibility check, then branch. A mission must stay reversible: the operator should be able to say "no, this is not it, try again" and drop the whole thing without losing other work. Before any write, run `git status --short`, `git rev-parse --abbrev-ref HEAD`, and `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null` (fall back to testing `main` then `master` if `origin/HEAD` is absent) to answer one question: can we throw this mission away cleanly later? Four cases block "yes", each with a concrete offer, not a blank question:
    - No `.git` in cwd, or a repo with zero commits. Offer once: "There is no git repo here yet (or no commits yet). Shall I run `git init` and place an empty initial commit on `main` so we start from a clean slate, or do you want to set it up differently?" If the operator approves, run `git init -b main` (or `git commit --allow-empty -m "Initial commit"` when `.git` exists without commits), then continue.
    - Working tree has uncommitted changes. Ask once, with the obvious options explicit: "The working tree has uncommitted changes; if we leave them unrecorded, rolling the mission back will drag them along. Should I commit them, stash them, or do you want to handle them first?"
    - Current branch is not the repo's default branch. Ask once: "We are on `<branch>` instead of `<default>`. Should this mission run here, or switch back to `<default>` first?"
    - Current branch matches the mission goal already. Stay on it; no new branch.
    When these are resolved, create the mission branch: `git checkout -b <kebab-goal-name>`. Kebab-case version of the loop-file name, no slashes, no prefixes, no rover or space-mission words (`fix-stale-cache`, `build-auth-page`, `investigate-slow-queries`). Record the chosen branch (or the operator's alternative arrangement) in the loop file's `branch:` field.
-2. Invoke `cron` via the Skill tool to `CronCreate`. Pass `.autonomous/<NAME>.md` as the loop-file path (derive `<NAME>` from the Dispatch the same way step 4 does: ALL-CAPS, hyphens, no spaces, goal not mechanism). The loop file does not have to exist yet; the cron prompt's Read is a no-op when the file is missing, and the next tick picks up once the file lands. Hold the returned job id in-session to write into the loop file in step 4. The point of pulling cron forward is that setup has several generation-horizon hazards (the big template write below is the worst), and the cron has to be the safety net during those hazards, not a consequence of surviving them.
 3. `Write .autonomous/.gitignore` with content `*` (always, even if the dir already exists; the Write tool creates parent dirs)
-4. `Write .autonomous/<NAME>.md` with the template below, fully populated, including the `cron_job_id` returned in step 2
+4. `Write .autonomous/<NAME>.md` with the template below, fully populated, including the `cron_job_id` returned in step 1 and the `branch` recorded in step 2
 5. Run the first SURVEY iteration directly in this same turn
 
-No exploration first. No "let me check the codebase." The cron goes live before the big writes so the loop file lands under an already-running safety net, not the other way around. Exploration happens inside the loop.
+No exploration first. No "let me check the codebase." Cron first, everything else after. The branch, .gitignore, and loop file all land under an already-running safety net. Exploration happens inside the loop.
 
 The first iteration races with the cron's period. This is safe because cron only fires when the REPL is idle, and the first iteration blocks idle. But: tune the initial cron to `* * * * *` (every minute) regardless of expected SURVEY duration. If SURVEY takes 20 minutes, that is fine; the cron will not fire until you yield.
 
@@ -385,7 +387,7 @@ Every log line needs a timestamp from `date +%H:%M`. Never guess based on "it wa
 
 ## Starting the cron
 
-Invoke `cron` via the Skill tool in setup step 2, before the loop file exists. That skill's setup flow runs `CronCreate`, returns the job id for the rover to embed when it writes the loop file in step 4, and sets the initial interval to `* * * * *`.
+Invoke `cron` via the Skill tool as setup step 1, before anything else. That skill's setup flow runs `CronCreate`, returns the job id for the rover to embed when it writes the loop file in step 4, and sets the initial interval to `* * * * *`.
 
 "Delegate" throughout these skills means: call the Skill tool with the target skill name. Not inline instructions, not shelling out. The Skill tool invocation.
 
