@@ -1,5 +1,5 @@
 {
   "name": "gurus",
   "description": "Opinionated panels that challenge a decision from multiple perspectives. Three user-invocable skills: gurus:software (eight-persona code review), gurus:council (five-advisor critical thinking with anonymised peer review and chairman synthesis), gurus:gurus (orchestrator that routes by context). All voices share the gurus:sonnet-max subagent.",
-  "version": "1.0.17"
+  "version": "1.0.18"
 }

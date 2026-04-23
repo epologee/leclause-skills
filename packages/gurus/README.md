@@ -8,7 +8,7 @@ Opinionated panels that challenge a decision from multiple perspectives. Two pan
 |-------|---------|-------|
 | `gurus:software` | Code review | Eight engineering personas (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). Consensus across 6 of 8 yields an action plan. |
 | `gurus:council` | A decision or idea | Five adversarial lenses (pre-mortem, first-principles, opportunity-finder, stranger, action) plus anonymised peer review plus chairman synthesis. |
-| `gurus:gurus` | You are not sure which panel fits | Reads the context (diff present or abstract question), proposes a default, lets you override, then dispatches. |
+| `gurus:gurus` | Orchestrator: you are not sure which panel fits | Reads the context (diff present or abstract question), proposes a default, lets you override, then dispatches. Not itself a review; only a router. |
 
 ## Commands
 
@@ -22,32 +22,9 @@ Runs the software panel against the full codebase by default; pass an explicit s
 
 ### `/gurus:council`
 
-Runs five advisors against a brief. Every advisor writes a lens-specific review (pre-mortem assumes the idea fails, first-principles strips assumptions, opportunity-finder seeks the adjacent bigger win, stranger answers with zero context, action demands a concrete next step). Responses are anonymised, peers blind-review each other, and a chairman synthesises one verdict plus one concrete next step. Pattern based on Ole Lehmann's "board of advisors" skill, itself grounded in Andrej Karpathy's LLM Council concept. Single-vendor variant: all voices on `gurus:sonnet-max`.
+Runs five advisors against a brief. Every advisor writes a lens-specific review (pre-mortem assumes the idea fails, first-principles strips assumptions, opportunity-finder seeks the adjacent bigger win, stranger answers with zero context, action demands a concrete next step). Responses are anonymised, peers blind-review each other, and a chairman synthesises one verdict plus one concrete next step. Pattern based on Ole Lehmann's "board of advisors" skill, itself inspired by parallel LLM-critique patterns that Andrej Karpathy (among others) has advocated. Single-vendor variant: all voices on `gurus:sonnet-max`.
 
-## Software panel
-
-| Guru | Lens |
-|------|------|
-| Kent Beck | TDD, simplicity, intent-revealing names |
-| Martin Fowler | Refactoring, code smells, expressive interfaces |
-| Robert C. Martin (Uncle Bob) | Clean Code, SOLID, no comments |
-| David Heinemeier Hansson | Conceptual compression, Rails idioms, no ceremony |
-| Sandi Metz | Object-oriented design, message passing, POODR rules |
-| Tobi Lutke | Pragmatism at scale, monolith-friendly, ship-it ethos |
-| Rich Hickey | Simplicity over easy, value-oriented programming, immutability |
-| Thoughtbot | Pattern catalogue, test discipline, gem ecosystem |
-
-## Council lenses
-
-| Advisor | Role |
-|---------|------|
-| Pre-mortem | Assumes the idea fails and reconstructs the blunder. |
-| First-principles | Strips assumptions, rebuilds the problem from scratch. |
-| Opportunity-finder | Looks for the bigger adjacent win the user is too close to see. |
-| Stranger | Zero context, naive-question mode, no jargon tolerated. |
-| Action | Cares only about the next concrete step this week. |
-
-A chairman agent reads all five reviews plus the anonymous peer rankings and synthesises one verdict.
+One invocation dispatches eleven `gurus:sonnet-max` agents at `effort: max` (five lenses, five peer reviews, one chairman). The two review phases run in parallel, so typical wall time is 2 to 4 minutes; token cost is substantial. See `skills/council/SKILL.md` for the full panel, lens briefings, and prompt templates. See `skills/software/SKILL.md` for the eight-guru software panel.
 
 ## When to use which
 

@@ -26,12 +26,15 @@ Lees eerst de context voordat je de user iets vraagt:
   - De user een bestand of directory noemt om te reviewen
   - Er recent commits zijn gezet en de vraag voelt als "is dit goed?"
   - De user woorden gebruikt als "review", "refactor", "smell", "structure"
+  - De user een technische correctheidsvraag stelt ("doet deze regex X?", "klopt deze query?"); dit is geen beslissing maar een code-vraag en valt onder software
 
 - **Council** is het juiste panel wanneer:
-  - De vraag een beslissing of afweging is ("moet ik X of Y?")
+  - De vraag een afweging of beslissing is ("moet ik X of Y?"), geen vraag over code-correctheid
   - Het onderwerp strategisch, product-gericht, of interpersoonlijk is
   - De user twijfelt of Claude eerder alleen meeging ("was ik te hard voor je?" is een signaal)
-  - De vraag geen code of diff bevat
+  - De vraag bevat geen concrete technische correctheidsvraag
+
+**Tiebreaker wanneer beide signalen vuren.** Een "should I use a service object here?" mengt een beslissingsvorm ("should I") met code-context. In dat geval: default naar **software**, want de code is de grond van waarheid; noem in de proposal-regel dat council ook past en geef de override expliciet.
 
 ### Default en override
 

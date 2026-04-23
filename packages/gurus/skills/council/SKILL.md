@@ -8,7 +8,7 @@ description: Vijf advisors vallen een idee, beslissing of plan vanuit vijf hoeke
 
 Claude is standaard een YES-MAN. Deze skill bouwt een tegengewicht in. Vijf adversariële agents kijken naar jouw vraag vanuit vijf fundamenteel verschillende hoeken, lezen elkaars werk blind, en een chairman maakt er één verdict van. Geen diplomatie, geen "het hangt ervan af". De lens is het antwoord.
 
-Pattern gebaseerd op Ole Lehmann's "board of advisors" skill, die zelf gestoeld is op Andrej Karpathy's LLM Council concept. Single-vendor variant: alle vijf advisors plus de chairman draaien op `gurus:sonnet-max`.
+Pattern gebaseerd op Ole Lehmann's "board of advisors" skill, zelf geïnspireerd op parallel LLM-critique patronen die o.a. Andrej Karpathy bepleit. Single-vendor variant: alle vijf advisors plus de chairman draaien op `gurus:sonnet-max`.
 
 ## Wanneer te gebruiken
 
@@ -18,6 +18,8 @@ Pattern gebaseerd op Ole Lehmann's "board of advisors" skill, die zelf gestoeld 
 - Claude's vorige antwoord voelt sycophantic
 
 Niet voor code review; daarvoor is `/gurus:software`. Niet voor zuiver feitelijke vragen; daarvoor is `/ground` of `/inspiratie`.
+
+**Kosten en latency.** Eén council-invocatie dispatcht elf `gurus:sonnet-max` agents op `effort: max` (vijf lenzen, vijf peer reviews, één chairman). De twee review-fasen lopen parallel, dus de typische doorlooptijd is 2 tot 4 minuten en de tokenconsumptie is substantieel. Gebruik het wanneer de beslissing de kosten rechtvaardigt; voor snelle sanity-checks is `/gurus:software` op een enkele Sonnet of een direct gesprek goedkoper.
 
 ## Het panel
 
@@ -77,7 +79,7 @@ Geen diplomatie. Geen "enerzijds/anderzijds". Spreek vanuit je lens.
 
 1. **Pre-mortem**: "Je neemt aan dat dit idee over zes maanden een blunder is. Je taak is die blunder reconstrueren voordat hij gebeurt. Zoek de faalmodi die nog onzichtbaar zijn: afhankelijkheden die breken, aannames die kloppen totdat ze niet meer kloppen, de menselijke dynamiek die gaat rotten. Schrijf alsof je de autopsie houdt."
 
-2. **First-principles**: "Je strijkt elke aanname weg: precedent, gewoonte, 'we doen dit altijd zo', 'dit is standaard'. Je bouwt het probleem opnieuw op vanaf fysica, economie, menselijk gedrag. Wat is hier daadwerkelijk het probleem? Wat als er geen bestaande oplossing was: hoe zou iemand dit van scratch oplossen?"
+2. **First-principles**: "Je strijkt elke aanname weg: precedent, gewoonte, 'we doen dit altijd zo', 'dit is standaard'. Wat zijn de daadwerkelijke constraints, los van gewoonte of precedent? Wat is hier daadwerkelijk het probleem? Wat als er geen bestaande oplossing was: hoe zou iemand dit van scratch oplossen?"
 
 3. **Opportunity-finder**: "Je zoekt de grotere kans die deze persoon te dichtbij zit om te zien. Als het voorstel slaagt, wat staat ernaast dat tien keer meer waard is? Als het voorstel een stap is: een stap naar wat? Welke poort gaat open? Welke grotere partij wordt bereikbaar?"
 
@@ -87,15 +89,16 @@ Geen diplomatie. Geen "enerzijds/anderzijds". Spreek vanuit je lens.
 
 ### Stap 3: Anonymiseren
 
-Verzamel de vijf responses. Ken elke response een willekeurige letter A tot E toe (shuffle), houd de mapping intern bij. De responses gaan anoniem naar de volgende fase.
+Verzamel de vijf responses. Ken elke response een willekeurige letter A tot E toe via shuffle. Houd de mapping `{lens-naam: letter}` intern bij als lookup-tabel; de orchestrator gebruikt die in Stap 4 om de eigen-letter uit te sluiten per advisor. De responses gaan anoniem naar de volgende fase.
 
 ### Stap 4: Blind peer review
 
-Opnieuw vijf parallelle `Agent` calls met `subagent_type: "gurus:sonnet-max"`. Elke advisor krijgt:
+Opnieuw vijf parallelle `Agent` calls met `subagent_type: "gurus:sonnet-max"`. Voor elke advisor:
 
-- De oorspronkelijke brief
-- De geanonimiseerde responses van de vier anderen (niet de eigen)
-- De instructie onder
+1. Zoek in de mapping uit Stap 3 de letter die aan deze advisor is toegekend. Noem die `OWN`.
+2. Stel de vier letters uit `{A, B, C, D, E} \ {OWN}` samen, op volgorde.
+3. Geef de advisor de oorspronkelijke brief plus precies deze vier geanonimiseerde responses.
+4. De eigen response wordt onder geen enkele letter opgenomen. Dit is de hardste regel van de peer-fase; zonder expliciete exclusie krijgt minstens één advisor zijn eigen werk terug en gaat de anonimiteit verloren.
 
 **Peer review prompt:**
 
@@ -171,7 +174,7 @@ Je bent chairman van een board of advisors. Vijf advisors hebben deze situatie b
 ## Wat je levert
 
 ### Convergentie
-Waar vallen minstens drie van de vijf lenzen samen? Dat is waar de persoon het minst naar mag kijken voor verdere validatie.
+Waar vallen minstens drie van de vijf lenzen samen? Dat is wat de persoon als vaststaand kan behandelen; verdere validatie is hier niet nodig.
 
 ### Divergentie
 Waar spreken lenzen elkaar expliciet tegen? Welke spanning moet de persoon zelf oplossen, omdat geen enkele lens alleen het antwoord heeft?
@@ -225,7 +228,7 @@ Presenteer het chairman-verdict prominent, gevolgd door de vijf originele review
 <details>
 <summary>Peer review rankings</summary>
 
-[De vijf peer reviews samengevat]
+Per advisor (bij naam): welke review zij top-1 en bottom-1 kozen (letter en bijbehorende lens-naam uit de mapping), plus de één-zin toelichting per keuze. Geen aggregatie of ranking-score; de individuele oordelen zijn het signaal.
 
 </details>
 ```

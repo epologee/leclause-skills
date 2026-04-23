@@ -150,4 +150,3 @@ Bij **/auto-loop**:
 
 Discussiepunten worden alleen uitgevoerd als de user ze expliciet goedkeurt.
 
-
