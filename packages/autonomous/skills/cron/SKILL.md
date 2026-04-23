@@ -18,19 +18,21 @@ Cron logic is mechanical and repetitive. Inlining it in the rover's code blurs t
 
 ## Setup (new loop)
 
-At rover start, `rover` has already written the loop file. Your job:
+`rover` calls this skill in its setup step 2, between the reversibility check and the loop-file write. The loop file typically does not exist yet; the cron is going live first so the Write in step 4 lands under an active safety net. During `wake` restore the file does exist. Your job:
 
 1. Compute cron expression. Active phase = `* * * * *`. STANDBY with `watch_checks >= 1` uses backoff.
 2. `CronCreate` with the project's standard prompt (see below)
-3. Write the returned job id to `cron_job_id` field in the loop file
+3. Return the job id to the caller. If the loop file already exists (the `wake` path), edit its `cron_job_id` field in place. If it does not (the `rover` new-loop path), the caller holds the id and writes it into the file when creating it.
 
 ### Standard cron prompt
 
 ```
-Read the file `.autonomous/<FILENAME>.md` in this project. Check the Phase.
-Follow the Instructions section for the current phase. Add a timestamped
-entry to the Log when you take action (run `date +%H:%M` first, never guess).
-If nothing changed, do nothing.
+Read the file `.autonomous/<FILENAME>.md` in this project. If the file does
+not exist yet, the main session is still finishing setup; do nothing this
+tick and let the next one retry. Otherwise check the Phase, follow the
+Instructions section for the current phase, and add a timestamped entry to
+the Log when you take action (run `date +%H:%M` first, never guess). If
+nothing changed, do nothing.
 ```
 
 Replace `<FILENAME>` with the actual file.

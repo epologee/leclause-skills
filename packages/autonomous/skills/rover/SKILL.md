@@ -173,12 +173,12 @@ The first tool calls after this skill loads are:
    - Current branch is not the repo's default branch. Ask once: "We are on `<branch>` instead of `<default>`. Should this mission run here, or switch back to `<default>` first?"
    - Current branch matches the mission goal already. Stay on it; no new branch.
    When these are resolved, create the mission branch: `git checkout -b <kebab-goal-name>`. Kebab-case version of the loop-file name, no slashes, no prefixes, no rover or space-mission words (`fix-stale-cache`, `build-auth-page`, `investigate-slow-queries`). Record the chosen branch (or the operator's alternative arrangement) in the loop file's `branch:` field.
-2. `Write .autonomous/.gitignore` with content `*` (always, even if the dir already exists; the Write tool creates parent dirs)
-3. `Write .autonomous/<NAME>.md` with the template below, fully populated
-4. Invoke `cron` via the Skill tool to `CronCreate` and write the job id back
+2. Invoke `cron` via the Skill tool to `CronCreate`. Pass `.autonomous/<NAME>.md` as the loop-file path (derive `<NAME>` from the Dispatch the same way step 4 does: ALL-CAPS, hyphens, no spaces, goal not mechanism). The loop file does not have to exist yet; the cron prompt's Read is a no-op when the file is missing, and the next tick picks up once the file lands. Hold the returned job id in-session to write into the loop file in step 4. The point of pulling cron forward is that setup has several generation-horizon hazards (the big template write below is the worst), and the cron has to be the safety net during those hazards, not a consequence of surviving them.
+3. `Write .autonomous/.gitignore` with content `*` (always, even if the dir already exists; the Write tool creates parent dirs)
+4. `Write .autonomous/<NAME>.md` with the template below, fully populated, including the `cron_job_id` returned in step 2
 5. Run the first SURVEY iteration directly in this same turn
 
-No exploration first. No "let me check the codebase." No skills loaded before the cron is live. The whole point is to get the loop running on its own branch so the work stays reversible. Exploration happens inside the loop.
+No exploration first. No "let me check the codebase." The cron goes live before the big writes so the loop file lands under an already-running safety net, not the other way around. Exploration happens inside the loop.
 
 The first iteration races with the cron's period. This is safe because cron only fires when the REPL is idle, and the first iteration blocks idle. But: tune the initial cron to `* * * * *` (every minute) regardless of expected SURVEY duration. If SURVEY takes 20 minutes, that is fine; the cron will not fire until you yield.
 
@@ -385,7 +385,7 @@ Every log line needs a timestamp from `date +%H:%M`. Never guess based on "it wa
 
 ## Starting the cron
 
-Invoke `cron` via the Skill tool. That skill's setup flow runs `CronCreate`, writes the job id back to the loop file's `cron_job_id` field, and sets the initial interval to `* * * * *`.
+Invoke `cron` via the Skill tool in setup step 2, before the loop file exists. That skill's setup flow runs `CronCreate`, returns the job id for the rover to embed when it writes the loop file in step 4, and sets the initial interval to `* * * * *`.
 
 "Delegate" throughout these skills means: call the Skill tool with the target skill name. Not inline instructions, not shelling out. The Skill tool invocation.
 
