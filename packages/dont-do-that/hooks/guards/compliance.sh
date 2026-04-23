@@ -1,7 +1,12 @@
 #!/bin/bash
-# Stop guard. Blocks "Wil je dat ik...?"-style compliance-reflex questions
-# when Claude already had a clear instruction to act. Pass with 🧭 prefix
-# for a genuine new direction or a pre-emptive forward question.
+# Stop guard, back-stop only. Catches two failure modes that end on '?':
+# (a) reflex-terugkaatsing where Claude asks the user something it could
+# just decide and continue, and (b) truncated generation that happened to
+# stop mid-sentence on a question mark. Not a whip. Steady pacing is the
+# point: when the question is reflex, answer it yourself and carry on at
+# normal pace; when it is a genuine user-choice, mark with 🧭 prefix so
+# the back-stop stands aside; when the work is actually done, end with
+# 🏁 + sentence.
 
 guard_compliance() {
   local input="$1"
@@ -20,5 +25,5 @@ guard_compliance() {
     | grep -qiE "(bedoel je|do you mean|of (wil je|wilt u)|or (do you|would you)|is dit beter|is this better|welke (van|optie)|which (of|option)|[0-9]+ (issues|bestanden|items|punten|commits|stappen))" \
     && return 0
 
-  dd_emit_block compliance "? aan einde. Werk door of start met 🧭 voor een genuine nieuwe richting."
+  dd_emit_block compliance "'?' einde: dubbelcheck, geen zweep. Reflex-ask of afgebroken output? Beantwoord zelf op eigen tempo, of markeer bewust: 🧭 (genuine user-keuze), 🏁 (klaar)."
 }
