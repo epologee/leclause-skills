@@ -77,16 +77,18 @@ The loop file is your window. `.autonomous/BUILD-SETTINGS-PAGE.md` gets a timest
 
 ## What you are building
 
-A markdown file in `.autonomous/` that holds context, phase, plan, decision audit, and log. A Claude Code cron job that fires the loop prompt every minute while the REPL is idle. A phase machine (SURVEY, DRIVE, INSPECT, STOW, STANDBY) that each cron tick advances.
+A markdown file in `.autonomous/` that holds context, phase, plan, decision audit, and log. A Claude Code cron job that fires the loop prompt every minute while the REPL is idle. A phase machine (optional PRELAUNCH, then SURVEY, DRIVE, INSPECT, STOW, STANDBY) that each cron tick advances.
 
 Phases and transitions:
 
 ```
-SURVEY ──► DRIVE ──► INSPECT ──► STOW ──► STANDBY
-    ▲           ▲            │                  │
-    │           └────────────┘                  │
-    └──────── new issues ────────────────────────┘
+PRELAUNCH ──► SURVEY ──► DRIVE ──► INSPECT ──► STOW ──► STANDBY
+                  ▲           ▲            │                  │
+                  │           └────────────┘                  │
+                  └──────── new issues ────────────────────────┘
 ```
+
+PRELAUNCH is optional and only written to the loop file when setup step 2 surfaces a human question the rover cannot answer itself; otherwise the loop file is born at Phase: SURVEY. The PRELAUNCH phase has a hard five-minute fuse: if the cron finds a PRELAUNCH loop file whose logged question is five minutes or older without an operator answer in `## Input`, the rover decides the question itself via `decide` and drives on.
 
 The loop is autonomous. It does not ask questions mid-phase. When it hits a choice, it invokes `decide`. Before any artefact leaves the rover (push, PR, handoff communiqué, research brief, generated doc, media, or any other deliverable), it invokes `pride` to catch what it missed. No human is required to keep it moving, but you can intervene via the `## Input` section or the `/autonomous:stop` and `/autonomous:wake` commands at any time.
 
@@ -156,6 +158,8 @@ The rover invokes `verify --propose` at the end of SURVEY to write Done criteria
 The rover runs without asking the operator mid-mission. Prelaunch is the interval between this skill loading and the mission branch coming into being in setup step 2; that is the rover's one window to ask the operator a question or a short batch of questions, and only when the mission parameters contain a human choice that `decide` and `pride` cannot stand in for. Once the mission branch exists the rover has launched and "No user-feedback during a rover action. Forbidden." (top of this skill) is absolute again.
 
 Note that setup step 1 (CronCreate) fires before prelaunch closes. It is not an operator-visible action and does not consume the window; the reversibility questions in step 2 are still prelaunch.
+
+**The prelaunch question has a five-minute fuse.** Before asking the operator any prelaunch question, the rover pulls setup step 4 forward in stub form: `Write .autonomous/<NAME>.md` with the template below, `Phase: PRELAUNCH`, `branch:` empty, and a `[HH:MM] Prelaunch question: <summary>` line in the Log capturing the timestamp and the pending choice. Only then ask the operator. If the operator answers, the rover proceeds with steps 2 through 5 as normal and the Log records the answer. If the cron fires and finds a `Phase: PRELAUNCH` loop file whose prelaunch-question line is five minutes or more old with no operator answer in `## Input`, the rover does not keep waiting: it answers the question itself via `decide`, records the verdict in the Decision Audit Trail with classification `prelaunch-timeout`, flips the Phase out of PRELAUNCH, and drives the mission forward including executing whatever that decision implies (reversibility fixes, branch creation, all of it). Better to come back to a branch that made a couple of odd choices than to come back to a rover that never moved an inch. A rover stuck at a prompt has failed the one job of being autonomous. The five-minute fuse is the operator's courtesy window, not a gate; after it burns down, decide-and-execute is the rule.
 
 Use this window for things like:
 
@@ -263,6 +267,9 @@ _Operator-to-rover only. Write new input here during a running loop; the loop re
 You are an autonomous loop. Follow the phase machine below. No user-feedback during a rover action. Forbidden. The operator is not available, not consulted, not asked, not escalated to. Use `decide` at every fork. Fix every finding or prove it is a non-issue via pride's second-pass gate; never defer, postpone, plan out, or down-scope. Run `pride` before any output leaves the rover. This covers every artefact, not just pushes: code, documents, prose, research briefs, plans, letters, songs, videos, audio, slides, scripts, configs. Including this one. If you cannot point to a `[HH:MM] Pride check findings:` block in the Log that covers what you are about to hand off, pride has not run. Stop and run it.
 
 ### Phases
+
+**PRELAUNCH**
+Only exists when setup step 2 surfaced a question the rover could not answer autonomously and pulled setup step 4 forward as a stub. The loop file's Log holds a `[HH:MM] Prelaunch question: <summary>` line. On every cron tick in this phase, run: read the Log, find the most recent `Prelaunch question:` line, parse its `HH:MM`, compare against `date +%H:%M`. If fewer than five minutes have elapsed and `## Input` is still empty, log `[HH:MM] PRELAUNCH: waiting (<N>m elapsed)` and stop the tick. If `## Input` has an operator answer, log it, apply it to the setup state (commit or stash any carried changes, switch branches if needed, create the mission branch), clear `## Input`, flip Phase to SURVEY, and run the first SURVEY iteration in the same tick. If five minutes or more have elapsed with `## Input` still empty, the fuse burns down: invoke `decide` on the pending question with classification `prelaunch-timeout`, record the verdict in the Decision Audit Trail, execute whatever that verdict implies (reversibility fixes, branch creation, and so on), log `[HH:MM] PRELAUNCH: fuse burned, decided <verdict>`, flip Phase to SURVEY, and run the first SURVEY iteration in the same tick. The rover never adds a new `Prelaunch question:` line after flipping out of PRELAUNCH; prelaunch is a one-shot phase.
 
 **SURVEY**
 Search the codebase. Read relevant files, tests, logs, errors. Form hypotheses. Verify with concrete evidence: a failing test, a trace, a grep result. Write findings to the Log. When the plan is concrete and verifiable, fill the Plan section, write a Mission Understanding paragraph (see below), run the Plan-vs-Dispatch check below, invoke `verify --propose` to generate Done criteria, then transition to DRIVE.
