@@ -1,7 +1,7 @@
 ---
-name: gurus
+name: software
 user-invocable: true
-description: Use when code needs opinionated review from multiple expert perspectives. Triggers on /gurus, expert review panel, guru review, or when seeking consensus across engineering philosophies.
+description: Opinionated software engineering review panel. Acht gurus (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot) reviewen code vanuit hun eigen filosofie. Triggers op /gurus:software, code review panel, engineering guru review.
 allowed-tools:
   - Bash(git diff *)
   - Bash(git log *)
@@ -10,7 +10,7 @@ allowed-tools:
   - Bash(wc *)
 ---
 
-# Guru Panel Review
+# Software Guru Panel
 
 Acht opinionated engineers reviewen je code en zoeken consensus over wat beter moet. Wanneer 6+/8 het eens zijn, wordt een actieplan gemaakt. De waarde zit in de spanning tussen hun perspectieven: consensus ondanks fundamenteel verschillende stijlen is een sterk signaal.
 
