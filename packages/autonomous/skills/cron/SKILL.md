@@ -31,8 +31,12 @@ Read the file `.autonomous/<FILENAME>.md` in this project. If the file does
 not exist yet, the main session is still finishing setup; do nothing this
 tick and let the next one retry. Otherwise check the Phase, follow the
 Instructions section for the current phase, and add a timestamped entry to
-the Log when you take action (run `date +%H:%M` first, never guess). If
-nothing changed, do nothing.
+the Log when you take action (run `date +%H:%M` first, never guess). In
+STANDBY, an idle tick with nothing new IS an action: bump `watch_checks`,
+invoke `cron` so the interval backs off per the table, and log the tick
+with the new `watch_checks` value and the current interval. A silent pass
+hides whether the cron is still alive and keeps backoff stuck at one
+minute.
 ```
 
 Replace `<FILENAME>` with the actual file.
