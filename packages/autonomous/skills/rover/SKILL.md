@@ -289,7 +289,7 @@ Run the check at three moments:
 Do not silently slide from "ship X" to "write a doc about X", not at setup, not at SURVEY end, not at DRIVE entry, not at INSPECT entry. Four gates, same question: are we delivering what the Dispatch asked for?
 
 **DRIVE**
-The mission branch was created at setup; stay on it. Read project CLAUDE.md and user CLAUDE.md for commit style and push policy, and default to the most recent pattern in the repo, not the most common. Do not rebase, fast-forward, or otherwise reshape the branch during the mission; it exists to absorb every commit so the operator can drop the whole branch and start over if the mission is not it.
+The mission branch was created at setup; stay on it. Read project CLAUDE.md and user CLAUDE.md for commit style and push policy; the rules there are authoritative. If CLAUDE.md points to a skill or other reference for these rules, follow the pointer and invoke it; the referenced content is the rule. Repo history is reference only for style details the rules leave silent. Git history is immutable, so a single off-style commit must not seed every commit that follows: before drafting each commit subject, name the rule you are applying and its source. Do not rebase, fast-forward, or otherwise reshape the branch during the mission; it exists to absorb every commit so the operator can drop the whole branch and start over if the mission is not it.
 
 Quality over speed. No duct tape, no hacks. Structural solutions. Commit per logical step. Do not transition out of DRIVE with uncommitted changes.
 
