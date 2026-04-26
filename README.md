@@ -19,7 +19,7 @@ The `@leclause` suffix in the second command is the marketplace alias that the f
 
 | Plugin | Command | Auto | Hooks | Platform | Description |
 |--------|---------|:----:|:-----:|:--------:|-------------|
-| **autonomous** | `/autonomous:rover` | | | | Dispatch a rover at a task. You stay back, the rover works in the field; the distance means it decides autonomously. Ships with eight skills: `rover` (entry), `rover-help` (briefing), `cron` (scheduling + backoff), `decide` (choice framework, also standalone), `pride` (contrarian review), `verify` (evidence discipline and Done criteria), `wake`, and `stop`. No hard deps on personal or team skills. |
+| **autonomous** | `/autonomous:rover`, `/autonomous:prepare` | | | | Dispatch a rover at a task. You stay back, the rover works in the field; the distance means it decides autonomously. Ships with nine skills: `rover` (entry), `rover-help` (briefing), `prepare` (lay a loop file in another repo for later wake), `cron` (scheduling + backoff), `decide` (choice framework, also standalone), `pride` (contrarian review), `verify` (evidence discipline and Done criteria), `wake`, and `stop`. No hard deps on personal or team skills. |
 | **bonsai** | `/bonsai` | | | macOS | Worktree lifecycle manager: create a worktree + Claude session in a new iTerm2 pane, or prune worktrees with safety checks. Requires macOS + iTerm2. |
 | **clipboard** | `/clipboard` | | | macOS | Copy the core content of the last answer to the clipboard via the `clipboard-copy` helper. `/clipboard slack` for rich text. |
 | **commit-all-the-things** | `/commit-all-the-things` | | | | Commit all uncommitted changes in the working tree, grouped into logical commits with descriptive messages. |
