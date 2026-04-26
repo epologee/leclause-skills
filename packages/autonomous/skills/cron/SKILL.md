@@ -109,15 +109,16 @@ Sum: 1 + 2 + 5 + 10 + 20 + 30 + 60 × 4 = 308 minutes, about 5 hours.
 
 ## Restore after session restart
 
-Cron jobs are session-scoped. A new Claude session means the old job id in the loop file is dead. Before doing any other work, restore the cron.
+Cron jobs are documented as session-scoped, but in practice some survive a SessionStart:resume. A loop that the operator thought was dead can keep firing on its old cadence while the restored cron fires on its new cadence; the operator sees double cron prompts and the backoff table never takes hold for the orphan. Before creating a new cron, reap any orphan that points at the same loop file.
 
-1. Read the loop file, note `watch_checks`
-2. Compute cron expression from the backoff table
-3. `CronCreate` with that interval and the standard prompt
-4. Update `cron_job_id` in the loop file
-5. Now continue with whatever the phase requires
+1. Read the loop file, note `watch_checks`.
+2. **Reap orphan crons.** Invoke `CronList` via Skill or ToolSearch. For every entry whose prompt contains the loop file's filename (the `<FILENAME>.md` token after `.autonomous/`), call `CronDelete` on its job id. Log one line per kill: `[HH:MM] reaped orphan cron <id> (matched loop file <FILENAME>)`. Skip and proceed silently when CronList is empty.
+3. Compute cron expression from the backoff table.
+4. `CronCreate` with that interval and the standard prompt.
+5. Update `cron_job_id` in the loop file.
+6. Now continue with whatever the phase requires.
 
-If the loop's phase is STANDBY and `watch_checks >= 10`, the loop was already auto-stopped. Do not restore. Log a note that the loop was found in terminal state.
+If the loop's phase is STANDBY and `watch_checks >= 10`, the loop was already auto-stopped. Do not restore. Still run step 2 to reap any orphan that survived restart on its own; a terminated loop should not have any cron firing for it. Log a note that the loop was found in terminal state.
 
 ## Stopping on demand
 
@@ -158,7 +159,9 @@ On systems without `flock` (macOS by default), fall back to `mkdir` lock or atom
 
 **Multiple loops active.** Each loop file has its own `cron_job_id`. They do not conflict. Do not try to share a cron across loops.
 
-**Session ended → cron is dead regardless of age.** Do not rely on file `stat` to infer cron liveness. Use `CronList` via the Skill or ToolSearch path and check for the id. A 30-minute-old loop file from a closed session has a dead cron just as surely as a 3-day-old one.
+**Session ended → cron is dead regardless of age (in theory).** Do not rely on file `stat` to infer cron liveness. Use `CronList` via the Skill or ToolSearch path and check for the id. A 30-minute-old loop file from a closed session has a dead cron just as surely as a 3-day-old one.
+
+**Cron survives a SessionStart:resume (in practice).** The session-only contract documented for `CronCreate` does not always hold across a SessionStart:resume. Empirically, a cron created in the previous session can keep firing in the resumed session under its old job id, in addition to whatever the restore flow creates. The result: two crons fire for the same loop file, the orphan ignores the loop file's backoff state, and the operator sees double 10-min ticks while the loop file's `cron_job_id` advances on its own backoff schedule. Always run the orphan-reap step at restore (see "Restore after session restart"). Always invoke `CronList` instead of trusting the `cron_job_id` field alone.
 
 ## Reference: relative-cron
 
