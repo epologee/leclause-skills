@@ -48,11 +48,6 @@
       "source": "./packages/inspiratie"
     },
     {
-      "name": "rebase-latest-default",
-      "description": "Rebase current branch on the latest default branch (local or remote) with staleness check and automatic conflict resolution.",
-      "source": "./packages/rebase-latest-default"
-    },
-    {
       "name": "recap",
       "description": "Structured status overview of the current session: what we are doing, where we are, what is next. Useful when returning to a session after idle time, after compaction, or after a long stretch of repetitive background output.",
       "source": "./packages/recap"
