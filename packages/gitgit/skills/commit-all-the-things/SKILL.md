@@ -70,7 +70,7 @@ Verifieer elke staging met `git diff --cached --stat` voordat je commit.
 
 ## Commits
 
-Volg `git-and-github` voor commit message format en conventies. Deze skill bepaalt alleen WAT er per commit gegroepeerd wordt, niet HOE de commit gemaakt wordt.
+Volg de commit-message conventies in project- en user-CLAUDE.md. Deze skill bepaalt alleen WAT er per commit gegroepeerd wordt, niet HOE de commit gemaakt wordt.
 
 ## Regels
 
