@@ -10,7 +10,7 @@ Inspects `git status` and `git diff`, groups changes by intent (feature, fix, re
 
 ### `/gitgit:commit-snipe`
 
-Precision commits when the working tree contains modifications from multiple unrelated tasks. Stages only the files (or hunks) that belong to the current conversation's work and leaves the rest untouched. Use when `commit-all-the-things` would over-commit.
+Precision commits when the working tree contains modifications from multiple unrelated tasks. Stages only the files (or hunks) that belong to the current conversation's work and leaves the rest untouched. Pick `commit-snipe` over `commit-all-the-things` when the working tree mixes the current task with unrelated drift you do not want captured in the same commit; pick `commit-all-the-things` when you want every uncommitted line tidied up in one pass regardless of provenance.
 
 ### `/gitgit:rebase-latest-default`
 
@@ -35,14 +35,20 @@ Push remains an explicit user action. The skill does not push.
 /plugin install gitgit@leclause
 ```
 
-If you previously installed the standalone `commit-all-the-things@leclause` or `rebase-latest-default@leclause` plugins, uninstall them first so the slash commands resolve to the bundled versions instead of the retired standalone copies:
+First-time installs can stop here; the migration block below applies only to users who previously had the standalone copies installed.
+
+### Migration from the standalone plugins
+
+`commit-all-the-things@leclause` and `rebase-latest-default@leclause` used to ship as separate plugins. Both standalone plugin entries have been removed from the marketplace, so a `claude plugins update` will not pick them up anymore, but their existing install still wins for the bare `/commit-all-the-things` and `/rebase-latest-default` slash commands. Uninstall them so the slash commands resolve to the bundled versions instead:
 
 ```bash
 /plugin uninstall commit-all-the-things@leclause
 /plugin uninstall rebase-latest-default@leclause
 ```
 
-After the migration the commands live at `/gitgit:commit-all-the-things` and `/gitgit:rebase-latest-default`.
+If you skip the uninstall, both copies coexist: the bare slash commands keep firing the retired standalone skill, while `/gitgit:commit-all-the-things` and `/gitgit:rebase-latest-default` route to the bundled version. That is functional but confusing; uninstalling the standalones removes the duplication.
+
+After migration, the commands live at `/gitgit:commit-all-the-things` and `/gitgit:rebase-latest-default`.
 
 ## Behavior
 
