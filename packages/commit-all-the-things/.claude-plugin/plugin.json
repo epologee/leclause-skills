@@ -1,5 +1,0 @@
-{
-  "name": "commit-all-the-things",
-  "description": "Commit all uncommitted changes in the working tree, grouped into logical commits with descriptive messages.",
-  "version": "1.0.5"
-}

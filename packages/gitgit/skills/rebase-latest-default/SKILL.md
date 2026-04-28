@@ -11,7 +11,7 @@ optional: true
 scope: global
 ---
 
-# /rebase-latest-default Skill
+# /gitgit:rebase-latest-default Skill
 
 Rebase the current branch on the latest version of the default branch. The target can be a local branch (e.g. `main`) or a remote tracking branch (e.g. `origin/main`), whichever is further ahead. This supports worktree setups where the main worktree has unpushed commits, and repos without a remote.
 
@@ -66,7 +66,7 @@ Compare the SHAs:
 - **If they differ:** show a warning and **stop**:
   ```
   origin/$DEFAULT is stale (local: <short-sha>, remote: <short-sha>).
-  Run `git fetch origin` first, then invoke /rebase-latest-default again.
+  Run `git fetch origin` first, then invoke /gitgit:rebase-latest-default again.
   ```
   Do NOT proceed with the rebase. Do NOT fetch. The user must fetch explicitly because fetching updates all remote tracking refs, which affects `--force-with-lease` behavior on other branches.
 
