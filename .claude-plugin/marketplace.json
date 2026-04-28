@@ -14,7 +14,7 @@
     },
     {
       "name": "bonsai",
-      "description": "Worktree lifecycle manager. Create a worktree with branch and launch a Claude session in a new iTerm2 pane, or prune worktrees with safety checks. Requires macOS + iTerm2.",
+      "description": "Worktree lifecycle manager. Create a worktree with branch and put a `cd <worktree> && claude \"...\"` start command on the clipboard so you can paste it into any terminal pane/tab/app, or prune worktrees with safety checks. Requires macOS.",
       "source": "./packages/bonsai"
     },
     {

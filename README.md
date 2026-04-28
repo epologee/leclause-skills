@@ -20,7 +20,7 @@ The `@leclause` suffix in the second command is the marketplace alias that the f
 | Plugin | Command | Auto | Hooks | Platform | Description |
 |--------|---------|:----:|:-----:|:--------:|-------------|
 | **autonomous** | `/autonomous:rover`, `/autonomous:prepare` | | | | Dispatch a rover at a task. You stay back, the rover works in the field; the distance means it decides autonomously. Ships with nine skills: `rover` (entry), `rover-help` (briefing), `prepare` (lay a loop file in another repo for later wake), `cron` (scheduling + backoff), `decide` (choice framework, also standalone), `pride` (contrarian review), `verify` (evidence discipline and Done criteria), `wake`, and `stop`. No hard deps on personal or team skills. |
-| **bonsai** | `/bonsai` | | | macOS | Worktree lifecycle manager: create a worktree + Claude session in a new iTerm2 pane, or prune worktrees with safety checks. Requires macOS + iTerm2. |
+| **bonsai** | `/bonsai` | | | macOS | Worktree lifecycle manager: create a worktree and put a `cd <worktree> && claude "..."` start command on the clipboard so you can paste it into any terminal pane/tab/app, or prune worktrees with safety checks. Requires macOS (uses `pbcopy`). |
 | **clipboard** | `/clipboard` | | | macOS | Copy the core content of the last answer to the clipboard via the `clipboard-copy` helper. `/clipboard slack` for rich text. |
 | **dont-do-that** | ❌ | | ✅ | | Nine guardrail hooks (one dispatcher, uniform `[dont-do-that/<code>]` messages) that push back on common AI reflexes: shifting blame, stopping prematurely, delegating verification, asking for confirmation when none was needed, and em-dashes in prose. See [dont-do-that](packages/dont-do-that/README.md). |
 | **export-skill** | `/export-skill` | | | macOS | Export a skill for sharing. Orchestrator that chains five sub-skills, each also user-invocable on its own: `sanitize` (PII + security), `translate` (en/nl), `port` (linux/windows/macos), `package` (zip or single-file md), `share` (clipboard summary + Finder handoff). The `share` sub-skill is macOS-only; the others run anywhere. |
@@ -86,7 +86,7 @@ The skill is not auto-activated: self-activation on description match without th
 
 ### bonsai
 
-Requires macOS + iTerm2. `/bonsai new` opens a new iTerm2 pane via `osascript`, which is macOS-only. `/bonsai prune` works anywhere git runs.
+Requires macOS. `/bonsai new` puts the start command on the clipboard via `pbcopy`, which is macOS-only. `/bonsai prune` works anywhere git runs. Terminal-app agnostic: paste the command into iTerm2, Terminal.app, cmux, Ghostty, Warp, a tmux pane, whatever.
 
 If you use a wrapper around `claude` (custom alias, flags, model pinning), expose it via the `CLAUDE_CLI` env var in your shell rc:
 
@@ -94,4 +94,4 @@ If you use a wrapper around `claude` (custom alias, flags, model pinning), expos
 export CLAUDE_CLI=my-wrapper
 ```
 
-Bonsai falls back to `claude` if the var is not set.
+Bonsai puts the literal string `${CLAUDE_CLI:-claude}` in the clipboard command so the target shell evaluates it at paste time, falling back to `claude` if the var is not set.

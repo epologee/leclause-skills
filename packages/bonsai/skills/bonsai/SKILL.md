@@ -9,27 +9,28 @@ description: >
   (via git status, ls, or file exploration) to verify gitignore setup.
 user-invocable: true
 argument-hint: "[new <branch> [prompt] | prune]"
-allowed-tools: Bash(git worktree *), Bash(git branch *), Bash(git symbolic-ref *), Bash(git status *), Bash(git log *), Bash(git ls-remote *), Bash(git rev-list *), Bash(git rev-parse *), Bash(gh pr list *), Bash(gh pr view *), Bash(cd *), Bash(git switch *), Bash(git merge-base *), Bash(osascript *)
+allowed-tools: Bash(git worktree *), Bash(git branch *), Bash(git symbolic-ref *), Bash(git status *), Bash(git log *), Bash(git ls-remote *), Bash(git rev-list *), Bash(git rev-parse *), Bash(gh pr list *), Bash(gh pr view *), Bash(cd *), Bash(git switch *), Bash(git merge-base *), Bash(pbcopy *)
 effort: low
-platform: macOS + iTerm2
+platform: macOS
 env:
   CLAUDE_CLI: >
-    Optioneel. Commando dat wordt gebruikt om Claude te starten in de nieuwe
-    worktree pane. Default `claude`. Zet dit wanneer je een eigen alias of
-    wrapper gebruikt (bijvoorbeeld `export CLAUDE_CLI=mijn-wrapper` in je shell
-    rc). De skill leest de env var op het moment dat de pane wordt geopend.
+    Optioneel. Commando dat in het clipboard-commando wordt gezet om Claude
+    te starten in de nieuwe worktree. Default `claude`. Zet dit wanneer je een
+    eigen alias of wrapper gebruikt (bijvoorbeeld `export CLAUDE_CLI=mijn-wrapper`
+    in je shell rc). De var wordt door de doel-shell geëvalueerd op het moment
+    dat je het commando plakt, niet door bonsai.
 ---
 
 # /bonsai
 
 Worktree lifecycle manager. Twee commando's:
 
-- **`/bonsai new <branch> [prompt]`**: maak worktree + branch, open iTerm2 pane met Claude sessie
+- **`/bonsai new <branch> [prompt]`**: maak worktree + branch, zet een `cd <worktree> && claude "..."` commando op je clipboard zodat je het in een nieuwe pane/tab/app naar keuze kunt plakken
 - **`/bonsai prune`**: ruim worktrees op (context-afhankelijk)
 
 ## Vereisten
 
-- **macOS + iTerm2**. `/bonsai new` opent panes via `osascript` en iTerm2, dus deze combinatie is hard nodig. `/bonsai prune` werkt overal waar git draait.
+- **macOS**. `/bonsai new` gebruikt `pbcopy` om het start-commando op het clipboard te zetten. `/bonsai prune` werkt overal waar git draait.
 - **`claude` op je PATH** (of een eigen wrapper, zie hieronder).
 
 ### Optioneel: eigen Claude launcher via `CLAUDE_CLI`
@@ -40,7 +41,7 @@ Gebruik je een alias of wrapper rond `claude` (bijvoorbeeld om logging, flags of
 export CLAUDE_CLI=mijn-wrapper
 ```
 
-Bonsai leest die waarde bij het openen van de worktree pane en valt terug op `claude` als de var niet gezet is. Geen eigen wrapper? Dan hoef je niks te doen.
+Bonsai zet de letterlijke string `${CLAUDE_CLI:-claude}` in het clipboard-commando, zodat de doel-shell de var op plak-moment evalueert. Geen eigen wrapper? Dan hoef je niks te doen.
 
 ## Kernprincipe
 
@@ -89,7 +90,7 @@ De berekende poort wordt opgenomen in de start prompt (zie stap 2) zodat de work
 
 ## /bonsai new
 
-Maak een nieuwe worktree met branch en start een Claude sessie in een nieuw iTerm2 pane.
+Maak een nieuwe worktree met branch en zet een start-commando voor de Claude sessie op het clipboard.
 
 **Input**: branch naam (optioneel), start prompt (optioneel), base ref (optioneel, default `origin/$DEFAULT`).
 
@@ -104,21 +105,16 @@ De start prompt bevat altijd de worktree-poort (zie "Dev server poorten"). Voeg 
 
 ### Stap 0: Preconditie check
 
-`/bonsai new` opent een nieuw pane via iTerm2 + osascript (macOS-only). Check dat beide beschikbaar zijn voordat je iets aanmaakt:
+`/bonsai new` zet het start-commando op het clipboard via `pbcopy` (macOS-only). Check dat het beschikbaar is voordat je iets aanmaakt:
 
 ```bash
-if ! command -v osascript >/dev/null 2>&1; then
-  echo "osascript niet gevonden. /bonsai new vereist macOS."
-  exit 1
-fi
-
-if ! osascript -e 'id of application "iTerm2"' >/dev/null 2>&1; then
-  echo "iTerm2 niet gevonden. /bonsai new vereist iTerm2."
+if ! command -v pbcopy >/dev/null 2>&1; then
+  echo "pbcopy niet gevonden. /bonsai new vereist macOS."
   exit 1
 fi
 ```
 
-Faalt een van beide: stop meteen, geen worktree aanmaken, geen half werk achterlaten.
+Faalt het: stop meteen, geen worktree aanmaken, geen half werk achterlaten.
 
 ### Stap 1: Maak worktree
 
@@ -194,51 +190,36 @@ done
 
 Install failures (missing tool, network error) worden gemeld maar blokkeren niet: de worktree is aangemaakt en de user kan handmatig herstellen. Andere package managers (pnpm, yarn, poetry, cargo, go mod) zijn nog niet gedekt; voeg ze toe wanneer ze in een project voorkomen.
 
-### Stap 2: Open iTerm2 pane
+### Stap 2: Zet start-commando op het clipboard
 
-**Escaping**: de start prompt gaat door drie lagen (osascript, iTerm2 write text, pane-shell). Schrijf de prompt naar een temp file en gebruik een osascript heredoc zodat het pad wordt ingevuld door de buitenste shell. `set +H 2>/dev/null || true` schakelt bash history expansion uit zodat `!` geen problemen geeft; in shells die `+H` niet kennen (zoals zsh) wordt de regel stil overgeslagen.
+Bouw een `cd <worktree> && claude "<prompt>"` commando en pipe het naar `pbcopy`. De prompt zit in een single-quoted heredoc binnen het commando, dus de doel-shell hoeft niets te escapen en de prompt mag vrij multi-line zijn met `$`, `!`, backticks et cetera. `${CLAUDE_CLI:-claude}` blijft letterlijk in het clipboard zodat de doel-shell de var op plak-moment evalueert.
+
+Met start prompt:
 
 ```bash
-PROMPT_FILE="/tmp/bonsai-prompt-$$"
-cat > "$PROMPT_FILE" << 'EOF'
+pbcopy <<CLIP
+cd <worktree-path> && \${CLAUDE_CLI:-claude} "\$(cat <<'BONSAI_PROMPT'
 <start-prompt>
 
 Dev server poort voor deze worktree: PORT=<WORKTREE_PORT>. Zoek uit wat je moet doen om de dev server van dit project te starten en geef PORT=<WORKTREE_PORT> mee. Gebruik NOOIT de standaard poort, de main worktree draait daar al op.
-EOF
-
-osascript << SCRIPT
-tell application "iTerm2"
-    tell current window
-        tell current session
-            set newSession to (split vertically with default profile)
-        end tell
-        tell newSession
-            write text "cd <worktree-path> && { set +H 2>/dev/null || true; } && ${CLAUDE_CLI:-claude} \\"\\$(cat $PROMPT_FILE)\\" && rm $PROMPT_FILE"
-        end tell
-    end tell
-end tell
-SCRIPT
+BONSAI_PROMPT
+)"
+CLIP
 ```
 
-Zonder start prompt (geen temp file nodig):
+Zonder start prompt:
 
 ```bash
-osascript -e '
-tell application "iTerm2"
-    tell current window
-        tell current session
-            set newSession to (split vertically with default profile)
-        end tell
-        tell newSession
-            write text "cd <worktree-path> && ${CLAUDE_CLI:-claude}"
-        end tell
-    end tell
-end tell'
+pbcopy <<CLIP
+cd <worktree-path> && \${CLAUDE_CLI:-claude}
+CLIP
 ```
+
+De buitenste heredoc is unquoted, zodat `<worktree-path>` (door bonsai zelf gevuld) gesubstitueerd wordt; de `$`-tekens die letterlijk op het clipboard moeten landen zijn ge-escaped met backslash. De binnenste heredoc-delimiter `BONSAI_PROMPT` is single-quoted, zodat de doel-shell niets in de prompt expandeert.
 
 ### Stap 3: Bevestiging
 
-> Worktree `<branch>` aangemaakt in `worktrees/<dir>`. Claude sessie gestart in nieuw iTerm2 pane.
+> Worktree `<branch>` aangemaakt in `worktrees/<dir>`. Start-commando staat op je clipboard: plak het in een nieuwe pane/tab/terminal naar keuze.
 
 ---
 
