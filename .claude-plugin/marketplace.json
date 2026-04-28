@@ -18,11 +18,6 @@
       "source": "./packages/bonsai"
     },
     {
-      "name": "commit-all-the-things",
-      "description": "Commit all uncommitted changes in the working tree, grouped into logical commits with descriptive messages.",
-      "source": "./packages/commit-all-the-things"
-    },
-    {
       "name": "dont-do-that",
       "description": "Guardrail hooks that push back on common AI reflexes: shifting blame, stopping prematurely, delegating verification, asking for confirmation when none was needed, and em-dashes in prose.",
       "source": "./packages/dont-do-that"
