@@ -1,7 +1,7 @@
 ---
 name: merge-to-default
-description: Use when the user wants to land the current branch on the project's default branch with a github-style merge commit. Triggers on /gitgit:merge-to-default, "merge naar default", "merge to main", "merge this into main". Commits any pending work via commit-all-the-things first, produces a --no-ff merge commit, and rebases the source branch on conflict before retrying.
-allowed-tools: Bash(git symbolic-ref:*), Bash(git rev-parse:*), Bash(git status:*), Bash(git checkout:*), Bash(git merge:*), Bash(git rebase:*), Bash(git log:*), Bash(git diff:*), Bash(git ls-remote:*), Bash(git remote:*), Skill(gitgit:commit-all-the-things), Skill(gitgit:rebase-latest-default)
+description: Use when the user wants to land the current branch on the project's default branch with a github-style merge commit. Triggers on /gitgit:merge-to-default, "merge naar default", "merge to main", "merge this into main". Commits any pending work via commit-all-the-things first, produces a --no-ff merge commit, rebases the source branch on conflict before retrying, and deletes the local source branch after the merge is confirmed (remote branches are left to GitHub workflows).
+allowed-tools: Bash(git symbolic-ref:*), Bash(git rev-parse:*), Bash(git status:*), Bash(git checkout:*), Bash(git merge:*), Bash(git rebase:*), Bash(git log:*), Bash(git diff:*), Bash(git ls-remote:*), Bash(git remote:*), Bash(git branch:*), Bash(git worktree:*), Skill(gitgit:commit-all-the-things), Skill(gitgit:rebase-latest-default)
 ---
 
 # /gitgit:merge-to-default
@@ -105,7 +105,27 @@ Nu zou de merge schoon moeten verlopen. Faalt-ie nog steeds, surface de conflict
 
 `merge-to-default` zelf maakt geen van deze keuzes voor de user; mid-rebase met genuine ambiguïteit is precies de plek waar handmatige resolutie de juiste manier is.
 
-## Stap 5: Rapportage
+## Stap 5: Lokale source-branch opruimen
+
+Na een geconfirmde merge ruimt de skill de lokale `$CURRENT` branch op. Geconfirmd betekent: HEAD zit op `$DEFAULT`, HEAD heeft twee parents, en de tweede parent komt overeen met de huidige tip van de `$CURRENT` ref. De skill checkt dat met:
+
+```bash
+SECOND_PARENT=$(git rev-parse HEAD^2 2>/dev/null || true)
+SOURCE_TIP=$(git rev-parse "$CURRENT")
+[ "$SECOND_PARENT" = "$SOURCE_TIP" ] || stop_with "merge confirmation failed; HEAD^2 ($SECOND_PARENT) does not match $CURRENT tip ($SOURCE_TIP)"
+```
+
+(Een `--no-ff` merge op `$DEFAULT` raakt de `$CURRENT` ref niet aan: vóór en na de merge wijst `$CURRENT` naar dezelfde commit. In het rebase-pad rebased Stap 4 `$CURRENT` op `$DEFAULT` en de retry-merge gebruikt die nieuwe tip; `git rev-parse $CURRENT` na de retry-merge geeft die post-rebase tip die ook HEAD^2 op `$DEFAULT` is.)
+
+Wanneer dat klopt: probeer de branch te deleten met `git branch -d "$CURRENT"`. Vóór dat command checkt de skill twee dingen:
+
+1. **Worktree safety.** `git worktree list --porcelain` toont één blok per worktree met `branch refs/heads/<naam>`. Als `$CURRENT` in een ander worktree dan de huidige checked out is (compare met `git rev-parse --git-dir` om de eigen worktree te identificeren), skip de delete en surface een TUI-regel: `⚠  Source branch '<CURRENT>' is checked out in worktree <path>; skipping local branch delete.` De merge commit op `$DEFAULT` blijft intact, alleen de lokale ref van `$CURRENT` blijft staan.
+
+2. **Geen `-D` force.** De skill gebruikt `-d` (lowercase), niet `-D`. `-d` faalt op niet-gemergede branches; in deze flow is `$CURRENT` per definitie gemerged in `$DEFAULT` via de merge commit, dus `-d` slaagt. Mocht `-d` toch falen (race-condition met user-input tussen stap 3/4 en stap 5), surface de error en stop zonder forceren.
+
+Remote branches raakt deze skill niet. De aanname is dat GitHub-workflows (branch protection rules met "delete head branch on merge") of een aparte cleanup-job de remote `origin/<CURRENT>` opruimen wanneer de PR-merge upstream landt. Mocht jouw repo dat niet doen, ruim de remote branch zelf op met `git push origin --delete <CURRENT>` na de push (dat zit niet in deze skill).
+
+## Stap 6: Rapportage
 
 Toon een korte samenvatting van wat er gebeurd is:
 
@@ -114,8 +134,9 @@ Toon een korte samenvatting van wat er gebeurd is:
   Merge commit: <abbrev SHA>
   Files changed: <N>, +<INS> -<DEL>
   Rebase preceded merge: yes/no
+  Local source branch: deleted | kept (worktree at <path>)
 ```
 
-`<abbrev SHA>` komt uit `git rev-parse --short HEAD`. `Files changed`, insertions en deletions uit `git diff --shortstat $DEFAULT~1...$DEFAULT`.
+`<abbrev SHA>` komt uit `git rev-parse --short HEAD`. `Files changed`, insertions en deletions uit `git diff --shortstat $DEFAULT~1...$DEFAULT`. De `Local source branch` regel reflecteert wat Stap 5 deed: `deleted` als `git branch -d` slaagde, `kept (worktree at <path>)` als de safety-check de delete oversloeg, of `kept (delete failed: <reden>)` als `-d` om een andere reden faalde.
 
 Push gebeurt NIET in deze skill. Een push naar de remote is een aparte user-go (de user-CLAUDE.md push-regime documenteert dit). De gebruiker pusht zelf wanneer hij gevalideerd heeft dat de merge klopt.

@@ -25,7 +25,8 @@ Lands the current branch on the project's default branch with a true `--no-ff` m
 3. Run `gitgit:commit-all-the-things` so any pending working-tree changes land on the source branch first.
 4. Switch to the default branch and run `git merge --no-ff <source>`.
 5. On conflict, abort the merge, switch back to the source branch, run `gitgit:rebase-latest-default`, then retry the merge from a clean tree.
-6. Report the merge commit SHA, the file list, and whether a rebase preceded the merge.
+6. After the merge commit is confirmed (HEAD on default, two parents, second parent matches the pre-merge source tip), delete the local source branch with `git branch -d <source>`. Skipped with a TUI line if the source branch is checked out in another worktree. Remote branches are left alone; GitHub workflows or a `git push origin --delete` (run separately) handle remote cleanup.
+7. Report the merge commit SHA, the file list, whether a rebase preceded the merge, and whether the local source branch was deleted or kept.
 
 Push remains an explicit user action. The skill does not push.
 
