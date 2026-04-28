@@ -40,7 +40,7 @@ digraph snipe {
 
 ## Regels
 
-- **Invocatie IS commit intent.** `/commit-snipe` betekent "commit nu". Geen bevestiging vragen, geen "wil je dit committen?". De user heeft zijn intent al gegeven door de skill aan te roepen.
+- **Invocatie IS commit intent.** `/gitgit:commit-snipe` betekent "commit nu". Geen bevestiging vragen, geen "wil je dit committen?". De user heeft zijn intent al gegeven door de skill aan te roepen.
 - **Bij twijfel, NIET stagen.** Een bestand dat je niet zeker kunt herleiden naar het huidige werk hoort niet in de commit.
 - **Nooit `git add .` of `git add -A`.** Altijd expliciete paden of hunks.
 - **Bestanden zijn een implementatiedetail.** De snipe kan twee regels

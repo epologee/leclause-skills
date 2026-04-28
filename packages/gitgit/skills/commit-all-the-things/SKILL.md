@@ -1,7 +1,7 @@
 ---
 name: commit-all-the-things
 user-invocable: true
-description: Use when the user wants to commit ALL uncommitted changes in the working tree, grouped into logical commits. Triggers on /commit-all-the-things or "commit alles", "ruim de working tree op", "commit what's left".
+description: Use when the user wants to commit ALL uncommitted changes in the working tree, grouped into logical commits. Triggers on /gitgit:commit-all-the-things or "commit alles", "ruim de working tree op", "commit what's left".
 ---
 
 # Commit All The Things
@@ -16,7 +16,7 @@ Commit alle uncommitted wijzigingen in de working tree, gegroepeerd in logische 
 
 ## Invocatie is intent
 
-`/commit-all-the-things` IS de opdracht. Geen plan presenteren, geen bevestiging per commit, geen tussentijdse vragen. Doorwerken tot de working tree schoon is.
+`/gitgit:commit-all-the-things` IS de opdracht. Geen plan presenteren, geen bevestiging per commit, geen tussentijdse vragen. Doorwerken tot de working tree schoon is.
 
 ## Workflow
 
