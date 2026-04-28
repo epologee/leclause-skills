@@ -44,7 +44,9 @@ Als `$CURRENT` gelijk is aan `$DEFAULT`, doe niets. Toon een duidelijke TUI-waar
     There is nothing to merge into <DEFAULT> from <DEFAULT>.
 
     Switch to the feature branch you want to merge first, then re-run
-    /gitgit:merge-to-default.
+    /gitgit:merge-to-default. Run `git branch` to list local branches,
+    or `git reflog` to find the branch you were on before HEAD landed
+    here.
 ```
 
 Geen commit, geen merge, geen rebase. Exit cleanly.
@@ -57,6 +59,8 @@ Invoke `gitgit:commit-all-the-things` via de Skill tool. Die sub-skill groepeert
 
 Na de invocatie: `git status --porcelain` is leeg, anders stop met de melding `commit-all-the-things left uncommitted changes; investigate before merging.`
 
+**Belangrijk om vooraf te weten:** de skill commit ALLES wat er staat, ook half-afgemaakt werk dat de user nog niet wilde vastleggen. Wie staged of working-tree wijzigingen heeft die niet bij de merge horen, zet die eerst opzij (`git stash push -m "wip"`, of een aparte snipe-commit op een ander branch) voordat `/gitgit:merge-to-default` aanroept. De skill heeft geen opt-out voor stap 2; dat is bewust, omdat een halve-merge met onuitgesproken pending wijzigingen de geschiedenis vertroebelt.
+
 ## Stap 3: First-pass merge
 
 ```bash
@@ -64,9 +68,9 @@ git checkout $DEFAULT
 git merge --no-ff --no-edit $CURRENT
 ```
 
-`--no-ff` dwingt een merge commit af (twee parents), zelfs als de default branch precies achter de feature-branch zit. Zo krijgt de geschiedenis dezelfde vorm als wat GitHub's "Create a merge commit" knop produceert.
+`--no-ff` dwingt een merge commit af (twee parents), zelfs als de default branch precies achter de feature-branch zit. Zo krijgt de geschiedenis dezelfde vorm als wat GitHub's "Create a merge commit" knop produceert; de iteratie op de feature-branch blijft zichtbaar in `git log --graph`. Een fast-forward of squash merge zou diezelfde iteratie afvlakken, daarom is `--no-ff` hier niet onderhandelbaar. Wie liever een fast-forward of een rebase-merge wil, gebruikt `git merge --ff-only` of `git rebase` direct vanaf de command line; deze skill is specifiek voor de github-merge-button vorm.
 
-`--no-edit` houdt de auto-gegenereerde merge subject (`Merge branch '<CURRENT>'`), dezelfde vorm die GitHub's merge button gebruikt.
+`--no-edit` houdt de auto-gegenereerde merge subject (`Merge branch '<CURRENT>'`), dezelfde vorm die GitHub bij een lokale merge gebruikt. Dat is bewust niet de PR-merge subject (`Merge pull request #N from ...`), omdat deze skill geen PR aanmaakt en geen PR-nummer kent.
 
 - **Slaagt schoon:** door naar Stap 5.
 - **Conflicten:** door naar Stap 4.
@@ -91,6 +95,16 @@ git merge --no-ff --no-edit $CURRENT
 
 Nu zou de merge schoon moeten verlopen. Faalt-ie nog steeds, surface de conflict en stop; dat betekent dat de rebase niet alle ambiguïteit kon oplossen en de user moet handmatig ingrijpen.
 
+### Wanneer rebase-latest-default zelf op een non-trivial conflict stopt
+
+`gitgit:rebase-latest-default` lost alleen trivial conflicts (whitespace, identieke edits, lockfile regenerations) automatisch op. Voor genuine ambiguïteit stopt die skill mid-rebase en wijst de user op de conflict bestanden. In dat geval is `merge-to-default` ook gestopt: de werktree zit mid-rebase op `$CURRENT`, `$DEFAULT` is onveranderd. De user heeft drie cleanup-opties:
+
+- `git rebase --abort`: zet `$CURRENT` terug naar pre-rebase staat. Geen merge gebeurd. Daarna kan de user de conflict op een andere manier aanpakken.
+- Handmatig de conflict resolven, `git rebase --continue` per stap, en dan `/gitgit:merge-to-default` opnieuw aanroepen om de retry-merge uit te voeren.
+- `git checkout $DEFAULT` zonder verdere actie: de mid-rebase state op `$CURRENT` blijft staan, `$DEFAULT` is intact, de user beslist later wat te doen.
+
+`merge-to-default` zelf maakt geen van deze keuzes voor de user; mid-rebase met genuine ambiguïteit is precies de plek waar handmatige resolutie de juiste manier is.
+
 ## Stap 5: Rapportage
 
 Toon een korte samenvatting van wat er gebeurd is:
@@ -105,11 +119,3 @@ Toon een korte samenvatting van wat er gebeurd is:
 `<abbrev SHA>` komt uit `git rev-parse --short HEAD`. `Files changed`, insertions en deletions uit `git diff --shortstat $DEFAULT~1...$DEFAULT`.
 
 Push gebeurt NIET in deze skill. Een push naar de remote is een aparte user-go (de user-CLAUDE.md push-regime documenteert dit). De gebruiker pusht zelf wanneer hij gevalideerd heeft dat de merge klopt.
-
-## Regels
-
-- **`--no-ff` is verplicht.** Geen fast-forward, geen squash. De merge commit bewaart twee parents zodat reviewers de iteratie op de feature-branch terug kunnen lezen.
-- **No-op-on-default is een hard safeguard, geen waarschuwing-en-doorgaan.** Wanneer `$CURRENT == $DEFAULT` doet de skill niets en exit cleanly. De TUI-waarschuwing legt uit wat er moet gebeuren (switch naar feature branch).
-- **Pending werk eerst committen, niet stashen.** `commit-all-the-things` produceert echte commits in de geschiedenis. Stashing zou werk verbergen tot na de merge en gaat tegen de transparantie van de skill in.
-- **Op conflict altijd rebase, nooit handmatige merge resolution.** De skill produceert óf een clean merge commit, óf surfaced de conflict aan de user. Een merge commit met handmatige resolutie verbergt de iteratie die de feature-branch had moeten plaatsen.
-- **Nooit pushen.** Push is een aparte user-actie.
