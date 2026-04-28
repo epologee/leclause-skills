@@ -66,7 +66,7 @@ git merge --no-ff --no-edit $CURRENT
 
 `--no-ff` dwingt een merge commit af (twee parents), zelfs als de default branch precies achter de feature-branch zit. Zo krijgt de geschiedenis dezelfde vorm als wat GitHub's "Create a merge commit" knop produceert.
 
-`--no-edit` houdt de auto-gegenereerde merge subject (`Merge branch '<CURRENT>'`); wijzig dat alleen als de project-CLAUDE.md een andere convention noemt.
+`--no-edit` houdt de auto-gegenereerde merge subject (`Merge branch '<CURRENT>'`), dezelfde vorm die GitHub's merge button gebruikt.
 
 - **Slaagt schoon:** door naar Stap 5.
 - **Conflicten:** door naar Stap 4.
