@@ -35,6 +35,15 @@ Push remains an explicit user action. The skill does not push.
 /plugin install gitgit@leclause
 ```
 
+If you previously installed the standalone `commit-all-the-things@leclause` or `rebase-latest-default@leclause` plugins, uninstall them first so the slash commands resolve to the bundled versions instead of the retired standalone copies:
+
+```bash
+/plugin uninstall commit-all-the-things@leclause
+/plugin uninstall rebase-latest-default@leclause
+```
+
+After the migration the commands live at `/gitgit:commit-all-the-things` and `/gitgit:rebase-latest-default`.
+
 ## Behavior
 
 - Reads project + user CLAUDE.md to pick up commit-message style, branch policy, and any opt-outs.
