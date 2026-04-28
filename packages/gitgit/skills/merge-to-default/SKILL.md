@@ -63,10 +63,15 @@ Na de invocatie: `git status --porcelain` is leeg, anders stop met de melding `c
 
 ## Stap 3: First-pass merge
 
+Bewaar eerst de tip van de source-branch, dan checkout en merge:
+
 ```bash
+PRE_MERGE_TIP=$(git rev-parse "$CURRENT")
 git checkout $DEFAULT
 git merge --no-ff --no-edit $CURRENT
 ```
+
+`PRE_MERGE_TIP` wordt later in Stap 5 gebruikt om te bevestigen dat de merge daadwerkelijk de source-tip integreerde, los van wat een ander proces (bijv. een andere shell) intussen met de `$CURRENT` ref doet.
 
 `--no-ff` dwingt een merge commit af (twee parents), zelfs als de default branch precies achter de feature-branch zit. Zo krijgt de geschiedenis dezelfde vorm als wat GitHub's "Create a merge commit" knop produceert; de iteratie op de feature-branch blijft zichtbaar in `git log --graph`. Een fast-forward of squash merge zou diezelfde iteratie afvlakken, daarom is `--no-ff` hier niet onderhandelbaar. Wie liever een fast-forward of een rebase-merge wil, gebruikt `git merge --ff-only` of `git rebase` direct vanaf de command line; deze skill is specifiek voor de github-merge-button vorm.
 
@@ -86,9 +91,10 @@ git checkout $CURRENT
 
 Invoke `gitgit:rebase-latest-default` via de Skill tool. Die sub-skill rebased `$CURRENT` op de freshest `$DEFAULT` (lokaal of `origin/$DEFAULT`, whichever is ahead) en lost trivial conflicts (whitespace, identieke edits, lockfile regenerations) automatisch op. Voor genuine ambiguïteiten stopt rebase-latest-default en surface die naar de user.
 
-Na een geslaagde rebase: keer terug naar Stap 3 voor de retry.
+Na een geslaagde rebase: capture de nieuwe source-tip vóór de retry-checkout, dan terug naar Stap 3 voor de retry.
 
 ```bash
+PRE_MERGE_TIP=$(git rev-parse "$CURRENT")
 git checkout $DEFAULT
 git merge --no-ff --no-edit $CURRENT
 ```
@@ -107,19 +113,18 @@ Nu zou de merge schoon moeten verlopen. Faalt-ie nog steeds, surface de conflict
 
 ## Stap 5: Lokale source-branch opruimen
 
-Na een geconfirmde merge ruimt de skill de lokale `$CURRENT` branch op. Geconfirmd betekent: HEAD zit op `$DEFAULT`, HEAD heeft twee parents, en de tweede parent komt overeen met de huidige tip van de `$CURRENT` ref. De skill checkt dat met:
+Na een geconfirmde merge ruimt de skill de lokale `$CURRENT` branch op. Geconfirmd betekent: HEAD zit op `$DEFAULT`, HEAD heeft twee parents, en de tweede parent komt overeen met `PRE_MERGE_TIP` (uit Stap 3) of, in het rebase-pad, met de tip die `$CURRENT` had vlak vóór de retry-merge in Stap 4. De skill checkt dat met:
 
 ```bash
 SECOND_PARENT=$(git rev-parse HEAD^2 2>/dev/null || true)
-SOURCE_TIP=$(git rev-parse "$CURRENT")
-[ "$SECOND_PARENT" = "$SOURCE_TIP" ] || stop_with "merge confirmation failed; HEAD^2 ($SECOND_PARENT) does not match $CURRENT tip ($SOURCE_TIP)"
+[ "$SECOND_PARENT" = "$PRE_MERGE_TIP" ] || stop_with "merge confirmation failed; HEAD^2 ($SECOND_PARENT) does not match captured pre-merge source tip ($PRE_MERGE_TIP)"
 ```
 
-(Een `--no-ff` merge op `$DEFAULT` raakt de `$CURRENT` ref niet aan: vóór en na de merge wijst `$CURRENT` naar dezelfde commit. In het rebase-pad rebased Stap 4 `$CURRENT` op `$DEFAULT` en de retry-merge gebruikt die nieuwe tip; `git rev-parse $CURRENT` na de retry-merge geeft die post-rebase tip die ook HEAD^2 op `$DEFAULT` is.)
+In het rebase-pad herhaalt Stap 4 de `PRE_MERGE_TIP=$(git rev-parse "$CURRENT")` capture na de rebase en vóór de retry-checkout, zodat de bevestigingscheck op de post-rebase tip vergelijkt. Door `PRE_MERGE_TIP` voor de checkout vast te leggen sluit de skill een race-window: een concurrent commit op `$CURRENT` na de checkout kan de live `git rev-parse "$CURRENT"` doen verschuiven, maar `PRE_MERGE_TIP` blijft staan op de waarde die de merge daadwerkelijk integreerde.
 
 Wanneer dat klopt: probeer de branch te deleten met `git branch -d "$CURRENT"`. Vóór dat command checkt de skill twee dingen:
 
-1. **Worktree safety.** `git worktree list --porcelain` toont één blok per worktree met `branch refs/heads/<naam>`. Als `$CURRENT` in een ander worktree dan de huidige checked out is (compare met `git rev-parse --git-dir` om de eigen worktree te identificeren), skip de delete en surface een TUI-regel: `⚠  Source branch '<CURRENT>' is checked out in worktree <path>; skipping local branch delete.` De merge commit op `$DEFAULT` blijft intact, alleen de lokale ref van `$CURRENT` blijft staan.
+1. **Worktree safety.** `git worktree list --porcelain` toont één blok per worktree met `worktree <path>` en `branch refs/heads/<naam>`. De huidige worktree-root komt uit `git rev-parse --show-toplevel` (NIET `--git-dir`, dat geeft de `.git` directory en matcht nooit met het `worktree` veld). Wanneer een ander blok dan het eigen blok `branch refs/heads/$CURRENT` heeft, skip de delete en surface een TUI-regel: `⚠  Source branch '<CURRENT>' is checked out in worktree <path>; skipping local branch delete.` De merge commit op `$DEFAULT` blijft intact, alleen de lokale ref van `$CURRENT` blijft staan.
 
 2. **Geen `-D` force.** De skill gebruikt `-d` (lowercase), niet `-D`. `-d` faalt op niet-gemergede branches; in deze flow is `$CURRENT` per definitie gemerged in `$DEFAULT` via de merge commit, dus `-d` slaagt. Mocht `-d` toch falen (race-condition met user-input tussen stap 3/4 en stap 5), surface de error en stop zonder forceren.
 
