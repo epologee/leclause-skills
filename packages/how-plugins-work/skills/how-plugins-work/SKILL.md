@@ -144,6 +144,23 @@ Drie trappen, van lichtst naar zwaarst:
 
 **Gotcha 2: terugvallen op remote.** Om van path-based terug naar remote te gaan moet het alias eerst expliciet worden verwijderd (`claude plugin marketplace remove leclause`) en opnieuw toegevoegd via de `owner/repo` form (`claude plugin marketplace add epologee/leclause-skills`). Reken dan in op gotcha 1 en bereid een re-install batch voor van alle plugins die je van de remote-versie wilt hebben.
 
+## marketplace.json `source` moet een echt subpad zijn
+
+Het `plugins[*].source` veld in `marketplace.json` doorloopt twee lagen, en het verschil daartussen kan misleidend zijn (Claude Code 2.1.119, empirisch tegen `epologee/apples`):
+
+- **Schema validation.** `"source": "."` faalt met `Invalid input` bij `claude plugin marketplace add`. `"source": "./"` slaagt en de marketplace landt in `~/.claude/settings.json` onder `extraKnownMarketplaces`. Het schema rejecteert dus de bare dot maar accepteert de slash-variant.
+- **Runtime resolution.** `"./"` overleeft schema-validation maar resolved niet. Symptomen:
+  - `claude plugin marketplace list` toont de marketplace niet.
+  - `claude plugin marketplace update <name>` zegt `Marketplace not found`.
+  - `claude plugin install <plugin>@<marketplace>` faalt met `Plugin "<plugin>" not found in marketplace`.
+  - De settings.json entry blijft achter als orphan; `enabledPlugins` heeft `<plugin>@<marketplace>: true` ondanks dat niets ooit installeerde.
+
+**Conclusie.** `source` moet een echte subdirectory zijn, niet de marketplace-root. Werkende vormen in deze setup: `"./packages/<plugin>"` (leclause, tank), `"./plugins/<plugin>"` (stekker-brains). Single-plugin repo waar de plugin de root claimt: verplaats `.claude-plugin/plugin.json` en `skills/` naar bijvoorbeeld `./packages/<plugin>/` en update `source` overeenkomstig. De marketplace-level `.claude-plugin/marketplace.json` blijft op repo-root.
+
+**Local-vs-remote is geen factor.** De schema-test is alleen tegen een lokale directory uitgevoerd, maar zowel lokale (tank, brains-local) als remote (leclause, stekker-brains) marketplaces in de actieve setup gebruiken al subpaden. De regel is bron-onafhankelijk.
+
+**Diagnostische signaalketen.** Wanneer `claude plugin marketplace add` slaagt maar `claude plugin marketplace list` de marketplace niet toont en install faalt met "Plugin not found in marketplace", is `source` de eerste plek om te verifiëren. Schema-pass impliceert geen runtime-pass.
+
 ## Env-vars uit settings.json lezen
 
 De `env` sectie van `~/.claude/settings.json` exporteert variabelen naar child bash-processes die Claude Code spawnt. Die waarden zijn **niet zichtbaar in Claude's conversation context**. Een skill die gedrag wil conditioneren op een env-var moet de waarde via bash opvragen. Claude "weet" de waarde niet uit zichzelf en gokt.
