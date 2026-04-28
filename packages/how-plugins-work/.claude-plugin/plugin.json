@@ -1,5 +1,5 @@
 {
   "name": "how-plugins-work",
   "description": "Explains how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work in practice. Ships a test-before-push sub-skill that encodes the canonical local-marketplace procedure for testing plugin changes in a fresh session without pushing first.",
-  "version": "1.0.19"
+  "version": "1.0.20"
 }
