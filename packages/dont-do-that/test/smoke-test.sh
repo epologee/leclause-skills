@@ -414,6 +414,7 @@ run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
 heredoc_body_cmd=$(cat <<'INNER_CMD'
 git commit -m "$(cat <<'EOF'
 Clean subject
+
 # ack-rule3
 EOF
 )"
@@ -432,6 +433,99 @@ run "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule1')" 
 expect_deny "rotator: violation + rewrite preserves pending rotation rule 3" \
   "$(pretool_bash 'git commit -m "Use policy on the read path"')" \
   "Rule 3/14"
+
+# --- commit-format ---
+
+# Format guard runs before commit-rule, so a format deny exits without ever
+# touching the rotator state. Most cases below reset_state anyway to keep
+# the rotator out of the picture for any passing case that would otherwise
+# trip its rotation reminder.
+
+reset_state
+expect_deny "format: subject over 72 chars denies" \
+  "$(pretool_bash 'git commit -m "Override the upstream defaults that nudge multi-line commits into a heredoc form."')" \
+  "max 72"
+
+reset_state
+run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
+expect_allow "format: 27-char subject with ack passes" \
+  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule3')"
+
+reset_state
+run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
+expect_allow "format: 60-char aspirational subject still passes (no warn block)" \
+  "$(pretool_bash 'git commit -m "Cap retry budget so the workflow no longer hammers backend" # ack-rule3')"
+
+reset_state
+expect_deny "format: subject over 72 denies even with ack present" \
+  "$(pretool_bash 'git commit -m "Override the upstream defaults that nudge multi-line commits into a heredoc form." # ack-rule3')" \
+  "max 72"
+
+reset_state
+heredoc_clean=$(cat <<'INNER_CMD'
+git commit -m "$(cat <<'EOF'
+Use policy on the read path
+
+The body explains the why in two short sentences.
+Wrap each line at the seventy-two char ceiling.
+
+[doublecheck]
+EOF
+)" # ack-rule3
+INNER_CMD
+)
+heredoc_clean_json=$(jq -cn --arg cmd "$heredoc_clean" \
+  '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$cmd}}')
+run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
+expect_allow "format: heredoc with body and blank separator passes" \
+  "$heredoc_clean_json"
+
+reset_state
+heredoc_long_body=$(cat <<'INNER_CMD'
+git commit -m "$(cat <<'EOF'
+Use policy on the read path
+
+This body line is intentionally written so it goes well past the seventy two char ceiling on purpose.
+EOF
+)" # ack-rule3
+INNER_CMD
+)
+heredoc_long_body_json=$(jq -cn --arg cmd "$heredoc_long_body" \
+  '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$cmd}}')
+expect_deny "format: heredoc body line over 72 denies with line number" \
+  "$heredoc_long_body_json" \
+  "Body line 3"
+
+reset_state
+heredoc_no_blank=$(cat <<'INNER_CMD'
+git commit -m "$(cat <<'EOF'
+Use policy on the read path
+Body line right after subject without a blank line.
+EOF
+)" # ack-rule3
+INNER_CMD
+)
+heredoc_no_blank_json=$(jq -cn --arg cmd "$heredoc_no_blank" \
+  '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$cmd}}')
+expect_deny "format: heredoc without blank separator denies" \
+  "$heredoc_no_blank_json" \
+  "blank line"
+
+reset_state
+heredoc_long_subject=$(cat <<'INNER_CMD'
+git commit -m "$(cat <<'EOF'
+This subject is deliberately stretched far past the seventy two char ceiling.
+
+Body.
+EOF
+)"
+INNER_CMD
+)
+heredoc_long_subject_json=$(jq -cn --arg cmd "$heredoc_long_subject" \
+  '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$cmd}}')
+expect_deny "format: heredoc subject over 72 denies before rotator runs" \
+  "$heredoc_long_subject_json" \
+  "Subject is"
 
 rm -f "$TMP_STATE"
 unset CLAUDE_COMMIT_RULE_STATE_FILE

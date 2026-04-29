@@ -1,6 +1,6 @@
 # dont-do-that
 
-Nine guardrail hooks that push back on common AI reflexes. Each hook either blocks a tool call, blocks the Stop event, or surfaces additional context at the moment a mistake is likely, forcing Claude to course-correct instead of barreling past the issue.
+Ten guardrail hooks that push back on common AI reflexes. Each hook either blocks a tool call, blocks the Stop event, or surfaces additional context at the moment a mistake is likely, forcing Claude to course-correct instead of barreling past the issue.
 
 ## Architecture
 
@@ -19,6 +19,9 @@ Denies `gh api` commands whose body contains deferral language ("follow-up", "wo
 On every `git commit` Bash call, parses the subject from `-m`, `-am`, `--message`, `--message=`, or the first non-empty HEREDOC line, and selects one of fourteen commit-message rules. Rules 1 and 2 fire on activity-word starts (Fix, Improve, Update, Change, Refactor, Add, Extract, Move, Remove, Rename, Drop, Create, Clear) and trigger-as-reason phrasing (Address review/feedback/findings/pride, Apply PR comments). Rules 3 through 14 are served in rotation; the rotation advances only on a passing ack. Pass condition: rewrite the subject if it violated, and add `# ack-rule<N>` as a trailing bash comment to confirm you read the rule. The full fourteen-rule text lives in `_DD_RULES` inside `hooks/guards/commit-rule.sh`.
 
 HEREDOC bodies and quoted strings are stripped before ack detection so an ack token buried inside the commit message itself does not count. Editor-mode commits (no inline subject) are denied with an instruction to pass the subject via `-m` so rules 1 and 2 can be checked. State lives at `$HOME/.claude/var/commit-rule-state`, three lines (pending violation index, pending rotation index, rotation position), written atomically. Path overridable via `CLAUDE_COMMIT_RULE_STATE_FILE` for tests.
+
+**`commit-format`** in `hooks/guards/commit-format.sh`
+Hard ceiling on commit-message format, enforced before `commit-rule` runs. Every line of the message (subject and body) must be 72 chars or fewer; multi-line commits must have a blank separator line between subject and body. The 50-char subject target is aspirational and emits nothing in the 51-72 range. Heredoc bodies are extracted first because Claude Code's defaults nudge multi-line commits into `git commit -m "$(cat <<'EOF' ... EOF)"`; without heredoc-first parsing, a naive `-m` extractor sees the command-substitution literal and misses the real message. Multiple `-m` flags fall back to the first literal only.
 
 ### PostToolUse (Edit, Write, Bash)
 

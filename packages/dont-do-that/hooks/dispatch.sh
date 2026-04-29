@@ -14,8 +14,10 @@ case "$EVENT" in
     TOOL=$(dd_tool_name "$INPUT")
     [ "$TOOL" = "Bash" ] || exit 0
     source "$DIR/guards/followup.sh"
+    source "$DIR/guards/commit-format.sh"
     source "$DIR/guards/commit-rule.sh"
     guard_followup "$INPUT"
+    guard_commit_format "$INPUT"
     guard_commit_rule "$INPUT"
     ;;
 
