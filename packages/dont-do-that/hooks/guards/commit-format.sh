@@ -55,7 +55,7 @@ guard_commit_format() {
 
   # Iterate. line_num is 1-indexed for human-readable error messages.
   local line_num=0
-  local saw_body=0
+  local subject_len=0
   while IFS= read -r line || [[ -n "$line" ]]; do
     line_num=$((line_num + 1))
 
@@ -73,6 +73,13 @@ guard_commit_format() {
       dd_emit_deny commit-format "Multi-line commit needs a blank line between subject and body."
     fi
 
-    [[ $line_num -ge 2 ]] && saw_body=1
+    [[ $line_num -eq 1 ]] && subject_len=${#line}
   done <<< "$message"
+
+  # Aspirational warning: 51-72 chars. Non-blocking additionalContext so
+  # Claude sees the nudge without losing the commit, and trends shorter on
+  # subsequent commits in the same session.
+  if [[ $subject_len -gt 50 && $subject_len -le 72 ]]; then
+    dd_emit_pre_context commit-format "Subject is ${subject_len} chars. Target is ≤50; 51-72 is allowed but aim shorter on the next commit."
+  fi
 }

@@ -132,3 +132,13 @@ dd_emit_context() {
   jq -cn --arg c "[dont-do-that/${mnemonic}] ${msg}" \
     '{hookSpecificOutput: {hookEventName: "PostToolUse", additionalContext: $c}}'
 }
+
+# dd_emit_pre_context <mnemonic> <message>
+# PreToolUse hook: print additionalContext JSON (does not block, surfaces text
+# to Claude in the next turn so it can adjust subsequent calls).
+dd_emit_pre_context() {
+  local mnemonic="$1"
+  local msg="$2"
+  jq -cn --arg c "[dont-do-that/${mnemonic}] ${msg}" \
+    '{hookSpecificOutput: {hookEventName: "PreToolUse", additionalContext: $c}}'
+}

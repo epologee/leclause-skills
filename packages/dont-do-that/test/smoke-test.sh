@@ -453,7 +453,28 @@ expect_allow "format: 27-char subject with ack passes" \
 
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
-expect_allow "format: 60-char aspirational subject still passes (no warn block)" \
+expect_allow "format: 58-char aspirational subject passes without block" \
+  "$(pretool_bash 'git commit -m "Cap retry budget so the workflow no longer hammers backend" # ack-rule3')"
+
+# 58-char subject: format emits non-blocking additionalContext warning.
+# We bypass commit-rule by primaring its state so the rotator passes too.
+reset_state
+expect_warning_subject() {
+  local description="$1" payload="$2"
+  local out
+  out=$(echo "$payload" | bash "$DISPATCH" 2>/dev/null)
+  if echo "$out" | grep -q '"additionalContext"' \
+     && echo "$out" | grep -q '\[dont-do-that/commit-format\]' \
+     && echo "$out" | grep -q '"hookEventName":"PreToolUse"'; then
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL [PreToolUse additionalContext expected]: ${description}"
+    echo "  output: ${out:-<empty>}"
+    FAIL=$((FAIL + 1))
+  fi
+}
+run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
+expect_warning_subject "format: 58-char subject emits aspirational warning" \
   "$(pretool_bash 'git commit -m "Cap retry budget so the workflow no longer hammers backend" # ack-rule3')"
 
 reset_state
