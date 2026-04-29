@@ -52,6 +52,15 @@ End a loop on purpose, with a recap.
 
    **Next actions for you.** A bulleted list of concrete operator moves, each a one-liner. These are **only** external-action gates the rover is structurally forbidden from taking: push, merge, deploy, notify a stakeholder outside the rover's channels. Never a decision, never a review question, never a scope check. The rover decided everything it was going to decide inside the mission; there are no pending questions waiting for operator judgement. **Never** "try it out", "verify it works", "test the feature", "check that the UI looks right", "see if it does what you wanted". The rover has already done verification during INSPECT; asking the operator to redo that work duplicates effort and contradicts the Done-criteria evidence.
 
+   **Verify each gate is actually applicable before listing it.** A gate that does not apply to this repo is noise, not guidance, and the operator reads the next-actions list as if every line is real. Run the relevant probe before each candidate bullet:
+
+   - **`git push -u origin <branch>`**: only list if `git remote -v` shows at least one remote. No remote, no push line. A repo cloned locally without a publish target is a local-only repo by intent. The probe also rules in or out the implicit "create a remote first": that is a setup decision the operator already made when they did not configure one, so the rover does not propose it.
+   - **`ansible-playbook ... -l <host>`**: only list if the role exists in this repo (`ls ansible/playbook-*.yml` matches the relevant playbook) AND the inventory has the targeted host (`grep -l <host> ansible/inventory.yml || ansible-inventory --list 2>/dev/null`). Otherwise the deploy bullet refers to a playbook that is not actually present.
+   - **`gh pr create`** or merge: only list if `gh repo view` succeeds AND there is a remote to push the branch to first.
+   - **External notifications, deploys, or any other gate** named in the mission: only list when the underlying tooling is reachable (binary on PATH, credentials present in the operator's known stores, target host alive). When the tooling is missing, the next action is operator-side setup, not the gate itself.
+
+   When a gate would have been listed but the probe ruled it out, write a single sentence in the conclusion paragraph naming what is missing ("no `origin` remote configured; the branch lives only locally"). That sentence replaces the bullet; it does not get smuggled back in as a different bullet.
+
    Close the communiqué with the loop file path and the phase at stop, on its own line, so the operator can find the full log if they want it.
 6. If `notify_on_done` is set in the loop file, check installation via the `has_skill` helper. If installed, invoke it with the recap. If missing, log a loud line: `[HH:MM] Stop: notify_on_done=<X> is not installed, skipping notification.`
 
