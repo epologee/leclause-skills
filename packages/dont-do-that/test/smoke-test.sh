@@ -330,20 +330,20 @@ expect_allow "rotator: trigger rewrite with ack-rule2 passes" \
   "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule2')"
 
 reset_state
-expect_deny "rotator: clean subject fresh state surfaces rule 3" \
+expect_deny "rotator: clean subject fresh state surfaces rule 4" \
   "$(pretool_bash 'git commit -m "Use policy on the read path"')" \
-  "Rule 3/14"
+  "Rule 4/14"
 
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
-expect_allow "rotator: clean subject with ack-rule3 passes" \
-  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule3')"
+expect_allow "rotator: clean subject with ack-rule4 passes" \
+  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule4')"
 
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
 expect_deny "rotator: wrong ack number still denies pending rule" \
   "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule9')" \
-  "Rule 3/14"
+  "Rule 4/14"
 
 reset_state
 expect_deny "rotator: -am extracts subject for violation" \
@@ -358,22 +358,22 @@ expect_deny "rotator: --message= extracts subject for violation" \
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
 expect_deny "rotator: ack inside quoted subject is stripped, still denies" \
-  "$(pretool_bash 'git commit -m "subject with # ack-rule3 inside"')" \
-  "Rule 3/14"
+  "$(pretool_bash 'git commit -m "subject with # ack-rule4 inside"')" \
+  "Rule 4/14"
 
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
-run "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule3')" 0
-expect_deny "rotator: rotation advances after pass to rule 4" \
+run "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule4')" 0
+expect_deny "rotator: rotation advances after pass to rule 5" \
   "$(pretool_bash 'git commit -m "Require session context on create"')" \
-  "Rule 4/14"
+  "Rule 5/14"
 
 reset_state
 run "$(pretool_bash 'git commit -m "Fix typo"')"
 run "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule1')" 0
-expect_deny "rotator: violation pass does not advance rotation, next clean still hits rule 3" \
+expect_deny "rotator: violation pass does not advance rotation, next clean still hits rule 4" \
   "$(pretool_bash 'git commit -m "Require session context on create"')" \
-  "Rule 3/14"
+  "Rule 4/14"
 
 reset_state
 expect_deny "rotator: subject is echoed in deny message" \
@@ -387,27 +387,27 @@ expect_deny "rotator: editor-mode git commit without subject denies with instruc
 
 reset_state
 printf 'garbage\nmore garbage\nnot a number\n' > "$TMP_STATE"
-expect_deny "rotator: corrupt state file resets to defaults and denies with rotation rule 3" \
+expect_deny "rotator: corrupt state file resets to defaults and denies with rotation rule 4" \
   "$(pretool_bash 'git commit -m "Use policy on the read path"')" \
-  "Rule 3/14"
+  "Rule 4/14"
 
 reset_state
 printf '99\n99\n99\n' > "$TMP_STATE"
-expect_deny "rotator: out-of-range state indices are clamped to rotation rule 3" \
+expect_deny "rotator: out-of-range state indices are clamped to rotation rule 4" \
   "$(pretool_bash 'git commit -m "Use policy on the read path"')" \
-  "Rule 3/14"
+  "Rule 4/14"
 
 reset_state
 printf '2\n0\n-5\n' > "$TMP_STATE"
 expect_deny "rotator: pending_violation outside {-1,0,1} is clamped to -1" \
   "$(pretool_bash 'git commit -m "Use policy on the read path"')" \
-  "Rule 3/14"
+  "Rule 4/14"
 
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
 expect_deny "rotator: ack without leading whitespace does not count as ack" \
-  "$(pretool_bash 'git commit -m "Use policy"bogus#ack-rule3')" \
-  "Rule 3/14"
+  "$(pretool_bash 'git commit -m "Use policy"bogus#ack-rule4')" \
+  "Rule 4/14"
 
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
@@ -415,7 +415,7 @@ heredoc_body_cmd=$(cat <<'INNER_CMD'
 git commit -m "$(cat <<'EOF'
 Clean subject
 
-# ack-rule3
+# ack-rule4
 EOF
 )"
 INNER_CMD
@@ -424,15 +424,15 @@ heredoc_body_json=$(jq -cn --arg cmd "$heredoc_body_cmd" \
   '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$cmd}}')
 expect_deny "rotator: ack inside heredoc body is stripped, does not count as ack" \
   "$heredoc_body_json" \
-  "Rule 3/14"
+  "Rule 4/14"
 
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
 run "$(pretool_bash 'git commit -m "Fix typo"')"
 run "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule1')" 0
-expect_deny "rotator: violation + rewrite preserves pending rotation rule 3" \
+expect_deny "rotator: violation + rewrite preserves pending rotation rule 4" \
   "$(pretool_bash 'git commit -m "Use policy on the read path"')" \
-  "Rule 3/14"
+  "Rule 4/14"
 
 # --- commit-format ---
 
@@ -449,12 +449,12 @@ expect_deny "format: subject over 72 chars denies" \
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
 expect_allow "format: 27-char subject with ack passes" \
-  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule3')"
+  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule4')"
 
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
 expect_allow "format: 58-char aspirational subject passes without block" \
-  "$(pretool_bash 'git commit -m "Cap retry budget so the workflow no longer hammers backend" # ack-rule3')"
+  "$(pretool_bash 'git commit -m "Cap retry budget so the workflow no longer hammers backend" # ack-rule4')"
 
 # 58-char subject: format emits non-blocking additionalContext warning.
 # We bypass commit-rule by primaring its state so the rotator passes too.
@@ -475,11 +475,11 @@ expect_warning_subject() {
 }
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
 expect_warning_subject "format: 58-char subject emits aspirational warning" \
-  "$(pretool_bash 'git commit -m "Cap retry budget so the workflow no longer hammers backend" # ack-rule3')"
+  "$(pretool_bash 'git commit -m "Cap retry budget so the workflow no longer hammers backend" # ack-rule4')"
 
 reset_state
 expect_deny "format: subject over 72 denies even with ack present" \
-  "$(pretool_bash 'git commit -m "Override the upstream defaults that nudge multi-line commits into a heredoc form." # ack-rule3')" \
+  "$(pretool_bash 'git commit -m "Override the upstream defaults that nudge multi-line commits into a heredoc form." # ack-rule4')" \
   "max 72"
 
 reset_state
@@ -492,7 +492,7 @@ Wrap each line at the seventy-two char ceiling.
 
 [doublecheck]
 EOF
-)" # ack-rule3
+)" # ack-rule4
 INNER_CMD
 )
 heredoc_clean_json=$(jq -cn --arg cmd "$heredoc_clean" \
@@ -508,7 +508,7 @@ Use policy on the read path
 
 This body line is intentionally written so it goes well past the seventy two char ceiling on purpose.
 EOF
-)" # ack-rule3
+)" # ack-rule4
 INNER_CMD
 )
 heredoc_long_body_json=$(jq -cn --arg cmd "$heredoc_long_body" \
@@ -523,7 +523,7 @@ git commit -m "$(cat <<'EOF'
 Use policy on the read path
 Body line right after subject without a blank line.
 EOF
-)" # ack-rule3
+)" # ack-rule4
 INNER_CMD
 )
 heredoc_no_blank_json=$(jq -cn --arg cmd "$heredoc_no_blank" \

@@ -27,7 +27,9 @@ _DD_RULES=(
   "Nooit squash merge. Bewaar commit history zodat reviewers de iteratie zien."
   "Amend is verboden tenzij het onpushed secrets/PII strippen is. Gebruik een nieuwe commit voor follow-up."
 )
-_DD_ROTATION_SLOTS=(2 3 4 5 6 7 8 9 10 11 12 13)
+# Rule 3 (idx 2) is owned by commit-format structurally and stays out of
+# the rotation so it does not double up as an ack-bypassable reminder.
+_DD_ROTATION_SLOTS=(3 4 5 6 7 8 9 10 11 12 13)
 
 _dd_read_state_line() {
   local file="$1" line_no="$2" default="$3"
