@@ -18,6 +18,10 @@ case "$EVENT" in
     # Slice 5: git-dash-c.sh runs first. It is a hard block on `git -C ...`
     # and there is no point in parsing the command further once that fires.
     source "$DIR/guards/git-dash-c.sh"
+    # Slice 7: push-wip-gate fires on `git push`, alongside git-dash-c. Both
+    # are git-command-specific guards that gate the call before any commit-
+    # message logic runs.
+    source "$DIR/guards/push-wip-gate.sh"
     source "$DIR/guards/commit-format.sh"
     source "$DIR/guards/commit-subject.sh"
     # Slice 4 promotes commit-body to block-mode (universal, all repos)
@@ -25,11 +29,11 @@ case "$EVENT" in
     # Slice 5 adds commit-trailers.sh (anthropic Co-Authored-By gate)
     source "$DIR/guards/commit-trailers.sh"
     guard_git_dash_c "$INPUT"
+    guard_push_wip_gate "$INPUT"
     guard_commit_format "$INPUT"
     guard_commit_subject "$INPUT"
     guard_commit_body "$INPUT"
     guard_commit_trailers "$INPUT"
-    # Slice 7 adds push-wip-gate.sh
     ;;
 esac
 
