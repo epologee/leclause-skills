@@ -61,9 +61,9 @@ dus de twee-laagse architectuur is definitief, niet voorlopig.
 |---------|--------|---------------|
 | `Slice` | opt-out token of vrije tekst (zie hieronder) | altijd |
 | `Tests` | comma-gescheiden lijst spec-paden | als `Slice` geen opt-out token is |
-| `Red-then-green` | `yes` of `n/a (reden >= 10 chars)` | als `Slice` niet `docs-only`, `config-only`, of `chore-deps` is |
+| `Red-then-green` | `yes` of `n/a (reden >= 10 chars)` | als `Slice` niet `docs-only`, `config-only`, `migration-only`, `spec-only`, of `chore-deps` is |
 
-**`Slice`-regels:** de waarde is ofwel een van de zeven opt-out tokens (zie
+**`Slice`-regels:** de waarde is ofwel een van de acht opt-out tokens (zie
 volgende sectie), ofwel vrije tekst die beschrijft welke lagen de commit raakt
 (bijv. `handler + service + spec`, `frontend + backend + migration`).
 
@@ -90,21 +90,24 @@ binnen de trailer-block maakt niet uit.
 
 ## Opt-out enum
 
-Als `Slice` een van deze zeven tokens is, gelden versoepelde regels:
+Als `Slice` een van deze acht tokens is, gelden versoepelde regels:
 
 | Token | Wanneer te gebruiken |
 |-------|----------------------|
 | `docs-only` | Alleen wijzigingen in documentatie (`.md`, `.txt`, `.rst`, README) |
 | `config-only` | Alleen wijzigingen in configuratiebestanden zonder gedragswijziging |
 | `migration-only` | Alleen database-migraties zonder bijbehorende handler/spec wijziging |
+| `spec-only` | Commit bevat uitsluitend spec/test-bestanden (de diff is zelf het rode bewijs) |
 | `chore-deps` | Dependency-bumps, lockfile-updates, build-systeem tweaks |
 | `revert` | Volledige revert van een eerdere commit |
 | `merge` | Merge-commits (gewoonlijk automatisch aangemaakt) |
-| `wip` | Work-in-progress commit op een feature-branch; **blokkeerd bij push** |
+| `wip` | Work-in-progress commit op een feature-branch; **blokkerd bij push** |
 
-Bij `docs-only`, `config-only`, en `chore-deps` vervalt ook de
-`Red-then-green`-verplichting (want geen uitvoerbare gedragswijziging).
-Bij alle zeven vervalt de `Tests`-verplichting.
+Bij `docs-only`, `config-only`, `migration-only`, `spec-only`, en `chore-deps`
+vervalt ook de `Red-then-green`-verplichting. Rationale: migraties hebben geen
+betekenisvolle rood-dan-groen sequentie; spec-only commits zijn zelf de rode
+fase (de spec bestond eerder dan de implementatie). Bij alle acht vervalt de
+`Tests`-verplichting.
 
 `wip`-commits worden geaccepteerd op commit-tijd maar geblokkeerd door de
 pre-push gate. Je kunt niet per ongeluk een wip-commit naar remote sturen.
@@ -155,7 +158,33 @@ Slice: chore-deps
 Red-then-green: n/a (no behavior change)
 ```
 
-### Voorbeeld 4: wip commit (en de pre-push gate die hem tegenhoudt)
+### Voorbeeld 4: migration-only opt-out
+
+```
+Add NOT NULL constraint to sessions.user_id
+
+The column was introduced in a prior migration without the constraint.
+A backfill confirmed no null rows exist in production before this runs.
+
+Slice: migration-only
+```
+
+(Geen `Tests` of `Red-then-green` vereist bij `migration-only`.)
+
+### Voorbeeld 5: spec-only opt-out
+
+```
+Add failing specs for enrollment race-condition fix
+
+Tests written first to drive the implementation. The handler does not
+exist yet; these specs are the red phase.
+
+Slice: spec-only
+```
+
+(Geen `Tests` of `Red-then-green` vereist bij `spec-only`.)
+
+### Voorbeeld 6: wip commit (en de pre-push gate die hem tegenhoudt)
 
 ```
 Sketch enrollment race-condition fix
@@ -197,6 +226,12 @@ guard onderschept dit patroon niet (de flag is in de command-string, niet een
 aparte hook). De post-commit hook logt `--no-verify`-gebruik naar
 `~/.claude/var/gitgit-no-verify.log` voor achteraf auditing.
 
+**Race-window beperking:** de detector gebruikt een trace-venster van 30
+seconden. Gelijktijdige commits in een andere shell kunnen de trace verversen
+en een bypass in deze shell maskeren. Lange test-runs (>30s tussen het starten
+van commit-msg en het vuren van post-commit) kunnen false positives opleveren.
+Het audit-log is best-effort, niet autoritatief.
+
 ### `GITGIT_ALLOW_AI_COAUTHOR=1`
 
 De `commit-trailers.sh` guard blokkeert `Co-Authored-By:` trailers met een
@@ -210,12 +245,25 @@ naar `~/.claude/var/gitgit-wip-pushes.log`. Gebruik de magic-comment-vorm
 als je de bypass in de command zelf wilt documenteren zonder een omgevingsvariabele
 te exporteren.
 
+**Asymmetrie:** het `# allow-wip-push` magic comment werkt alleen wanneer
+Claude de push uitvoert (de PreToolUse:Bash guard leest de bash-commandstring).
+Voor pushes die je zelf in een terminal uitvoert werkt alleen
+`GITGIT_ALLOW_WIP_PUSH=1`; de git-native pre-push hook leest de
+commandstring niet.
+
 ### `GITGIT_TRIVIAL_OK=1`
 
 Wordt automatisch gezet door de PreToolUse:Bash guard als de staged diff
 maximaal 1 bestand en maximaal 5 inserties telt. Kan ook handmatig
 gexporteerd worden om body-validatie voor een specifiek triviaal commit
 over te slaan. Niet persistent; geldt alleen voor de eerstvolgende commit.
+
+**Beperking:** handmatige export van `GITGIT_TRIVIAL_OK=1` geldt alleen voor de
+PreToolUse:Bash laag. De git-native commit-msg hook leidt de trivial-flag
+opnieuw af uit de staged diff bij elke run; een extern geexporteerde waarde
+bypascht die hook niet. Gebruik voor triviale-maar-grotere commits op de
+git-native laag het `# vsd-skip: <reden>` magic comment in plaats van de
+environment variable.
 
 ### `GITGIT_TEST_CACHE_REQUIRED=1`
 
@@ -323,7 +371,13 @@ naar `gitgit/hooks/guards/` (slice 2). De user-level git hooks
 `block-git-dash-c.sh`) zijn geabsorbeerd in `gitgit/hooks/guards/` (slice 5).
 `~/.claude/hooks/` bevat geen git-rakende hooks meer na de migratie.
 
-Slices 1 tot en met 10 zijn cumulatief geimplementeerd op branch
-`gitgit-commit-body-hooks`. De test-suite bevat 207 BATS-cases en een
-22-case smoke-suite. Geen halve afwerkingen; het eindontwerp uit het plan is
-volledig gerealiseerd.
+De audit-script zit in de plugin onder `bin/audit-no-body-commits`. Gebruik het
+als volgt om het altijd tegen de actieve plugin-versie te draaien:
+
+```bash
+GITGIT=$(jq -r '.plugins["gitgit@leclause"][0].installPath' \
+  ~/.claude/plugins/installed_plugins.json)
+python3 "$GITGIT/bin/audit-no-body-commits"
+python3 "$GITGIT/bin/audit-no-body-commits" --branch main --since 2026-04-01
+python3 "$GITGIT/bin/audit-no-body-commits" --exclude-trivial
+```

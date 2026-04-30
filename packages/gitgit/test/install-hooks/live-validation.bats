@@ -95,7 +95,8 @@ BODY
 
   local log="$HOME/.claude/var/gitgit-no-verify.log"
   [ -f "$log" ]
-  grep -q "|main|" "$log"
+  # Format is ts|sha|branch (3 fields, no email column since Fix 8).
+  grep -qE "\|main$" "$log"
 }
 
 @test "post-commit does NOT log when commit-msg ran normally" {

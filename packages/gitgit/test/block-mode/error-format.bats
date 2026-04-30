@@ -165,3 +165,33 @@ commit_with_trailers_cmd() {
   [[ "$output" == *"docs-only"* ]]
   [[ "$output" == *"revert"* ]]
 }
+
+# ---------------------------------------------------------------------------
+# Fix 1: stderr capture - violation code must appear in deny output
+# ---------------------------------------------------------------------------
+
+@test "deny output contains the violation code from validate_body stderr" {
+  # This test confirms Fix 1: validate_body writes diagnostics to stderr.
+  # The old redirect (2>&1 >/dev/null) swallowed stderr; the fix (2>&1)
+  # merges it into stdout so the denial message carries the violation code.
+  export GIT_SHIM_SHORTSTAT=" 3 files changed, 25 insertions(+)"
+  export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/session.rb\napp/services/session_service.rb\nspec/models/session_spec.rb')"
+  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Slice: handler + spec\nRed-then-green: yes')"
+
+  local cmd
+  cmd=$(commit_with_trailers_cmd \
+    "Session boundary model for meter events" \
+    "$(printf 'Slice: handler + spec\nRed-then-green: yes')")
+
+  run_dispatch "$cmd"
+
+  [ "$status" -eq 2 ]
+  # The violation code "missing-tests" must be present in the deny message,
+  # not just in a synthesized example. This only works if stderr is captured.
+  [[ "$output" == *"missing-tests"* ]]
+  # The code must appear before the example block (i.e. it comes from the
+  # violation_output, not coincidentally from the synthesized example).
+  local first_occurrence
+  first_occurrence=$(printf '%s' "$output" | grep -n 'missing-tests' | head -1 | cut -d: -f1)
+  [[ "$first_occurrence" -le 3 ]]
+}

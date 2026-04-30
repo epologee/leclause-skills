@@ -155,7 +155,10 @@ Five escape-hatches, each logged for later auditing:
   `Co-Authored-By:` trailer
 - `GITGIT_ALLOW_WIP_PUSH=1` or the magic-comment `# allow-wip-push` to
   push a range that contains `Slice: wip` commits (logged to
-  `~/.claude/var/gitgit-wip-pushes.log`)
+  `~/.claude/var/gitgit-wip-pushes.log`). Note: `# allow-wip-push` only
+  works when Claude issues the push (the PreToolUse:Bash guard reads the
+  bash command string). For terminal-issued `git push`, only
+  `GITGIT_ALLOW_WIP_PUSH=1` works.
 - `GITGIT_TRIVIAL_OK=1` to skip body-validation for a single trivial commit
   (set automatically by the PreToolUse guard for diffs of <= 1 file and
   <= 5 insertions)
@@ -200,12 +203,16 @@ chain end-to-end.
 
 ## Audit
 
-After a mission run, verify that no body-less commits slipped through:
+After a mission run, verify that no body-less commits slipped through.
+The script ships inside the plugin at `bin/audit-no-body-commits`; resolve
+its path from the active install so it survives plugin updates:
 
 ```bash
-bin/audit-no-body-commits
-bin/audit-no-body-commits --branch main --since 2026-04-01
-bin/audit-no-body-commits --exclude-trivial
+GITGIT=$(jq -r '.plugins["gitgit@leclause"][0].installPath' \
+  ~/.claude/plugins/installed_plugins.json)
+python3 "$GITGIT/bin/audit-no-body-commits"
+python3 "$GITGIT/bin/audit-no-body-commits" --branch main --since 2026-04-01
+python3 "$GITGIT/bin/audit-no-body-commits" --exclude-trivial
 ```
 
 Lists every commit on the branch with a single-line message (or below the

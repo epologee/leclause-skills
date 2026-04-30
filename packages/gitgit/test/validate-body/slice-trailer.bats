@@ -102,8 +102,8 @@ MSG
   [ "$status" -eq 0 ]
 }
 
-@test "Slice: migration-only exempts Tests but still requires Red-then-green" {
-  # migration-only is in the opt-out set (Tests exempt) but NOT in RTG-exempt.
+@test "Slice: migration-only is accepted without Tests and RTG" {
+  # Fix 2: migration-only is now also RTG-exempt.
   use_trailers "Slice: migration-only"
   local body
   body="$(cat <<'MSG'
@@ -119,8 +119,27 @@ MSG
   file=$(write_fixture "migration-only.txt" "$body")
 
   run invoke_validator "$file"
-  [ "$status" -eq 1 ]
-  [[ "$output" == *"missing-red-then-green"* ]]
+  [ "$status" -eq 0 ]
+}
+
+@test "Slice: spec-only is accepted without Tests and RTG" {
+  # Fix 2: spec-only is a new opt-out token; both Tests and RTG are exempt.
+  use_trailers "Slice: spec-only"
+  local body
+  body="$(cat <<'MSG'
+Add failing specs for enrollment race-condition fix
+
+Tests written first to drive the implementation. The handler does not
+exist yet; these specs are the red phase of the TDD cycle.
+
+Slice: spec-only
+MSG
+)"
+  local file
+  file=$(write_fixture "spec-only.txt" "$body")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
 }
 
 @test "Slice: chore-deps is accepted without Tests and RTG" {
@@ -158,6 +177,77 @@ MSG
 )"
   local file
   file=$(write_fixture "wip.txt" "$body")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+# ---------------------------------------------------------------------------
+# Fix 3: free-text Slice minimum length (>= 10 chars)
+# ---------------------------------------------------------------------------
+
+@test "free-text Slice shorter than 10 chars fails with slice-too-short" {
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: api"$'\n'"Red-then-green: yes"
+  local body
+  body="$(cat <<'MSG'
+Expose session boundary on transaction events
+
+When StartTransaction or StopTransaction messages arrive with a
+meter reading that fails domain validation, we previously rejected
+the entire event.
+
+Tests: spec/services/session_spec.rb
+Slice: api
+Red-then-green: yes
+MSG
+)"
+  local file
+  file=$(write_fixture "short-slice.txt" "$body")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"slice-too-short"* ]]
+}
+
+@test "free-text Slice exactly 10 chars passes" {
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: api + spec"$'\n'"Red-then-green: yes"
+  local body
+  body="$(cat <<'MSG'
+Expose session boundary on transaction events
+
+When StartTransaction or StopTransaction messages arrive with a
+meter reading that fails domain validation, we previously rejected
+the entire event.
+
+Tests: spec/services/session_spec.rb
+Slice: api + spec
+Red-then-green: yes
+MSG
+)"
+  local file
+  file=$(write_fixture "exact10-slice.txt" "$body")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+@test "opt-out token shorter than 10 chars is still accepted (not subject to length rule)" {
+  use_trailers "Slice: wip"$'\n'"Red-then-green: n/a (wip, continuing next commit)"
+  local body
+  body="$(cat <<'MSG'
+Wire session boundary to analytics pipeline (WIP)
+
+First pass connecting the event bus to the analytics ingestion layer.
+This commit intentionally skips the adapter layer; next commit adds it.
+
+Slice: wip
+Red-then-green: n/a (wip, continuing next commit)
+MSG
+)"
+  local file
+  file=$(write_fixture "wip-short-ok.txt" "$body")
 
   run invoke_validator "$file"
   [ "$status" -eq 0 ]

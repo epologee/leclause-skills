@@ -66,17 +66,14 @@ guard_commit_subject() {
   command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
   [[ ! "$command" =~ git[[:space:]]+commit ]] && return 0
 
-  # Subject extraction: -m / -am / --message / --message=, first HEREDOC line.
+  # Subject extraction: delegate to dd_extract_commit_message (shared parser),
+  # then take the first line as the subject. This deduplicates the heredoc-first
+  # / -m-fallback logic that commit-format.sh and commit-body.sh also use.
+  local full_message
+  full_message=$(dd_extract_commit_message "$command")
   local subject=""
-  local dashm
-  dashm=$(echo "$command" | grep -oE -- $'(-[a-zA-Z]*m|--message)[[:space:]=]+("[^"]*"|\x27[^\x27]*\x27)' | head -1 || true)
-  if [[ -n "$dashm" ]]; then
-    subject=$(echo "$dashm" | sed -E $'s/^(-[a-zA-Z]*m|--message)[[:space:]=]+["\x27]//;s/["\x27]$//')
-  fi
-  if [[ -z "$subject" ]]; then
-    local heredoc
-    heredoc=$(echo "$command" | awk '/<<-?[[:space:]]*['\''"]?[A-Z]+['\''"]?/{flag=1; next} flag && NF {print; exit}' || true)
-    [[ -n "$heredoc" ]] && subject="$heredoc"
+  if [[ -n "$full_message" ]]; then
+    subject=$(printf '%s' "$full_message" | head -1)
   fi
 
   # Strip HEREDOC body + quoted strings from command for ack-token detection,

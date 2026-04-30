@@ -59,7 +59,7 @@ _run_editor_abort_commit() {
 # Tests
 # ---------------------------------------------------------------------------
 
-@test "live: prepare-commit-msg writes WHY comment into COMMIT_EDITMSG" {
+@test "live: prepare-commit-msg writes WHY placeholder into COMMIT_EDITMSG" {
   _install_and_stage
   _run_editor_abort_commit
 
@@ -68,13 +68,15 @@ _run_editor_abort_commit() {
   grep -q "WHY:" "$editmsg"
 }
 
-@test "live: prepare-commit-msg writes Slice comment into COMMIT_EDITMSG" {
+@test "live: prepare-commit-msg writes real Slice trailer into COMMIT_EDITMSG" {
+  # Fix 9: Slice must be a real line (no # prefix) so the validator sees it.
   _install_and_stage
   _run_editor_abort_commit
 
   editmsg="$TEST_REPO/.git/COMMIT_EDITMSG"
   [ -f "$editmsg" ]
-  grep -q "Slice:" "$editmsg"
+  # Real Slice line (not a comment).
+  grep -qE '^Slice:' "$editmsg"
 }
 
 @test "live: prepare-commit-msg auto-detects staged spec path" {

@@ -59,3 +59,45 @@ MSG
   [ "$status" -eq 1 ]
   [[ "$output" == *"missing-red-then-green"* ]]
 }
+
+# ---------------------------------------------------------------------------
+# Fix 2: migration-only and spec-only RTG exemption
+# ---------------------------------------------------------------------------
+
+@test "Slice: migration-only does not require Red-then-green (Fix 2)" {
+  use_trailers "Slice: migration-only"
+  local body
+  body="$(cat <<'MSG'
+Add NOT NULL constraint to sessions.user_id
+
+The column lacked the constraint in the original migration.
+Backfill confirmed no nulls exist in production before this runs.
+
+Slice: migration-only
+MSG
+)"
+  local file
+  file=$(write_fixture "rtg-migration-only.txt" "$body")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+@test "Slice: spec-only does not require Red-then-green (Fix 2)" {
+  use_trailers "Slice: spec-only"
+  local body
+  body="$(cat <<'MSG'
+Add failing specs for enrollment race-condition handler
+
+Tests written first; the handler implementation follows in the
+next commit. These specs define the expected behaviour contract.
+
+Slice: spec-only
+MSG
+)"
+  local file
+  file=$(write_fixture "rtg-spec-only.txt" "$body")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}

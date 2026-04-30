@@ -12,6 +12,9 @@
 #
 # Log line format (written by commit-body.sh):
 #   <ISO-timestamp>|<sha-or-staging>|<branch>|<violation-code>|<subject-first-50>
+#
+# Note: commit-body.sh sanitises branch and subject by replacing literal '|'
+# with '-' before writing, so field-splitting on '|' is always safe.
 
 set -euo pipefail
 

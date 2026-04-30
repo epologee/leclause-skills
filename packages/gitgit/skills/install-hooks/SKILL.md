@@ -2,18 +2,27 @@
 name: install-hooks
 user-invocable: true
 description: >
-  Install gitgit's git-native commit-msg and post-commit hooks into
-  the current repo so commits done outside Claude Code (CLI, IDE,
-  another tool) still get the body-schema validation. Run once per
-  clone. Use --force to overwrite existing hooks.
+  Install gitgit's four git-native hooks (commit-msg, prepare-commit-msg,
+  post-commit, pre-push) into the current repo so commits and pushes done
+  outside Claude Code (CLI, IDE, another tool) still get the body-schema
+  validation and wip-gate enforcement. Run once per clone. Use --force to
+  overwrite existing hooks.
 argument-hint: "[--force] [--dry-run]"
 ---
 
 # Install Hooks
 
-Plaats de git-native hooks van gitgit (`commit-msg`, `post-commit`) in de
-huidige repo, zodat commits die buiten Claude Code om gemaakt worden (gewone
-CLI, IDE-knop, andere tooling) ook tegen het body-schema worden gevalideerd.
+Plaats de vier git-native hooks van gitgit in de huidige repo, zodat commits
+en pushes die buiten Claude Code om gemaakt worden ook worden bewaakt.
+
+De vier hooks:
+
+| Hook | Doel |
+|------|------|
+| `commit-msg` | Valideert het commit-bericht tegen `validate-body.sh` (zelfde lib als de PreToolUse guard). |
+| `prepare-commit-msg` | Pre-fills het editor-venster met een gestructureerd body-template op basis van de staged diff. |
+| `post-commit` | Detecteert `--no-verify` gebruik en logt het naar `~/.claude/var/gitgit-no-verify.log`. |
+| `pre-push` | Herdraaait de wip-gate op de push-range: commits met `Slice: wip` worden geblokkeerd. |
 
 ## Waarom
 
@@ -22,23 +31,24 @@ Commits die rechtstreeks via `git commit` op de shell of vanuit een IDE
 worden gemaakt zien deze guard niet. Claude Code biedt geen native
 `PreCommit` lifecycle event en zal dat ook niet krijgen
 (https://github.com/anthropics/claude-code/issues/4834 closed not planned),
-dus een per-repo geinstalleerde git-native hook is de enige manier om
-non-Claude commits te dekken.
+dus de per-repo git-native hooks zijn de enige manier om non-Claude commits
+en pushes te dekken.
 
-De geinstalleerde hooks delen exact dezelfde `validate-body.sh` als de
-PreToolUse-guard, dus het gedrag is identiek voor beide bronnen.
+Alle hooks delen dezelfde `validate-body.sh` als de PreToolUse-guard, zodat
+gedrag nooit divergeert.
 
 ## Wat de skill doet
 
 1. Verifieert dat we in een git repo zitten (`git rev-parse --git-dir`).
 2. Detecteert of `core.hooksPath` is gezet, en kiest de juiste doeldir
    (`.git/hooks/` of de waarde van `core.hooksPath`).
-3. Vindt de plugin-install-pad via `~/.claude/plugins/installed_plugins.json`
-   en bakt dat absolute pad in elke geinstalleerde hook in (placeholder
+3. Vindt het plugin-install-pad via `~/.claude/plugins/installed_plugins.json`
+   en bakt dat absolute pad in elke hook in (placeholder
    `__PLUGIN_INSTALL_PATH__` wordt vervangen). Re-run na een plugin-update
    ververst het pad.
-4. Kopieert per hook (`commit-msg`, `post-commit`) de bron uit de plugin
-   naar de doeldir, zet de executable bit, en logt het resultaat.
+4. Kopieert per hook (`commit-msg`, `prepare-commit-msg`, `post-commit`,
+   `pre-push`) de bron uit de plugin naar de doeldir, zet de executable bit,
+   en logt het resultaat.
 
 ## Defaults en flags
 
@@ -84,7 +94,9 @@ gitgit:install-hooks
   hooks dir   : .git/hooks (default)
   plugin path : ~/.claude/plugins/cache/epologee/gitgit/1.0.30
   installed   : commit-msg
+  installed   : prepare-commit-msg
   installed   : post-commit
+  installed   : pre-push
   skipped     : (none)
   backups     : (none)
 done.
@@ -104,9 +116,16 @@ gitgit:install-hooks
 exit 1
 ```
 
-## Scope
+## Post-update procedure
 
-Slice 6 levert `commit-msg` en `post-commit`. De `prepare-commit-msg`
-(slice 8) en `pre-push` (slice 7) hooks worden later in dezelfde
-`git-hooks/` directory gelegd; `lib/install.sh` is voorbereid om die
-mee te installeren zodra ze bestaan.
+Na elke `claude plugins update gitgit@leclause` is het baked plugin-pad in de
+geinstalleerde hooks verouderd. Draai in elke repo waar de hooks actief zijn:
+
+```bash
+/gitgit:install-hooks --force
+```
+
+Dit vervangt de bestaande hooks (met automatische backup) en bakt het nieuwe
+pad in. Zonder deze stap zullen de hooks bij de volgende commit het oude
+plugin-pad proberen te sourcen, wat kan mislukken als de cache-directory is
+opgeruimd.

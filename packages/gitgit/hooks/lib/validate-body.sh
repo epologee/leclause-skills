@@ -43,10 +43,16 @@ fi
 
 # validate_body_classify_skip <subject>
 # Returns 0 (match) if the subject starts with a well-known auto-generated
-# prefix that should bypass body validation entirely.
+# prefix that should bypass body validation entirely, or if the subject
+# contains the standard git cherry-pick trailer phrase.
 validate_body_classify_skip() {
   local subject="$1"
   if [[ "$subject" =~ ^(Merge\ |Revert\ |fixup\!|squash\!|amend\!) ]]; then
+    return 0
+  fi
+  # Cherry-pick commits: git appends "(cherry picked from commit <sha>)" to
+  # the subject when using `git cherry-pick -x`. Match that standard phrase.
+  if [[ "$subject" == *"(cherry picked from commit "* ]]; then
     return 0
   fi
   return 1
@@ -196,8 +202,15 @@ validate_body() {
     return 2
   fi
 
-  # Rule: skip-pattern check.
+  # Rule: skip-pattern check (subject-level).
   if validate_body_classify_skip "$subject"; then
+    return 0
+  fi
+
+  # Rule: cherry-pick detection in body. git cherry-pick -x appends the
+  # "(cherry picked from commit <sha>)" line to the body, not just the subject.
+  # When the body contains this phrase on its own line, skip validation.
+  if printf '%s' "$content" | grep -qF '(cherry picked from commit '; then
     return 0
   fi
 
@@ -236,11 +249,15 @@ validate_body() {
   local rtg_value
   rtg_value=$(_vb_trailer_value "$trailers" "Red-then-green")
 
-  # Opt-out enum tokens.
-  local OPT_OUT_ENUM="docs-only config-only migration-only chore-deps revert merge wip"
+  # Opt-out enum tokens. spec-only added: commits touching only spec/test
+  # files don't need a Tests trailer (the diff is itself the test evidence).
+  local OPT_OUT_ENUM="docs-only config-only migration-only spec-only chore-deps revert merge wip"
 
   # RTG-exempt tokens (subset of opt-out that also exempts Red-then-green).
-  local RTG_EXEMPT="docs-only config-only chore-deps"
+  # migration-only and spec-only are exempt: a migration has no meaningful
+  # red-then-green sequence; a spec-only commit is the red (the spec was
+  # written first and drives the implementation in the next commit).
+  local RTG_EXEMPT="docs-only config-only migration-only spec-only chore-deps"
 
   # Rule: Slice trailer must be present and non-empty.
   if [[ -z "$slice_value" ]]; then
@@ -257,6 +274,12 @@ validate_body() {
       break
     fi
   done
+
+  # Rule: free-text Slice must be at least 10 chars to carry meaningful context.
+  if [[ "$slice_is_optout" -eq 0 ]] && [[ ${#slice_value} -lt 10 ]]; then
+    printf 'slice-too-short: free-text Slice must be at least 10 chars (got: "%s")\n' "$slice_value" >&2
+    return 1
+  fi
 
   # Determine if Slice value is RTG-exempt.
   local slice_is_rtg_exempt=0
@@ -413,6 +436,17 @@ validate_body() {
   fi
 
   # Rule: Anti-copy-paste. Compare SHA1 of WHY block against previous 5 commits.
+  #
+  # Scope note: the comparison is HEAD-linear (last 5 first-parent commits in
+  # git log order), not strictly branch-scoped. A commit on a feature branch
+  # will be compared against commits from main that HEAD is descended from if
+  # those are within the 5-commit window. This is a deliberate choice: it
+  # catches copy-paste from recently-merged main commits without requiring the
+  # branch's merge-base to be computed, which is costly and fragile on shallow
+  # clones. Trade-off: a commit immediately after a merge of a large batch may
+  # compare against main-branch commits that are topically unrelated. In
+  # practice the risk is low because the WHY blocks of unrelated commits rarely
+  # hash-collide after whitespace normalisation.
   local why_sha
   why_sha=$(_vb_sha1 "$why_block")
 

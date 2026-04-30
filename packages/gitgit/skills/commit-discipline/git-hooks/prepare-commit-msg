@@ -70,20 +70,21 @@ tests_suggestion=$(printf '%s\n' "$staged_paths" | suggest_tests)
 # ---------------------------------------------------------------------------
 # Build the template block
 # ---------------------------------------------------------------------------
+# Trailers are emitted as REAL lines with <placeholder> values so that the
+# validator rejects a commit whose author forgot to fill them in. Comment-only
+# trailers were stripped by git before validation, causing silent failures.
 
 template_block=""
 
 template_block="${template_block}
-# WHY: explain the change in two short sentences below this comment.
-# Replace this whole comment with prose, or delete the body for a trivial commit.
-#
-# gitgit commit body schema (delete the lines you do not need):
-# Tests: <comma-separated spec paths that ran green>
-# Slice: <suggested-classification>
-# Red-then-green: <yes | n/a (rationale)>
-# Resolves: <issue url, or omit>
-# Cucumber: <applicable | n/a (rationale), or omit>
-#
+
+<WHY: replace this with two sentences explaining why this change is needed>
+
+Tests: <comma-separated spec paths that ran green>
+Slice: ${slice_suggestion}
+Red-then-green: <yes | n/a (rationale >= 10 chars)>
+
+# Replace the placeholder values above before committing.
 # Auto-detected from your staged diff:
 #   Layers: ${layer_summary}
 #   Suggested Slice: ${slice_suggestion}"

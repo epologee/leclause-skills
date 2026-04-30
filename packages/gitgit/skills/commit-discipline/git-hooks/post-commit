@@ -49,12 +49,13 @@ if [[ "$recent" -eq 1 ]]; then
 fi
 
 # --no-verify path. Capture the just-landed commit metadata.
+# %ae (author email) omitted to minimise PII surface; branch + SHA suffice
+# for audit purposes.
 short_sha=$(git rev-parse --short HEAD 2>/dev/null || printf 'unknown')
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || printf 'unknown')
-author=$(git log -1 --pretty=format:'%ae' HEAD 2>/dev/null || printf 'unknown')
 ts_iso=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-printf '%s|%s|%s|%s\n' "$ts_iso" "$short_sha" "$branch" "$author" \
+printf '%s|%s|%s\n' "$ts_iso" "$short_sha" "$branch" \
   >> "$no_verify_log" 2>/dev/null || true
 
 exit 0

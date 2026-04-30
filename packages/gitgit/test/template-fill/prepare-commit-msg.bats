@@ -54,9 +54,28 @@ teardown() {
   bash "$RENDERED_HOOK" "$MSG_FILE" ""
 
   content=$(cat "$MSG_FILE")
+  # Fix 9: trailers are real lines now (not comment-only), so they survive git
+  # comment-stripping and the validator can reject placeholder values.
   [[ "$content" == *"WHY:"* ]]
   [[ "$content" == *"Slice:"* ]]
   [[ "$content" == *"Tests:"* ]]
+  [[ "$content" == *"Red-then-green:"* ]]
+}
+
+@test "prepare-commit-msg: trailer lines are real (not comment-prefixed)" {
+  bash "$RENDERED_HOOK" "$MSG_FILE" ""
+
+  content=$(cat "$MSG_FILE")
+  # The Slice and Tests trailer lines must NOT start with '#'. They must be
+  # real lines so git does not strip them before the validator sees them.
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^Slice: ]]; then
+      # Found a real Slice line (no # prefix). Test passes.
+      return 0
+    fi
+  done <<< "$content"
+  # If we get here, no real (non-comment) Slice line was found.
+  false
 }
 
 @test "prepare-commit-msg: empty source preserves git comment lines" {

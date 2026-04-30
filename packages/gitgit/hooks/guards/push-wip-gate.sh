@@ -141,11 +141,16 @@ guard_push_wip_gate() {
 
   # If we are here either there were no wip commits, or a bypass was active.
   if [[ "$wip_count" -gt 0 ]]; then
-    local mechanism="unknown"
+    local mechanism=""
     if [[ "${GITGIT_ALLOW_WIP_PUSH:-0}" = "1" ]]; then
       mechanism="env"
     elif grep -qF '# allow-wip-push' <<< "$command"; then
       mechanism="magic-comment"
+    else
+      # wip_gate_should_block returned 1 (allow) without a known bypass.
+      # This should not happen; log a BUG notice to stderr and skip the log.
+      printf '[gitgit/push-wip-gate] BUG: bypass without recognised mechanism\n' >&2
+      return 0
     fi
     local sha_csv
     sha_csv=$(printf '%s' "$wip_list" | tr '\n' ',' | sed 's/,$//')

@@ -60,7 +60,7 @@ guard_commit_body() {
   printf '%s' "$message" > "$tmpfile"
 
   local violation_output exit_code
-  violation_output=$(validate_body "$tmpfile" 2>&1 >/dev/null)
+  violation_output=$(validate_body "$tmpfile" 2>&1)
   exit_code=$?
 
   rm -f "$tmpfile"
@@ -84,6 +84,10 @@ guard_commit_body() {
   branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || printf 'unknown')
   short_sha=$(git rev-parse --short HEAD 2>/dev/null || printf 'staging')
   subject_50="${subject:0:50}"
+  # Sanitise pipe characters in subject and branch so the log parser does not
+  # mistake them for field delimiters. Replacement character: dash (-).
+  subject_50="${subject_50//|/-}"
+  branch="${branch//|/-}"
 
   printf '%s|%s|%s|%s|%s\n' \
     "$timestamp" "$short_sha" "$branch" "$violation_code" "$subject_50" \
@@ -94,7 +98,7 @@ guard_commit_body() {
   example=$(gitgit_synthesize_example 2>/dev/null || printf '<example unavailable>')
 
   # Opt-out enum list.
-  local opt_out_list="docs-only, config-only, migration-only, chore-deps, revert, merge, wip"
+  local opt_out_list="docs-only, config-only, migration-only, spec-only, chore-deps, revert, merge, wip"
 
   # Build the deny message.
   local deny_msg
