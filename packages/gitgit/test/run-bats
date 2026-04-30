@@ -21,4 +21,5 @@ exec bats \
   packages/gitgit/test/migrated-hooks/*.bats \
   packages/gitgit/test/install-hooks/*.bats \
   packages/gitgit/test/wip-gate/*.bats \
+  packages/gitgit/test/template-fill/*.bats \
   "$@"

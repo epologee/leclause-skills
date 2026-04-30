@@ -9,28 +9,13 @@
 #     Classifies paths into layers, suggests Slice token and Tests trailer,
 #     then prints a multi-line example body on stdout.
 #     Never exits non-zero; falls back to a generic template on any error.
+#
+# Classification logic is delegated to layer-classify.sh (same directory).
 
-# Layer classification regexes (ERE, applied to each path).
-_GS_FRONTEND_RE='(\.css|\.scss|\.html|\.tsx?|\.jsx?|app/javascript/)'
-_GS_BACKEND_RE='(\.rb|\.py|\.go|\.java|app/controllers/|app/models/|app/services/)'
-_GS_SPEC_RE='(spec/|test/|__tests__/|_spec\.|_test\.|\.test\.|\.feature)'
-_GS_MIGRATION_RE='(db/migrate/|migrations/)'
-_GS_CONFIG_RE='(\.yml|\.yaml|\.json|\.toml|\.lock|Gemfile|package\.json|\.config\.)'
-_GS_DOCS_RE='(\.md|\.txt|\.rst|README|CHANGELOG)'
-
-# _gs_classify_path <path>
-# Prints the layer name for a single path, or "other" if none matches.
-_gs_classify_path() {
-  local p="$1"
-  # Spec must come before backend because spec paths often match backend regex too.
-  if [[ "$p" =~ $_GS_SPEC_RE ]]; then printf 'spec'; return; fi
-  if [[ "$p" =~ $_GS_MIGRATION_RE ]]; then printf 'migration'; return; fi
-  if [[ "$p" =~ $_GS_FRONTEND_RE ]]; then printf 'frontend'; return; fi
-  if [[ "$p" =~ $_GS_BACKEND_RE ]]; then printf 'backend'; return; fi
-  if [[ "$p" =~ $_GS_CONFIG_RE ]]; then printf 'config'; return; fi
-  if [[ "$p" =~ $_GS_DOCS_RE ]]; then printf 'docs'; return; fi
-  printf 'other'
-}
+# Source the shared classification library.
+_ES_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+# shellcheck disable=SC1091
+. "$_ES_LIB_DIR/layer-classify.sh"
 
 # gitgit_synthesize_example
 # Prints a multi-line example commit body on stdout.
@@ -39,59 +24,19 @@ gitgit_synthesize_example() {
   local staged_paths
   staged_paths=$(git diff --cached --name-only 2>/dev/null || true)
 
-  # Collect spec paths from staged diff (used for Tests trailer).
-  local spec_paths=""
-  local has_frontend=0 has_backend=0 has_spec=0 has_migration=0
-  local has_config=0 has_docs=0 has_other=0
+  # Classify using the shared library.
+  local layer_summary
+  layer_summary=$(printf '%s\n' "$staged_paths" | classify_diff)
 
-  while IFS= read -r path; do
-    [[ -z "$path" ]] && continue
-    local layer
-    layer=$(_gs_classify_path "$path")
-    case "$layer" in
-      frontend)  has_frontend=1 ;;
-      backend)   has_backend=1 ;;
-      spec)      has_spec=1
-                 # Accumulate spec paths for the Tests trailer.
-                 if [[ -z "$spec_paths" ]]; then
-                   spec_paths="$path"
-                 else
-                   spec_paths="$spec_paths, $path"
-                 fi
-                 ;;
-      migration) has_migration=1 ;;
-      config)    has_config=1 ;;
-      docs)      has_docs=1 ;;
-      *)         has_other=1 ;;
-    esac
-  done <<< "$staged_paths"
+  # Collect spec paths for the Tests trailer.
+  local spec_paths
+  spec_paths=$(printf '%s\n' "$staged_paths" | suggest_tests)
 
   # Build Slice token.
+  # example-synth uses "handler" instead of "backend" for display purposes to
+  # match the gitgit schema vocabulary. Apply that rename here.
   local slice_token
-
-  # Check for single-layer opt-out scenarios first.
-  local non_docs_count=$(( has_frontend + has_backend + has_spec + has_migration + has_config + has_other ))
-
-  if [[ "$has_docs" -eq 1 && "$non_docs_count" -eq 0 ]]; then
-    slice_token="docs-only"
-  elif [[ "$has_migration" -eq 1 && "$has_frontend" -eq 0 && "$has_backend" -eq 0 \
-          && "$has_spec" -eq 0 && "$has_config" -eq 0 && "$has_docs" -eq 0 && "$has_other" -eq 0 ]]; then
-    slice_token="migration-only"
-  elif [[ "$has_config" -eq 1 && "$has_frontend" -eq 0 && "$has_backend" -eq 0 \
-          && "$has_spec" -eq 0 && "$has_migration" -eq 0 && "$has_docs" -eq 0 && "$has_other" -eq 0 ]]; then
-    slice_token="config-only"
-  else
-    # Build a layer-combination token.
-    local parts=""
-    [[ "$has_frontend" -eq 1 ]] && parts="${parts:+$parts + }frontend"
-    [[ "$has_backend" -eq 1 ]]  && parts="${parts:+$parts + }handler"
-    [[ "$has_migration" -eq 1 ]] && parts="${parts:+$parts + }migration"
-    [[ "$has_spec" -eq 1 ]]     && parts="${parts:+$parts + }spec"
-    [[ "$has_config" -eq 1 ]]   && parts="${parts:+$parts + }config"
-    [[ "$has_docs" -eq 1 ]]     && parts="${parts:+$parts + }docs"
-    [[ "$has_other" -eq 1 ]]    && parts="${parts:+$parts + }other"
-    slice_token="${parts:-handler + spec}"
-  fi
+  slice_token=$(suggest_slice "$layer_summary" | sed 's/\bbackend\b/handler/g')
 
   # Build Tests trailer value.
   local tests_value
