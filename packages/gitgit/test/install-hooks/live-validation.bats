@@ -96,7 +96,9 @@ BODY
   local log="$HOME/.claude/var/gitgit-no-verify.log"
   [ -f "$log" ]
   # Format is ts|sha|branch (3 fields, no email column since Fix 8).
-  grep -qE "\|main$" "$log"
+  # Pattern anchors to exactly 3 pipe-delimited fields so a 4-field regression
+  # (e.g. email column reintroduced) would cause this assertion to fail.
+  grep -qE "^[^|]+\|[^|]+\|main$" "$log"
 }
 
 @test "post-commit does NOT log when commit-msg ran normally" {

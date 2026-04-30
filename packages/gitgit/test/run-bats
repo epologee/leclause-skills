@@ -23,4 +23,5 @@ exec bats \
   packages/gitgit/test/wip-gate/*.bats \
   packages/gitgit/test/template-fill/*.bats \
   packages/gitgit/test/test-cache/*.bats \
+  packages/gitgit/test/cross-layer/*.bats \
   "$@"

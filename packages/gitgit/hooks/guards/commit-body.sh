@@ -84,10 +84,11 @@ guard_commit_body() {
   branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || printf 'unknown')
   short_sha=$(git rev-parse --short HEAD 2>/dev/null || printf 'staging')
   subject_50="${subject:0:50}"
-  # Sanitise pipe characters in subject and branch so the log parser does not
-  # mistake them for field delimiters. Replacement character: dash (-).
+  # Sanitise pipe characters in all operator-controlled fields so the log
+  # parser does not mistake them for field delimiters. Replacement: dash (-).
   subject_50="${subject_50//|/-}"
   branch="${branch//|/-}"
+  violation_code="${violation_code//|/-}"
 
   printf '%s|%s|%s|%s|%s\n' \
     "$timestamp" "$short_sha" "$branch" "$violation_code" "$subject_50" \

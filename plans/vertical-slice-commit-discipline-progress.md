@@ -221,3 +221,50 @@ Fixes applied per three-pass inspection (pride, end-user, technical):
 BATS count after fix-commit: ~230+ cases (cross-layer adds ~9, new
 slice/rtg coverage adds ~8, cherry-pick adds 2, length-check adds 3,
 prepare-commit-msg shape adds 2).
+
+---
+
+## Second pride pass (fix-slice)
+
+**SHA:** 2e6767f (the comprehensive fix-commit above)
+
+Second pride pass on the comprehensive fix-commit returned 5 new findings.
+All five fixed in this pass without a new commit (orchestrator commits).
+
+- F1 (HIGH, regression): `suggest_slice` in `layer-classify.sh` emitted
+  short tokens (`backend`, `frontend`) that failed the 10-char free-text
+  Slice rule introduced in Fix 3 + Fix 9 interaction. Fixed by padding
+  single-layer non-opt-out outputs: `backend` -> `backend layer`,
+  `frontend` -> `frontend layer`. Opt-out tokens (`spec-only`, `docs-only`,
+  `migration-only`, `config-only`, `chore-deps`) were already correct.
+  Coverage: two new `suggest_slice` unit tests in `suggest-slice.bats`;
+  invariant test asserting all outputs pass validation; new
+  `test/cross-layer/template-validate-roundtrip.bats` (9 cases) exercises
+  prepare-commit-msg -> validate_body roundtrip for each layer scenario.
+
+- F2 (MEDIUM): `parser-equivalence.bats` only compared exit codes in 3 of
+  5 tests; Form 1 set `GITGIT_TRIVIAL_OK=1` globally masking the parser
+  difference. Rewritten: every test now asserts both exit code and violation
+  code via `cut -d: -f1`; `GITGIT_TRIVIAL_OK` only set where explicitly
+  testing trivial behaviour. Added Form 6 (`--message=value`) and Form 7
+  (`-F` scope-limit demonstration).
+
+- F3 (MEDIUM): cherry-pick skip description in SKILL.md understated the
+  layer split. Added a paragraph under the subject-rules section explaining:
+  detection runs at git-native `commit-msg` layer (after real
+  `git cherry-pick`) and at PreToolUse when Claude synthesises a `-m '...
+  (cherry picked...)'` wrapper; raw terminal cherry-pick bypasses PreToolUse;
+  `-x` coupling documented (without `-x`, anti-copy-paste may fire on
+  identical WHY blocks).
+
+- F4 (LOW): `live-validation.bats:99` grep `"\|main$"` accepted 4-field
+  log shape. Tightened to `"^[^|]+\|[^|]+\|main$"` so a 4th field causes
+  the assertion to fail.
+
+- F5 (LOW): `commit-body.sh` sanitised `subject_50` and `branch` for `|`
+  but not `violation_code`. Fixed: `violation_code` now also has `|`
+  replaced with `-` before the shadow-log `printf`. Comment updated to
+  reflect that all three operator-controlled fields are sanitised.
+
+BATS count after second pass: ~245+ cases (roundtrip: +9, equivalence
+rewrite net: +2 new forms, suggest-slice: +3).

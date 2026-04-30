@@ -44,6 +44,15 @@ dus de twee-laagse architectuur is definitief, niet voorlopig.
 - Geen punt aan het einde.
 - Geen conventionele-commits-prefix verplicht (`feat:`, `fix:`), maar toegestaan.
 - Automatisch overgeslagen voor: `Merge ...`, `Revert ...`, `fixup!`, `squash!`, `amend!`.
+- Cherry-pick commits: skip loopt via twee lagen. De git-native `commit-msg`
+  hook detecteert cherry-picks omdat `git cherry-pick -x` de frase
+  `(cherry picked from commit <sha>)` aan de body toevoegt. De PreToolUse
+  guard detecteert dezelfde frase wanneer Claude een `git commit -m '...(cherry
+  picked from commit ...)...'`-wrapper aanroept. Een raw `git cherry-pick` vanuit
+  de terminal passeert PreToolUse niet, dus de laag-splitsing is daar niet van
+  toepassing. Zonder de `-x` vlag bevat de subject geen `(cherry picked...)`
+  frase, waardoor de anti-copy-paste check ten onrechte kan vuren als de WHY
+  van de bron-commit identiek is.
 
 ### WHY-paragraaf
 

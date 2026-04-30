@@ -41,6 +41,16 @@ _slice() {
 # Multi-layer combinations
 # ---------------------------------------------------------------------------
 
+@test "suggest_slice: 'backend' -> 'backend layer' (padded to >= 10 chars)" {
+  result=$(_slice "backend")
+  [ "$result" = "backend layer" ]
+}
+
+@test "suggest_slice: 'frontend' -> 'frontend layer' (padded to >= 10 chars)" {
+  result=$(_slice "frontend")
+  [ "$result" = "frontend layer" ]
+}
+
 @test "suggest_slice: 'backend spec' -> 'backend + spec'" {
   result=$(_slice "backend spec")
   [ "$result" = "backend + spec" ]
@@ -54,4 +64,34 @@ _slice() {
 @test "suggest_slice: 'backend migration spec' -> 'backend + migration + spec'" {
   result=$(_slice "backend migration spec")
   [ "$result" = "backend + migration + spec" ]
+}
+
+@test "suggest_slice outputs all satisfy validate-body >= 10 chars or are opt-out tokens" {
+  # All single-layer and multi-layer outputs that reach the free-text path
+  # must be >= 10 chars to pass the slice-too-short rule.
+  local opt_out="docs-only config-only migration-only spec-only chore-deps"
+
+  check_output() {
+    local summary="$1"
+    local result
+    result=$(bash -c "source '$CLASSIFY_LIB'; suggest_slice '$summary'")
+    # If result is an opt-out token, it is exempt.
+    local tok
+    for tok in $opt_out; do
+      [[ "$result" = "$tok" ]] && return 0
+    done
+    # Otherwise must be >= 10 chars.
+    [ "${#result}" -ge 10 ]
+  }
+
+  check_output "docs"
+  check_output "config"
+  check_output "migration"
+  check_output "spec"
+  check_output "other"
+  check_output "backend"
+  check_output "frontend"
+  check_output "backend spec"
+  check_output "frontend backend spec"
+  check_output "backend migration spec"
 }

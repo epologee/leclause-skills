@@ -88,6 +88,8 @@ classify_diff() {
 suggest_slice() {
   local summary="$1"
 
+  # Single-layer opt-out tokens: map to the validated enum values that
+  # validate-body.sh recognises and exempts from the 10-char length rule.
   case "$summary" in
     docs)                       printf 'docs-only'       ; return ;;
     config)                     printf 'config-only'     ; return ;;
@@ -96,10 +98,16 @@ suggest_slice() {
     other)                      printf 'chore-deps'      ; return ;;
   esac
 
-  # Multiple layers: build a human-readable joined string.
-  # Replace spaces with " + " and map "backend" -> "backend" (keep as-is;
-  # example-synth uses "handler" for display, but classify_diff uses "backend"
-  # as the canonical layer name here).
+  # Single-layer non-opt-out tokens: pad to >= 10 chars so the free-text
+  # Slice length rule (>= 10 chars) is satisfied when the user accepts the
+  # template suggestion as-is.
+  case "$summary" in
+    backend)                    printf 'backend layer'   ; return ;;
+    frontend)                   printf 'frontend layer'  ; return ;;
+  esac
+
+  # Multi-layer output: join with " + ". All multi-layer combinations are
+  # >= 10 chars (shortest: "backend + spec" = 14).
   local joined
   joined=$(printf '%s' "$summary" | sed 's/ / + /g')
   printf '%s' "$joined"
