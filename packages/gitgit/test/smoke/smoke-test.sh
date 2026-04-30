@@ -121,6 +121,9 @@ expect_deny "format: multi-line without blank separator is denied" \
   "blank line"
 
 # --- commit-format: valid multi-line heredoc passes ---
+# Body includes Slice/Tests/Red-then-green trailers so commit-body block-mode
+# is satisfied. The smoke test focuses on commit-format behaviour; the body
+# schema is orthogonal and we ship a compliant body here.
 
 reset_state
 heredoc_clean=$(cat <<'INNER_CMD'
@@ -129,6 +132,8 @@ Use policy on the read path
 
 The body explains the why in two short sentences.
 Wrap each line at the seventy-two char ceiling.
+
+Slice: docs-only
 EOF
 )" # ack-rule4
 INNER_CMD

@@ -2,6 +2,8 @@
 # log-format.bats
 # Verify that shadow log entries conform to the expected pipe-delimited format
 # and that the log directory is created automatically when it does not exist.
+# In block-mode violations also exit 2 (deny), but the shadow log is still
+# written as a parallel audit record.
 
 load helpers
 
@@ -13,9 +15,11 @@ load helpers
   export GIT_SHIM_HEAD_SHORT="cafe123"
   export GIT_SHIM_HEAD_ABBREV="feature/log-test"
 
+  # Block-mode exits 2 on violation; run captures it without failing the test.
   run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
 
-  [ "$status" -eq 0 ]
+  # Block-mode: denied.
+  [ "$status" -eq 2 ]
 
   # The shadow log must exist and have at least one entry.
   [ -f "$GITGIT_SHADOW_LOG" ]
@@ -65,8 +69,8 @@ load helpers
 
   run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
 
-  [ "$status" -eq 0 ]
-  # Directory and log file must now exist.
+  # Block-mode: denied; but directory and log file must now exist.
+  [ "$status" -eq 2 ]
   [ -d "$(dirname "$deep_log")" ]
   [ -f "$deep_log" ]
 }
@@ -78,7 +82,7 @@ load helpers
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
   # Override the git shim so rev-parse --short exits non-zero (simulates
-  # initial commit where HEAD does not exist).  We replace the shim inline.
+  # initial commit where HEAD does not exist). We replace the shim inline.
   local shim_bin="$BATS_TEST_TMPDIR/bin"
   cat > "$shim_bin/git" <<'SHIM2'
 #!/usr/bin/env bash
@@ -115,7 +119,8 @@ SHIM2
 
   run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
 
-  [ "$status" -eq 0 ]
+  # Block-mode: denied.
+  [ "$status" -eq 2 ]
   [ -f "$GITGIT_SHADOW_LOG" ]
   local sha_field
   sha_field=$(tail -1 "$GITGIT_SHADOW_LOG" | cut -d'|' -f2)

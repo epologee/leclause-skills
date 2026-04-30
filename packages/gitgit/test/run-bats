@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the gitgit BATS test suites (validate-body + shadow-mode).
+# Run the gitgit BATS test suites (validate-body + shadow-mode + block-mode).
 # Must be executed from the repo root (leclause-skills/).
 
 set -euo pipefail
@@ -16,4 +16,5 @@ fi
 exec bats \
   packages/gitgit/test/validate-body/*.bats \
   packages/gitgit/test/shadow-mode/*.bats \
+  packages/gitgit/test/block-mode/*.bats \
   "$@"

@@ -14,14 +14,14 @@ case "$EVENT" in
     TOOL=$(dd_tool_name "$INPUT")
     [ "$TOOL" = "Bash" ] || exit 0
     source "$DIR/lib/validate-body.sh"
+    source "$DIR/lib/example-synth.sh"
     source "$DIR/guards/commit-format.sh"
     source "$DIR/guards/commit-subject.sh"
-    # Slice 3 adds commit-body shadow-mode guard
+    # Slice 4 promotes commit-body to block-mode (universal, all repos)
     source "$DIR/guards/commit-body.sh"
     guard_commit_format "$INPUT"
     guard_commit_subject "$INPUT"
     guard_commit_body "$INPUT"
-    # Slice 4 promotes commit-body to block-mode and adds all repos
     # Slice 5 adds commit-trailers.sh
     # Slice 6 adds git-dash-c.sh
     # Slice 7 adds push-wip-gate.sh

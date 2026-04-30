@@ -1,49 +1,51 @@
 #!/usr/bin/env bats
 # repo-detect.bats
-# Verify that the commit-body shadow guard activates only for the
-# leclause-skills repo and stays silent for all other repos.
+# Verifies that the shadow log receives an entry for violations regardless of
+# the repo origin URL (block-mode is universal). The repo-gate from slice 3
+# is gone; this file now tests the shadow-log writing side effect.
 
 load helpers
 
-# ---------------------------------------------------------------------------
-# leclause-skills URL: guard fires on a violation
-# ---------------------------------------------------------------------------
-
-@test "leclause-skills repo URL activates guard: warn observed on missing body" {
+@test "leclause-skills repo URL: violation still writes to shadow log" {
   export GIT_SHIM_ORIGIN_URL="git@github.com:epologee/leclause-skills.git"
-  # Non-trivial diff so trivial shortcut does not apply.
   export GIT_SHIM_SHORTSTAT=" 5 files changed, 20 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'a.rb\nb.rb\nc.rb\nd.rb\ne.rb')"
-  # No trailers -> validate_body will emit missing-body for a single-line commit.
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  # Ack the rotation rule so commit-subject guard does not interfere.
+  local before
+  before=$(shadow_log_line_count)
+
+  # run with || true: dispatch exits 2 (deny), bats run captures status.
   run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
 
-  # dispatch exits 0 (warn mode, never denies).
-  [ "$status" -eq 0 ]
-  # stdout must carry an additionalContext JSON with our mnemonic.
-  [[ "$output" == *'"additionalContext"'* ]]
-  [[ "$output" == *'commit-body-shadow'* ]]
+  # Block-mode: denied.
+  [ "$status" -eq 2 ]
+
+  # Shadow log must have grown.
+  local after
+  after=$(shadow_log_line_count)
+  [ "$after" -eq $((before + 1)) ]
 }
 
-@test "leclause-skills HTTPS URL also activates guard" {
+@test "leclause-skills HTTPS URL: violation writes to shadow log" {
   export GIT_SHIM_ORIGIN_URL="https://github.com/epologee/leclause-skills.git"
   export GIT_SHIM_SHORTSTAT=" 3 files changed, 15 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'x.rb\ny.rb\nz.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
+  local before
+  before=$(shadow_log_line_count)
+
   run_dispatch 'git commit -m "Expose unused import path" # ack-rule4'
 
-  [ "$status" -eq 0 ]
-  [[ "$output" == *'commit-body-shadow'* ]]
+  [ "$status" -eq 2 ]
+
+  local after
+  after=$(shadow_log_line_count)
+  [ "$after" -eq $((before + 1)) ]
 }
 
-# ---------------------------------------------------------------------------
-# Other-repo URL: guard is completely silent
-# ---------------------------------------------------------------------------
-
-@test "other-repo URL skips silently: no warn, no log entry" {
+@test "other-repo URL: violation also writes to shadow log (universal)" {
   export GIT_SHIM_ORIGIN_URL="https://github.com/someorg/otherrepo.git"
   export GIT_SHIM_SHORTSTAT=" 5 files changed, 20 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'a.rb\nb.rb\nc.rb\nd.rb\ne.rb')"
@@ -54,28 +56,35 @@ load helpers
 
   run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
 
-  # No deny.
-  [ "$status" -eq 0 ]
-  # No commit-body-shadow context in output.
-  [[ "$output" != *'commit-body-shadow'* ]]
-  # No new shadow log entry.
+  # Block-mode denies all repos.
+  [ "$status" -eq 2 ]
+
+  # Shadow log grows even for non-leclause-skills repos.
   local after
   after=$(shadow_log_line_count)
-  [ "$after" -eq "$before" ]
+  [ "$after" -eq $((before + 1)) ]
 }
 
-@test "empty remote URL skips silently" {
-  export GIT_SHIM_ORIGIN_URL=""
+@test "valid commit: no shadow log entry regardless of repo" {
+  export GIT_SHIM_ORIGIN_URL="https://github.com/someorg/otherrepo.git"
   export GIT_SHIM_SHORTSTAT=" 5 files changed, 20 insertions(+)"
-  export GIT_SHIM_DIFF_NAMES="$(printf 'a.rb\nb.rb\nc.rb')"
+  export GIT_SHIM_DIFF_NAMES="$(printf 'a.rb\nb.rb\nc.rb\nd.rb\ne.rb')"
+  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$VALID_TRAILERS"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
 
   local before
   before=$(shadow_log_line_count)
 
-  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
+  local cmd
+  cmd=$(commit_cmd_heredoc \
+    "Expose session boundary on transaction events" \
+    "$(printf 'When StartTransaction or StopTransaction messages arrive with a\nmeter reading that fails domain validation, we previously rejected\nthe entire event, which masked session starts and stops in analytics.\n\nTests: spec/services/session_spec.rb\nSlice: handler + service + spec\nRed-then-green: yes')")
+  cmd="$cmd # ack-rule4"
+
+  run_dispatch "$cmd"
 
   [ "$status" -eq 0 ]
-  [[ "$output" != *'commit-body-shadow'* ]]
+
   local after
   after=$(shadow_log_line_count)
   [ "$after" -eq "$before" ]

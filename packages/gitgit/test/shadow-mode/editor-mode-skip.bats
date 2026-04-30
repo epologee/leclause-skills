@@ -16,13 +16,13 @@ load helpers
   # Plain "git commit" with no message flag.
   # commit-subject guard will deny this with "Pass inline" but we want to
   # confirm commit-body does not add its own context before that happens.
-  # We check no commit-body-shadow context appears in the output.
+  # We check no commit-body context appears in the output.
   run bash "$DISPATCH" <<< \
     '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git commit"}}'
 
   # commit-subject guard blocks editor-mode (exit 2); that is expected.
-  # What we assert: commit-body-shadow does NOT appear in either stdout or stderr.
-  [[ "$output" != *'commit-body-shadow'* ]]
+  # What we assert: commit-body does NOT appear in either stdout or stderr.
+  [[ "$output" != *'commit-body'* ]]
 
   # No shadow log entry from commit-body.
   local after
@@ -39,7 +39,7 @@ load helpers
   run bash "$DISPATCH" <<< \
     '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git commit --amend"}}'
 
-  [[ "$output" != *'commit-body-shadow'* ]]
+  [[ "$output" != *'commit-body'* ]]
   local after
   after=$(shadow_log_line_count)
   [ "$after" -eq "$before" ]

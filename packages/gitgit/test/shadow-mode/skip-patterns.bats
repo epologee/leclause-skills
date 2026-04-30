@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # skip-patterns.bats
 # Auto-generated commit subjects (Merge / Revert / fixup! / squash! / amend!)
-# must bypass body validation entirely even in the leclause-skills repo.
+# must bypass body validation entirely even in block-mode.
 
 load helpers
 
@@ -57,7 +57,7 @@ SHIM
   run_dispatch "git commit -m \"Merge branch 'feature/x' into main\" # ack-rule4"
 
   [ "$status" -eq 0 ]
-  [[ "$output" != *'commit-body-shadow'* ]]
+  [[ "$output" != *'commit-body'* ]]
   local after
   after=$(shadow_log_line_count)
   [ "$after" -eq "$before" ]
@@ -70,7 +70,7 @@ SHIM
   run_dispatch 'git commit -m "Revert \"Expose session endpoint\"" # ack-rule4'
 
   [ "$status" -eq 0 ]
-  [[ "$output" != *'commit-body-shadow'* ]]
+  [[ "$output" != *'commit-body'* ]]
   local after
   after=$(shadow_log_line_count)
   [ "$after" -eq "$before" ]
@@ -83,7 +83,7 @@ SHIM
   run_dispatch 'git commit -m "fixup! Expose session endpoint" # ack-rule4'
 
   [ "$status" -eq 0 ]
-  [[ "$output" != *'commit-body-shadow'* ]]
+  [[ "$output" != *'commit-body'* ]]
   local after
   after=$(shadow_log_line_count)
   [ "$after" -eq "$before" ]
@@ -96,7 +96,7 @@ SHIM
   run_dispatch 'git commit -m "squash! Expose session endpoint" # ack-rule4'
 
   [ "$status" -eq 0 ]
-  [[ "$output" != *'commit-body-shadow'* ]]
+  [[ "$output" != *'commit-body'* ]]
   local after
   after=$(shadow_log_line_count)
   [ "$after" -eq "$before" ]
@@ -109,7 +109,7 @@ SHIM
   run_dispatch 'git commit -m "amend! Expose session endpoint" # ack-rule4'
 
   [ "$status" -eq 0 ]
-  [[ "$output" != *'commit-body-shadow'* ]]
+  [[ "$output" != *'commit-body'* ]]
   local after
   after=$(shadow_log_line_count)
   [ "$after" -eq "$before" ]
