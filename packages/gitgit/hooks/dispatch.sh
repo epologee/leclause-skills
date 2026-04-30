@@ -15,15 +15,20 @@ case "$EVENT" in
     [ "$TOOL" = "Bash" ] || exit 0
     source "$DIR/lib/validate-body.sh"
     source "$DIR/lib/example-synth.sh"
+    # Slice 5: git-dash-c.sh runs first. It is a hard block on `git -C ...`
+    # and there is no point in parsing the command further once that fires.
+    source "$DIR/guards/git-dash-c.sh"
     source "$DIR/guards/commit-format.sh"
     source "$DIR/guards/commit-subject.sh"
     # Slice 4 promotes commit-body to block-mode (universal, all repos)
     source "$DIR/guards/commit-body.sh"
+    # Slice 5 adds commit-trailers.sh (anthropic Co-Authored-By gate)
+    source "$DIR/guards/commit-trailers.sh"
+    guard_git_dash_c "$INPUT"
     guard_commit_format "$INPUT"
     guard_commit_subject "$INPUT"
     guard_commit_body "$INPUT"
-    # Slice 5 adds commit-trailers.sh
-    # Slice 6 adds git-dash-c.sh
+    guard_commit_trailers "$INPUT"
     # Slice 7 adds push-wip-gate.sh
     ;;
 esac
