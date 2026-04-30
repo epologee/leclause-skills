@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run the gitgit BATS test suites (validate-body + shadow-mode + block-mode +
-# migrated-hooks + install-hooks).
+# migrated-hooks + install-hooks + test-cache).
 # Must be executed from the repo root (leclause-skills/).
 
 set -euo pipefail
@@ -22,4 +22,5 @@ exec bats \
   packages/gitgit/test/install-hooks/*.bats \
   packages/gitgit/test/wip-gate/*.bats \
   packages/gitgit/test/template-fill/*.bats \
+  packages/gitgit/test/test-cache/*.bats \
   "$@"
