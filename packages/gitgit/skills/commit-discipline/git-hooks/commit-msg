@@ -1,0 +1,137 @@
+#!/bin/bash
+# packages/gitgit/skills/commit-discipline/git-hooks/commit-msg
+#
+# git-native commit-msg hook. Validates the commit message body against the
+# gitgit schema. Reads the commit-msg file path from $1. On violation, prints
+# a diagnostic to stderr and exits 1, aborting the commit.
+#
+# At install time, /gitgit:install-hooks substitutes __PLUGIN_INSTALL_PATH__
+# with the absolute path of the active gitgit plugin install. The shared
+# validator and the example-synth helper are sourced from there, so this
+# hook always runs against the same logic as the PreToolUse:Bash guard.
+#
+# Side effects:
+# - Writes a single trace line to ~/.claude/var/.gitgit-commit-msg-trace.log
+#   at the start of execution. The post-commit hook reads that line to detect
+#   bypass via --no-verify (when post-commit fires without a matching recent
+#   trace, --no-verify was used).
+
+set -uo pipefail
+
+PLUGIN_PATH="__PLUGIN_INSTALL_PATH__"
+VALIDATOR="$PLUGIN_PATH/hooks/lib/validate-body.sh"
+SYNTH="$PLUGIN_PATH/hooks/lib/example-synth.sh"
+
+msg_file="${1:-}"
+
+# ---------------------------------------------------------------------------
+# Trace marker (read by post-commit to detect --no-verify bypass)
+# ---------------------------------------------------------------------------
+# Why this approach: a fixed trace file with a recency check is simpler and
+# less racy than per-PID sentinels. post-commit checks the most recent line
+# (timestamp) and accepts it as "hook ran" if it is fresher than 30 seconds.
+# Stale traces from earlier sessions are ignored by the recency check.
+
+trace_dir="$HOME/.claude/var"
+trace_log="$trace_dir/.gitgit-commit-msg-trace.log"
+mkdir -p "$trace_dir" 2>/dev/null || true
+printf '%s|%s\n' "$(date +%s)" "$$" >> "$trace_log" 2>/dev/null || true
+
+# ---------------------------------------------------------------------------
+# Source the shared validator
+# ---------------------------------------------------------------------------
+
+if [[ ! -f "$VALIDATOR" ]]; then
+  printf 'gitgit/commit-msg: validator not found at %s\n' "$VALIDATOR" >&2
+  printf '  Re-run /gitgit:install-hooks to refresh the plugin path, or\n' >&2
+  printf '  use git commit --no-verify to bypass this check.\n' >&2
+  exit 1
+fi
+
+# shellcheck disable=SC1090
+. "$VALIDATOR"
+
+# ---------------------------------------------------------------------------
+# Read the commit message
+# ---------------------------------------------------------------------------
+
+if [[ -z "$msg_file" ]] || [[ ! -f "$msg_file" ]]; then
+  # No message file path given; nothing to validate. Exit 0 to be safe.
+  exit 0
+fi
+
+# Strip comment lines (those starting with #) for the subject extraction.
+subject=$(grep -v '^#' "$msg_file" | head -1)
+
+# ---------------------------------------------------------------------------
+# Skip-pattern: Merge / Revert / fixup! / squash! / amend!
+# ---------------------------------------------------------------------------
+
+if validate_body_classify_skip "$subject"; then
+  exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# Trivial-commit detection
+# ---------------------------------------------------------------------------
+# When invoked by git as a hook, $PWD is the repo root and git diff --cached
+# works directly.
+
+shortstat=$(git diff --cached --shortstat 2>/dev/null || true)
+file_count=$(git diff --cached --name-only 2>/dev/null | wc -l | tr -d ' ')
+insertion_count=0
+if [[ "$shortstat" =~ ([0-9]+)[[:space:]]+insertion ]]; then
+  insertion_count="${BASH_REMATCH[1]}"
+fi
+
+if [[ "$file_count" -le 1 && "$insertion_count" -le 5 ]]; then
+  export GITGIT_TRIVIAL_OK=1
+else
+  export GITGIT_TRIVIAL_OK=0
+fi
+
+# ---------------------------------------------------------------------------
+# Validate
+# ---------------------------------------------------------------------------
+
+violation_output=$(validate_body "$msg_file" 2>&1 >/dev/null)
+exit_code=$?
+
+if [[ "$exit_code" -eq 0 ]]; then
+  exit 0
+fi
+
+if [[ "$exit_code" -eq 2 ]]; then
+  # Skip silently (file unreadable / template-only / vsd-skip handled inside).
+  exit 0
+fi
+
+# exit 1: violation. Format the diagnostic.
+violation_line=$(printf '%s' "$violation_output" | head -1)
+
+# Synthesize a filled example from the staged diff.
+example=""
+if [[ -f "$SYNTH" ]]; then
+  # shellcheck disable=SC1090
+  . "$SYNTH"
+  if command -v gitgit_synthesize_example >/dev/null 2>&1; then
+    example=$(gitgit_synthesize_example 2>/dev/null || printf '')
+  fi
+fi
+if [[ -z "$example" ]]; then
+  example="<example unavailable>"
+fi
+
+opt_out_list="docs-only, config-only, migration-only, chore-deps, revert, merge, wip"
+
+{
+  printf '\n'
+  printf '[gitgit/commit-msg] %s\n' "$violation_line"
+  printf '\n'
+  printf 'Expected body format:\n\n%s\n\n' "$example"
+  printf 'Opt-out tokens for Slice: %s\n\n' "$opt_out_list"
+  printf 'Add "# vsd-skip: <reason>" to the commit body to bypass validation,\n'
+  printf 'or use git commit --no-verify (logged to ~/.claude/var/gitgit-no-verify.log).\n'
+} >&2
+
+exit 1
