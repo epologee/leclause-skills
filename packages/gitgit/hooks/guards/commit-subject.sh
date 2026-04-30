@@ -1,12 +1,16 @@
 #!/bin/bash
+# packages/gitgit/hooks/guards/commit-subject.sh
 # PreToolUse:Bash guard. On every git commit, parse the subject from -m /
 # --message / HEREDOC; check rules 1 (activity-word start) and 2 (trigger
 # phrasing); otherwise serve a rotating thematic reminder. Blocks until an
 # appropriate '# ack-rule<N>' token appears.
 #
-# State: three lines at $CLAUDE_COMMIT_RULE_STATE_FILE (fallback
-# $HOME/.claude/var/commit-rule-state): pending_violation, pending_rotation,
-# rotation_pos. Written atomically via temp-file rename.
+# State: three lines at $GITGIT_COMMIT_RULE_STATE_FILE (fallback
+# $HOME/.claude/var/gitgit-commit-rule-state): pending_violation,
+# pending_rotation, rotation_pos. Written atomically via temp-file rename.
+#
+# One-shot migration: if the old dont-do-that state file exists and the new
+# one does not, the old file is copied to the new path on first run.
 
 # Readable short summaries for the single-line block. The long rules with
 # full justification stay in the in-source array so the operator can trace
@@ -53,10 +57,10 @@ _dd_commit_deny() {
   local rule_idx="$1" msg="$2" pv="$3" pr="$4" rp="$5" state_file="$6"
   local num=$((rule_idx + 1))
   _dd_write_state "$state_file" "$pv" "$pr" "$rp"
-  dd_emit_deny commit-rule "Rule ${num}/14: ${msg}"
+  dd_emit_deny commit-subject "Rule ${num}/14: ${msg}"
 }
 
-guard_commit_rule() {
+guard_commit_subject() {
   local input="$1"
   local command
   command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
@@ -115,9 +119,16 @@ guard_commit_rule() {
   fi
   shopt -u nocasematch
 
-  # State file (overridable in tests via CLAUDE_COMMIT_RULE_STATE_FILE).
-  local state_file="${CLAUDE_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/commit-rule-state}"
+  # State file. GITGIT_COMMIT_RULE_STATE_FILE overrides for tests.
+  # One-shot migration from the old dont-do-that location.
+  local state_file="${GITGIT_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/gitgit-commit-rule-state}"
   mkdir -p "$(dirname "$state_file")"
+  if [[ ! -f "$state_file" ]]; then
+    local old_state_file="${CLAUDE_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/commit-rule-state}"
+    if [[ -f "$old_state_file" ]]; then
+      cp "$old_state_file" "$state_file"
+    fi
+  fi
 
   local pv pr rp
   pv=-1; pr=-1; rp=0
@@ -139,7 +150,7 @@ guard_commit_rule() {
 
   # Editor-mode commit: no subject parseable, rules 1/2 cannot be checked.
   if [[ -z "$subject" ]]; then
-    dd_emit_deny commit-rule "Editor-mode commit verbergt subject. Pass inline: git commit -m \"...\"."
+    dd_emit_deny commit-subject "Editor-mode commit verbergt subject. Pass inline: git commit -m \"...\"."
   fi
 
   # Fresh violation: always deny with rule 1 or 2.

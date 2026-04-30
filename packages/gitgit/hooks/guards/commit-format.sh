@@ -1,4 +1,5 @@
 #!/bin/bash
+# packages/gitgit/hooks/guards/commit-format.sh
 # PreToolUse:Bash guard. Enforce hard format limits on every git commit
 # message: 72-char ceiling on every line (subject and body), and a blank
 # separator line between subject and body for multi-line commits. The
@@ -80,6 +81,6 @@ guard_commit_format() {
   # Claude sees the nudge without losing the commit, and trends shorter on
   # subsequent commits in the same session.
   if [[ $subject_len -gt 50 && $subject_len -le 72 ]]; then
-    dd_emit_pre_context commit-format "Subject is ${subject_len} chars. Target is ≤50; 51-72 is allowed but aim shorter on the next commit."
+    dd_emit_pre_context commit-format "Subject is ${subject_len} chars. Target is <=50; 51-72 is allowed but aim shorter on the next commit."
   fi
 }

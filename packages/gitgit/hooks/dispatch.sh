@@ -13,8 +13,10 @@ case "$EVENT" in
   PreToolUse)
     TOOL=$(dd_tool_name "$INPUT")
     [ "$TOOL" = "Bash" ] || exit 0
-    # Slice 2 adds commit-subject.sh
-    # Slice 3 adds commit-format.sh
+    source "$DIR/guards/commit-format.sh"
+    source "$DIR/guards/commit-subject.sh"
+    guard_commit_format "$INPUT"
+    guard_commit_subject "$INPUT"
     # Slice 4 adds commit-body.sh
     # Slice 5 adds commit-trailers.sh
     # Slice 6 adds git-dash-c.sh
