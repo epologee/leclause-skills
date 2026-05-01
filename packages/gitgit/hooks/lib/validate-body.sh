@@ -12,30 +12,12 @@
 #   validate_body_classify_skip <subject>
 #     exit 0: subject matches a skip pattern (Merge / Revert / fixup! / squash! / amend!)
 #     exit 1: subject does not match any skip pattern
-#
-# Cache-aware validation (Slice 9):
-#   When GITGIT_TEST_CACHE_REQUIRED=1, each path listed in the Tests trailer
-#   must have a matching recent green run in the test-runner cache
-#   (see hooks/lib/test-cache.sh). Missing cache entry fails with:
-#     tests-cache-miss: <path> has no recent green run
-#   When Red-then-green value is "yes" and GITGIT_TEST_CACHE_REQUIRED=1,
-#   each Tests path must have a red entry preceding its green entry:
-#     red-then-green-evidence-missing: <path> has no recent red preceding green
-#   Both checks are skipped when GITGIT_TEST_CACHE_REQUIRED is 0 or unset
-#   (default: off, for backwards compatibility).
 
 # Note: no "set -euo pipefail" here. This file is sourced as a library by
 # dispatch.sh, git hooks, and test harnesses. Caller shells already control
 # their own errexit/pipefail; setting it here would cause "read -r" at EOF
 # (exit 1) and other expected non-zero returns to abort the sourcing shell.
 # All errors are handled explicitly via conditional checks below.
-
-# Source the test-cache library (best-effort; absent on older plugin versions).
-_VB_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
-if [[ -f "$_VB_SCRIPT_DIR/test-cache.sh" ]]; then
-  # shellcheck source=test-cache.sh
-  source "$_VB_SCRIPT_DIR/test-cache.sh"
-fi
 
 # ---------------------------------------------------------------------------
 # Skip-pattern classifier
@@ -349,21 +331,6 @@ validate_body() {
       printf 'tests-path-not-found: no Tests path exists in HEAD tree or staged diff\n' >&2
       return 1
     fi
-
-    # Cache check (Slice 9): when GITGIT_TEST_CACHE_REQUIRED=1, every Tests
-    # path must have a recent green run in the test-runner cache.
-    if [[ "${GITGIT_TEST_CACHE_REQUIRED:-0}" = "1" ]] && command -v test_cache_query_run >/dev/null 2>&1; then
-      while IFS= read -r path; do
-        local clean_path="${path%%#*}"
-        clean_path="${clean_path%%,*}"
-        clean_path=$(printf '%s' "$clean_path" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-        [[ -z "$clean_path" ]] && continue
-        if ! test_cache_query_run "$clean_path" >/dev/null 2>&1; then
-          printf 'tests-cache-miss: %s has no recent green run\n' "$clean_path" >&2
-          return 1
-        fi
-      done <<< "$tests_paths"
-    fi
   fi
 
   # Rule: Red-then-green required unless Slice is RTG-exempt.
@@ -375,24 +342,7 @@ validate_body() {
 
     # Value must be "yes", "n/a", or "n/a (...)" with >=10 chars rationale.
     if [[ "$rtg_value" = "yes" ]]; then
-      # Cache check (Slice 9): when GITGIT_TEST_CACHE_REQUIRED=1 and RTG is
-      # "yes", each Tests path must have a red entry preceding a green entry
-      # within the cache window.
-      if [[ "${GITGIT_TEST_CACHE_REQUIRED:-0}" = "1" ]] && command -v test_cache_query_red_then_green >/dev/null 2>&1; then
-        # tests_paths may be unset if slice is opt-out, guard with -n check.
-        if [[ -n "${tests_paths:-}" ]]; then
-          while IFS= read -r path; do
-            local clean_path="${path%%#*}"
-            clean_path="${clean_path%%,*}"
-            clean_path=$(printf '%s' "$clean_path" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-            [[ -z "$clean_path" ]] && continue
-            if ! test_cache_query_red_then_green "$clean_path" >/dev/null 2>&1; then
-              printf 'red-then-green-evidence-missing: %s has no recent red preceding green\n' "$clean_path" >&2
-              return 1
-            fi
-          done <<< "$tests_paths"
-        fi
-      fi
+      : # Self-attestation: "yes" is accepted as-is; no cache evidence required.
     elif [[ "$rtg_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
       local rationale="${BASH_REMATCH[1]}"
       if [[ ${#rationale} -lt 10 ]]; then

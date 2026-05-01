@@ -4,10 +4,9 @@ user-invocable: true
 description: >
   Reference skill for the gitgit commit body schema: subject + WHY
   paragraph + Slice / Tests / Red-then-green trailers parsed via
-  git interpret-trailers, with opt-out enum tokens and an evidence
-  cache that backs the trailer claims. Read this skill when the
-  hook denies a commit and you want the canonical schema, examples,
-  escape-hatches, and troubleshooting.
+  git interpret-trailers, with opt-out enum tokens. Read this skill
+  when the hook denies a commit and you want the canonical schema,
+  examples, escape-hatches, and troubleshooting.
 argument-hint: ""
 ---
 
@@ -82,9 +81,16 @@ volgende sectie), ofwel vrije tekst die beschrijft welke lagen de commit raakt
 `.rb`, `.py`, `.js`, `.ts`, `.go`, `.sh`, `.bash`, `.feature`, `.tsx`, `.jsx`.
 Anker-suffixen (`#method_name`) worden gestript voor de bestandscontrole.
 
-**`Red-then-green`-regels:** waarde `yes` betekent dat de test echt in rode
-staat gezien is. Waarde `n/a (reden)` is toegestaan met een rationale van
-minimaal 10 tekens. Kale `n/a` zonder rationale is afgewezen.
+**`Red-then-green`-regels:** waarde `yes` is zelf-attestatie dat de test
+in rode staat gezien is; er is geen cache-bewijs vereist of geverifieerd.
+Waarde `n/a (reden)` is toegestaan met een rationale van minimaal 10 tekens.
+Kale `n/a` zonder rationale is afgewezen.
+
+Structurele beperking: de validator controleert de aanwezigheid en het formaat
+van `Red-then-green`, niet de inhoudelijke waarheid ervan. Dat is een
+bewuste keuze: een cache die automatisch bewijs bijhoudt voegt meer
+complexiteit toe dan ze waard is. De attestatie-verantwoordelijkheid ligt
+bij de auteur.
 
 ### Optionele trailers
 
@@ -274,14 +280,6 @@ bypascht die hook niet. Gebruik voor triviale-maar-grotere commits op de
 git-native laag het `# vsd-skip: <reden>` magic comment in plaats van de
 environment variable.
 
-### `GITGIT_TEST_CACHE_REQUIRED=1`
-
-Standaard uitgeschakeld. Als je dit op `1` zet, moet elk pad in de
-`Tests:`-trailer een recente groene run in de test-runner cache hebben
-(`~/.claude/var/gitgit-test-runs.log`). Gebruik `/gitgit:run-spec` om
-runs te loggen en `/gitgit:saw-red` om handmatig een rode observatie te
-registreren.
-
 ## Troubleshooting
 
 **"De hook blokkeert mijn commit met missing-tests; hoe los ik dat op?"**
@@ -312,21 +310,6 @@ die van een van de vijf meest recente commits op de huidige branch. Dit
 wijst op copy-paste van een eerder commit-bericht. Herschrijf de WHY voor
 dit specifieke commit; zelfs kleine tekstuele afwijkingen zijn voldoende.
 
-**"tests-cache-miss op een pad dat ik echt heb gerund"**
-
-De cache-check is opt-in via `GITGIT_TEST_CACHE_REQUIRED=1`. Als die
-variabele niet gezet is, wordt de cache nooit geraadpleegd en krijg je
-deze fout niet. Is de variabele wel gezet, dan is er geen cache-entry
-gevonden voor het pad. Gebruik `/gitgit:run-spec <pad>` om een run te
-loggen, of exporteer `GITGIT_TEST_CACHE_REQUIRED=0` voor dit commit.
-
-**"red-then-green-evidence-missing terwijl ik echt rood heb gezien"**
-
-De cache bevat geen RED-entry voor het pad dat voorafgaat aan de groene run.
-Gebruik `/gitgit:saw-red <pad>` om handmatig een rode observatie te
-registreren, daarna `/gitgit:run-spec <pad>` voor de groene run. De
-combinatie satisfies `Red-then-green: yes` validatie.
-
 **"push geblokkeerd door wip-gate maar de wip-commit is al geamend"**
 
 Als je een `Slice: wip` commit hebt geamend naar een normaal schema-compliant
@@ -355,8 +338,7 @@ PreToolUse:Bash dispatcher (hooks/dispatch.sh)
     +-> validate-body.sh (gedeelde bibliotheek)
            |-- layer-classify.sh
            |-- example-synth.sh
-           |-- wip-gate.sh
-           +-- test-cache.sh
+           +-- wip-gate.sh
 
 git commit (buiten Claude, via CLI of IDE)
     |

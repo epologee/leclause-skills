@@ -16,7 +16,7 @@ structured commit body schema across both Claude-driven commits
    (PreToolUse guards plus git-native hooks) that validates a structured
    body schema: subject + WHY paragraph + Slice / Tests / Red-then-green
    trailers parsed via `git interpret-trailers`, with seven opt-out enum
-   tokens and an evidence cache that backs the trailer claims.
+   tokens. `Red-then-green: yes` is self-attestation; no cache backs it.
 
 Reference for the schema, examples, escape-hatches, and troubleshooting:
 `/gitgit:commit-discipline`.
@@ -32,7 +32,6 @@ Reference for the schema, examples, escape-hatches, and troubleshooting:
 | commit-discipline | `/gitgit:commit-discipline` | |
 | install-hooks | `/gitgit:install-hooks` | |
 | run-spec | `/gitgit:run-spec` | |
-| saw-red | `/gitgit:saw-red` | |
 
 - **commit-all-the-things** inspects `git status` plus `git diff`, groups
   changes by intent (feature, fix, refactor, docs, config), and creates
@@ -56,12 +55,8 @@ Reference for the schema, examples, escape-hatches, and troubleshooting:
   made outside Claude Code still get validated. `--force` overwrites
   existing hooks (a backup is taken automatically); `--dry-run` previews.
 - **run-spec** runs a single test/spec file through the project's
-  auto-detected runner (RSpec, Jest, Vitest, Go test, pytest) and writes a
-  green/red entry to the test-runner cache.
-- **saw-red** writes a RED cache entry for a spec path you observed
-  failing outside `/gitgit:run-spec` (IDE, terminal, CI), enabling the
-  `Red-then-green: yes` trailer to validate once a subsequent green run
-  is recorded.
+  auto-detected runner (RSpec, Jest, Vitest, Go test, pytest) and prints
+  a PASS/FAIL summary. No cache side-effects.
 
 ## Hooks
 
@@ -145,7 +140,7 @@ requirement.
 
 ## Bypass
 
-Five escape-hatches, each logged for later auditing:
+Four escape-hatches, each logged for later auditing:
 
 - `# vsd-skip: <reason>` magic comment in the body (logged to
   `~/.claude/var/gitgit-skips.log`)
@@ -166,19 +161,6 @@ Five escape-hatches, each logged for later auditing:
 See `/gitgit:commit-discipline` for the full schema, opt-out matrix, and
 troubleshooting guide.
 
-## Test-runner cache (optional)
-
-When `GITGIT_TEST_CACHE_REQUIRED=1` is set in the environment, the body
-validator additionally checks every path in the `Tests:` trailer against
-the test-runner cache (`~/.claude/var/gitgit-test-runs.log`). Use
-`/gitgit:run-spec <path>` to log a run, `/gitgit:saw-red <path>` to log a
-manual red observation. With the cache required, `Red-then-green: yes`
-also requires a red entry preceding a green entry within the cache window.
-
-The cache is opt-in (default off) so existing flows keep working; the
-required-mode is for operators who want stronger evidence behind the
-trailer claims.
-
 ## Test suite
 
 ```bash
@@ -196,7 +178,6 @@ The BATS suite is split per concern:
   existing hooks, `core.hooksPath`, worktree).
 - `migrated-hooks/`, `migration/` cover the `dont-do-that` to `gitgit`
   migration parity.
-- `test-cache/` covers the opt-in test-runner cache.
 
 The smoke suite spins up disposable git repos and exercises the full hook
 chain end-to-end.

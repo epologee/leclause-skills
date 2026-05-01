@@ -224,6 +224,46 @@ prepare-commit-msg shape adds 2).
 
 ---
 
+## Slice 9 removal
+
+**SHA:** to be determined (orchestrator commits)
+
+Slice 9 was REMOVED. The test-runner cache introduced in this slice
+turned out to add more complexity than value: the cache-required mode
+was opt-in by default, making it rarely exercised; the `saw-red` skill
+and the cache query in `validate-body.sh` duplicated concerns that are
+better owned by the author; and the BATS suite for the cache alone
+accounted for ~30 cases that tested infrastructure rather than schema
+rules.
+
+The operator chose to drop the cache entirely. Changes applied:
+
+- Deleted: `packages/gitgit/hooks/lib/test-cache.sh`
+- Deleted: `packages/gitgit/skills/saw-red/`
+- Deleted: `packages/gitgit/test/test-cache/`
+- Modified: `validate-body.sh` -- removed `source test-cache.sh`, removed
+  `tests-cache-miss` block, removed `red-then-green-evidence-missing` block,
+  removed `GITGIT_TEST_CACHE_REQUIRED` env-var handling.
+- Modified: `skills/run-spec/lib/run-spec.sh` -- dropped `test_cache_record_run`
+  call; skill now runs the test and reports PASS/FAIL with no side-effects.
+- Modified: `skills/run-spec/SKILL.md` -- reframed as ergonomic runner-detect
+  helper; removed all cache claims.
+- Modified: `skills/commit-discipline/SKILL.md` -- removed `tests-cache-miss`
+  and `red-then-green-evidence-missing` troubleshooting entries, removed
+  `GITGIT_TEST_CACHE_REQUIRED` escape-hatch, added explicit note that
+  `Red-then-green: yes` is self-attestation (structural-vs-semantic limit),
+  updated architecture diagram to remove `test-cache.sh`.
+- Modified: `packages/gitgit/README.md` -- removed `saw-red` from skill list,
+  updated `run-spec` description, removed cache-validation feature section.
+- Modified: top-level `README.md` -- dropped `/gitgit:saw-red`, reframed
+  `/gitgit:run-spec`, removed cache claims from gitgit row.
+- Modified: `test/run-bats` -- removed `test-cache/*.bats` glob.
+
+BATS count before removal: ~245 cases. After: ~215 cases (~30 cache-specific
+cases dropped).
+
+---
+
 ## Second pride pass (fix-slice)
 
 **SHA:** 2e6767f (the comprehensive fix-commit above)
