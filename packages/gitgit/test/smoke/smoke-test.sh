@@ -111,7 +111,7 @@ git commit -m "$(cat <<'EOF'
 Use policy on the read path
 Body line right after subject without a blank line.
 EOF
-)" # ack-rule4
+)" # ack-rule4:essentie
 INNER_CMD
 )
 heredoc_no_blank_json=$(jq -cn --arg cmd "$heredoc_no_blank" \
@@ -135,7 +135,7 @@ Wrap each line at the seventy-two char ceiling.
 
 Slice: docs-only
 EOF
-)" # ack-rule4
+)" # ack-rule4:essentie
 INNER_CMD
 )
 heredoc_clean_json=$(jq -cn --arg cmd "$heredoc_clean" \
@@ -149,7 +149,7 @@ expect_allow "format: valid heredoc with blank separator passes" \
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
 expect_warning_subject "format: 58-char subject emits aspirational warning" \
-  "$(pretool_bash 'git commit -m "Cap retry budget so the workflow no longer hammers backend" # ack-rule4')"
+  "$(pretool_bash 'git commit -m "Cap retry budget so the workflow no longer hammers backend" # ack-rule4:essentie')"
 
 # --- commit-subject: rule 1 (activity-word start) ---
 
@@ -190,16 +190,16 @@ expect_deny "subject: Apply PR comments denies with rule 2" \
 reset_state
 run "$(pretool_bash 'git commit -m "Fix typo"')"
 expect_allow "subject: ack-rule1 on clean rewrite clears violation" \
-  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule1')"
+  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule1:gedrag')"
 
 reset_state
 run "$(pretool_bash 'git commit -m "Address pride findings"')"
 expect_allow "subject: ack-rule2 on clean rewrite clears trigger violation" \
-  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule2')"
+  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule2:effect')"
 
 reset_state
 expect_deny "subject: ack-rule on still-violating subject denies with overtreedt nog" \
-  "$(pretool_bash 'git commit -m "Fix typo" # ack-rule1')" \
+  "$(pretool_bash 'git commit -m "Fix typo" # ack-rule1:gedrag')" \
   "overtreedt nog"
 
 # --- commit-subject: rotation reminder ---
@@ -212,17 +212,17 @@ expect_deny "subject: clean subject in fresh state surfaces rule 4" \
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
 expect_allow "subject: clean subject with correct ack passes rotation" \
-  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule4')"
+  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule4:essentie')"
 
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
 expect_deny "subject: wrong ack number still denies pending rule 4" \
-  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule9')" \
+  "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule9:solist')" \
   "Rule 4/14"
 
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
-run "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule4')" 0
+run "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule4:essentie')" 0
 expect_deny "subject: rotation advances after pass to rule 5" \
   "$(pretool_bash 'git commit -m "Require session context on create"')" \
   "Rule 5/14"
@@ -252,7 +252,7 @@ heredoc_body_cmd=$(cat <<'INNER_CMD'
 git commit -m "$(cat <<'EOF'
 Clean subject
 
-# ack-rule4
+# ack-rule4:essentie
 EOF
 )"
 INNER_CMD

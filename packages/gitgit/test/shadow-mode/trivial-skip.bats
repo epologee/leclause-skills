@@ -15,7 +15,7 @@ load helpers
   local before
   before=$(shadow_log_line_count)
 
-  run_dispatch 'git commit -m "Tweak readme wording" # ack-rule4'
+  run_dispatch 'git commit -m "Tweak readme wording" # ack-rule4:essentie'
 
   # Trivial: must pass.
   [ "$status" -eq 0 ]
@@ -34,7 +34,7 @@ load helpers
   local before
   before=$(shadow_log_line_count)
 
-  run_dispatch 'git commit -m "Guard against nil on session close" # ack-rule4'
+  run_dispatch 'git commit -m "Guard against nil on session close" # ack-rule4:essentie'
 
   [ "$status" -eq 0 ]
   local after
@@ -48,7 +48,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="$(printf 'a.rb\nb.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
+  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
   [ "$status" -eq 2 ]
 }
@@ -59,7 +59,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="lib/big.rb"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
+  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
   [ "$status" -eq 2 ]
 }

@@ -12,7 +12,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/session.rb\nspec/models/session_spec.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Session boundary model for transaction events" # ack-rule4'
+  run_dispatch 'git commit -m "Session boundary model for transaction events" # ack-rule4:essentie'
 
   [ "$status" -eq 2 ]
 }
@@ -27,7 +27,7 @@ load helpers
   cmd=$(commit_cmd_heredoc \
     "Controller boundary for incoming session events" \
     "$(printf 'When StartTransaction messages arrive with an invalid meter reading,\nthe previous implementation rejected the entire event and masked\nsession starts in the analytics pipeline.\n\nTests: spec/controllers/foo_spec.rb\nSlice: handler + spec\nRed-then-green: yes')")
-  cmd="$cmd # ack-rule4"
+  cmd="$cmd # ack-rule4:essentie"
 
   run_dispatch "$cmd"
 
@@ -39,7 +39,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/session.rb\nspec/models/session_spec.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Session boundary model for transaction events" # ack-rule4'
+  run_dispatch 'git commit -m "Session boundary model for transaction events" # ack-rule4:essentie'
 
   [ "$status" -eq 2 ]
   # stderr carries the deny message (bats captures combined output in $output).
@@ -51,7 +51,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/session.rb\nspec/models/session_spec.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Session boundary model for transaction events" # ack-rule4'
+  run_dispatch 'git commit -m "Session boundary model for transaction events" # ack-rule4:essentie'
 
   [ "$status" -eq 2 ]
   # The example body always contains a Slice trailer.
@@ -65,7 +65,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/session.rb\nspec/models/session_spec.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Session boundary model for transaction events" # ack-rule4'
+  run_dispatch 'git commit -m "Session boundary model for transaction events" # ack-rule4:essentie'
 
   [ "$status" -eq 2 ]
   [[ "$output" == *"docs-only"* ]]

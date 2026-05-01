@@ -17,7 +17,7 @@ valid_why_only_cmd() {
   cmd=$(commit_cmd_heredoc \
     "$subject" \
     "$(printf 'This change addresses a latent race condition in the session\nhandler that manifested under high concurrency in staging.')")
-  printf '%s # ack-rule4' "$cmd"
+  printf '%s # ack-rule4:essentie' "$cmd"
 }
 
 # commit_with_trailers_cmd <subject> <trailer-block>
@@ -29,7 +29,7 @@ commit_with_trailers_cmd() {
   cmd=$(commit_cmd_heredoc \
     "$subject" \
     "$(printf 'This change addresses a latent race condition in the session\nhandler that manifested under high concurrency in staging.\n\n%s' "$trailers")")
-  printf '%s # ack-rule4' "$cmd"
+  printf '%s # ack-rule4:essentie' "$cmd"
 }
 
 # ---------------------------------------------------------------------------

@@ -12,7 +12,7 @@ load helpers
   write_global_sentinel
 
   run_dispatch_no_session \
-    'git commit -m "bad commit no body" # ack-rule4'
+    'git commit -m "bad commit no body" # ack-rule4:essentie'
 
   [ "$status" -eq 0 ]
   [[ "$output" != *"[gitgit/"* ]]
@@ -25,7 +25,7 @@ load helpers
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
   run_dispatch_no_session \
-    'git commit -m "bare subject no body" # ack-rule4'
+    'git commit -m "bare subject no body" # ack-rule4:essentie'
 
   [ "$status" -eq 2 ]
 }
@@ -35,7 +35,7 @@ load helpers
 
   # Provide a session_id too, but no session-specific sentinel.
   run_dispatch_with_session \
-    'git commit -m "bad commit no body" # ack-rule4' \
+    'git commit -m "bad commit no body" # ack-rule4:essentie' \
     "some-session-xyz"
 
   [ "$status" -eq 0 ]

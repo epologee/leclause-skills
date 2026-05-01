@@ -54,7 +54,7 @@ SHIM
   local before
   before=$(shadow_log_line_count)
 
-  run_dispatch "git commit -m \"Merge branch 'feature/x' into main\" # ack-rule4"
+  run_dispatch "git commit -m \"Merge branch 'feature/x' into main\" # ack-rule4:essentie"
 
   [ "$status" -eq 0 ]
   [[ "$output" != *'commit-body'* ]]
@@ -67,7 +67,7 @@ SHIM
   local before
   before=$(shadow_log_line_count)
 
-  run_dispatch 'git commit -m "Revert \"Expose session endpoint\"" # ack-rule4'
+  run_dispatch 'git commit -m "Revert \"Expose session endpoint\"" # ack-rule4:essentie'
 
   [ "$status" -eq 0 ]
   [[ "$output" != *'commit-body'* ]]
@@ -80,7 +80,7 @@ SHIM
   local before
   before=$(shadow_log_line_count)
 
-  run_dispatch 'git commit -m "fixup! Expose session endpoint" # ack-rule4'
+  run_dispatch 'git commit -m "fixup! Expose session endpoint" # ack-rule4:essentie'
 
   [ "$status" -eq 0 ]
   [[ "$output" != *'commit-body'* ]]
@@ -93,7 +93,7 @@ SHIM
   local before
   before=$(shadow_log_line_count)
 
-  run_dispatch 'git commit -m "squash! Expose session endpoint" # ack-rule4'
+  run_dispatch 'git commit -m "squash! Expose session endpoint" # ack-rule4:essentie'
 
   [ "$status" -eq 0 ]
   [[ "$output" != *'commit-body'* ]]
@@ -106,7 +106,7 @@ SHIM
   local before
   before=$(shadow_log_line_count)
 
-  run_dispatch 'git commit -m "amend! Expose session endpoint" # ack-rule4'
+  run_dispatch 'git commit -m "amend! Expose session endpoint" # ack-rule4:essentie'
 
   [ "$status" -eq 0 ]
   [[ "$output" != *'commit-body'* ]]

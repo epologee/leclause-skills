@@ -3,7 +3,10 @@
 # PreToolUse:Bash guard. On every git commit, parse the subject from -m /
 # --message / HEREDOC; check rules 1 (activity-word start) and 2 (trigger
 # phrasing); otherwise serve a rotating thematic reminder. Blocks until an
-# appropriate '# ack-rule<N>' token appears.
+# appropriate '# ack-rule<N>:<wachtwoord>' token appears, where the
+# wachtwoord must match the mnemonic for that rule. The mnemonics live in
+# hooks/lib/rotation-rules.sh and are documented in the
+# /gitgit:commit-discipline skill (section "Rotation reminders").
 #
 # State: three lines at $GITGIT_COMMIT_RULE_STATE_FILE (fallback
 # $HOME/.claude/var/gitgit-commit-rule-state): pending_violation,
@@ -12,25 +15,10 @@
 # One-shot migration: if the old dont-do-that state file exists and the new
 # one does not, the old file is copied to the new path on first run.
 
-# Readable short summaries for the single-line block. The long rules with
-# full justification stay in the in-source array so the operator can trace
-# each code back to its meaning via the README or this file.
-_DD_RULES=(
-  "Subject beschrijft nieuw gedrag/capability, geen git-activiteit. Activity-word start (Fix/Add/Update/...) verbergt het resultaat."
-  "Verwijs niet naar de trigger. 'Address feedback/comments/findings', 'Apply PR comments' beschrijft WAAROM je commit, niet WAT het systeem nu doet."
-  "Subject past in 50 (target) / 72 (max) chars. Imperatief, Engels. Geen diff-samenvatting."
-  "Body alleen als nodig: 2-4 zinnen prose over het waarom."
-  "Geen file listings of class inventaris. De diff toont files al."
-  "Geen bullet dumps of meta-narrative ('reviewer vroeg', 'tests faalden')."
-  "Logisch onafhankelijke changes = aparte commits. Test + implementation van 1 feature = 1 atomic commit. Formatting drift hoort niet in feature commits."
-  "Nooit broken code committen met plan om de volgende commit te fixen."
-  "Geen Co-Authored-By van AI tooling tenzij gevraagd."
-  "Geen 'Generated with Claude Code' footer."
-  "Review de staged diff voor commit. Edit-tool 'updated successfully' is geen bewijs van volledigheid."
-  "Commit check = evidence, niet gut feel. Draaide test, raakte endpoint, checkte state."
-  "Nooit squash merge. Bewaar commit history zodat reviewers de iteratie zien."
-  "Amend is verboden tenzij het onpushed secrets/PII strippen is. Gebruik een nieuwe commit voor follow-up."
-)
+# Source the password mnemonics; provides DD_RULE_PASSWORD[].
+_DD_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$_DD_HERE/../lib/rotation-rules.sh"
+
 # Rule 3 (idx 2) is owned by commit-format structurally and stays out of
 # the rotation so it does not double up as an ack-bypassable reminder.
 _DD_ROTATION_SLOTS=(3 4 5 6 7 8 9 10 11 12 13)
@@ -99,9 +87,14 @@ guard_commit_subject() {
     }' || true)
   cmd_clean=$(echo "$cmd_clean" | sed -E $'s/"[^"]*"//g; s/\x27[^\x27]*\x27//g' || true)
 
+  # Optional :<password> suffix. Bare `# ack-rule<N>` is still recognised as
+  # "user tried to ack" (drives the "overtreedt nog" branch when their subject
+  # is still violating); only the suffixed form actually clears state.
   local ack_idx=-1
-  if [[ "$cmd_clean" =~ (^|[[:space:]])\#[[:space:]]*ack-rule([0-9]+) ]]; then
+  local ack_password=""
+  if [[ "$cmd_clean" =~ (^|[[:space:]])\#[[:space:]]*ack-rule([0-9]+)(:([a-z]+))? ]]; then
     ack_idx=$((${BASH_REMATCH[2]} - 1))
+    ack_password="${BASH_REMATCH[4]}"
   fi
 
   # Rule 1 (idx 0) / Rule 2 (idx 1) violation detection on the subject.
@@ -150,28 +143,38 @@ guard_commit_subject() {
     dd_emit_deny commit-subject "Editor-mode commit verbergt subject. Pass inline: git commit -m \"...\"."
   fi
 
+  # Helper: does the ack supply the right password for the named rule index?
+  _dd_ack_matches() {
+    local target_idx="$1"
+    [[ "$ack_idx" -ne "$target_idx" ]] && return 1
+    [[ -z "$ack_password" ]] && return 1
+    [[ "$ack_password" != "${DD_RULE_PASSWORD[$target_idx]}" ]] && return 1
+    return 0
+  }
+
   # Fresh violation: always deny with rule 1 or 2.
   if [[ "$violation_idx" -ge 0 ]]; then
     local rn=$((violation_idx + 1))
     if [[ "$ack_idx" -eq "$violation_idx" ]]; then
       _dd_commit_deny "$violation_idx" \
-        "\"${subject}\" overtreedt nog; rewrite en hou '# ack-rule${rn}' erop." \
+        "\"${subject}\" overtreedt nog. Rewrite + '# ack-rule${rn}:<wachtwoord>' (zie /gitgit:commit-discipline)." \
         "$violation_idx" "$pr" "$rp" "$state_file"
     else
       _dd_commit_deny "$violation_idx" \
-        "\"${subject}\" overtreedt. Rewrite + '# ack-rule${rn}'." \
+        "\"${subject}\" overtreedt. Rewrite + '# ack-rule${rn}:<wachtwoord>' (zie /gitgit:commit-discipline)." \
         "$violation_idx" "$pr" "$rp" "$state_file"
     fi
   fi
 
-  # Pending violation from a previous call: subject must be clean AND ack present.
+  # Pending violation from a previous call: subject must be clean AND ack
+  # must carry the right password.
   if [[ "$pv" -ge 0 ]]; then
-    if [[ "$ack_idx" -eq "$pv" ]]; then
+    if _dd_ack_matches "$pv"; then
       _dd_write_state "$state_file" -1 "$pr" "$rp"
       return 0
     fi
     _dd_commit_deny "$pv" \
-      "\"${subject}\" ack ontbreekt. Voeg '# ack-rule$((pv + 1))' toe." \
+      "\"${subject}\" wachtwoord onjuist of ontbreekt. Plak '# ack-rule$((pv + 1)):<wachtwoord>' (zie /gitgit:commit-discipline)." \
       "$pv" "$pr" "$rp" "$state_file"
   fi
 
@@ -179,17 +182,17 @@ guard_commit_subject() {
   if [[ "$pr" -lt 0 ]]; then
     local selected="${_DD_ROTATION_SLOTS[$rp]}"
     _dd_commit_deny "$selected" \
-      "\"${subject}\" rotation reminder. Voeg '# ack-rule$((selected + 1))' toe." \
+      "reminder. Plak '# ack-rule$((selected + 1)):<wachtwoord>' (zoek wachtwoord in /gitgit:commit-discipline)." \
       -1 "$selected" "$rp" "$state_file"
   fi
 
-  # Pending rotation: ack must match exactly.
-  if [[ "$ack_idx" -eq "$pr" ]]; then
+  # Pending rotation: ack must match exactly with the right password.
+  if _dd_ack_matches "$pr"; then
     local new_rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
     _dd_write_state "$state_file" -1 -1 "$new_rp"
     return 0
   fi
   _dd_commit_deny "$pr" \
-    "\"${subject}\" ack ontbreekt. Voeg '# ack-rule$((pr + 1))' toe." \
+    "wachtwoord onjuist of ontbreekt. Plak '# ack-rule$((pr + 1)):<wachtwoord>' (zie /gitgit:commit-discipline)." \
     -1 "$pr" "$rp" "$state_file"
 }

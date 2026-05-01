@@ -16,7 +16,7 @@ load helpers
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
   run_dispatch_with_session \
-    'git commit -m "bare subject no body" # ack-rule4' \
+    'git commit -m "bare subject no body" # ack-rule4:essentie' \
     "$sid"
 
   [ "$status" -eq 2 ]
@@ -34,7 +34,7 @@ load helpers
   # trigger-phrase pattern (rule 2). "Typo corrected in README" starts with
   # "Typo" which is not in the activity-word list; ack-rule4 clears pr=3.
   run_dispatch_with_session \
-    'git commit -m "Typo corrected in README" # ack-rule4' \
+    'git commit -m "Typo corrected in README" # ack-rule4:essentie' \
     "$sid"
 
   [ "$status" -eq 0 ]

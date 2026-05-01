@@ -24,7 +24,7 @@ Wrap each line at the seventy-two char ceiling.
 Slice: docs-only
 Co-Authored-By: AI <noreply@anthropic.com>
 EOF
-)" # ack-rule4
+)" # ack-rule4:essentie
 INNER_CMD
 )
 
@@ -48,7 +48,7 @@ Wrap each line at the seventy-two char ceiling.
 Slice: docs-only
 Co-Authored-By: A Human <human@example.com>
 EOF
-)" # ack-rule4
+)" # ack-rule4:essentie
 INNER_CMD
 )
 
@@ -72,7 +72,7 @@ Wrap each line at the seventy-two char ceiling.
 Slice: docs-only
 Co-Authored-By: AI <noreply@anthropic.com>
 EOF
-)" # ack-rule4
+)" # ack-rule4:essentie
 INNER_CMD
 )
 
@@ -93,7 +93,7 @@ Wrap each line at the seventy-two char ceiling.
 
 Slice: docs-only
 EOF
-)" # ack-rule4
+)" # ack-rule4:essentie
 INNER_CMD
 )
 
