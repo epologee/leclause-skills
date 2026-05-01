@@ -148,7 +148,8 @@ dd_emit_pre_context() {
 # dd_extract_commit_message <bash-command>
 # Extract the commit message from a bash command string.
 # Tries heredoc body first (the pattern Claude Code defaults to for multi-line
-# commits); falls back to the first -m / -am / --message literal.
+# commits); falls back to all -m / -am / --message literals, joined with blank
+# lines (matching git's paragraph-per-flag behavior).
 # Prints the message on stdout, or nothing if no message is detected.
 # Both commit-format.sh and commit-body.sh rely on this shared parser.
 dd_extract_commit_message() {
@@ -179,12 +180,28 @@ dd_extract_commit_message() {
     ' <<< "$command")
   fi
 
-  # Fallback: first -m / -am / --message literal.
+  # Fallback: all -m / -am / --message literals, joined with blank lines.
+  # Multiple -m flags concatenate into subject + body paragraphs in git,
+  # each separated by a blank line. Collect every match, strip the flag and
+  # surrounding quotes from each, then join them with \n\n.
   if [[ -z "$message" ]]; then
-    local dashm
-    dashm=$(echo "$command" | grep -oE -- $'(-[a-zA-Z]*m|--message)[[:space:]=]+("[^"]*"|\x27[^\x27]*\x27)' | head -1 || true)
-    if [[ -n "$dashm" ]]; then
-      message=$(echo "$dashm" | sed -E $'s/^(-[a-zA-Z]*m|--message)[[:space:]=]+["\x27]//;s/["\x27]$//')
+    local all_dashm stripped para
+    all_dashm=$(printf '%s' "$command" \
+      | grep -oE -- $'(-[a-zA-Z]*m|--message)[[:space:]=]+("[^"]*"|\x27[^\x27]*\x27)' \
+      || true)
+    if [[ -n "$all_dashm" ]]; then
+      stripped=""
+      while IFS= read -r para; do
+        local val
+        val=$(printf '%s' "$para" \
+          | sed -E $'s/^(-[a-zA-Z]*m|--message)[[:space:]=]+["\x27]//;s/["\x27]$//')
+        if [[ -z "$stripped" ]]; then
+          stripped="$val"
+        else
+          stripped="${stripped}"$'\n\n'"${val}"
+        fi
+      done <<< "$all_dashm"
+      message="$stripped"
     fi
   fi
 

@@ -275,6 +275,81 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# Form 6b: -am combined-flag form
+# `git commit -am "subject"` combines -a (auto-stage) with -m (message). The
+# parser regex (-[a-zA-Z]*m|--message) matches -am the same way it matches -m,
+# so the extract path sees the same subject-only message as the file path and
+# both must fail with missing-body. The pride pass found that this form was
+# never asserted in the cross-layer suite even though the rover communiques
+# hedged on whether -am was covered.
+# ---------------------------------------------------------------------------
+
+@test "equivalence: -am combined-flag form agrees on exit code and violation code" {
+  _setup_valid_shim
+  unset GITGIT_TRIVIAL_OK
+
+  local subject="Subject without body"
+  local cmd="git commit -am \"${subject}\""
+
+  # File-input path.
+  local file
+  file=$(write_fixture "form6b.txt" "$subject")
+  run invoke_validator_file "$file"
+  local file_status=$status
+  local file_code
+  file_code=$(violation_code_from "$output")
+
+  # Extract path.
+  local extract_out extract_status
+  extract_out=$(invoke_via_extract "$cmd") && extract_status=0 || extract_status=$?
+  local extract_code
+  extract_code=$(violation_code_from "$extract_out")
+
+  [ "$file_status" -eq "$extract_status" ]
+  [ "$file_code" = "$extract_code" ]
+  # Subject-only message without trivial flag must fail with missing-body.
+  [ "$file_code" = "missing-body" ]
+}
+
+# ---------------------------------------------------------------------------
+# Form 6c: multiple -m flags concatenate to subject + body
+# `git commit -m "subject" -m "body"` produces a two-paragraph commit at git
+# execution time. The current PreToolUse parser only captures the first -m
+# literal (head -1 in the regex pipeline), so the extract path sees only the
+# subject while the file path sees both paragraphs. This test asserts
+# equivalence so the divergence is visible: any future parser change that
+# concatenates multiple -m values closes the gap and the test stays green.
+# ---------------------------------------------------------------------------
+
+@test "equivalence: multiple -m flags agree on exit code and violation code" {
+  _setup_valid_shim
+  unset GITGIT_TRIVIAL_OK
+
+  local subject="subject"
+  local body_para="body block with Slice: docs-only"
+
+  # File-input path: the two paragraphs git would produce from two -m flags.
+  local body
+  body="${subject}"$'\n\n'"${body_para}"
+  local file
+  file=$(write_fixture "form6c.txt" "$body")
+  run invoke_validator_file "$file"
+  local file_status=$status
+  local file_code
+  file_code=$(violation_code_from "$output")
+
+  # Extract path: two -m flags on the command line.
+  local cmd="git commit -m \"${subject}\" -m \"${body_para}\""
+  local extract_out extract_status
+  extract_out=$(invoke_via_extract "$cmd") && extract_status=0 || extract_status=$?
+  local extract_code
+  extract_code=$(violation_code_from "$extract_out")
+
+  [ "$file_status" -eq "$extract_status" ]
+  [ "$file_code" = "$extract_code" ]
+}
+
+# ---------------------------------------------------------------------------
 # Form 7: -F <file> scope demonstration
 # The -F flag reads a message from a file at git-execution time, not at
 # PreToolUse parse time. dd_extract_commit_message sees the literal string
