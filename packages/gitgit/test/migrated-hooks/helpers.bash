@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# Shared setup, teardown, and fixture helpers for the migrated-hooks BATS suite.
+#
+# Mock strategy: identical git-shim approach as block-mode/helpers.bash. The
+# guards under test (commit-trailers, git-dash-c) only need a minimal shim
+# because they do not consult git state directly. We still install one so that
+# guard_commit_format and guard_commit_body (which run in the same dispatch
+# pass) get sane shortstat / diff / interpret-trailers values.
+#
+# Shim variables:
+#   GIT_SHIM_ORIGIN_URL                 - "git config --get remote.origin.url"
+#   GIT_SHIM_SHORTSTAT                  - "git diff --cached --shortstat"
+#   GIT_SHIM_DIFF_NAMES                 - "git diff --cached --name-only"
+#   GIT_SHIM_INTERPRET_TRAILERS_OUTPUT  - "git interpret-trailers --parse"
+#   GIT_SHIM_LS_TREE_OUTPUT             - "git ls-tree -r HEAD --name-only"
+#   GIT_SHIM_LOG_HASHES                 - "git log -5 --pretty=format:%H HEAD"
+#   GIT_SHIM_LOG_BODY                   - "git log -1 --pretty=format:%B <hash>"
+#   GIT_SHIM_HEAD_ABBREV / HEAD_SHORT   - rev-parse helpers used by example-synth
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DISPATCH="$SCRIPT_DIR/../../hooks/dispatch.sh"
+
+# Override shadow log so tests never write to the real log.
+export GITGIT_SHADOW_LOG="$BATS_TEST_TMPDIR/shadow.log"
+
+# Default shims set up a trivial commit (1 file, 1 insertion) so the body
+# guard auto-skips and we can isolate the trailer / dash-c behaviour.
+export GIT_SHIM_ORIGIN_URL="https://github.com/someorg/somerepo.git"
+export GIT_SHIM_SHORTSTAT=" 1 file changed, 1 insertion(+)"
+export GIT_SHIM_DIFF_NAMES="docs/notes.md"
+export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
+export GIT_SHIM_LS_TREE_OUTPUT=""
+export GIT_SHIM_DIFF_CACHED_OUTPUT=""
+export GIT_SHIM_LOG_HASHES=""
+export GIT_SHIM_LOG_BODY=""
+export GIT_SHIM_HEAD_ABBREV="feature/migrated-hooks"
+export GIT_SHIM_HEAD_SHORT="deadbeef"
+
+setup() {
+  local shim_bin="$BATS_TEST_TMPDIR/bin"
+  install -d "$shim_bin" 2>/dev/null || true
+
+  cat > "$shim_bin/git" <<'SHIM'
+#!/usr/bin/env bash
+args=("$@")
+
+if [[ "${args[0]}" = "config" && "${args[*]}" =~ "remote.origin.url" ]]; then
+  printf '%s\n' "$GIT_SHIM_ORIGIN_URL"
+  exit 0
+fi
+if [[ "${args[0]}" = "diff" && "${args[*]}" =~ "--shortstat" ]]; then
+  printf '%s\n' "$GIT_SHIM_SHORTSTAT"
+  exit 0
+fi
+if [[ "${args[0]}" = "diff" && "${args[*]}" =~ "--name-only" ]]; then
+  printf '%s\n' "$GIT_SHIM_DIFF_NAMES"
+  exit 0
+fi
+if [[ "${args[0]}" = "interpret-trailers" && "${args[1]}" = "--parse" ]]; then
+  printf '%s' "$GIT_SHIM_INTERPRET_TRAILERS_OUTPUT"
+  exit 0
+fi
+if [[ "${args[0]}" = "ls-tree" ]]; then
+  printf '%s' "$GIT_SHIM_LS_TREE_OUTPUT"
+  exit 0
+fi
+if [[ "${args[0]}" = "log" && "${args[*]}" =~ "%H" ]]; then
+  [[ -n "$GIT_SHIM_LOG_HASHES" ]] && printf '%s\n' "$GIT_SHIM_LOG_HASHES"
+  exit 0
+fi
+if [[ "${args[0]}" = "log" && "${args[*]}" =~ "%B" ]]; then
+  printf '%s\n' "$GIT_SHIM_LOG_BODY"
+  exit 0
+fi
+if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--abbrev-ref" ]]; then
+  printf '%s\n' "$GIT_SHIM_HEAD_ABBREV"
+  exit 0
+fi
+if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--short" ]]; then
+  printf '%s\n' "$GIT_SHIM_HEAD_SHORT"
+  exit 0
+fi
+if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "HEAD" ]]; then
+  printf 'deadbeef00000000\n'
+  exit 0
+fi
+
+REAL_GIT=$(command -v -p git 2>/dev/null || true)
+if [[ -n "$REAL_GIT" ]]; then
+  exec "$REAL_GIT" "$@"
+fi
+
+printf 'git shim: unhandled: %s\n' "$*" >&2
+exit 1
+SHIM
+  chmod +x "$shim_bin/git"
+
+  export PATH="$shim_bin:$PATH"
+
+  # Pre-seed commit-subject rotation state so ack-rule4 passes immediately,
+  # so that any test using a clean subject does not hit the rotation reminder.
+  local _state_file="$BATS_TEST_TMPDIR/commit-rule-state"
+  printf '%s\n%s\n%s\n' '-1' '3' '0' > "$_state_file"
+  export GITGIT_COMMIT_RULE_STATE_FILE="$_state_file"
+}
+
+teardown() {
+  : # BATS_TEST_TMPDIR cleaned up by bats-core.
+}
+
+# pretool_bash_json <bash-command-string>
+pretool_bash_json() {
+  local cmd="$1"
+  jq -cn --arg c "$cmd" \
+    '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}'
+}
+
+# run_dispatch <bash-command-string>
+run_dispatch() {
+  local cmd="$1"
+  local json
+  json=$(pretool_bash_json "$cmd")
+  run bash "$DISPATCH" <<< "$json"
+}

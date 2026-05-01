@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Run the gitgit BATS test suites (validate-body + shadow-mode + block-mode +
+# migrated-hooks + install-hooks + wip-gate + template-fill + cross-layer).
+# Must be executed from the repo root (leclause-skills/).
+
+set -euo pipefail
+
+if ! command -v bats >/dev/null 2>&1; then
+  printf 'bats not found. Install bats-core first:\n'
+  printf '  brew install bats-core          # macOS via Homebrew\n'
+  printf '  apt-get install bats            # Debian/Ubuntu\n'
+  printf '  npm install -g bats             # via npm\n'
+  printf '  https://github.com/bats-core/bats-core for other options\n'
+  exit 1
+fi
+
+exec bats \
+  packages/gitgit/test/validate-body/*.bats \
+  packages/gitgit/test/shadow-mode/*.bats \
+  packages/gitgit/test/block-mode/*.bats \
+  packages/gitgit/test/migrated-hooks/*.bats \
+  packages/gitgit/test/install-hooks/*.bats \
+  packages/gitgit/test/wip-gate/*.bats \
+  packages/gitgit/test/template-fill/*.bats \
+  packages/gitgit/test/cross-layer/*.bats \
+  packages/gitgit/test/session-toggle/*.bats \
+  "$@"

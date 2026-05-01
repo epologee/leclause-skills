@@ -1,4 +1,5 @@
 #!/bin/bash
+# packages/gitgit/hooks/guards/commit-format.sh
 # PreToolUse:Bash guard. Enforce hard format limits on every git commit
 # message: 72-char ceiling on every line (subject and body), and a blank
 # separator line between subject and body for multi-line commits. The
@@ -16,40 +17,10 @@ guard_commit_format() {
   command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
   [[ ! "$command" =~ git[[:space:]]+commit ]] && return 0
 
-  local message=""
-
-  # Heredoc body extraction. Walks the command line-by-line, opens on
-  # <<MARKER or <<-MARKER (quoted or unquoted), captures until a line whose
-  # trimmed content matches the marker. Only the first heredoc is used.
-  if [[ "$command" == *"<<"* ]]; then
-    message=$(awk '
-      in_hd {
-        trimmed = $0
-        sub(/^[[:space:]]+/, "", trimmed)
-        if (trimmed == marker) { in_hd = 0; exit }
-        print
-        next
-      }
-      {
-        if (match($0, /<<-?[[:space:]]*['\''"]?[A-Za-z_][A-Za-z0-9_]*['\''"]?/)) {
-          tok = substr($0, RSTART, RLENGTH)
-          sub(/<<-?[[:space:]]*['\''"]?/, "", tok)
-          sub(/['\''"]?$/, "", tok)
-          marker = tok
-          in_hd = 1
-        }
-      }
-    ' <<< "$command")
-  fi
-
-  # Fallback: first -m / -am / --message literal.
-  if [[ -z "$message" ]]; then
-    local dashm
-    dashm=$(echo "$command" | grep -oE -- $'(-[a-zA-Z]*m|--message)[[:space:]=]+("[^"]*"|\x27[^\x27]*\x27)' | head -1 || true)
-    if [[ -n "$dashm" ]]; then
-      message=$(echo "$dashm" | sed -E $'s/^(-[a-zA-Z]*m|--message)[[:space:]=]+["\x27]//;s/["\x27]$//')
-    fi
-  fi
+  # Delegate message extraction to the shared parser in common.sh so there
+  # is a single canonical implementation (heredoc-first, -m fallback).
+  local message
+  message=$(dd_extract_commit_message "$command")
 
   [[ -z "$message" ]] && return 0
 
@@ -80,6 +51,6 @@ guard_commit_format() {
   # Claude sees the nudge without losing the commit, and trends shorter on
   # subsequent commits in the same session.
   if [[ $subject_len -gt 50 && $subject_len -le 72 ]]; then
-    dd_emit_pre_context commit-format "Subject is ${subject_len} chars. Target is ≤50; 51-72 is allowed but aim shorter on the next commit."
+    dd_emit_pre_context commit-format "Subject is ${subject_len} chars. Target is <=50; 51-72 is allowed but aim shorter on the next commit."
   fi
 }
