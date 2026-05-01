@@ -199,13 +199,58 @@ De leclause marketplace is symlink-free. Elke skill leeft op één plek onder `p
 
 Anthropic docs beschrijven wel dat Claude Code symlinks in de install cache bewaart ([Plugins reference, Plugin caching and file resolution](https://code.claude.com/docs/en/plugins-reference)), maar dat vereist dat de symlinks de clone überhaupt overleven. De drie alternatieven die in een eerder experiment zijn verkend (`git-subdir`, `rsync -aL` materialisatie via release branch, `CLAUDE_CODE_PLUGIN_SEED_DIR`) bleken allemaal meer consumer-setup te vereisen dan een vlakke, symlink-vrije layout. De repo is daarop afgestemd.
 
+## Hooks
+
+Hooks (SessionStart, PreToolUse, PostToolUse, Stop, en de andere lifecycle events) leven NIET in `plugin.json`. Een `hooks` key in `plugin.json` wordt door `claude plugins validate` afgewezen met `hooks: Invalid input`, en bij installatie silent gestript zonder runtime fout. Het werkende pad is een aparte `<plugin>/hooks/hooks.json` (of een custom locatie via `"hooks": "./path"` in plugin.json).
+
+### Schema
+
+Het schema heeft een dubbele `hooks` nesting die makkelijk fout te raden is. Werkend voorbeeld voor SessionStart:
+
+```json
+{
+  "description": "Optional: surfaces in claude plugins inspect.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/install.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+De buitenste `"hooks"` is het object dat events groepeert; per event entry zit er een **tweede** `"hooks": [...]` array waarin de daadwerkelijke commands staan. Vergeet die nesting en de plugin valideert wel maar het hook-array komt door de validator als verkeerd type.
+
+### Matcher syntax
+
+`matcher` is altijd een regex string, geen object. Voor PreToolUse / PostToolUse matcht hij op tool-naam (`"Bash"`, `"Edit|Write"`). Voor SessionStart matcht hij op source: één van `startup`, `resume`, `clear`, `compact` (of een pipe-combinatie zoals `"startup|resume"`). `matcher` weglaten betekent fire op alle bronnen; voor een install-hook die op `/clear` of een auto-compact niets te doen heeft is `"matcher": "startup|resume"` de zuinige keuze.
+
+Bevestigd in Claude Code 2.x: `claude plugins validate` accepteert zowel een ontbrekende matcher als de regex string. Het object-formaat `{"source": [...]}` werkt NIET, ondanks dat sommige LLM-suggesties die vorm noemen.
+
+### Validate vóór ship
+
+`claude plugins validate <pad>` is de canonical pre-ship sanity check voor elke plugin manifest- of hooks-wijziging. Het draait tegen het lokale source-pad (niet de install cache) en vangt schema-violations die anders pas bij de eerste install van een collega zichtbaar worden, vaak silent.
+
+```bash
+claude plugins validate ./packages/<plugin>
+```
+
+Run het na ELKE wijziging aan `plugin.json` of `hooks/hooks.json`. Geen vervanging voor een echte install-test, wel een gratis eerste filter.
+
 ## Versioning
 
 De `version` field in `plugin.json` wordt automatisch bijgewerkt door de leclause pre-commit hook. Het format is `1.0.{commits}` waar `{commits}` het aantal commits is dat `packages/<name>/` of `skills/<name>/` heeft geraakt.
 
 ## Wat landt er in de plugin cache
 
-Claude Code installeert een plugin uit het repo-subpad dat in `marketplace.json` is opgegeven (meestal `packages/<plugin>/`) en dropt de volledige inhoud van dat subpad in de cache. Dat betekent: `.claude-plugin/`, `skills/`, de plugin-level `README.md`, **en** `bin/` landen allemaal mee. Bestanden buiten het subpad (bijvoorbeeld de repo-root `README.md` of de repo-root `bin/`) komen niet mee, want de plugin source start bij `packages/<plugin>/`, niet bij de repo-root.
+Claude Code installeert een plugin uit het repo-subpad dat in `marketplace.json` is opgegeven (meestal `packages/<plugin>/`) en dropt de volledige inhoud van dat subpad in de cache. Dat betekent: `.claude-plugin/`, `skills/`, de plugin-level `README.md`, `bin/`, **en** `hooks/` (inclusief het `hooks/hooks.json` manifest plus alle hook-scripts) landen allemaal mee. Bestanden buiten het subpad (bijvoorbeeld de repo-root `README.md` of de repo-root `bin/`) komen niet mee, want de plugin source start bij `packages/<plugin>/`, niet bij de repo-root.
 
 Empirisch getest tegen `autonomous@leclause` in versie 1.0.23:
 
@@ -237,6 +282,8 @@ Dat pad is de **plugin-root in de cache**, niet de repo-root. Het bevat `.claude
 | Skill resource | `$installPath/skills/<skill>/<file>` | `$installPath/packages/<plugin>/skills/<skill>/<file>` |
 | Bin-script | `$installPath/bin/<script>` | `$installPath/packages/<plugin>/bin/<script>` |
 | Plugin manifest | `$installPath/.claude-plugin/plugin.json` | (geen andere) |
+| Hooks manifest | `$installPath/hooks/hooks.json` | `$installPath/.claude-plugin/plugin.json` (zie Hooks-sectie) |
+| Hook script | `$installPath/hooks/<script>` (referentie via `${CLAUDE_PLUGIN_ROOT}/hooks/<script>` in hooks.json) | (absolute paden; werken niet cross-machine) |
 
 De `packages/<plugin>/`-prefix bestaat alleen in de source-repo, niet in de cache. De `ls -1dt ... | head -1` truc tegen `~/.claude/plugins/cache/<marketplace>/<plugin>/` wijst hetzelfde pad aan maar leunt op mtime-ordening en is daardoor niet stabiel; de `jq` lookup werkt deterministisch.
 
