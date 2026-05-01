@@ -1,14 +1,14 @@
 ---
-name: status
+name: discipline-status
 user-invocable: true
 description: >
-  Use ONLY when the operator types `/gitgit:status`. Do not auto-invoke.
+  Use ONLY when the operator types `/gitgit:discipline-status`. Do not auto-invoke.
   Reports the current enable/disable state of the gitgit guards for this
   session, the sentinel paths, and the active plugin version.
 argument-hint: ""
 ---
 
-# /gitgit:status
+# /gitgit:discipline-status
 
 Rapporteer de huidige staat van de gitgit guards voor deze sessie.
 
@@ -70,4 +70,4 @@ Plugin version : <version>
 Guard scripts  : <lijst van .sh bestanden>
 ```
 
-Als guards DISABLED zijn, vermeld dan `/gitgit:enable` om ze te heractiveren.
+Als guards DISABLED zijn, vermeld dan `/gitgit:enable-discipline` om ze te heractiveren.

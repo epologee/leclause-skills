@@ -56,7 +56,7 @@ load helpers
     "$sid"
   [ "$status" -eq 0 ]
 
-  # Remove sentinel (simulates /gitgit:enable).
+  # Remove sentinel (simulates /gitgit:enable-discipline).
   rm "$HOME/.claude/var/gitgit-disabled-$sid"
 
   # Now guards should run for a non-trivial commit.

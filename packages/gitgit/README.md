@@ -32,9 +32,9 @@ Reference for the schema, examples, escape-hatches, and troubleshooting:
 | commit-discipline | `/gitgit:commit-discipline` | |
 | install-hooks | `/gitgit:install-hooks` | |
 | run-spec | `/gitgit:run-spec` | |
-| disable-session | `/gitgit:disable` | |
-| enable-session | `/gitgit:enable` | |
-| session-status | `/gitgit:status` | |
+| disable-session | `/gitgit:disable-discipline` | |
+| enable-session | `/gitgit:enable-discipline` | |
+| session-status | `/gitgit:discipline-status` | |
 
 - **commit-all-the-things** inspects `git status` plus `git diff`, groups
   changes by intent (feature, fix, refactor, docs, config), and creates
