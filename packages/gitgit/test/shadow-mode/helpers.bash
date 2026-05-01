@@ -116,12 +116,12 @@ SHIM
   export PATH="$shim_bin:$PATH"
 
   # Pre-seed the commit-subject rotation state so a single call with
-  # "# ack-rule4" passes without a first-call denial.
+  # "# ack-rule4:essentie" passes without a first-call denial.
   # State format: pv / pr / rp (three lines).
   #   pv=-1 : no pending violation
   #   pr=3  : rotation for rule 4 (slot index 3, 0-based rule index) pending
   #   rp=0  : rotation position 0
-  # With this state a clean subject + "# ack-rule4" passes immediately.
+  # With this state a clean subject + "# ack-rule4:essentie" passes immediately.
   local _state_file="$BATS_TEST_TMPDIR/commit-rule-state"
   printf '%s\n%s\n%s\n' '-1' '3' '0' > "$_state_file"
   export GITGIT_COMMIT_RULE_STATE_FILE="$_state_file"

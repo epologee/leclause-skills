@@ -10,7 +10,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="README.md"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Typo in README" # ack-rule4'
+  run_dispatch 'git commit -m "Typo in README" # ack-rule4:essentie'
 
   [ "$status" -eq 0 ]
 }
@@ -20,7 +20,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="lib/helper.rb"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Guard against nil on session close" # ack-rule4'
+  run_dispatch 'git commit -m "Guard against nil on session close" # ack-rule4:essentie'
 
   [ "$status" -eq 0 ]
 }
@@ -30,7 +30,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="lib/big.rb"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Expand helper logic" # ack-rule4'
+  run_dispatch 'git commit -m "Expand helper logic" # ack-rule4:essentie'
 
   [ "$status" -eq 2 ]
 }
@@ -40,7 +40,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="$(printf 'a.rb\nb.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Tweak two files" # ack-rule4'
+  run_dispatch 'git commit -m "Tweak two files" # ack-rule4:essentie'
 
   [ "$status" -eq 2 ]
 }

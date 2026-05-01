@@ -12,7 +12,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="$(printf 'a.rb\nb.rb\nc.rb\nd.rb\ne.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Add feature to other project" # ack-rule4'
+  run_dispatch 'git commit -m "Add feature to other project" # ack-rule4:essentie'
 
   # Block-mode: must deny (exit 2).
   [ "$status" -eq 2 ]
@@ -24,7 +24,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="$(printf 'a.rb\nb.rb\nc.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Extend leclause plugin" # ack-rule4'
+  run_dispatch 'git commit -m "Extend leclause plugin" # ack-rule4:essentie'
 
   [ "$status" -eq 2 ]
 }
@@ -38,7 +38,7 @@ load helpers
   local before
   before=$(shadow_log_line_count)
 
-  run_dispatch 'git commit -m "Session boundary for acme project" # ack-rule4'
+  run_dispatch 'git commit -m "Session boundary for acme project" # ack-rule4:essentie'
 
   local after
   after=$(shadow_log_line_count)
@@ -53,7 +53,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="$(printf 'a.rb\nb.rb\nc.rb\nd.rb\ne.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Some commit no body" # ack-rule4'
+  run_dispatch 'git commit -m "Some commit no body" # ack-rule4:essentie'
 
   [ "$status" -eq 2 ]
 }

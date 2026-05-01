@@ -6,7 +6,9 @@
 #
 #   1. A subject starting with "Fix " is denied with the [gitgit/commit-subject]
 #      mnemonic (previously [dont-do-that/commit-rule]).
-#   2. The ack-rule token format is unchanged: "# ack-rule12" still works.
+#   2. The ack-rule token resolves a pending state: "# ack-rule12:bewijsstuk"
+#      with the right rule-number+wachtwoord pair clears a pending rotation
+#      reminder; the pair must match the mnemonic in rotation-rules.sh.
 #   3. The state file is read from the new path; old state is migrated forward.
 #   4. A subject starting with "Address review" is denied with rule 2.
 #   5. commit-format denials use [gitgit/commit-format] mnemonic.
@@ -40,18 +42,18 @@ teardown() {
   echo "$output" | grep -q 'Rule 1/14'
 }
 
-# --- 2. ack-rule token format unchanged ---
+# --- 2. ack-rule token clears pending state ---
 
-@test "ack-rule token format unchanged: ack-rule1 clears Fix violation on rewrite" {
+@test "ack-rule clears Fix violation: ack-rule1:gedrag on rewrite passes" {
   # First call establishes a pending violation for Fix.
   echo "$(pretool_bash 'git commit -m "Fix the typo"')" | bash "$GITGIT_DISPATCH" >/dev/null 2>/dev/null || true
 
   # Second call: clean subject + ack-rule1 must pass.
-  run bash -c "echo '$(pretool_bash 'git commit -m "Use correct policy on read path" # ack-rule1')' | bash '$GITGIT_DISPATCH' 2>&1"
+  run bash -c "echo '$(pretool_bash 'git commit -m "Use correct policy on read path" # ack-rule1:gedrag')' | bash '$GITGIT_DISPATCH' 2>&1"
   [ "$status" -eq 0 ]
 }
 
-@test "ack-rule token format unchanged: ack-rule12 is accepted as a valid token" {
+@test "ack-rule clears rotation reminder: ack-rule12:bewijsstuk advances state" {
   # Advance rotation to slot 12 (idx 11, rule 12) by walking through earlier slots.
   # Slot order: 3 4 5 6 7 8 9 10 11 12 13 (0-indexed 0..10 in _DD_ROTATION_SLOTS).
   # Slot index 8 in the array is rule 12 (1-indexed). We need rp=8 in state file.
@@ -64,7 +66,7 @@ teardown() {
   echo "$output" | grep -q 'Rule 12/14'
 
   # Now ack-rule12 should pass it.
-  run bash -c "echo '$(pretool_bash 'git commit -m "Introduce session context guard" # ack-rule12')' | bash '$GITGIT_DISPATCH' 2>&1"
+  run bash -c "echo '$(pretool_bash 'git commit -m "Introduce session context guard" # ack-rule12:bewijsstuk')' | bash '$GITGIT_DISPATCH' 2>&1"
   [ "$status" -eq 0 ]
 }
 

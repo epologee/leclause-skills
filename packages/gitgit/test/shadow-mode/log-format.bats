@@ -16,7 +16,7 @@ load helpers
   export GIT_SHIM_HEAD_ABBREV="feature/log-test"
 
   # Block-mode exits 2 on violation; run captures it without failing the test.
-  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
+  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
   # Block-mode: denied.
   [ "$status" -eq 2 ]
@@ -67,7 +67,7 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="$(printf 'a.rb\nb.rb\nc.rb\nd.rb\ne.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
+  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
   # Block-mode: denied; but directory and log file must now exist.
   [ "$status" -eq 2 ]
@@ -117,7 +117,7 @@ exit 1
 SHIM2
   chmod +x "$shim_bin/git"
 
-  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
+  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
   # Block-mode: denied.
   [ "$status" -eq 2 ]

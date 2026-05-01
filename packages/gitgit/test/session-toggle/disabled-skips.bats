@@ -13,7 +13,7 @@ load helpers
 
   # A bare subject with no body would normally be blocked by commit-body.
   run_dispatch_with_session \
-    'git commit -m "bad commit no body" # ack-rule4' \
+    'git commit -m "bad commit no body" # ack-rule4:essentie' \
     "$sid"
 
   [ "$status" -eq 0 ]
@@ -24,7 +24,7 @@ load helpers
   write_session_sentinel "$sid"
 
   run_dispatch_with_session \
-    'git commit -m "bad commit no body" # ack-rule4' \
+    'git commit -m "bad commit no body" # ack-rule4:essentie' \
     "$sid"
 
   [[ "$output" != *"[gitgit/"* ]]
@@ -55,7 +55,7 @@ load helpers
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
   run_dispatch_with_session \
-    'git commit -m "bare subject no body" # ack-rule4' \
+    'git commit -m "bare subject no body" # ack-rule4:essentie' \
     "$active_sid"
 
   [ "$status" -ne 0 ]

@@ -31,7 +31,7 @@ load helpers
 
   # Session A: should exit 0 silently.
   run_dispatch_with_session \
-    'git commit -m "bad commit no body" # ack-rule4' \
+    'git commit -m "bad commit no body" # ack-rule4:essentie' \
     "$sid_a"
   [ "$status" -eq 0 ]
 
@@ -41,7 +41,7 @@ load helpers
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
   run_dispatch_with_session \
-    'git commit -m "bare subject no body" # ack-rule4' \
+    'git commit -m "bare subject no body" # ack-rule4:essentie' \
     "$sid_b"
   [ "$status" -eq 2 ]
 }
@@ -52,7 +52,7 @@ load helpers
 
   # Confirm guards are suppressed.
   run_dispatch_with_session \
-    'git commit -m "bad commit no body" # ack-rule4' \
+    'git commit -m "bad commit no body" # ack-rule4:essentie' \
     "$sid"
   [ "$status" -eq 0 ]
 
@@ -65,7 +65,7 @@ load helpers
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
   run_dispatch_with_session \
-    'git commit -m "bare subject no body" # ack-rule4' \
+    'git commit -m "bare subject no body" # ack-rule4:essentie' \
     "$sid"
   [ "$status" -eq 2 ]
 }

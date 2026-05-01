@@ -16,7 +16,7 @@ load helpers
   before=$(shadow_log_line_count)
 
   # run with || true: dispatch exits 2 (deny), bats run captures status.
-  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
+  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
   # Block-mode: denied.
   [ "$status" -eq 2 ]
@@ -36,7 +36,7 @@ load helpers
   local before
   before=$(shadow_log_line_count)
 
-  run_dispatch 'git commit -m "Expose unused import path" # ack-rule4'
+  run_dispatch 'git commit -m "Expose unused import path" # ack-rule4:essentie'
 
   [ "$status" -eq 2 ]
 
@@ -54,7 +54,7 @@ load helpers
   local before
   before=$(shadow_log_line_count)
 
-  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4'
+  run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
   # Block-mode denies all repos.
   [ "$status" -eq 2 ]
@@ -79,7 +79,7 @@ load helpers
   cmd=$(commit_cmd_heredoc \
     "Expose session boundary on transaction events" \
     "$(printf 'When StartTransaction or StopTransaction messages arrive with a\nmeter reading that fails domain validation, we previously rejected\nthe entire event, which masked session starts and stops in analytics.\n\nTests: spec/services/session_spec.rb\nSlice: handler + service + spec\nRed-then-green: yes')")
-  cmd="$cmd # ack-rule4"
+  cmd="$cmd # ack-rule4:essentie"
 
   run_dispatch "$cmd"
 

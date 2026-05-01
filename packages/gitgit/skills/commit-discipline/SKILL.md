@@ -127,6 +127,39 @@ fase (de spec bestond eerder dan de implementatie). Bij alle acht vervalt de
 `wip`-commits worden geaccepteerd op commit-tijd maar geblokkeerd door de
 pre-push gate. Je kunt niet per ongeluk een wip-commit naar remote sturen.
 
+## Rotation reminders
+
+Naast de structurele subject- en body-checks rouleert de
+PreToolUse:Bash-guard `commit-subject.sh` elke commit één thematische
+reminder uit de onderstaande tabel. Bevestig met
+`# ack-rule<N>:<wachtwoord>` als afsluitend shell-comment achter het
+git-commando. Het wachtwoord is een mnemonic die referentieel aan de
+regel is, zodat het opzoeken één blootstelling per cyclus afdwingt.
+
+| Rule | Wachtwoord | Regel |
+|------|------------|-------|
+| 1 | `gedrag` | Subject = nieuw gedrag/capability, geen git-actie ("Fix/Add/..."). |
+| 2 | `effect` | Subject zegt WAT het systeem doet, niet de WAAROM-trigger ("Address feedback"). |
+| 4 | `essentie` | Body alleen als nodig: 2-4 zinnen waarom. |
+| 5 | `dubbelop` | Geen file listings of class-inventaris; de diff toont files al. |
+| 6 | `proza` | Geen bullet dumps of meta-narrative ("reviewer vroeg", "tests faalden"). |
+| 7 | `atoom` | Logisch onafhankelijke changes = aparte commits; test + impl van 1 feature = 1 atomic commit. |
+| 8 | `inferno` | Nooit broken code committen met "fix in next commit". |
+| 9 | `solist` | Geen Co-Authored-By van AI tooling tenzij gevraagd. |
+| 10 | `incognito` | Geen 'Generated with Claude Code' footer. |
+| 11 | `loep` | Review de staged diff voor commit; tool-output is geen bewijs. |
+| 12 | `bewijsstuk` | Commit-check is evidence (test draaide, endpoint geraakt), niet gut feel. |
+| 13 | `kralen` | Nooit squash merge; bewaar history. |
+| 14 | `voorwaarts` | Amend is verboden tenzij onpushed secrets/PII strippen; gebruik nieuwe commit. |
+
+Rule 3 (subject-lengte 50/72) wordt structureel afgedwongen door
+`commit-format.sh` en zit niet in de rotatie. Rules 1 en 2 vallen alleen
+op je dak na een echte violation in het subject; rules 4-14 rouleren op
+slotvolgorde, één per commit. State leeft in
+`~/.claude/var/gitgit-commit-rule-state` en schuift door na elke
+geslaagde ack. De canonieke mnemonic-tabel waar de hook tegen valideert
+staat in `packages/gitgit/hooks/lib/rotation-rules.sh`.
+
 ## Voorbeelden
 
 ### Voorbeeld 1: feature commit met handler + service + spec + Red-then-green
