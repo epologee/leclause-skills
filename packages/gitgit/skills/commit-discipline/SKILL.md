@@ -318,6 +318,15 @@ commit, loopt de wip-gate soms over een stale reflog-entry. Controleer met
 Als er geen meer is maar de gate nog blokkeert, stel `GITGIT_ALLOW_WIP_PUSH=1`
 in voor de push en meld de edge-case.
 
+## Session-level kill-switch
+
+Wanneer je tijdelijk de gitgit guards uit wilt zonder de plugin globaal te
+disablen, gebruik `/gitgit:disable`. Dat schrijft een sentinel file in
+`~/.claude/var/` met je session-id; de dispatcher exit early op elke
+`git commit` of `git push`. Re-enable met `/gitgit:enable`. Status check met
+`/gitgit:status`. De skills zijn user-invocable; Claude roept ze niet zelf
+aan om de discipline te omzeilen.
+
 ## Architectuur
 
 De enforcement bestaat uit twee parallelle lagen die dezelfde

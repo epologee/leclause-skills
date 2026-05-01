@@ -32,6 +32,9 @@ Reference for the schema, examples, escape-hatches, and troubleshooting:
 | commit-discipline | `/gitgit:commit-discipline` | |
 | install-hooks | `/gitgit:install-hooks` | |
 | run-spec | `/gitgit:run-spec` | |
+| disable-session | `/gitgit:disable` | |
+| enable-session | `/gitgit:enable` | |
+| session-status | `/gitgit:status` | |
 
 - **commit-all-the-things** inspects `git status` plus `git diff`, groups
   changes by intent (feature, fix, refactor, docs, config), and creates
@@ -57,6 +60,14 @@ Reference for the schema, examples, escape-hatches, and troubleshooting:
 - **run-spec** runs a single test/spec file through the project's
   auto-detected runner (RSpec, Jest, Vitest, Go test, pytest) and prints
   a PASS/FAIL summary. No cache side-effects.
+- **disable-session** writes a sentinel file at `~/.claude/var/gitgit-disabled-<session_id>`
+  that tells the dispatcher to skip all guards for the current session. Other
+  sessions are not affected. Only fire on explicit operator invocation.
+- **enable-session** removes the session sentinel (and the global fallback
+  sentinel if present), restoring guards for the current session.
+- **session-status** reports the current session_id, which sentinels exist,
+  whether guards are active or disabled, the active plugin version, and the
+  list of guard scripts in the install.
 
 ## Hooks
 

@@ -1,5 +1,5 @@
 {
   "name": "gitgit",
   "description": "Bundle of git-write skills for Claude Code: commit-all-the-things groups every uncommitted change into logical commits, commit-snipe stages only what belongs to the current task, rebase-latest-default rebases the current branch on the freshest default, and merge-to-default lands a feature branch on the project's default branch with a github-style --no-ff merge commit (rebases on conflict, deletes the local source branch after a confirmed merge, and no-ops with a TUI warning when invoked on the default branch itself).",
-  "version": "1.0.39"
+  "version": "1.0.40"
 }
