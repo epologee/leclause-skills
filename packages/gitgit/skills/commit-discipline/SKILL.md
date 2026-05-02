@@ -70,6 +70,7 @@ dus de twee-laagse architectuur is definitief, niet voorlopig.
 | `Slice` | opt-out token of vrije tekst (zie hieronder) | altijd |
 | `Tests` | comma-gescheiden lijst spec-paden | als `Slice` geen opt-out token is |
 | `Red-then-green` | `yes` of `n/a (reden >= 10 chars)` | als `Slice` niet `docs-only`, `config-only`, `migration-only`, `spec-only`, of `chore-deps` is |
+| `Visual` | bestandspad of `n/a (reden >= 10 chars)` | als de staged diff UI-bestanden raakt (zie heuristiek hieronder) |
 
 **`Slice`-regels:** de waarde is ofwel een van de acht opt-out tokens (zie
 volgende sectie), ofwel vrije tekst die beschrijft welke lagen de commit raakt
@@ -91,6 +92,41 @@ van `Red-then-green`, niet de inhoudelijke waarheid ervan. Dat is een
 bewuste keuze: een cache die automatisch bewijs bijhoudt voegt meer
 complexiteit toe dan ze waard is. De attestatie-verantwoordelijkheid ligt
 bij de auteur.
+
+**`Visual`-regels:** een pad-waarde verwijst naar een screenshot of
+opname-bestand dat moet bestaan in de werk-tree (`[[ -f "$path" ]]`). De
+waarde `n/a (reden)` is toegestaan met een rationale van minimaal 10
+tekens; kale `n/a` zonder rationale is afgewezen. De trailer is alleen
+verplicht wanneer de heuristiek hieronder UI-aanrakingen detecteert in de
+staged diff; backend-only commits zien de regel niet en hoeven `Visual`
+niet op te nemen.
+
+**UI-touch heuristiek:** de validator scant `git diff --cached --name-only`
+en triggert de Visual-eis bij elk pad dat aan een van deze patronen voldoet:
+
+- web-template: `.tsx`, `.jsx`, `.vue`, `.svelte`, `.html`, `.htm`,
+  `.erb`, `.haml`, `.slim`
+- styling: `.css`, `.scss`, `.sass`, `.less`
+- iOS storyboard/xib: `.storyboard`, `.xib`
+- iOS asset catalog: elk pad onder `*.xcassets/`
+- Swift bron-bestanden: `.swift` waarvan de staged inhoud (`git show :<path>`,
+  fallback naar werk-tree) een van `import SwiftUI`, `import UIKit`,
+  `import AppKit`, `: View {`, `UIView`, `UIViewController`, `NSView`,
+  of `NSViewController` bevat
+
+Backend-`.swift`-bestanden zonder UI-symbolen vallen niet onder de regel.
+False positives van de heuristiek zijn opvangbaar via
+`Visual: n/a (backend rewrite, no UI touched)` of vergelijkbare rationale,
+analoog aan de `Red-then-green: n/a` opt-out. De heuristiek consulteert
+geen `Slice`-tokens; de trailer fired correct wanneer een commit met
+`chore-deps` slice ook een CSS dependency bumpt.
+
+Foutcodes:
+
+| Code | Wanneer |
+|------|---------|
+| `missing-visual` | UI-touch gedetecteerd maar trailer ontbreekt, of trailer is kale `n/a`, of `n/a (reden)` met te korte rationale |
+| `visual-path-not-found` | Trailer is geen `n/a`-vorm en het opgegeven pad bestaat niet in de werk-tree |
 
 ### Optionele trailers
 
@@ -232,7 +268,38 @@ Slice: spec-only
 
 (Geen `Tests` of `Red-then-green` vereist bij `spec-only`.)
 
-### Voorbeeld 6: wip commit (en de pre-push gate die hem tegenhoudt)
+### Voorbeeld 6: UI-aanraking met `Visual:` trailer
+
+```
+Render onboarding banner above tab strip
+
+The banner replaces the static placeholder we shipped last week
+and now hosts the IAP teaser for unconfigured users.
+
+Tests: spec/views/onboarding_view_spec.rb
+Slice: frontend layer
+Red-then-green: yes
+Visual: doc/screenshots/onboarding-banner.png
+```
+
+`Visual:` mag ook `n/a (reden)` zijn voor false positives van de
+heuristiek of bij commits waar wel UI-bestanden gewijzigd worden maar
+zonder pixel-effect (bv. een geherorganiseerd component zonder render
+wijziging):
+
+```
+Extract OnboardingBanner into its own file
+
+Pure organisatorische split; render-output is byte-identiek aan de
+vorige versie. Geen screenshot nodig.
+
+Tests: spec/views/onboarding_view_spec.rb
+Slice: frontend layer
+Red-then-green: yes
+Visual: n/a (extract only, render output unchanged)
+```
+
+### Voorbeeld 7: wip commit (en de pre-push gate die hem tegenhoudt)
 
 ```
 Sketch enrollment race-condition fix
