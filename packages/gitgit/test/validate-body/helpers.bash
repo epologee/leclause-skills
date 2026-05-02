@@ -99,6 +99,16 @@ if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "HEAD" ]]; then
   exit 0
 fi
 
+# Pattern: git rev-parse --show-toplevel
+# Return the per-test TMPDIR_TEST so relative paths in fixtures resolve to
+# the test's sandbox, not the surrounding repo. Falling through to real git
+# from inside this shim caused infinite recursion when the system git path
+# resolved back to the shim itself.
+if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--show-toplevel" ]]; then
+  printf '%s\n' "${TMPDIR_TEST:-/}"
+  exit 0
+fi
+
 # Pattern: git show :<path> (read staged blob from the per-test stash)
 if [[ "${args[0]}" = "show" && "${args[1]}" =~ ^: ]]; then
   blob_path="${args[1]#:}"

@@ -397,7 +397,17 @@ validate_body() {
       printf 'missing-visual: bare "n/a" requires a rationale in parens: n/a (reason >= 10 chars)\n' >&2
       return 1
     else
-      if [[ ! -f "$visual_value" ]]; then
+      # Resolve relative to repo root so the check is stable whether the
+      # caller is the git-native commit-msg hook (always repo root) or the
+      # PreToolUse:Bash dispatcher (whatever subdirectory Claude invoked
+      # from). Absolute paths in the trailer pass through unchanged.
+      local repo_root
+      repo_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+      local resolved="$visual_value"
+      if [[ -n "$repo_root" && "$resolved" != /* ]]; then
+        resolved="$repo_root/$resolved"
+      fi
+      if [[ ! -f "$resolved" ]]; then
         printf 'visual-path-not-found: Visual path "%s" was not found on disk (relative to repo root). Add the file or use Visual: n/a (rationale).\n' "$visual_value" >&2
         return 1
       fi

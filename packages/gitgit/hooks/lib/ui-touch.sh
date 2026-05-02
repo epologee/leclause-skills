@@ -9,9 +9,10 @@
 # Public functions:
 #
 #   _vb_ui_touched_files
-#     Echoes a comma-separated list of staged paths that match the UI-touch
-#     heuristic, or empty when no UI is touched. Reads `git diff --cached
-#     --name-only` once per call.
+#     Echoes a newline-separated list of staged paths that match the
+#     UI-touch heuristic, or empty when no UI is touched. Reads `git diff
+#     --cached --name-only` once per call. Callers that need a single-line
+#     display join with their own separator (the validator uses ", ").
 #
 #   _vb_is_ui_touch
 #     Convenience wrapper: returns 0 when at least one path is UI-touched,

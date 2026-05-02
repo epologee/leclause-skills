@@ -179,6 +179,25 @@ spec/util_spec.rb"
 # Validator: UI-touched commits require Visual trailer
 # ---------------------------------------------------------------------------
 
+@test "UI-touch + relative Visual path resolves against repo root, not \$PWD" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+
+  # Create the screenshot at <repo-root>/docs/screenshots/foo.png where the
+  # shim returns TMPDIR_TEST as repo root.
+  mkdir -p "$TMPDIR_TEST/docs/screenshots"
+  : > "$TMPDIR_TEST/docs/screenshots/foo.png"
+
+  use_trailers "$(_trailers_with_visual "docs/screenshots/foo.png")"
+  local file
+  file=$(write_fixture "vis-relpath.txt" "$(_body_with_visual "docs/screenshots/foo.png")")
+
+  # Run from a different directory (HOME) to prove the check resolves
+  # against repo root, not $PWD.
+  run bash -c "cd \"\$HOME\"; source '$VALIDATOR'; validate_body '$file' 2>&1"
+  [ "$status" -eq 0 ]
+}
+
 @test "UI-touch + Visual: existing path passes" {
   export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
