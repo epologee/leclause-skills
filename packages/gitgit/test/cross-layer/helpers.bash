@@ -86,6 +86,14 @@ if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "HEAD" ]]; then
   exit 0
 fi
 
+# git rev-parse --show-toplevel
+# Sandboxed to TMPDIR_TEST (or BATS_TEST_TMPDIR) so the validator's
+# Visual: path-resolution does not escape the per-test tempdir.
+if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--show-toplevel" ]]; then
+  printf '%s\n' "${TMPDIR_TEST:-${BATS_TEST_TMPDIR:-/}}"
+  exit 0
+fi
+
 if [[ "${args[0]}" = "config" && "${args[*]}" =~ "remote.origin.url" ]]; then
   printf '%s\n' "$GIT_SHIM_ORIGIN_URL"
   exit 0

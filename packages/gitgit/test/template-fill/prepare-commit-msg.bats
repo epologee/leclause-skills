@@ -134,6 +134,24 @@ teardown() {
   [ "$original" = "$after" ]
 }
 
+@test "prepare-commit-msg: UI-touched diff includes Visual: line" {
+  export GIT_SHIM_DIFF_NAMES="src/components/Banner.tsx"$'\n'"spec/banner_spec.rb"
+
+  bash "$RENDERED_HOOK" "$MSG_FILE" ""
+
+  content=$(cat "$MSG_FILE")
+  [[ "$content" == *"Visual:"* ]]
+}
+
+@test "prepare-commit-msg: backend-only diff does not include Visual: line" {
+  export GIT_SHIM_DIFF_NAMES="app/services/billing.rb"$'\n'"spec/services/billing_spec.rb"
+
+  bash "$RENDERED_HOOK" "$MSG_FILE" ""
+
+  content=$(cat "$MSG_FILE")
+  [[ "$content" != *"Visual:"* ]]
+}
+
 @test "prepare-commit-msg: template source leaves msg-file unchanged" {
   original=$(cat "$MSG_FILE")
   bash "$RENDERED_HOOK" "$MSG_FILE" "template"

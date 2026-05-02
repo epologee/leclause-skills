@@ -69,6 +69,10 @@ fi
 if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "HEAD" ]]; then
   printf 'deadbeef00000000\n'; exit 0
 fi
+# git rev-parse --show-toplevel: sandbox to BATS_TEST_TMPDIR.
+if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--show-toplevel" ]]; then
+  printf '%s\n' "${BATS_TEST_TMPDIR:-/}"; exit 0
+fi
 
 REAL_GIT=$(command -v -p git 2>/dev/null || true)
 if [[ -n "$REAL_GIT" ]]; then exec "$REAL_GIT" "$@"; fi

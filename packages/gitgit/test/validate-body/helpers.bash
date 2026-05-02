@@ -21,10 +21,16 @@ export GIT_SHIM_LOG_HASHES=""                 # what "git log -5 --pretty=format
 export GIT_SHIM_LOG_BODY=""                   # what "git log -1 --pretty=format:%B <hash>" returns
 export GIT_SHIM_HEAD_ABBREV="abc1234"         # what "git rev-parse --abbrev-ref HEAD" returns
 export GIT_SHIM_HEAD_SHORT="abc1234"          # what "git rev-parse --short HEAD" returns
+export GIT_SHIM_STAGED_BLOB_DIR=""            # directory containing files keyed by path; "git show :<path>" reads from here
 
 setup() {
   TMPDIR_TEST="$(mktemp -d)"
   export TMPDIR_TEST
+
+  # Staged-blob stash for "git show :<path>" lookups.
+  GIT_SHIM_STAGED_BLOB_DIR="$TMPDIR_TEST/staged-blobs"
+  mkdir -p "$GIT_SHIM_STAGED_BLOB_DIR"
+  export GIT_SHIM_STAGED_BLOB_DIR
 
   # Write the git shim into a private bin dir.
   local shim_bin="$TMPDIR_TEST/bin"
@@ -91,6 +97,26 @@ fi
 if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "HEAD" ]]; then
   printf 'abc1234def5678\n'
   exit 0
+fi
+
+# Pattern: git rev-parse --show-toplevel
+# Return the per-test TMPDIR_TEST so relative paths in fixtures resolve to
+# the test's sandbox, not the surrounding repo. Falling through to real git
+# from inside this shim caused infinite recursion when the system git path
+# resolved back to the shim itself.
+if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--show-toplevel" ]]; then
+  printf '%s\n' "${TMPDIR_TEST:-/}"
+  exit 0
+fi
+
+# Pattern: git show :<path> (read staged blob from the per-test stash)
+if [[ "${args[0]}" = "show" && "${args[1]}" =~ ^: ]]; then
+  blob_path="${args[1]#:}"
+  if [[ -n "$GIT_SHIM_STAGED_BLOB_DIR" && -f "$GIT_SHIM_STAGED_BLOB_DIR/$blob_path" ]]; then
+    cat "$GIT_SHIM_STAGED_BLOB_DIR/$blob_path"
+    exit 0
+  fi
+  exit 128
 fi
 
 # Fallback: real git (for anything not shimmed).
@@ -169,4 +195,28 @@ TR
 # Set GIT_SHIM_INTERPRET_TRAILERS_OUTPUT to the trailers matching a fixture.
 use_trailers() {
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$1"
+}
+
+# set_staged_blob <path> <content>
+# Stash <content> as the staged blob for <path>. The git shim returns this
+# content for `git show ":<path>"`, used by _vb_is_ui_touch when content-grepping
+# .swift files for SwiftUI / UIKit / AppKit symbols.
+set_staged_blob() {
+  local path="$1"
+  local content="$2"
+  local target="$GIT_SHIM_STAGED_BLOB_DIR/$path"
+  mkdir -p "$(dirname "$target")"
+  printf '%s' "$content" > "$target"
+}
+
+# write_visual_path <relative-path>
+# Touch an empty file at $TMPDIR_TEST/<relative-path> and echo its absolute
+# path. Use as a Visual: trailer value when the test asserts the
+# path-existence check passes.
+write_visual_path() {
+  local rel="$1"
+  local target="$TMPDIR_TEST/$rel"
+  mkdir -p "$(dirname "$target")"
+  : > "$target"
+  printf '%s' "$target"
 }

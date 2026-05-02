@@ -129,6 +129,13 @@ _vb_why_block() {
   printf '%s' "$why"
 }
 
+# UI-touch heuristic lives in its own lib so example-synth.sh and
+# prepare-commit-msg can source the helper without dragging in the full
+# validator. Provides _vb_ui_touched_files and _vb_is_ui_touch.
+_VB_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+# shellcheck disable=SC1091
+. "$_VB_LIB_DIR/ui-touch.sh"
+
 # ---------------------------------------------------------------------------
 # Main validator
 # ---------------------------------------------------------------------------
@@ -356,6 +363,61 @@ validate_body() {
       printf 'missing-red-then-green: value must be "yes" or "n/a (reason)"; got: "%s"\n' "$rtg_value" >&2
       return 1
     fi
+  fi
+
+  # Rule: Visual trailer.
+  # Format is validated whenever the trailer is present, regardless of the
+  # UI-touch heuristic; a malformed value is always a bug. The UI-touch
+  # heuristic only decides whether ABSENCE of the trailer is a bug. Slice
+  # tokens are not consulted: the trailer fires correctly on rare cases like
+  # a chore-deps slice that also bumped a CSS dependency, and the format
+  # check stays honest when an operator opts in on a backend-only commit.
+  local visual_value
+  visual_value=$(_vb_trailer_value "$trailers" "Visual")
+  # git interpret-trailers normalises but a defensive trailing-whitespace
+  # strip keeps the path-existence check honest if a trailer ever arrives
+  # with trailing spaces.
+  visual_value=$(printf '%s' "$visual_value" | sed 's/[[:space:]]*$//')
+
+  # Compute the touched-files list once so the missing-visual error can name
+  # them. _vb_ui_touched_files runs `git diff --cached --name-only` exactly
+  # once per validator pass; reuse the output for both the absence check and
+  # the error message.
+  local visual_ui_touched
+  visual_ui_touched=$(_vb_ui_touched_files)
+
+  if [[ -n "$visual_value" ]]; then
+    if [[ "$visual_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
+      local rationale="${BASH_REMATCH[1]}"
+      if [[ ${#rationale} -lt 10 ]]; then
+        printf 'missing-visual: n/a rationale must be at least 10 chars (got: "%s")\n' "$rationale" >&2
+        return 1
+      fi
+    elif [[ "$visual_value" = "n/a" ]]; then
+      printf 'missing-visual: bare "n/a" requires a rationale in parens: n/a (reason >= 10 chars)\n' >&2
+      return 1
+    else
+      # Resolve relative to repo root so the check is stable whether the
+      # caller is the git-native commit-msg hook (always repo root) or the
+      # PreToolUse:Bash dispatcher (whatever subdirectory Claude invoked
+      # from). Absolute paths in the trailer pass through unchanged.
+      local repo_root
+      repo_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+      local resolved="$visual_value"
+      if [[ -n "$repo_root" && "$resolved" != /* ]]; then
+        resolved="$repo_root/$resolved"
+      fi
+      if [[ ! -f "$resolved" ]]; then
+        printf 'visual-path-not-found: Visual path "%s" was not found on disk (relative to repo root). Add the file or use Visual: n/a (rationale).\n' "$visual_value" >&2
+        return 1
+      fi
+    fi
+  elif [[ -n "$visual_ui_touched" ]]; then
+    # Join the newline-separated list with ", " for the single-line error.
+    local joined
+    joined=$(printf '%s' "$visual_ui_touched" | tr '\n' ',' | sed 's/,$//;s/,/, /g')
+    printf 'missing-visual: Visual trailer is absent; UI files in this commit: %s\n' "$joined" >&2
+    return 1
   fi
 
   # Rule: WHY block length.

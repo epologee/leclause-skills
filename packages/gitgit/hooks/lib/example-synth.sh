@@ -16,6 +16,11 @@
 _ES_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 # shellcheck disable=SC1091
 . "$_ES_LIB_DIR/layer-classify.sh"
+# Source the small UI-touch helper so the synthesized example can decide
+# whether to emit a Visual: line based on the same heuristic the validator
+# applies. ui-touch.sh is a leaf lib so this does not pull in the validator.
+# shellcheck disable=SC1091
+. "$_ES_LIB_DIR/ui-touch.sh"
 
 # gitgit_synthesize_example
 # Prints a multi-line example commit body on stdout.
@@ -63,6 +68,14 @@ gitgit_synthesize_example() {
       ;;
   esac
 
+  # Decide whether to emit a Visual: line. The heuristic re-reads the staged
+  # diff inside validate-body.sh; the cost is negligible and keeps the helper
+  # contract self-contained.
+  local visual_value=""
+  if _vb_is_ui_touch; then
+    visual_value='<screenshot-path or "n/a (reason >= 10 chars)">'
+  fi
+
   # Print the synthesized example.
   printf '<subject: one imperative sentence>\n'
   printf '\n'
@@ -72,4 +85,7 @@ gitgit_synthesize_example() {
   printf 'Tests: %s\n' "$tests_value"
   printf 'Slice: %s\n' "$slice_token"
   printf 'Red-then-green: %s\n' "$rtg_value"
+  if [[ -n "$visual_value" ]]; then
+    printf 'Visual: %s\n' "$visual_value"
+  fi
 }

@@ -105,3 +105,26 @@ run_synth() {
   [[ "$slice_line" == *"handler"* ]]
   [[ "$slice_line" == *"spec"* ]]
 }
+
+# ---------------------------------------------------------------------------
+# Visual: trailer synthesis (driven by UI-touch heuristic in validate-body.sh)
+# ---------------------------------------------------------------------------
+
+@test "UI-touched staged paths produce a Visual: line in the example" {
+  export GIT_SHIM_DIFF_NAMES="$(printf 'src/components/Banner.tsx\nspec/banner_spec.rb')"
+
+  result=$(run_synth)
+
+  visual_line=$(printf '%s' "$result" | grep '^Visual:' || true)
+  [[ -n "$visual_line" ]]
+  [[ "$visual_line" == *'screenshot-path'* ]] || [[ "$visual_line" == *'n/a'* ]]
+}
+
+@test "non-UI staged paths produce no Visual: line in the example" {
+  export GIT_SHIM_DIFF_NAMES="$(printf 'app/services/billing.rb\nspec/services/billing_spec.rb')"
+
+  result=$(run_synth)
+
+  visual_line=$(printf '%s' "$result" | grep '^Visual:' || true)
+  [[ -z "$visual_line" ]]
+}
