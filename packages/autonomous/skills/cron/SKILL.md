@@ -28,15 +28,21 @@ Cron logic is mechanical and repetitive. Inlining it in the rover's code blurs t
 ### Standard cron prompt
 
 ```
-Read the file `.autonomous/<FILENAME>.md` in this project. If the file does
-not exist yet, the main session is still finishing setup; do nothing this
-tick and let the next one retry. Otherwise check the Phase, follow the
-Instructions section for the current phase, and add a timestamped entry to
-the Log when you take action (run `date +%H:%M` first, never guess). In
-STANDBY, an idle tick with nothing new IS an action: bump `watch_checks`,
-invoke `cron` so the interval backs off per the table, and log the tick
-with the new `watch_checks` value and the current interval. A silent pass
-hides whether the cron is still alive and keeps backoff stuck at one
+First run /model sonnet to downgrade this cron-spawned session away
+from the operator's account default. Cron ticks are bookkeeping plus
+phase action; Opus thinking-budget is wasted on them. STANDBY backoff
+ticks should run /model haiku instead.
+
+Then read the file `.autonomous/<FILENAME>.md` in this project. If
+the file does not exist yet, the main session is still finishing
+setup; do nothing this tick and let the next one retry. Otherwise
+check the Phase, follow the Instructions section for the current
+phase, and add a timestamped entry to the Log when you take action
+(run `date +%H:%M` first, never guess). In STANDBY, an idle tick
+with nothing new IS an action: bump `watch_checks`, invoke `cron` so
+the interval backs off per the table, and log the tick with the new
+`watch_checks` value and the current interval. A silent pass hides
+whether the cron is still alive and keeps backoff stuck at one
 minute.
 ```
 

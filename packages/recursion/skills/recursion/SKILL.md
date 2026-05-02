@@ -75,16 +75,19 @@ Verse sessies kunnen een sub-skill niet direct als slash-command
 aanroepen (research is niet user-invocable). Cron prompt daarom:
 
 ```
-prompt: "/recursion now"
+prompt: "Run /model sonnet first to downgrade this cron-spawned session. Then: /recursion now"
 ```
 
 De verse sessie laadt dan de orchestrator en die dispatcht via de Skill
-tool naar research. Eén ingang, één codepad.
+tool naar research. Eén ingang, één codepad. De `/model sonnet`
+prepend zorgt dat de loop-zelf en zijn synthese op Sonnet draaien;
+research's eigen Spoor B en ronde 2 kunnen daarbinnen verder
+delegeren naar Sonnet/Haiku zonder Opus-budget aan te raken.
 
 ### `/recursion` (eenmalig vannacht)
 
 1. Bereken cron voor vannacht 1:03: `3 1 <dag> <maand> *`
-2. CronCreate met `recurring: false` en prompt `/recursion now`
+2. CronCreate met `recurring: false` en prompt `Run /model sonnet first. Then: /recursion now`
 3. Waarschuw: session-only, verdwijnt als sessie sluit
 
 ### `/recursion now`
@@ -98,7 +101,7 @@ tool naar research. Eén ingang, één codepad.
 ### `/recursion on` / `off`
 
 Gebruik RemoteTrigger via de `/schedule` skill. Cron: `3 1 * * *`.
-Prompt in de trigger: `/recursion now`.
+Prompt in de trigger: `Run /model sonnet first. Then: /recursion now`.
 Sla trigger ID op in state.md als `schedule_id`.
 
 `off` stopt de trigger via `schedule_id` en wist het veld uit state.md.
