@@ -3,6 +3,7 @@ name: verify
 description: Evidence discipline for the rover. Writes Done criteria at end of SURVEY so the mission has an actual endpoint, then gathers evidence against each criterion during INSPECT (run the code, screenshot the UI, curl the endpoint, query the state) and reports what is proven, what is still unverified, what failed. Invokable directly as /autonomous:verify on any loop file, or called by the rover during SURVEY and INSPECT.
 user-invocable: true
 argument-hint: "[--propose <loop-file> | <loop-file> | free text]"
+effort: high
 ---
 
 # Autonomous Verify

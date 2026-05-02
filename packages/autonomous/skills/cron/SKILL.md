@@ -2,6 +2,7 @@
 name: cron
 description: Uplink cadence machine for the rover. Handles CronCreate, CronDelete, exponential backoff when the field goes quiet, auto-stop after sustained standby, and cron restoration after a session restart. Not user-invocable; loaded by rover, wake, and stop.
 user-invocable: false
+effort: low
 ---
 
 # Autonomy Cron

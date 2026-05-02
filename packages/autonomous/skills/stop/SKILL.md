@@ -2,6 +2,7 @@
 name: stop
 description: End a rover mission on purpose. Cuts the cron, writes a final log entry, and transmits a mission report home: a length-scaled narrative of the traverse, a qualitative conclusion, a (usually empty) not-done listing, and any external-action gates the rover could not take itself (push, merge, deploy). Not user-invocable directly; reached via the rover entry point.
 user-invocable: false
+effort: low
 ---
 
 # Autonomy Stop

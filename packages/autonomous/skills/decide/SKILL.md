@@ -3,6 +3,7 @@ name: decide
 description: Choice framework for a rover in the field, or for any moment an operator is stuck between options. Classifies the call, applies the six principles, enlists research skills to resolve, logs the verdict in the audit trail when a loop file is present. Invoked by the rover at forks in the traverse; also invocable directly as /autonomous:decide with free-form text describing the choice.
 user-invocable: true
 argument-hint: "[free text describing the choice]"
+effort: high
 ---
 
 # Autonomy Decide

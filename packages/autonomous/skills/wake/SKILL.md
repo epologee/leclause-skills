@@ -2,6 +2,7 @@
 name: wake
 description: Bring a stalled rover back online. Reads the loop file, relights the cron via cron, summarises where the traverse left off, and fires the next iteration. Not user-invocable directly; reached via the rover entry point with a loop file path.
 user-invocable: false
+effort: low
 ---
 
 # Autonomy Wake
