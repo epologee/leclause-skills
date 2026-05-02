@@ -9,6 +9,7 @@ allowed-tools:
   - Bash(mkdir -p *)
   - Read(*)
   - Write(**)
+effort: low
 ---
 
 # Translate Skill

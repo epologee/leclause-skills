@@ -8,6 +8,7 @@ allowed-tools:
   - Bash(open *)
   - Read(*)
   - Write(**)
+effort: low
 ---
 
 # Share Skill

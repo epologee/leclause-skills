@@ -6,6 +6,7 @@ argument-hint: "<skill-name> [en|nl|linux|windows|macos]"
 allowed-tools:
   - Skill
   - Bash(ls *)
+effort: low
 ---
 
 # Export Skill
