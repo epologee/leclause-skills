@@ -24,6 +24,7 @@ allowed-tools:
   - CronDelete
   - RemoteTrigger
   - Skill
+effort: high
 ---
 
 # Recursion

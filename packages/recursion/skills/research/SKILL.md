@@ -25,6 +25,7 @@ allowed-tools:
   - WebSearch
   - WebFetch(*)
   - Agent
+effort: high
 ---
 
 # Research
