@@ -154,8 +154,12 @@ _vb_is_ui_touch() {
         if [[ -z "$content" ]] && [[ -f "$f" ]]; then
           content=$(cat "$f" 2>/dev/null || true)
         fi
+        # Boundary patterns end on a non-identifier char or end-of-line so the
+        # dominant SwiftUI form `struct Foo: View<EOL>` (opening brace on next
+        # line) matches alongside `: View {` and `: View,`. Same care for
+        # UIView and NSView.
         if printf '%s' "$content" \
-            | grep -qE '(import SwiftUI|import UIKit|import AppKit|: View[[:space:]{]|: UIView[[:space:]{:]|: NSView[[:space:]{:]|UIViewController|NSViewController)'; then
+            | grep -qE '(import SwiftUI|import UIKit|import AppKit|: View([^A-Za-z0-9_]|$)|: UIView([^A-Za-z0-9_]|$)|: NSView([^A-Za-z0-9_]|$)|UIViewController|NSViewController)'; then
           return 0
         fi
         ;;
@@ -394,18 +398,22 @@ validate_body() {
     fi
   fi
 
-  # Rule: Visual trailer required when staged diff touches UI files.
-  # The UI-touch heuristic decides; Slice tokens are not consulted here so the
-  # trailer fires correctly on rare cases like a `chore-deps` slice that also
-  # bumped a CSS dependency. Backend-only commits skip the rule silently.
-  if _vb_is_ui_touch; then
-    local visual_value
-    visual_value=$(_vb_trailer_value "$trailers" "Visual")
+  # Rule: Visual trailer.
+  # Format is validated whenever the trailer is present, regardless of the
+  # UI-touch heuristic; a malformed value is always a bug. The UI-touch
+  # heuristic only decides whether ABSENCE of the trailer is a bug. Slice
+  # tokens are not consulted: the trailer fires correctly on rare cases like
+  # a chore-deps slice that also bumped a CSS dependency, and the format
+  # check stays honest when an operator opts in on a backend-only commit.
+  local visual_value
+  visual_value=$(_vb_trailer_value "$trailers" "Visual")
+  # git interpret-trailers normalises but a defensive trailing-whitespace
+  # strip keeps the path-existence check honest if a trailer ever arrives
+  # with trailing spaces.
+  visual_value=$(printf '%s' "$visual_value" | sed 's/[[:space:]]*$//')
 
-    if [[ -z "$visual_value" ]]; then
-      printf 'missing-visual: Visual trailer is absent; commit touches UI files\n' >&2
-      return 1
-    elif [[ "$visual_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
+  if [[ -n "$visual_value" ]]; then
+    if [[ "$visual_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
       local rationale="${BASH_REMATCH[1]}"
       if [[ ${#rationale} -lt 10 ]]; then
         printf 'missing-visual: n/a rationale must be at least 10 chars (got: "%s")\n' "$rationale" >&2
@@ -420,6 +428,9 @@ validate_body() {
         return 1
       fi
     fi
+  elif _vb_is_ui_touch; then
+    printf 'missing-visual: Visual trailer is absent; commit touches UI files\n' >&2
+    return 1
   fi
 
   # Rule: WHY block length.

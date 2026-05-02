@@ -92,6 +92,31 @@ Red-then-green: yes'
   [ "$status" -eq 0 ]
 }
 
+@test "_vb_is_ui_touch: .swift file with View conformance and brace on next line is UI-touched" {
+  set_staged_blob "Sources/Screen.swift" "struct OnboardingView: View
+{
+  var body: some View { Text(\"hi\") }
+}"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="Sources/Screen.swift"
+  run bash -c "source '$VALIDATOR'; _vb_is_ui_touch"
+  [ "$status" -eq 0 ]
+}
+
+@test "_vb_is_ui_touch: .swift file referencing ViewModifier is not UI-touched (regex word-boundary)" {
+  set_staged_blob "Sources/Mod.swift" "import Foundation
+struct CustomMod: ViewModifier { func body(content: Content) -> some View { content } }"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="Sources/Mod.swift"
+  run bash -c "source '$VALIDATOR'; _vb_is_ui_touch"
+  # ViewModifier is a SwiftUI type but the conformance does NOT match : View
+  # because the boundary check requires a non-identifier char after View. The
+  # `some View` reference also doesn't match the conformance pattern because
+  # it has no preceding `:`. This is a deliberate trade-off: we catch
+  # `import SwiftUI` cases on the same import line, and pure-Foundation
+  # ViewModifier helpers are rare enough that the operator can opt-in via
+  # Visual: n/a (rationale) when needed.
+  [ "$status" -eq 1 ]
+}
+
 @test "_vb_is_ui_touch: .swift file with import SwiftUI is UI-touched" {
   set_staged_blob "Sources/Screen.swift" "import SwiftUI
 
@@ -232,7 +257,7 @@ spec/util_spec.rb"
   [ "$status" -eq 0 ]
 }
 
-@test "no UI-touch + Visual: n/a is also accepted (operator may opt-in)" {
+@test "no UI-touch + well-formed Visual: n/a (rationale) passes (format checked when present)" {
   export GIT_SHIM_DIFF_CACHED_OUTPUT="lib/app_state.rb"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/app_state_spec.rb"
 
@@ -247,39 +272,18 @@ spec/util_spec.rb"
   [ "$status" -eq 0 ]
 }
 
-@test ".swift without UI symbols + missing Visual passes" {
-  set_staged_blob "Sources/Service.swift" "import Foundation
-struct AppState { var configured: Bool }"
-  export GIT_SHIM_DIFF_CACHED_OUTPUT="Sources/Service.swift"
-  export GIT_SHIM_LS_TREE_OUTPUT="Tests/AppStateTests.swift"
+@test "no UI-touch + malformed bare n/a Visual fails (format checked when present)" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="lib/app_state.rb"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/app_state_spec.rb"
 
   local body
-  body="$(cat <<'MSG'
-Treat credentials as orthogonal to purchase state
+  body=$(printf '%s\nVisual: n/a' "$(_body_no_visual_backend)")
 
-The computed appState used to short-circuit to .purchased the moment
-the engine returned isConfigured. The new onboarding flow breaks that
-assumption.
-
-Tests: Tests/AppStateTests.swift
-Slice: backend layer
-Red-then-green: yes
-MSG
-)"
-  use_trailers "Tests: Tests/AppStateTests.swift
-Slice: backend layer
-Red-then-green: yes"
-
+  use_trailers "$(printf '%s\nVisual: n/a' "$_trailers_backend")"
   local file
-  file=$(write_fixture "swift-no-ui.txt" "$body")
-
-  # The Tests trailer here references a .swift path. The current path-format
-  # rule recognises rb/py/js/ts/go/sh/bash/feature/tsx/jsx so this commit will
-  # currently bounce on missing-tests, not on Visual. We use # vsd-skip to
-  # bypass the validator on this fixture and isolate the heuristic-only check;
-  # a proper test for .swift acceptance in Tests trailer is a separate concern.
-  printf '%s\n# vsd-skip: isolating UI-touch heuristic for Swift backend file' >> "$file"
+  file=$(write_fixture "no-ui-bare-na.txt" "$body")
 
   run invoke_validator "$file"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing-visual"* ]]
 }
