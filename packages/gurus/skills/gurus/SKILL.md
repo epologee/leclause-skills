@@ -8,6 +8,7 @@ allowed-tools:
   - Bash(git log *)
   - Bash(git status *)
   - Bash(git branch *)
+effort: high
 ---
 
 > **Preflight.** De sub-skills dispatchen via `gurus:sonnet-max`. Die agent bestaat vanaf plugin-versie 1.0.8. Wanneer de dispatch faalt met "unknown subagent_type: gurus:sonnet-max", draai `claude plugins update gurus@leclause` en probeer opnieuw.

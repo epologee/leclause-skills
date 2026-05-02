@@ -8,6 +8,7 @@ allowed-tools:
   - Bash(git status *)
   - Bash(git branch *)
   - Bash(wc *)
+effort: high
 ---
 
 # Software Guru Panel
