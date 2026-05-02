@@ -259,6 +259,48 @@ expect_allow "followup: Bewust uitgesteld escape" \
 expect_allow "followup: non-gh command passes" \
   "$(pretool_bash 'echo follow-up')"
 
+# --- no-remote ---
+# Each case sets up a temp git repo and cd's in before invoking the hook,
+# because the guard reads `git remote` against the current working directory.
+
+ORIG_PWD="$PWD"
+
+NO_REMOTE=$(mktemp -d)
+git -C "$NO_REMOTE" init -q
+cd "$NO_REMOTE"
+expect_deny "no-remote: push without any remote" \
+  "$(pretool_bash 'git push')" \
+  "no-remote"
+expect_deny "no-remote: push origin without any remote" \
+  "$(pretool_bash 'git push origin main')" \
+  "no-remote"
+cd "$ORIG_PWD"
+rm -rf "$NO_REMOTE"
+
+WITH_REMOTE=$(mktemp -d)
+git -C "$WITH_REMOTE" init -q
+git -C "$WITH_REMOTE" remote add origin https://example.com/foo.git
+cd "$WITH_REMOTE"
+expect_allow "no-remote: push allowed when origin configured" \
+  "$(pretool_bash 'git push')"
+expect_allow "no-remote: push origin matches existing remote" \
+  "$(pretool_bash 'git push origin main')"
+expect_deny "no-remote: push to unknown named remote" \
+  "$(pretool_bash 'git push upstream main')" \
+  "no-remote"
+cd "$ORIG_PWD"
+rm -rf "$WITH_REMOTE"
+
+NO_REMOTE2=$(mktemp -d)
+git -C "$NO_REMOTE2" init -q
+cd "$NO_REMOTE2"
+expect_allow "no-remote: non-push git commands pass" \
+  "$(pretool_bash 'git status')"
+expect_allow "no-remote: non-git commands pass" \
+  "$(pretool_bash 'echo no push here')"
+cd "$ORIG_PWD"
+rm -rf "$NO_REMOTE2"
+
 # --- block-inline-dashes ---
 # The awk dash-detect needs an em-dash in a non-code line. We use printf
 # to inject the raw byte so the literal stays out of the file.
