@@ -398,12 +398,15 @@ validate_body() {
       return 1
     else
       if [[ ! -f "$visual_value" ]]; then
-        printf 'visual-path-not-found: Visual path "%s" was not found in the repo (relative to repo root). Add the file or use Visual: n/a (rationale).\n' "$visual_value" >&2
+        printf 'visual-path-not-found: Visual path "%s" was not found on disk (relative to repo root). Add the file or use Visual: n/a (rationale).\n' "$visual_value" >&2
         return 1
       fi
     fi
   elif [[ -n "$visual_ui_touched" ]]; then
-    printf 'missing-visual: Visual trailer is absent; UI files in this commit: %s\n' "$visual_ui_touched" >&2
+    # Join the newline-separated list with ", " for the single-line error.
+    local joined
+    joined=$(printf '%s' "$visual_ui_touched" | tr '\n' ',' | sed 's/,$//;s/,/, /g')
+    printf 'missing-visual: Visual trailer is absent; UI files in this commit: %s\n' "$joined" >&2
     return 1
   fi
 

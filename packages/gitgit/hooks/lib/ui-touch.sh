@@ -42,22 +42,24 @@ _vb_ui_touched_files() {
   staged=$(git diff --cached --name-only 2>/dev/null || true)
   [[ -z "$staged" ]] && return 0
 
+  # Newline-separated output keeps filenames with embedded commas or spaces
+  # intact; consumers join with their own separator for display.
   local f
   local matches=""
   while IFS= read -r f; do
     [[ -z "$f" ]] && continue
     case "$f" in
-      *.tsx|*.jsx|*.vue|*.svelte|*.html|*.htm) matches="${matches:+$matches, }$f" ;;
-      *.css|*.scss|*.sass|*.less)              matches="${matches:+$matches, }$f" ;;
-      *.erb|*.haml|*.slim)                     matches="${matches:+$matches, }$f" ;;
-      *.storyboard|*.xib)                      matches="${matches:+$matches, }$f" ;;
-      *.xcassets/*)                            matches="${matches:+$matches, }$f" ;;
+      *.tsx|*.jsx|*.vue|*.svelte|*.html|*.htm) matches+="${matches:+$'\n'}$f" ;;
+      *.css|*.scss|*.sass|*.less)              matches+="${matches:+$'\n'}$f" ;;
+      *.erb|*.haml|*.slim)                     matches+="${matches:+$'\n'}$f" ;;
+      *.storyboard|*.xib)                      matches+="${matches:+$'\n'}$f" ;;
+      *.xcassets/*)                            matches+="${matches:+$'\n'}$f" ;;
       *.swift)
         local content=""
         content=$(git show ":$f" 2>/dev/null || true)
         if printf '%s' "$content" \
             | grep -qE '(import SwiftUI|import UIKit|import AppKit|: View([^A-Za-z0-9_]|$)|: UIView([^A-Za-z0-9_]|$)|: NSView([^A-Za-z0-9_]|$)|UIViewController|NSViewController)'; then
-          matches="${matches:+$matches, }$f"
+          matches+="${matches:+$'\n'}$f"
         fi
         ;;
     esac
