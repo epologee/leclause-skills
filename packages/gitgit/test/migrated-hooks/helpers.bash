@@ -84,6 +84,10 @@ if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "HEAD" ]]; then
   printf 'deadbeef00000000\n'
   exit 0
 fi
+
+# git rev-parse --show-toplevel
+# Sandboxed to BATS_TEST_TMPDIR so the validator's Visual: path-resolution
+# does not escape the per-test tempdir.
 if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--show-toplevel" ]]; then
   printf '%s\n' "${BATS_TEST_TMPDIR:-/}"
   exit 0
