@@ -17,8 +17,8 @@ _ES_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 # shellcheck disable=SC1091
 . "$_ES_LIB_DIR/layer-classify.sh"
 # Source the small UI-touch helper so the synthesized example can decide
-# whether to emit a Visual: line. Was previously sourcing validate-body.sh,
-# which imported the entire validator just for one helper.
+# whether to emit a Visual: line based on the same heuristic the validator
+# applies. ui-touch.sh is a leaf lib so this does not pull in the validator.
 # shellcheck disable=SC1091
 . "$_ES_LIB_DIR/ui-touch.sh"
 
