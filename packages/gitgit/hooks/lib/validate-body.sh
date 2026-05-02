@@ -175,6 +175,26 @@ validate_body() {
       printf 'invalid-skip: vsd-skip requires a non-empty reason\n' >&2
       return 1
     fi
+    # Autonomous mode forbids vsd-skip entirely. Rovers commit unattended
+    # and the magic comment was the structural escape used to defer visual
+    # evidence to a later phase that rarely materialised; closing it forces
+    # the rover to either capture the screenshot now or articulate a real
+    # Visual: n/a rationale that is not a deferral.
+    if [[ "${GITGIT_AUTONOMOUS:-0}" = "1" ]]; then
+      printf 'vsd-skip-autonomous: vsd-skip is disabled under GITGIT_AUTONOMOUS=1. Supply Visual: <path> with the screenshot, or Visual: n/a (rationale) if no UI was touched.\n' >&2
+      return 1
+    fi
+    # vsd-skip cannot bypass commits that touch UI files. The opt-out was
+    # designed for backend/spec/migration commits where the UI-touch
+    # heuristic does not fire; using it on a UI commit defeats the entire
+    # Visual gate. Operators must use Visual: <path> or Visual: n/a
+    # (rationale) instead.
+    if _vb_is_ui_touch; then
+      local ui_files
+      ui_files=$(_vb_ui_touched_files | tr '\n' ',' | sed 's/,$//;s/,/, /g')
+      printf 'vsd-skip-ui-touch: vsd-skip cannot bypass commits that touch UI files: %s. Use Visual: <path> or Visual: n/a (rationale).\n' "$ui_files" >&2
+      return 1
+    fi
     local sha_label
     sha_label=$(git rev-parse --short HEAD 2>/dev/null || printf 'staging')
     _vb_log_skip "$sha_label" "$skip_reason"
@@ -317,7 +337,7 @@ validate_body() {
     done <<< "$tests_paths"
 
     # Validate path format for at least one entry.
-    local path_re='[a-zA-Z0-9_./-]+\.(rb|py|js|ts|go|sh|bash|feature|tsx|jsx)$'
+    local path_re='[a-zA-Z0-9_./-]+\.(rb|py|js|ts|go|sh|bash|bats|feature|tsx|jsx)$'
     local has_valid_format=0
     while IFS= read -r path; do
       local clean_path="${path%%#*}"
@@ -391,6 +411,16 @@ validate_body() {
       local rationale="${BASH_REMATCH[1]}"
       if [[ ${#rationale} -lt 10 ]]; then
         printf 'missing-visual: n/a rationale must be at least 10 chars (got: "%s")\n' "$rationale" >&2
+        return 1
+      fi
+      # Autonomous mode forbids n/a on UI-touched commits. A rover that
+      # touched a SwiftUI view, .tsx component, or stylesheet can capture
+      # a screenshot now; the n/a rationale was structurally a deferral
+      # ("evidence lands in INSPECT") and that promise rarely paid off.
+      if [[ "${GITGIT_AUTONOMOUS:-0}" = "1" ]] && [[ -n "$visual_ui_touched" ]]; then
+        local autonomous_files
+        autonomous_files=$(printf '%s' "$visual_ui_touched" | tr '\n' ',' | sed 's/,$//;s/,/, /g')
+        printf 'visual-na-autonomous: Visual: n/a is not accepted under GITGIT_AUTONOMOUS=1 when UI files are touched (%s). Capture a screenshot and supply Visual: <path>.\n' "$autonomous_files" >&2
         return 1
       fi
     elif [[ "$visual_value" = "n/a" ]]; then

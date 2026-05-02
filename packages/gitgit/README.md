@@ -154,7 +154,13 @@ requirement.
 Four escape-hatches, each logged for later auditing:
 
 - `# vsd-skip: <reason>` magic comment in the body (logged to
-  `~/.claude/var/gitgit-skips.log`)
+  `~/.claude/var/gitgit-skips.log`). Refused on UI-touched commits
+  (`vsd-skip-ui-touch`); use `Visual: <path>` or
+  `Visual: n/a (rationale)` instead.
+- `GITGIT_AUTONOMOUS=1` for unattended commits: refuses `# vsd-skip`
+  outright (`vsd-skip-autonomous`) and refuses `Visual: n/a` on
+  UI-touched commits (`visual-na-autonomous`); only `Visual: <path>`
+  passes.
 - `git commit --no-verify` (logged to `~/.claude/var/gitgit-no-verify.log`
   via the `post-commit` hook)
 - `GITGIT_ALLOW_AI_COAUTHOR=1` to allow a single `@anthropic.com`

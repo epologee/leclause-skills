@@ -349,6 +349,28 @@ De validator leest de commentaarregels (voor het strippen) en
 logt de reden naar `~/.claude/var/gitgit-skips.log`. De commit
 gaat door. De reden mag niet leeg zijn.
 
+**`vsd-skip` werkt niet op UI-touched commits.** Wanneer de UI-touch
+heuristiek vuurt (SwiftUI/UIKit/AppKit, `.tsx`/`.jsx`/`.vue`/`.svelte`,
+`.html`/`.css`/`.scss`, `.erb`/`.haml`/`.slim`, `.storyboard`/`.xib`,
+`.xcassets/`) wordt het magic comment afgewezen met
+`vsd-skip-ui-touch`. Gebruik dan `Visual: <pad>` (screenshot in de repo)
+of `Visual: n/a (rationale)`. De opt-out blijft beschikbaar voor
+backend-, spec- en migratie-commits.
+
+### `GITGIT_AUTONOMOUS=1`
+
+Striktere variant voor unattended commits (rover, autonomous-loop). Zet
+de env var voordat `git commit` runt. Twee extra regels:
+
+1. `# vsd-skip` wordt onvoorwaardelijk afgewezen met
+   `vsd-skip-autonomous`.
+2. `Visual: n/a (rationale)` wordt afgewezen op UI-touched commits met
+   `visual-na-autonomous`. Alleen `Visual: <pad>` blijft toegestaan; het
+   pad moet ook bestaan (bestaande `visual-path-not-found` regel).
+
+Backend-only commits zijn niet geraakt; `Visual: n/a (rationale)` blijft
+daar geldig.
+
 ### `--no-verify`
 
 `git commit --no-verify` slaat alle git-native hooks over. De PreToolUse:Bash

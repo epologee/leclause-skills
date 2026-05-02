@@ -40,3 +40,63 @@ MSG
   [ "$status" -eq 1 ]
   [[ "$output" == *"invalid-skip"* ]]
 }
+
+@test "vsd-skip on a UI-touched commit fails with vsd-skip-ui-touch" {
+  # Stage a SwiftUI file so the UI-touch heuristic fires.
+  set_staged_blob "Sources/Card.swift" "import SwiftUI
+
+struct Card: View { var body: some View { Text(\"hi\") } }"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="Sources/Card.swift"
+
+  local body
+  body="$(cat <<'MSG'
+Tighten resident card layout
+
+# vsd-skip: visual evidence lands in INSPECT
+MSG
+)"
+  local file
+  file=$(write_fixture "vsd-skip-ui.txt" "$body")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"vsd-skip-ui-touch"* ]]
+  [[ "$output" == *"Sources/Card.swift"* ]]
+}
+
+@test "vsd-skip on a backend-only commit still passes (heuristic does not fire)" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="lib/app_state.rb"
+
+  local body
+  body="$(cat <<'MSG'
+Expose session endpoint
+
+# vsd-skip: one-line hotfix pushed under time pressure
+MSG
+)"
+  local file
+  file=$(write_fixture "vsd-skip-backend.txt" "$body")
+
+  export HOME="$TMPDIR_TEST"
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+@test "vsd-skip is rejected outright under GITGIT_AUTONOMOUS=1" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="lib/app_state.rb"
+  export GITGIT_AUTONOMOUS=1
+
+  local body
+  body="$(cat <<'MSG'
+Expose session endpoint
+
+# vsd-skip: one-line hotfix pushed under time pressure
+MSG
+)"
+  local file
+  file=$(write_fixture "vsd-skip-autonomous.txt" "$body")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"vsd-skip-autonomous"* ]]
+}

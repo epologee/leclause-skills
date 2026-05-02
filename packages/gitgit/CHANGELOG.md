@@ -15,6 +15,33 @@ Categories:
 Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 
+## [v1.0.61]
+
+### Breaking
+
+- **`# vsd-skip` no longer bypasses UI-touched commits.** Previously the
+  magic-comment opt-out worked on any commit. It now refuses commits where
+  the UI-touch heuristic fires (SwiftUI / UIKit / AppKit `.swift`,
+  `.tsx` / `.jsx` / `.vue` / `.svelte` / `.html` / `.css` / `.scss`,
+  `.erb` / `.haml` / `.slim`, `.storyboard` / `.xib`, `.xcassets/`),
+  with new error code `vsd-skip-ui-touch`. UI commits must use
+  `Visual: <path>` (screenshot in the repo) or `Visual: n/a (rationale)`
+  instead. Backend / spec / migration commits are unaffected. Rationale:
+  `vsd-skip` was structurally being used to defer screenshots to "a later
+  phase" that rarely materialised, defeating the Visual gate on the
+  commits that needed it most.
+
+### Added
+
+- **`GITGIT_AUTONOMOUS=1` strict mode for unattended commits.** When the
+  env var is set (intended for rover / autonomous-loop scenarios), two
+  extra rules apply: `# vsd-skip` is rejected outright with code
+  `vsd-skip-autonomous`, and `Visual: n/a (rationale)` is rejected on
+  UI-touched commits with code `visual-na-autonomous` (only
+  `Visual: <path>` accepted, file-must-exist still enforced). Ship the
+  env var from your rover skill before invoking `git commit` to enforce
+  the stricter policy without affecting interactive sessions.
+
 ## [v1.0.57]
 
 ### Added

@@ -309,6 +309,53 @@ spec/util_spec.rb"
   [ "$status" -eq 0 ]
 }
 
+@test "UI-touch + Visual: n/a fails under GITGIT_AUTONOMOUS=1" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+  export GITGIT_AUTONOMOUS=1
+
+  use_trailers "$(_trailers_with_visual "n/a (logo refresh, no behaviour change)")"
+  local file
+  file=$(write_fixture "vis-na-autonomous.txt" "$(_body_with_visual "n/a (logo refresh, no behaviour change)")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"visual-na-autonomous"* ]]
+  [[ "$output" == *"src/App.tsx"* ]]
+}
+
+@test "non-UI commit + Visual: n/a still passes under GITGIT_AUTONOMOUS=1" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="lib/app_state.rb"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/app_state_spec.rb"
+  export GITGIT_AUTONOMOUS=1
+
+  local body
+  body=$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$(_body_no_visual_backend)")
+
+  use_trailers "$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$_trailers_backend")"
+  local file
+  file=$(write_fixture "no-ui-na-autonomous.txt" "$body")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+@test "UI-touch + Visual: <existing path> still passes under GITGIT_AUTONOMOUS=1" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+  export GITGIT_AUTONOMOUS=1
+
+  local screenshot
+  screenshot=$(write_visual_path "screenshots/onboarding-banner.png")
+
+  use_trailers "$(_trailers_with_visual "$screenshot")"
+  local file
+  file=$(write_fixture "vis-path-autonomous.txt" "$(_body_with_visual "$screenshot")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
 @test "no UI-touch + malformed bare n/a Visual fails (format checked when present)" {
   export GIT_SHIM_DIFF_CACHED_OUTPUT="lib/app_state.rb"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/app_state_spec.rb"
