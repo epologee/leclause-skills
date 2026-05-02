@@ -101,6 +101,11 @@
       "name": "gitgit",
       "description": "Bundle of git-write skills for Claude Code: commit-all-the-things groups every uncommitted change into logical commits, commit-snipe stages only what belongs to the current task, rebase-latest-default rebases the current branch on the freshest default, and merge-to-default lands a feature branch on the project's default branch with a github-style --no-ff merge commit (rebases on conflict, deletes the local source branch after a confirmed merge, and no-ops with a TUI warning when invoked on the default branch itself).",
       "source": "./packages/gitgit"
+    },
+    {
+      "name": "leclause",
+      "description": "Marketplace-wide utilities for the leclause-skills marketplace. Currently ships /leclause:whats-new, a one-stop reader for the post-update CHANGELOG section of any installed leclause plugin.",
+      "source": "./packages/leclause"
     }
   ]
 }

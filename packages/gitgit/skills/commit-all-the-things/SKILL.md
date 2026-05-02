@@ -19,8 +19,8 @@ here is what changed."). Then continue with the rest of this skill.
 If the command produces no output, say nothing about updates and proceed.
 
 The helper writes the sentinel only when stdout was non-empty, so a silent
-run does not mark the version as seen. `/gitgit:whats-new` re-shows the
-section on demand without touching the sentinel.
+run does not mark the version as seen. `/leclause:whats-new gitgit`
+re-shows the section on demand without touching the sentinel.
 </post-update-broadcast>
 
 # Commit All The Things

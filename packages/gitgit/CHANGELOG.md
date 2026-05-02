@@ -2,7 +2,7 @@
 
 Each entry corresponds to the `version` in `.claude-plugin/plugin.json`. The
 post-update broadcast (see `bin/check-broadcast`) shows the section for the
-currently-installed version exactly once per machine. Use `/gitgit:whats-new`
+currently-installed version exactly once per machine. Use `/leclause:whats-new gitgit`
 to re-read at any time.
 
 Categories:
@@ -24,6 +24,7 @@ omitted; the broadcast budget is for things the user benefits from knowing.
   pattern), gitgit shows a one-line summary of what changed in the new
   version. Runs once per machine per version; the sentinel lives at
   `~/.claude/var/leclause/gitgit-broadcast-seen`.
-- **`/gitgit:whats-new` slash command.** Re-prints this file's section for
-  the current version on demand, regardless of whether the broadcast already
-  fired.
+- **Shared `/leclause:whats-new gitgit` reader.** Re-prints this file's
+  section for the current version on demand, regardless of whether the
+  broadcast already fired. The reader lives in the new `leclause` plugin
+  and works for any leclause plugin that adopts the broadcast pattern.

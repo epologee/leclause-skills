@@ -35,7 +35,6 @@ Reference for the schema, examples, escape-hatches, and troubleshooting:
 | disable-session | `/gitgit:disable-discipline` | |
 | enable-session | `/gitgit:enable-discipline` | |
 | session-status | `/gitgit:discipline-status` | |
-| whats-new | `/gitgit:whats-new` | |
 
 - **commit-all-the-things** inspects `git status` plus `git diff`, groups
   changes by intent (feature, fix, refactor, docs, config), and creates
@@ -219,7 +218,8 @@ command shows the latest `CHANGELOG.md` section once. The broadcast block
 lives in `skills/commit-all-the-things/SKILL.md` and calls
 `bin/check-broadcast`, which compares the active plugin version against
 `~/.claude/var/leclause/gitgit-broadcast-seen` and writes the file only
-when a CHANGELOG section was actually shown. `/gitgit:whats-new` reprints
+when a CHANGELOG section was actually shown. The shared
+`/leclause:whats-new gitgit` reader (from the `leclause` plugin) reprints
 on demand and never touches the sentinel.
 
 Authoring a release note is a single edit to `CHANGELOG.md`: add a new
