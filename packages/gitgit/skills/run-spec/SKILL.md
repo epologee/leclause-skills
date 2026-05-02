@@ -6,6 +6,7 @@ description: >
   Echoes PASS or FAIL plus the runner output. Useful as an ergonomic
   helper for /gitgit:commit-discipline workflows.
 argument-hint: "<test-or-spec-path>"
+effort: low
 ---
 
 # /gitgit:run-spec

@@ -6,6 +6,7 @@ description: >
   Reports the current enable/disable state of the gitgit guards for this
   session, the sentinel paths, and the active plugin version.
 argument-hint: ""
+effort: low
 ---
 
 # /gitgit:discipline-status
