@@ -1,0 +1,5 @@
+{
+  "name": "leclause",
+  "description": "Marketplace-wide utilities for the leclause-skills marketplace. Currently ships /leclause:whats-new, a one-stop reader for the post-update CHANGELOG section of any installed leclause plugin.",
+  "version": "1.0.1"
+}

@@ -30,6 +30,7 @@ The `@leclause` suffix in the second command is the marketplace alias that the f
 | **gurus** | `/gurus`, `/gurus:software`, `/gurus:council` | | | | Opinionated panels that challenge a decision from multiple perspectives. `gurus:software` hosts the eight-persona code review panel (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). `gurus:council` runs Ole Lehmann's five-advisor pattern (pre-mortem, first-principles, opportunity-finder, stranger, action) with anonymised peer-review and chairman synthesis. `/gurus` is an orchestrator that routes between the two panels based on context; it is not itself a review. All voices run on the shared `gurus:sonnet-max` subagent. |
 | **how-plugins-work** | `/how-plugins-work`, `/how-plugins-work:test-before-push` | ✅ | | | Living document explaining how Claude Code plugin naming, skill resolution, and the plugin:skill invocation pattern work. The `test-before-push` sub-skill encodes the canonical procedure for pointing a marketplace alias at the local working copy so you can test a plugin change in a fresh Claude session without pushing first. |
 | **inspiratie** | `/inspiratie` | ✅ | | | Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. |
+| **leclause** | `/leclause:whats-new` | | | | Marketplace-wide utilities. Currently ships `whats-new`, a one-stop reader for the post-update CHANGELOG section of any installed leclause plugin. Argument is the plugin name (`/leclause:whats-new gitgit`); without argument, lists every leclause plugin that adopted the broadcast pattern. The reader uses `--force`, so it never advances the per-plugin sentinel under `~/.claude/var/leclause/`. |
 | **recap** | `/recap` | | | | Structured status overview of the current session: what we are doing, where we are, what is next. |
 | **recursion** | `/recursion` | | | | Nightly workflow-improvement loop. Orchestrator manages schedule, state, focus, reject. Ships with an internal `research` sub-skill that runs parallel friction and external discovery agents, synthesizes findings, and writes atomic improvement plans. |
 | **rename-suggestion** | `/rename-suggestion` | | | | Suggest a descriptive session name based on conversation context. Portable; the macOS-only `clipboard-copy` helper is invoked when present, and on other platforms the ghost-text suggestion still works without the clipboard step. |
@@ -95,3 +96,24 @@ export CLAUDE_CLI=my-wrapper
 ```
 
 Bonsai puts the literal string `${CLAUDE_CLI:-claude}` in the clipboard command so the target shell evaluates it at paste time, falling back to `claude` if the var is not set.
+
+## Post-update broadcasts
+
+Plugins in this marketplace can ship a one-off broadcast that fires the next time the user runs one of the plugin's slash commands after `claude plugins update`. Use it to announce renames, new commands, breaking hook changes, or deprecation warnings. Patch-level fixes that change nothing observable are intentionally silent.
+
+`gitgit` is the reference implementation. To adopt the pattern in another plugin:
+
+1. Copy `packages/gitgit/bin/check-broadcast` into `packages/<plugin>/bin/check-broadcast`. The script is plugin-agnostic; it reads the active `name` and `version` from `.claude-plugin/plugin.json` and namespaces the sentinel by plugin name.
+2. Add a `CHANGELOG.md` at `packages/<plugin>/CHANGELOG.md`. Each release is a `## [vX.Y.Z]` section with `### Breaking`, `### Added`, `### Changed`, `### Fixed` subheadings as needed. The helper extracts the top-most section in document order, so patch bumps without an entry stay silent without forcing a placeholder.
+3. Add a `<post-update-broadcast>` block at the top of the most-frequently-loaded user-invocable skill (typically the plugin's main verb). The block instructs Claude to run `node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"`, show non-empty output verbatim with one short framing sentence, and proceed silently otherwise. See `packages/gitgit/skills/commit-all-the-things/SKILL.md` for the canonical wording.
+4. No per-plugin `whats-new` skill is needed. The shared `/leclause:whats-new <plugin>` command (from the `leclause` plugin) reprints the section on demand, regardless of whether the broadcast already fired. One slash-command for the whole marketplace; one entry in `/`-autocomplete; one place where the policy lives.
+
+The sentinel lives at `~/.claude/var/leclause/<plugin>-broadcast-seen` and stores the last-broadcast plugin version. The directory is shared across all leclause plugins so the user can audit it in one place. The helper writes the sentinel only on a non-empty broadcast, so a missing CHANGELOG entry never marks the version as seen.
+
+### What belongs in a broadcast
+
+- **Breaking** (renamed or removed slash commands, hook gates that block previously-accepted input, deprecations with a removal date), **notable Added** (new slash command, new hook event the user can plug into, new opt-out token), **Security** advisories. Always written in user-impact, never in implementation terms. Phrase Breaking entries at the top so the user cannot miss them.
+- **Not in a broadcast:** internal refactors, silent bug fixes the user never saw, "various improvements", performance tweaks without observable behavior change, doc-only or test-only commits, language-of-implementation changes, marketing or cross-promotion, donation requests, telemetry-opt-in prompts. Plugins that broadcast these accumulate the same fatigue npm post-install messages caused; treat the broadcast budget like a feature-development budget.
+- **Volgordecriterium:** the user MUST NOT be surprised by breaking changes; non-breaking additions can be a soft nudge; never gate the user's actual work on acknowledgement.
+
+The single test for inclusion: would the user benefit from knowing this before their next slash invocation. If the answer is no, leave it out; the next entry above it stays the latest section and the broadcast stays silent until something genuinely worth saying lands.

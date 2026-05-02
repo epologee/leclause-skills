@@ -4,6 +4,25 @@ user-invocable: true
 description: Use when the user wants to commit ALL uncommitted changes in the working tree, grouped into logical commits. Triggers on /gitgit:commit-all-the-things or "commit alles", "ruim de working tree op", "commit what's left".
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the gitgit plugin was updated since the
+last time you saw the broadcast on this machine. Show the output verbatim
+in a markdown block, prefixed with one short sentence ("gitgit was updated;
+here is what changed."). Then continue with the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new gitgit`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 # Commit All The Things
 
 Commit alle uncommitted wijzigingen in de working tree, gegroepeerd in logische commits met beschrijvende messages.
