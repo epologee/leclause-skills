@@ -98,27 +98,33 @@ PREPARE → RESEARCH (ronde 1 → tussensynthese → ronde 2 → ronde 3 → ein
 ### 2. RESEARCH
 
 Dit is het hart. Grondig, radicaal, geen concessies. Spawn parallelle
-Opus agents per onderzoeksrichting.
+agents per onderzoeksrichting met model-keuze per ronde: Sonnet voor
+breedte-werk (Spoor A friction-grep, Spoor B verkenning, ronde 2
+diepte) en Opus voor de contrarian-rondes en de eindsynthese.
 
 #### Ronde 1: Parallelle verkenning (Spoor A + Spoor B)
 
 **Spoor A: Friction Analysis** (één agent, parallel met Spoor B)
 
-Spawn een Opus agent met de prompt uit
+Spawn een Sonnet agent met de prompt uit
 `${CLAUDE_SKILL_DIR}/prompts/friction-analysis.md`.
 Analyseert sessie-JSONLs sinds `last_run` op friction patronen:
 correcties, overclaimed confidence, compliance reflex, premature action,
 doel-abandonment, downgrade-spiralen, herhaalde instructies,
-self-improvement audit.
+self-improvement audit. Transcript-grep en patroon-classificatie zijn
+mechanisch werk; Sonnet is hier kwalitatief gelijkwaardig en
+substantieel goedkoper.
 
 **Spoor B: Externe Research** (5-10 parallelle agents)
 
 Lees `${CLAUDE_SKILL_DIR}/prompts/explore.md` voor de volledige
 instructies en privacy regels.
 
-Spawn agents met `model: "opus"`, elk gericht op één bron of invalshoek.
-Elke agent gaat DIEP: hele threads lezen, links volgen, discussies
-analyseren. Niet titels scrapen, maar argumenten begrijpen.
+Spawn agents met `model: "sonnet"`, elk gericht op één bron of
+invalshoek. Elke agent gaat DIEP: hele threads lezen, links volgen,
+discussies analyseren. Niet titels scrapen, maar argumenten begrijpen.
+Sonnet is voldoende voor scrape, samenvatting en argument-extractie;
+de eindsynthese in main loop weegt diepte tegen contrarian-rondes.
 
 Verplichte agents:
 
@@ -146,11 +152,16 @@ Lees alle agent-rapporten. Identificeer:
 #### Ronde 2: Gerichte diepte-agents (3-5 agents)
 
 Elke agent krijgt een specifieke vervolgvraag uit de tussensynthese
-plus relevante bevindingen uit ronde 1.
+plus relevante bevindingen uit ronde 1. Spawn met `model: "sonnet"`;
+gerichte verdieping op een geformuleerde vraag is binnen Sonnet's
+sweet spot.
 
 #### Ronde 3: Contrarian verificatie (2-3 agents)
 
-Het tegengewicht tegen confirmation bias:
+Het tegengewicht tegen confirmation bias. Spawn met `model: "opus"`;
+contrarian-werk vereist de capaciteit om de meest waarschijnlijke
+conclusie te weerstaan, en Sonnet 4.6 toont gedocumenteerde quality
+flux op precies dat patroon (claude-code issue 46935).
 
 - **Contrarian**: zoek bewijs dat conclusies niet kloppen
 - **Verificatie**: zijn bronnen onafhankelijk of echo chamber?
@@ -202,7 +213,10 @@ Run: /auto-loop ~/.claude/recursion/plans/<bestand>
 Single source of truth voor privacy en safety regels. Ook van toepassing
 op de `recursion` orchestrator wanneer die via de Skill tool delegeert.
 
-- Alle analyse van externe content MOET door Opus model agents.
+- Spoor B verkenning en ronde 2 diepte-agents draaien op Sonnet.
+  Ronde 3 contrarian en de eindsynthese MOETEN op Opus draaien;
+  daar weegt prompt-injection-resistentie en het kunnen weerstaan
+  van de meest waarschijnlijke conclusie het zwaarst.
 - Geen projectnamen, bedrijfsnamen of persoonlijke namen in zoekopdrachten
   (zie `prompts/explore.md § Privacy Regels`).
 - Geen content uploaden naar externe diensten.

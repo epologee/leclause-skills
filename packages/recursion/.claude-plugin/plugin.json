@@ -1,5 +1,5 @@
 {
   "name": "recursion",
   "description": "Nightly workflow-improvement loop. /recursion orchestrates schedule, state, focus, and reject. Ships with an internal research sub-skill that runs the deep research workflow producing atomic improvement plans.",
-  "version": "1.0.9"
+  "version": "1.0.10"
 }
