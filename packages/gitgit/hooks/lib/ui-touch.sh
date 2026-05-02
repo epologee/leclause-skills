@@ -55,10 +55,26 @@ _vb_ui_touched_files() {
       *.storyboard|*.xib)                      matches+="${matches:+$'\n'}$f" ;;
       *.xcassets/*)                            matches+="${matches:+$'\n'}$f" ;;
       *.swift)
-        local content=""
-        content=$(git show ":$f" 2>/dev/null || true)
-        if printf '%s' "$content" \
+        # Two passes. First the staged blob; this is what the commit will
+        # actually carry. Second the working-tree file as a backstop so
+        # `git add -p` (partial-stage of a non-UI hunk in a UI file) does
+        # not silently classify a SwiftUI view as backend. False positives
+        # from the working-tree pass (e.g., staged content has UI removed
+        # but the working tree still shows it) are absorbed by Visual: n/a
+        # (rationale); false negatives from the staged-only pass were
+        # silent and harder to recover from.
+        local content_staged=""
+        content_staged=$(git show ":$f" 2>/dev/null || true)
+        local _matched=0
+        if printf '%s' "$content_staged" \
             | grep -qE '(import SwiftUI|import UIKit|import AppKit|: View([^A-Za-z0-9_]|$)|: UIView([^A-Za-z0-9_]|$)|: NSView([^A-Za-z0-9_]|$)|UIViewController|NSViewController)'; then
+          _matched=1
+        elif [[ -f "$f" ]] && grep -qE \
+            '(import SwiftUI|import UIKit|import AppKit|: View([^A-Za-z0-9_]|$)|: UIView([^A-Za-z0-9_]|$)|: NSView([^A-Za-z0-9_]|$)|UIViewController|NSViewController)' \
+            "$f" 2>/dev/null; then
+          _matched=1
+        fi
+        if [[ "$_matched" -eq 1 ]]; then
           matches+="${matches:+$'\n'}$f"
         fi
         ;;

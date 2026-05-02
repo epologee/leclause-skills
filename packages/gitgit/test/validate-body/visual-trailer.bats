@@ -128,6 +128,23 @@ struct OnboardingView: View {
   [ "$status" -eq 0 ]
 }
 
+@test "_vb_is_ui_touch: .swift partial-stage that hides UI symbols falls back to working tree" {
+  # Simulate `git add -p` of a non-UI hunk: staged blob has only the
+  # Foundation portion, but the working-tree file still carries SwiftUI
+  # symbols. The heuristic must catch this via the working-tree backstop.
+  set_staged_blob "Sources/Mixed.swift" "import Foundation
+struct Helper { var x: Int }"
+  local wt_file="$TMPDIR_TEST/Sources/Mixed.swift"
+  mkdir -p "$(dirname "$wt_file")"
+  printf 'import SwiftUI\n\nstruct MixedView: View {\n  var body: some View { Text("hi") }\n}\n' > "$wt_file"
+
+  # Run from $TMPDIR_TEST so the relative path "Sources/Mixed.swift" resolves
+  # to the working-tree file we just wrote.
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="Sources/Mixed.swift"
+  run bash -c "cd '$TMPDIR_TEST' && source '$VALIDATOR'; _vb_is_ui_touch"
+  [ "$status" -eq 0 ]
+}
+
 @test "_vb_is_ui_touch: .swift file without UI symbols is not UI-touched" {
   set_staged_blob "Sources/Service.swift" "import Foundation
 
