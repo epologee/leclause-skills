@@ -2,6 +2,7 @@
 name: art-director
 user-invocable: true
 description: Use when starting a new product, brand refresh, or design-system foundation, before UI work begins. Triggers on explicit requests for "art direction", "brand work", "visual language", or "design system architecture". Also use when a project has been building features without a documented brand, visual language, or token taxonomy, and the choices have become reflex-driven. NOT for small UI tweaks, per-component review, single-screen layout fixes, or anti-AI-slop checking: those are eye-of-the-beholder (diagnose) and impeccable (apply standard). Art direction works upstream of both: it captures who the product is, how it speaks visually, and how its system scales, BEFORE CSS exists.
+effort: high
 ---
 
 # Art Director
