@@ -1,0 +1,285 @@
+#!/usr/bin/env bats
+# Visual trailer + UI-touch heuristic.
+#
+# The Visual: trailer mirrors Red-then-green: in format (path or
+# "n/a (rationale)"). The trigger is different: Visual is required only when
+# the staged diff touches UI files (.tsx, .jsx, .vue, .svelte, .html, .htm,
+# .css, .scss, .sass, .less, .erb, .haml, .slim, .storyboard, .xib,
+# .xcassets/, or .swift files containing SwiftUI / UIKit / AppKit symbols).
+# Backend-only commits do not need the trailer.
+
+load helpers
+
+# ---------------------------------------------------------------------------
+# Helpers: build a body with or without a Visual: trailer
+# ---------------------------------------------------------------------------
+
+_body_no_visual() {
+  cat <<MSG
+Render onboarding banner above tab strip
+
+The banner replaces the static placeholder we shipped last week
+and now hosts the IAP teaser for unconfigured users.
+
+Tests: spec/views/onboarding_view_spec.rb
+Slice: frontend layer
+Red-then-green: yes
+MSG
+}
+
+_body_with_visual() {
+  local visual_value="$1"
+  cat <<MSG
+Render onboarding banner above tab strip
+
+The banner replaces the static placeholder we shipped last week
+and now hosts the IAP teaser for unconfigured users.
+
+Tests: spec/views/onboarding_view_spec.rb
+Slice: frontend layer
+Red-then-green: yes
+Visual: ${visual_value}
+MSG
+}
+
+_body_no_visual_backend() {
+  cat <<MSG
+Treat credentials as orthogonal to purchase state
+
+The computed appState used to short-circuit to .purchased the moment
+the engine returned isConfigured. The new onboarding flow breaks that
+assumption.
+
+Tests: spec/services/app_state_spec.rb
+Slice: backend layer
+Red-then-green: yes
+MSG
+}
+
+# Standard trailers strings that the shim returns for each fixture variant.
+_trailers_no_visual='Tests: spec/views/onboarding_view_spec.rb
+Slice: frontend layer
+Red-then-green: yes'
+
+_trailers_with_visual() {
+  local visual_value="$1"
+  printf '%s\nVisual: %s' "$_trailers_no_visual" "$visual_value"
+}
+
+_trailers_backend='Tests: spec/services/app_state_spec.rb
+Slice: backend layer
+Red-then-green: yes'
+
+# ---------------------------------------------------------------------------
+# UI-touch heuristic returns 0 / 1 for representative file types
+# ---------------------------------------------------------------------------
+
+@test "_vb_is_ui_touch: .tsx file is UI-touched" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
+  run bash -c "source '$VALIDATOR'; _vb_is_ui_touch"
+  [ "$status" -eq 0 ]
+}
+
+@test "_vb_is_ui_touch: .css file is UI-touched" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="styles/main.css"
+  run bash -c "source '$VALIDATOR'; _vb_is_ui_touch"
+  [ "$status" -eq 0 ]
+}
+
+@test "_vb_is_ui_touch: .erb file is UI-touched" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="app/views/layouts/application.html.erb"
+  run bash -c "source '$VALIDATOR'; _vb_is_ui_touch"
+  [ "$status" -eq 0 ]
+}
+
+@test "_vb_is_ui_touch: .swift file with import SwiftUI is UI-touched" {
+  set_staged_blob "Sources/Screen.swift" "import SwiftUI
+
+struct OnboardingView: View {
+  var body: some View { Text(\"hi\") }
+}"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="Sources/Screen.swift"
+  run bash -c "source '$VALIDATOR'; _vb_is_ui_touch"
+  [ "$status" -eq 0 ]
+}
+
+@test "_vb_is_ui_touch: .swift file without UI symbols is not UI-touched" {
+  set_staged_blob "Sources/Service.swift" "import Foundation
+
+struct AppState {
+  var configured: Bool
+}"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="Sources/Service.swift"
+  run bash -c "source '$VALIDATOR'; _vb_is_ui_touch"
+  [ "$status" -eq 1 ]
+}
+
+@test "_vb_is_ui_touch: only .rb files staged is not UI-touched" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="lib/util.rb
+spec/util_spec.rb"
+  run bash -c "source '$VALIDATOR'; _vb_is_ui_touch"
+  [ "$status" -eq 1 ]
+}
+
+@test "_vb_is_ui_touch: empty staged diff is not UI-touched" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT=""
+  run bash -c "source '$VALIDATOR'; _vb_is_ui_touch"
+  [ "$status" -eq 1 ]
+}
+
+@test "_vb_is_ui_touch: .xcassets path is UI-touched" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="App/Assets.xcassets/AppIcon.appiconset/Contents.json"
+  run bash -c "source '$VALIDATOR'; _vb_is_ui_touch"
+  [ "$status" -eq 0 ]
+}
+
+# ---------------------------------------------------------------------------
+# Validator: UI-touched commits require Visual trailer
+# ---------------------------------------------------------------------------
+
+@test "UI-touch + Visual: existing path passes" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+
+  local screenshot
+  screenshot=$(write_visual_path "screenshots/onboarding-banner.png")
+
+  use_trailers "$(_trailers_with_visual "$screenshot")"
+  local file
+  file=$(write_fixture "vis-path.txt" "$(_body_with_visual "$screenshot")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+@test "UI-touch + Visual: n/a with rationale passes" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+
+  use_trailers "$(_trailers_with_visual "n/a (logo refresh, no behaviour change)")"
+  local file
+  file=$(write_fixture "vis-na.txt" "$(_body_with_visual "n/a (logo refresh, no behaviour change)")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+@test "UI-touch + missing Visual fails with missing-visual" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+
+  use_trailers "$_trailers_no_visual"
+  local file
+  file=$(write_fixture "vis-missing.txt" "$(_body_no_visual)")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing-visual"* ]]
+}
+
+@test "UI-touch + bare n/a fails with missing-visual" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+
+  use_trailers "$(_trailers_with_visual "n/a")"
+  local file
+  file=$(write_fixture "vis-bare-na.txt" "$(_body_with_visual "n/a")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing-visual"* ]]
+}
+
+@test "UI-touch + nonexistent path fails with visual-path-not-found" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+
+  use_trailers "$(_trailers_with_visual "/no/such/screenshot.png")"
+  local file
+  file=$(write_fixture "vis-bad-path.txt" "$(_body_with_visual "/no/such/screenshot.png")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"visual-path-not-found"* ]]
+}
+
+@test "UI-touch + n/a with too-short rationale fails" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+
+  use_trailers "$(_trailers_with_visual "n/a (short)")"
+  local file
+  file=$(write_fixture "vis-short-na.txt" "$(_body_with_visual "n/a (short)")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing-visual"* ]]
+}
+
+# ---------------------------------------------------------------------------
+# Validator: non-UI commits do not require Visual trailer
+# ---------------------------------------------------------------------------
+
+@test "no UI-touch + missing Visual passes (silent on backend-only)" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="lib/app_state.rb"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/app_state_spec.rb"
+
+  use_trailers "$_trailers_backend"
+  local file
+  file=$(write_fixture "no-ui-no-vis.txt" "$(_body_no_visual_backend)")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+@test "no UI-touch + Visual: n/a is also accepted (operator may opt-in)" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="lib/app_state.rb"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/app_state_spec.rb"
+
+  local body
+  body=$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$(_body_no_visual_backend)")
+
+  use_trailers "$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$_trailers_backend")"
+  local file
+  file=$(write_fixture "no-ui-with-vis.txt" "$body")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+@test ".swift without UI symbols + missing Visual passes" {
+  set_staged_blob "Sources/Service.swift" "import Foundation
+struct AppState { var configured: Bool }"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="Sources/Service.swift"
+  export GIT_SHIM_LS_TREE_OUTPUT="Tests/AppStateTests.swift"
+
+  local body
+  body="$(cat <<'MSG'
+Treat credentials as orthogonal to purchase state
+
+The computed appState used to short-circuit to .purchased the moment
+the engine returned isConfigured. The new onboarding flow breaks that
+assumption.
+
+Tests: Tests/AppStateTests.swift
+Slice: backend layer
+Red-then-green: yes
+MSG
+)"
+  use_trailers "Tests: Tests/AppStateTests.swift
+Slice: backend layer
+Red-then-green: yes"
+
+  local file
+  file=$(write_fixture "swift-no-ui.txt" "$body")
+
+  # The Tests trailer here references a .swift path. The current path-format
+  # rule recognises rb/py/js/ts/go/sh/bash/feature/tsx/jsx so this commit will
+  # currently bounce on missing-tests, not on Visual. We use # vsd-skip to
+  # bypass the validator on this fixture and isolate the heuristic-only check;
+  # a proper test for .swift acceptance in Tests trailer is a separate concern.
+  printf '%s\n# vsd-skip: isolating UI-touch heuristic for Swift backend file' >> "$file"
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}

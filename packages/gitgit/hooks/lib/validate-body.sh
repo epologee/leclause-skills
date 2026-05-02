@@ -129,6 +129,42 @@ _vb_why_block() {
   printf '%s' "$why"
 }
 
+# _vb_is_ui_touch
+# Returns 0 when the staged diff touches at least one UI-bearing file,
+# 1 otherwise. UI is detected by file extension or, for .swift files, by
+# content-grepping the staged blob (or working-tree fallback) for SwiftUI /
+# UIKit / AppKit symbols. Used by the Visual trailer rule below.
+_vb_is_ui_touch() {
+  local staged
+  staged=$(git diff --cached --name-only 2>/dev/null || true)
+  [[ -z "$staged" ]] && return 1
+
+  local f
+  while IFS= read -r f; do
+    [[ -z "$f" ]] && continue
+    case "$f" in
+      *.tsx|*.jsx|*.vue|*.svelte|*.html|*.htm) return 0 ;;
+      *.css|*.scss|*.sass|*.less)              return 0 ;;
+      *.erb|*.haml|*.slim)                     return 0 ;;
+      *.storyboard|*.xib)                      return 0 ;;
+      *.xcassets/*)                            return 0 ;;
+      *.swift)
+        local content=""
+        content=$(git show ":$f" 2>/dev/null || true)
+        if [[ -z "$content" ]] && [[ -f "$f" ]]; then
+          content=$(cat "$f" 2>/dev/null || true)
+        fi
+        if printf '%s' "$content" \
+            | grep -qE '(import SwiftUI|import UIKit|import AppKit|: View[[:space:]{]|: UIView[[:space:]{:]|: NSView[[:space:]{:]|UIViewController|NSViewController)'; then
+          return 0
+        fi
+        ;;
+    esac
+  done <<< "$staged"
+
+  return 1
+}
+
 # ---------------------------------------------------------------------------
 # Main validator
 # ---------------------------------------------------------------------------
@@ -355,6 +391,34 @@ validate_body() {
     else
       printf 'missing-red-then-green: value must be "yes" or "n/a (reason)"; got: "%s"\n' "$rtg_value" >&2
       return 1
+    fi
+  fi
+
+  # Rule: Visual trailer required when staged diff touches UI files.
+  # The UI-touch heuristic decides; Slice tokens are not consulted here so the
+  # trailer fires correctly on rare cases like a `chore-deps` slice that also
+  # bumped a CSS dependency. Backend-only commits skip the rule silently.
+  if _vb_is_ui_touch; then
+    local visual_value
+    visual_value=$(_vb_trailer_value "$trailers" "Visual")
+
+    if [[ -z "$visual_value" ]]; then
+      printf 'missing-visual: Visual trailer is absent; commit touches UI files\n' >&2
+      return 1
+    elif [[ "$visual_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
+      local rationale="${BASH_REMATCH[1]}"
+      if [[ ${#rationale} -lt 10 ]]; then
+        printf 'missing-visual: n/a rationale must be at least 10 chars (got: "%s")\n' "$rationale" >&2
+        return 1
+      fi
+    elif [[ "$visual_value" = "n/a" ]]; then
+      printf 'missing-visual: bare "n/a" requires a rationale in parens: n/a (reason >= 10 chars)\n' >&2
+      return 1
+    else
+      if [[ ! -f "$visual_value" ]]; then
+        printf 'visual-path-not-found: Visual path "%s" does not exist in working tree\n' "$visual_value" >&2
+        return 1
+      fi
     fi
   fi
 
