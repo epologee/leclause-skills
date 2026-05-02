@@ -100,6 +100,16 @@ if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "HEAD" ]]; then
   exit 0
 fi
 
+# git rev-parse --show-toplevel
+# Sandbox the validator's Visual: path-resolution lookup so it does not
+# escape the per-test tempdir. Falling through to real git would resolve
+# to the surrounding repo root, mismatching any fixture file we wrote in
+# BATS_TEST_TMPDIR.
+if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--show-toplevel" ]]; then
+  printf '%s\n' "${BATS_TEST_TMPDIR:-/}"
+  exit 0
+fi
+
 REAL_GIT=$(command -v -p git 2>/dev/null || true)
 if [[ -n "$REAL_GIT" ]]; then
   exec "$REAL_GIT" "$@"
