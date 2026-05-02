@@ -25,7 +25,7 @@ set -uo pipefail
 
 PLUGIN_PATH="__PLUGIN_INSTALL_PATH__"
 CLASSIFY_LIB="$PLUGIN_PATH/hooks/lib/layer-classify.sh"
-VALIDATE_LIB="$PLUGIN_PATH/hooks/lib/validate-body.sh"
+UI_TOUCH_LIB="$PLUGIN_PATH/hooks/lib/ui-touch.sh"
 
 msg_file="${1:-}"
 commit_source="${2:-}"
@@ -58,12 +58,12 @@ fi
 # shellcheck disable=SC1090
 . "$CLASSIFY_LIB"
 
-# Source the validator library too, so the template fill can decide whether
-# to include a Visual: trailer using the same UI-touch heuristic the
-# commit-msg hook applies. Skip silently when missing (older plugin install).
-if [[ -f "$VALIDATE_LIB" ]]; then
+# Source the small UI-touch helper so the template fill can decide whether
+# to include a Visual: trailer. Skip silently when missing (older plugin
+# install).
+if [[ -f "$UI_TOUCH_LIB" ]]; then
   # shellcheck disable=SC1090
-  . "$VALIDATE_LIB"
+  . "$UI_TOUCH_LIB"
 fi
 
 # ---------------------------------------------------------------------------

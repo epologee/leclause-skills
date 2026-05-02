@@ -189,7 +189,7 @@ spec/util_spec.rb"
   [ "$status" -eq 0 ]
 }
 
-@test "UI-touch + missing Visual fails with missing-visual" {
+@test "UI-touch + missing Visual fails with missing-visual and names the touched files" {
   export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
 
@@ -200,6 +200,7 @@ spec/util_spec.rb"
   run invoke_validator "$file"
   [ "$status" -eq 1 ]
   [[ "$output" == *"missing-visual"* ]]
+  [[ "$output" == *"src/App.tsx"* ]]
 }
 
 @test "UI-touch + bare n/a fails with missing-visual" {

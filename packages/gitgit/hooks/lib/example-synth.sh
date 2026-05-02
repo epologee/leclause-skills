@@ -16,10 +16,11 @@
 _ES_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 # shellcheck disable=SC1091
 . "$_ES_LIB_DIR/layer-classify.sh"
-# Source validate-body.sh so the synthesized example can decide whether to
-# emit a Visual: line based on the same UI-touch heuristic the validator uses.
+# Source the small UI-touch helper so the synthesized example can decide
+# whether to emit a Visual: line. Was previously sourcing validate-body.sh,
+# which imported the entire validator just for one helper.
 # shellcheck disable=SC1091
-. "$_ES_LIB_DIR/validate-body.sh"
+. "$_ES_LIB_DIR/ui-touch.sh"
 
 # gitgit_synthesize_example
 # Prints a multi-line example commit body on stdout.

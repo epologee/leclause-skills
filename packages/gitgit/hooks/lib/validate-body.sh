@@ -129,45 +129,12 @@ _vb_why_block() {
   printf '%s' "$why"
 }
 
-# _vb_is_ui_touch
-# Returns 0 when the staged diff touches at least one UI-bearing file,
-# 1 otherwise. UI is detected by file extension or, for .swift files, by
-# content-grepping the staged blob (or working-tree fallback) for SwiftUI /
-# UIKit / AppKit symbols. Used by the Visual trailer rule below.
-_vb_is_ui_touch() {
-  local staged
-  staged=$(git diff --cached --name-only 2>/dev/null || true)
-  [[ -z "$staged" ]] && return 1
-
-  local f
-  while IFS= read -r f; do
-    [[ -z "$f" ]] && continue
-    case "$f" in
-      *.tsx|*.jsx|*.vue|*.svelte|*.html|*.htm) return 0 ;;
-      *.css|*.scss|*.sass|*.less)              return 0 ;;
-      *.erb|*.haml|*.slim)                     return 0 ;;
-      *.storyboard|*.xib)                      return 0 ;;
-      *.xcassets/*)                            return 0 ;;
-      *.swift)
-        local content=""
-        content=$(git show ":$f" 2>/dev/null || true)
-        if [[ -z "$content" ]] && [[ -f "$f" ]]; then
-          content=$(cat "$f" 2>/dev/null || true)
-        fi
-        # Boundary patterns end on a non-identifier char or end-of-line so the
-        # dominant SwiftUI form `struct Foo: View<EOL>` (opening brace on next
-        # line) matches alongside `: View {` and `: View,`. Same care for
-        # UIView and NSView.
-        if printf '%s' "$content" \
-            | grep -qE '(import SwiftUI|import UIKit|import AppKit|: View([^A-Za-z0-9_]|$)|: UIView([^A-Za-z0-9_]|$)|: NSView([^A-Za-z0-9_]|$)|UIViewController|NSViewController)'; then
-          return 0
-        fi
-        ;;
-    esac
-  done <<< "$staged"
-
-  return 1
-}
+# UI-touch heuristic lives in its own lib so example-synth.sh and
+# prepare-commit-msg can source the helper without dragging in the full
+# validator. Provides _vb_ui_touched_files and _vb_is_ui_touch.
+_VB_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+# shellcheck disable=SC1091
+. "$_VB_LIB_DIR/ui-touch.sh"
 
 # ---------------------------------------------------------------------------
 # Main validator
@@ -412,6 +379,13 @@ validate_body() {
   # with trailing spaces.
   visual_value=$(printf '%s' "$visual_value" | sed 's/[[:space:]]*$//')
 
+  # Compute the touched-files list once so the missing-visual error can name
+  # them. _vb_ui_touched_files runs `git diff --cached --name-only` exactly
+  # once per validator pass; reuse the output for both the absence check and
+  # the error message.
+  local visual_ui_touched
+  visual_ui_touched=$(_vb_ui_touched_files)
+
   if [[ -n "$visual_value" ]]; then
     if [[ "$visual_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
       local rationale="${BASH_REMATCH[1]}"
@@ -424,12 +398,12 @@ validate_body() {
       return 1
     else
       if [[ ! -f "$visual_value" ]]; then
-        printf 'visual-path-not-found: Visual path "%s" does not exist in working tree\n' "$visual_value" >&2
+        printf 'visual-path-not-found: Visual path "%s" was not found in the repo (relative to repo root). Add the file or use Visual: n/a (rationale).\n' "$visual_value" >&2
         return 1
       fi
     fi
-  elif _vb_is_ui_touch; then
-    printf 'missing-visual: Visual trailer is absent; commit touches UI files\n' >&2
+  elif [[ -n "$visual_ui_touched" ]]; then
+    printf 'missing-visual: Visual trailer is absent; UI files in this commit: %s\n' "$visual_ui_touched" >&2
     return 1
   fi
 
