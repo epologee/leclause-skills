@@ -8,9 +8,9 @@ Automated screen recordings and demo videos of browser-based features using Play
 
 Drives a headless browser through a scripted flow and captures the session as a video file. Output lands in a path the skill names in its report so you can share or attach it.
 
-## Auto-trigger
+## Activation
 
-Activates when the user asks for an automated recording, demo video, or visual documentation of a browser flow.
+Invoked explicitly with `/screen-recording`. The skill does not self-activate, because Playwright is an out-of-band global install: silent activation without that runtime would fail.
 
 ## Requirements
 
@@ -20,7 +20,7 @@ Activates when the user asks for an automated recording, demo video, or visual d
 npm install -g playwright
 ```
 
-The skill never closes the browser explicitly inside scripts; zombie Playwright processes block the real Chrome session. If Chrome refuses to start, kill stale processes:
+Always close the browser explicitly at the end of a script; orphaned Playwright processes can block a fresh Chrome launch. If Chrome refuses to start, kill stale processes:
 
 ```bash
 pkill -f "user-data-dir=/tmp/pw-"
