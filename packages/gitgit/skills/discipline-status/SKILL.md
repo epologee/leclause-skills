@@ -11,31 +11,31 @@ effort: low
 
 # /gitgit:discipline-status
 
-Rapporteer de huidige staat van de gitgit guards voor deze sessie.
+Report the current state of the gitgit guards for this session.
 
-## Wat wordt gerapporteerd
+## What is reported
 
-- Huidige session_id (als afleidbaar).
-- Of de sessie-specifieke sentinel bestaat (`~/.claude/var/gitgit-disabled-<session_id>`).
-- Of de globale sentinel bestaat (`~/.claude/var/gitgit-disabled-global`).
-- Conclusie: guards ACTIVE of DISABLED.
-- Actieve gitgit plugin-versie (gelezen uit `~/.claude/plugins/installed_plugins.json`).
-- Aanwezige guard-scripts onder de actieve plugin-install.
+- Current session_id (if derivable).
+- Whether the session-specific sentinel exists (`~/.claude/var/gitgit-disabled-<session_id>`).
+- Whether the global sentinel exists (`~/.claude/var/gitgit-disabled-global`).
+- Conclusion: guards ACTIVE or DISABLED.
+- Active gitgit plugin version (read from `~/.claude/plugins/installed_plugins.json`).
+- Guard scripts present under the active plugin install.
 
-## Implementatie
+## Implementation
 
-Voer de volgende stappen uit en presenteer de output als een gestructureerd
-statusrapport:
+Perform the following steps and present the output as a structured
+status report:
 
 ```bash
 # 1. Session_id
 SESSION_ID="${CLAUDE_SESSION_ID:-}"
-# Als leeg: zoek het meest recente JSONL-bestand
+# If empty: find the most recent JSONL file
 if [[ -z "$SESSION_ID" ]]; then
   SESSION_ID=$(ls -t "$HOME/.claude/projects/"*/*.jsonl 2>/dev/null | head -1 | xargs basename 2>/dev/null | sed 's/\.jsonl$//' || true)
 fi
 
-# 2. Sentinel paden
+# 2. Sentinel paths
 SESSION_SENTINEL="$HOME/.claude/var/gitgit-disabled-${SESSION_ID}"
 GLOBAL_SENTINEL="$HOME/.claude/var/gitgit-disabled-global"
 
@@ -43,11 +43,11 @@ GLOBAL_SENTINEL="$HOME/.claude/var/gitgit-disabled-global"
 [[ -f "$SESSION_SENTINEL" ]] && SESSION_DISABLED=yes || SESSION_DISABLED=no
 [[ -f "$GLOBAL_SENTINEL" ]] && GLOBAL_DISABLED=yes || GLOBAL_DISABLED=no
 
-# 4. Plugin versie
+# 4. Plugin version
 PLUGIN_VERSION=$(jq -r '.plugins["gitgit@leclause"][0].version // "unknown"' \
   "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null || echo "unknown")
 
-# 5. Install path voor guard-lijst
+# 5. Install path for guard list
 INSTALL_PATH=$(jq -r '.plugins["gitgit@leclause"][0].installPath // ""' \
   "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null || true)
 
@@ -58,17 +58,17 @@ if [[ -d "$INSTALL_PATH/hooks/guards" ]]; then
 fi
 ```
 
-Presenteer het resultaat als:
+Present the result as:
 
 ```
 gitgit session status
 ---------------------
-Session ID     : <session_id of "not available">
+Session ID     : <session_id or "not available">
 Session sentinel: <path> [EXISTS / not found]
 Global sentinel : <path> [EXISTS / not found]
 Guards         : DISABLED / ACTIVE
 Plugin version : <version>
-Guard scripts  : <lijst van .sh bestanden>
+Guard scripts  : <list of .sh files>
 ```
 
-Als guards DISABLED zijn, vermeld dan `/gitgit:enable-discipline` om ze te heractiveren.
+If guards are DISABLED, mention `/gitgit:enable-discipline` to re-enable them.

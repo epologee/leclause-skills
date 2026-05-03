@@ -12,208 +12,209 @@ argument-hint: ""
 
 # /gitgit:commit-discipline
 
-Canonieke referentie voor het gitgit commit body schema. De PreToolUse:Bash
-guard en de git-native hooks (`commit-msg`, `pre-push`) lezen dezelfde
-validator (`hooks/lib/validate-body.sh`); dit document beschrijft wat die
-validator eist, welke ontsnappingsluiken bestaan, en hoe je troubleshoot.
+Canonical reference for the gitgit commit body schema. The PreToolUse:Bash
+guard and the git-native hooks (`commit-msg`, `pre-push`) read the same
+validator (`hooks/lib/validate-body.sh`); this document describes what
+that validator requires, which escape hatches exist, and how to
+troubleshoot.
 
-## Wat
+## What
 
-De commit-discipline extensie dwingt een gestructureerde commit body af via
-twee lagen: een PreToolUse:Bash guard die Claude-aangedreven commits
-onderschept, en git-native hooks (geinstalleerd via `/gitgit:install-hooks`)
-die commits buiten Claude om bewaken.
+The commit-discipline extension enforces a structured commit body via
+two layers: a PreToolUse:Bash guard that intercepts Claude-driven commits,
+and git-native hooks (installed via `/gitgit:install-hooks`)
+that guard commits made outside of Claude.
 
-Het schema bestaat uit drie onderdelen: een onderwerp-regel in imperatief
-Engels (50/72 tekens), een vrije WHY-paragraaf die uitlegt waarom de
-wijziging nodig is, en een reeks trailers in `git interpret-trailers`-formaat
-(`Key: Value`, onderaan het bericht). De validator draait in twee lagen maar
-deelt exact dezelfde logica, zodat gedrag nooit divergeert.
+The schema consists of three parts: a subject line in imperative
+English (50/72 characters), a free-form WHY paragraph that explains
+why the change is needed, and a series of trailers in `git interpret-trailers`
+format (`Key: Value`, at the bottom of the message). The validator runs
+in two layers but shares exactly the same logic, so behavior never
+diverges.
 
-Claude Code biedt geen native PreCommit lifecycle event
+Claude Code does not offer a native PreCommit lifecycle event
 (https://github.com/anthropics/claude-code/issues/4834, closed not planned),
-dus de twee-laagse architectuur is definitief, niet voorlopig.
+so the two-layer architecture is final, not provisional.
 
-## Het schema
+## The schema
 
-### Onderwerpregels
+### Subject lines
 
-- Imperatief Engels ("Add handler", niet "Added handler" of "Adding handler").
-- Maximaal 72 tekens; 50 tekens is het streefdoel voor leesbaarheid in `git log`.
-- Geen punt aan het einde.
-- Geen conventionele-commits-prefix verplicht (`feat:`, `fix:`), maar toegestaan.
-- Automatisch overgeslagen voor: `Merge ...`, `Revert ...`, `fixup!`, `squash!`, `amend!`.
-- Cherry-pick commits: skip loopt via twee lagen. De git-native `commit-msg`
-  hook detecteert cherry-picks omdat `git cherry-pick -x` de frase
-  `(cherry picked from commit <sha>)` aan de body toevoegt. De PreToolUse
-  guard detecteert dezelfde frase wanneer Claude een `git commit -m '...(cherry
-  picked from commit ...)...'`-wrapper aanroept. Een raw `git cherry-pick` vanuit
-  de terminal passeert PreToolUse niet, dus de laag-splitsing is daar niet van
-  toepassing. Zonder de `-x` vlag bevat de subject geen `(cherry picked...)`
-  frase, waardoor de anti-copy-paste check ten onrechte kan vuren als de WHY
-  van de bron-commit identiek is.
+- Imperative English ("Add handler", not "Added handler" or "Adding handler").
+- At most 72 characters; 50 characters is the target for readability in `git log`.
+- No period at the end.
+- No conventional-commits prefix required (`feat:`, `fix:`), but allowed.
+- Automatically skipped for: `Merge ...`, `Revert ...`, `fixup!`, `squash!`, `amend!`.
+- Cherry-pick commits: skip runs through both layers. The git-native `commit-msg`
+  hook detects cherry-picks because `git cherry-pick -x` adds the phrase
+  `(cherry picked from commit <sha>)` to the body. The PreToolUse
+  guard detects the same phrase when Claude invokes a `git commit -m '...(cherry
+  picked from commit ...)...'` wrapper. A raw `git cherry-pick` from
+  the terminal does not pass through PreToolUse, so the layer split does not
+  apply there. Without the `-x` flag, the subject does not contain a
+  `(cherry picked...)` phrase, which means the anti-copy-paste check can fire
+  unjustly if the WHY of the source commit is identical.
 
-### WHY-paragraaf
+### WHY paragraph
 
-- Vrije proza, minimaal twee niet-lege regels OF minimaal 60 tekens eindigend
-  op `.`, `!` of `?`.
-- Staat na de onderwerpregel, gescheiden door een lege regel.
-- Anti-copy-paste: de SHA1 van de WHY-tekst mag niet identiek zijn aan die van
-  een van de vijf meest recente commits op de huidige branch.
-- Wordt niet inhoudelijk gevalideerd (te makkelijk te bullshitten), wel
-  structureel.
+- Free-form prose, at least two non-empty lines OR at least 60 characters
+  ending in `.`, `!`, or `?`.
+- Sits after the subject line, separated by a blank line.
+- Anti-copy-paste: the SHA1 of the WHY text must not be identical to that of
+  any of the five most recent commits on the current branch.
+- Not validated for content (too easy to bullshit), only structurally.
 
-### Verplichte trailers
+### Required trailers
 
-| Trailer | Waarde | Verplicht bij |
-|---------|--------|---------------|
-| `Slice` | opt-out token of vrije tekst (zie hieronder) | altijd |
-| `Tests` | comma-gescheiden lijst spec-paden | als `Slice` geen opt-out token is |
-| `Red-then-green` | `yes` of `n/a (reden >= 10 chars)` | als `Slice` niet `docs-only`, `config-only`, `migration-only`, `spec-only`, of `chore-deps` is |
-| `Visual` | bestandspad of `n/a (reden >= 10 chars)` | als de staged diff UI-bestanden raakt (zie heuristiek hieronder) |
+| Trailer | Value | Required when |
+|---------|-------|---------------|
+| `Slice` | opt-out token or free-form text (see below) | always |
+| `Tests` | comma-separated list of spec paths | when `Slice` is not an opt-out token |
+| `Red-then-green` | `yes` or `n/a (reason >= 10 chars)` | when `Slice` is not `docs-only`, `config-only`, `migration-only`, `spec-only`, or `chore-deps` |
+| `Visual` | file path or `n/a (reason >= 10 chars)` | when the staged diff touches UI files (see heuristic below) |
 
-**`Slice`-regels:** de waarde is ofwel een van de acht opt-out tokens (zie
-volgende sectie), ofwel vrije tekst die beschrijft welke lagen de commit raakt
-(bijv. `handler + service + spec`, `frontend + backend + migration`).
+**`Slice` rules:** the value is either one of the eight opt-out tokens (see
+the next section), or free-form text describing which layers the commit
+touches (e.g. `handler + service + spec`, `frontend + backend + migration`).
 
-**`Tests`-regels:** elk pad in de lijst moet bestaan in de HEAD-tree
-(`git ls-tree -r HEAD --name-only`) of in de staged diff
-(`git diff --cached --name-only`). Ondersteunde extensies:
+**`Tests` rules:** every path in the list must exist in the HEAD tree
+(`git ls-tree -r HEAD --name-only`) or in the staged diff
+(`git diff --cached --name-only`). Supported extensions:
 `.rb`, `.py`, `.js`, `.ts`, `.go`, `.sh`, `.bash`, `.feature`, `.tsx`, `.jsx`.
-Anker-suffixen (`#method_name`) worden gestript voor de bestandscontrole.
+Anchor suffixes (`#method_name`) are stripped for the file existence check.
 
-**`Red-then-green`-regels:** waarde `yes` is zelf-attestatie dat de test
-in rode staat gezien is; er is geen cache-bewijs vereist of geverifieerd.
-Waarde `n/a (reden)` is toegestaan met een rationale van minimaal 10 tekens.
-Kale `n/a` zonder rationale is afgewezen.
+**`Red-then-green` rules:** value `yes` is self-attestation that the test
+was seen in red state; no cache evidence is required or verified.
+Value `n/a (reason)` is allowed with a rationale of at least 10 characters.
+Bare `n/a` without rationale is rejected.
 
-Structurele beperking: de validator controleert de aanwezigheid en het formaat
-van `Red-then-green`, niet de inhoudelijke waarheid ervan. Dat is een
-bewuste keuze: een cache die automatisch bewijs bijhoudt voegt meer
-complexiteit toe dan ze waard is. De attestatie-verantwoordelijkheid ligt
-bij de auteur.
+Structural limitation: the validator checks the presence and format
+of `Red-then-green`, not the truth of its content. That is a
+deliberate choice: a cache that automatically tracks evidence adds more
+complexity than it is worth. Attestation responsibility lies
+with the author.
 
-**`Visual`-regels:** een pad-waarde verwijst naar een screenshot of
-opname-bestand dat moet bestaan in de werk-tree (`[[ -f "$path" ]]`). De
-waarde `n/a (reden)` is toegestaan met een rationale van minimaal 10
-tekens; kale `n/a` zonder rationale is afgewezen. De trailer is alleen
-verplicht wanneer de heuristiek hieronder UI-aanrakingen detecteert in de
-staged diff; backend-only commits zien de regel niet en hoeven `Visual`
-niet op te nemen.
+**`Visual` rules:** a path value points to a screenshot or
+recording file that must exist in the worktree (`[[ -f "$path" ]]`). The
+value `n/a (reason)` is allowed with a rationale of at least 10
+characters; bare `n/a` without rationale is rejected. The trailer is only
+required when the heuristic below detects UI touches in the
+staged diff; backend-only commits do not see the rule and need not
+include `Visual`.
 
-**UI-touch heuristiek:** de validator scant `git diff --cached --name-only`
-en triggert de Visual-eis bij elk pad dat aan een van deze patronen voldoet:
+**UI-touch heuristic:** the validator scans `git diff --cached --name-only`
+and triggers the Visual requirement on any path that matches one of these patterns:
 
-- web-template: `.tsx`, `.jsx`, `.vue`, `.svelte`, `.html`, `.htm`,
+- web template: `.tsx`, `.jsx`, `.vue`, `.svelte`, `.html`, `.htm`,
   `.erb`, `.haml`, `.slim`
 - styling: `.css`, `.scss`, `.sass`, `.less`
 - iOS storyboard/xib: `.storyboard`, `.xib`
-- iOS asset catalog: elk pad onder `*.xcassets/`
-- Swift bron-bestanden: `.swift` waarvan de staged inhoud (`git show :<path>`,
-  fallback naar werk-tree) een van `import SwiftUI`, `import UIKit`,
+- iOS asset catalog: any path under `*.xcassets/`
+- Swift source files: `.swift` whose staged content (`git show :<path>`,
+  fallback to worktree) contains one of `import SwiftUI`, `import UIKit`,
   `import AppKit`, `: View {`, `UIView`, `UIViewController`, `NSView`,
-  of `NSViewController` bevat
+  or `NSViewController`
 
-Backend-`.swift`-bestanden zonder UI-symbolen vallen niet onder de regel.
-False positives van de heuristiek zijn opvangbaar via
-`Visual: n/a (backend rewrite, no UI touched)` of vergelijkbare rationale,
-analoog aan de `Red-then-green: n/a` opt-out. De heuristiek consulteert
-geen `Slice`-tokens; de trailer fired correct wanneer een commit met
-`chore-deps` slice ook een CSS dependency bumpt.
+Backend `.swift` files without UI symbols are not covered by the rule.
+False positives of the heuristic can be absorbed via
+`Visual: n/a (backend rewrite, no UI touched)` or a similar rationale,
+analogous to the `Red-then-green: n/a` opt-out. The heuristic does not
+consult `Slice` tokens; the trailer fires correctly when a commit with
+`chore-deps` slice also bumps a CSS dependency.
 
-**Bekende false positives.** De extensie-lijst kiest bewust voor breed
-boven slim:
+**Known false positives.** The extension list deliberately chooses broad
+over narrow:
 
-- `.html` matcht ook backend e-mail templates en HTML-fixtures zonder
-  rendering. Ontsnap met `Visual: n/a (e-mail template, no rendered UI)`.
-- Een `chore-deps` commit die ook een gegenereerde `.scss` of `.css`
-  meeneemt vuurt de regel. De Slice-token onderdrukt de heuristiek
-  expliciet niet (een echte UI-wijziging in een chore-deps commit moet
-  ook een screenshot krijgen). Ontsnap met `Visual: n/a (regenerated by
+- `.html` also matches backend e-mail templates and HTML fixtures without
+  rendering. Escape with `Visual: n/a (e-mail template, no rendered UI)`.
+- A `chore-deps` commit that also brings along a generated `.scss` or `.css`
+  fires the rule. The Slice token does not explicitly suppress the
+  heuristic (a real UI change in a chore-deps commit must
+  also get a screenshot). Escape with `Visual: n/a (regenerated by
   package manager, no UI authored)`.
-- `.swift` zonder zichtbare UI-symbolen valt buiten; pas op wanneer de
-  staged blob niet beschikbaar is (bv. partial amend) want dan
-  classificeert de heuristiek het bestand conservatief als non-UI en
-  moet je zelf opt-in via `Visual: <pad>` of `Visual: n/a (...)`.
+- `.swift` without visible UI symbols falls outside; watch out when the
+  staged blob is not available (e.g. partial amend), because then the
+  heuristic conservatively classifies the file as non-UI and you must
+  opt in yourself via `Visual: <path>` or `Visual: n/a (...)`.
 
-Foutcodes:
+Error codes:
 
-| Code | Wanneer |
-|------|---------|
-| `missing-visual` | UI-touch gedetecteerd maar trailer ontbreekt, of trailer is kale `n/a`, of `n/a (reden)` met te korte rationale |
-| `visual-path-not-found` | Trailer is geen `n/a`-vorm en het opgegeven pad bestaat niet in de werk-tree |
+| Code | When |
+|------|------|
+| `missing-visual` | UI-touch detected but trailer is absent, or trailer is bare `n/a`, or `n/a (reason)` with too short a rationale |
+| `visual-path-not-found` | Trailer is not an `n/a` form and the given path does not exist in the worktree |
 
-### Optionele trailers
+### Optional trailers
 
-| Trailer | Waarde |
-|---------|--------|
-| `Resolves` | URL naar issue, Sentry, incident; of `none` |
-| `Cucumber` | `applicable` (en gebruikt), of `n/a (reden)` |
-| `Co-authored-by` | toegestaan mits niet `@anthropic.com`-adres (zie escape-hatches) |
+| Trailer | Value |
+|---------|-------|
+| `Resolves` | URL to issue, Sentry, incident; or `none` |
+| `Cucumber` | `applicable` (and used), or `n/a (reason)` |
+| `Co-authored-by` | allowed provided it is not an `@anthropic.com` address (see escape hatches) |
 
-Trailers worden geparsed via `git interpret-trailers --parse`. Volgorde
-binnen de trailer-block maakt niet uit.
+Trailers are parsed via `git interpret-trailers --parse`. Order
+within the trailer block does not matter.
 
 ## Opt-out enum
 
-Als `Slice` een van deze acht tokens is, gelden versoepelde regels:
+If `Slice` is one of these eight tokens, relaxed rules apply:
 
-| Token | Wanneer te gebruiken |
-|-------|----------------------|
-| `docs-only` | Alleen wijzigingen in documentatie (`.md`, `.txt`, `.rst`, README) |
-| `config-only` | Alleen wijzigingen in configuratiebestanden zonder gedragswijziging |
-| `migration-only` | Alleen database-migraties zonder bijbehorende handler/spec wijziging |
-| `spec-only` | Commit bevat uitsluitend spec/test-bestanden (de diff is zelf het rode bewijs) |
-| `chore-deps` | Dependency-bumps, lockfile-updates, build-systeem tweaks |
-| `revert` | Volledige revert van een eerdere commit |
-| `merge` | Merge-commits (gewoonlijk automatisch aangemaakt) |
-| `wip` | Work-in-progress commit op een feature-branch; **blokkerd bij push** |
+| Token | When to use |
+|-------|-------------|
+| `docs-only` | Only changes in documentation (`.md`, `.txt`, `.rst`, README) |
+| `config-only` | Only changes in configuration files without behavior change |
+| `migration-only` | Only database migrations without an associated handler/spec change |
+| `spec-only` | Commit contains only spec/test files (the diff is itself the red evidence) |
+| `chore-deps` | Dependency bumps, lockfile updates, build system tweaks |
+| `revert` | Full revert of an earlier commit |
+| `merge` | Merge commits (typically created automatically) |
+| `wip` | Work-in-progress commit on a feature branch; **blocked at push** |
 
-Bij `docs-only`, `config-only`, `migration-only`, `spec-only`, en `chore-deps`
-vervalt ook de `Red-then-green`-verplichting. Rationale: migraties hebben geen
-betekenisvolle rood-dan-groen sequentie; spec-only commits zijn zelf de rode
-fase (de spec bestond eerder dan de implementatie). Bij alle acht vervalt de
-`Tests`-verplichting.
+For `docs-only`, `config-only`, `migration-only`, `spec-only`, and `chore-deps`
+the `Red-then-green` requirement also drops. Rationale: migrations have no
+meaningful red-then-green sequence; spec-only commits are themselves the red
+phase (the spec existed before the implementation). For all eight, the
+`Tests` requirement drops.
 
-`wip`-commits worden geaccepteerd op commit-tijd maar geblokkeerd door de
-pre-push gate. Je kunt niet per ongeluk een wip-commit naar remote sturen.
+`wip` commits are accepted at commit time but blocked by the
+pre-push gate. You cannot accidentally send a wip commit to remote.
 
 ## Rotation reminders
 
-Naast de structurele subject- en body-checks rouleert de
-PreToolUse:Bash-guard `commit-subject.sh` elke commit één thematische
-reminder uit de onderstaande tabel. Bevestig met
-`# ack-rule<N>:<wachtwoord>` als afsluitend shell-comment achter het
-git-commando. Het wachtwoord is een mnemonic die referentieel aan de
-regel is, zodat het opzoeken één blootstelling per cyclus afdwingt.
+In addition to the structural subject and body checks, the
+PreToolUse:Bash guard `commit-subject.sh` rotates one thematic
+reminder from the table below on every commit. Acknowledge with
+`# ack-rule<N>:<password>` as a trailing shell comment behind the
+git command. The password is a mnemonic that is referentially tied
+to the rule, so looking it up forces one exposure per cycle.
 
-| Rule | Wachtwoord | Regel |
-|------|------------|-------|
-| 1 | `gedrag` | Subject = nieuw gedrag/capability, geen git-actie ("Fix/Add/..."). |
-| 2 | `effect` | Subject zegt WAT het systeem doet, niet de WAAROM-trigger ("Address feedback"). |
-| 4 | `essentie` | Body alleen als nodig: 2-4 zinnen waarom. |
-| 5 | `dubbelop` | Geen file listings of class-inventaris; de diff toont files al. |
-| 6 | `proza` | Geen bullet dumps of meta-narrative ("reviewer vroeg", "tests faalden"). |
-| 7 | `atoom` | Logisch onafhankelijke changes = aparte commits; test + impl van 1 feature = 1 atomic commit. |
-| 8 | `inferno` | Nooit broken code committen met "fix in next commit". |
-| 9 | `solist` | Geen Co-Authored-By van AI tooling tenzij gevraagd. |
-| 10 | `incognito` | Geen 'Generated with Claude Code' footer. |
-| 11 | `loep` | Review de staged diff voor commit; tool-output is geen bewijs. |
-| 12 | `bewijsstuk` | Commit-check is evidence (test draaide, endpoint geraakt), niet gut feel. |
-| 13 | `kralen` | Nooit squash merge; bewaar history. |
-| 14 | `voorwaarts` | Amend is verboden tenzij onpushed secrets/PII strippen; gebruik nieuwe commit. |
+| Rule | Password | Rule |
+|------|----------|------|
+| 1 | `gedrag` | Subject = new behavior/capability, no git action ("Fix/Add/..."). |
+| 2 | `effect` | Subject says WHAT the system does, not the WHY trigger ("Address feedback"). |
+| 4 | `essentie` | Body only when needed: 2-4 sentences why. |
+| 5 | `dubbelop` | No file listings or class inventory; the diff already shows files. |
+| 6 | `proza` | No bullet dumps or meta-narrative ("reviewer asked", "tests failed"). |
+| 7 | `atoom` | Logically independent changes = separate commits; test + impl of 1 feature = 1 atomic commit. |
+| 8 | `inferno` | Never commit broken code with "fix in next commit". |
+| 9 | `solist` | No Co-Authored-By from AI tooling unless asked. |
+| 10 | `incognito` | No 'Generated with Claude Code' footer. |
+| 11 | `loep` | Review the staged diff before commit; tool output is not evidence. |
+| 12 | `bewijsstuk` | Commit check is evidence (test ran, endpoint hit), not gut feel. |
+| 13 | `kralen` | Never squash merge; preserve history. |
+| 14 | `voorwaarts` | Amend is forbidden unless stripping unpushed secrets/PII; use a new commit. |
 
-Rule 3 (subject-lengte 50/72) wordt structureel afgedwongen door
-`commit-format.sh` en zit niet in de rotatie. Rules 1 en 2 vallen alleen
-op je dak na een echte violation in het subject; rules 4-14 rouleren op
-slotvolgorde, één per commit. State leeft in
-`~/.claude/var/gitgit-commit-rule-state` en schuift door na elke
-geslaagde ack. De canonieke mnemonic-tabel waar de hook tegen valideert
-staat in `packages/gitgit/hooks/lib/rotation-rules.sh`.
+Rule 3 (subject length 50/72) is enforced structurally by
+`commit-format.sh` and is not in the rotation. Rules 1 and 2 only
+land on you after a real violation in the subject; rules 4-14 rotate in
+slot order, one per commit. State lives in
+`~/.claude/var/gitgit-commit-rule-state` and shifts after every
+successful ack. The canonical mnemonic table that the hook validates
+against is in `packages/gitgit/hooks/lib/rotation-rules.sh`.
 
-## Voorbeelden
+## Examples
 
-### Voorbeeld 1: feature commit met handler + service + spec + Red-then-green
+### Example 1: feature commit with handler + service + spec + Red-then-green
 
 ```
 Drop invalid meter reading on transaction events
@@ -231,7 +232,7 @@ Red-then-green: yes
 Resolves: https://example.org/backlog/issues/1234
 ```
 
-### Voorbeeld 2: docs-only opt-out met minimale trailers
+### Example 2: docs-only opt-out with minimal trailers
 
 ```
 Update install instructions for Windows consumers
@@ -242,9 +243,9 @@ ln -s. The previous instructions silently created a text file.
 Slice: docs-only
 ```
 
-(Geen `Tests` of `Red-then-green` vereist bij `docs-only`.)
+(No `Tests` or `Red-then-green` required for `docs-only`.)
 
-### Voorbeeld 3: chore-deps versie-bump
+### Example 3: chore-deps version bump
 
 ```
 Bump bundler to 2.5.18
@@ -257,7 +258,7 @@ Slice: chore-deps
 Red-then-green: n/a (no behavior change)
 ```
 
-### Voorbeeld 4: migration-only opt-out
+### Example 4: migration-only opt-out
 
 ```
 Add NOT NULL constraint to sessions.user_id
@@ -268,9 +269,9 @@ A backfill confirmed no null rows exist in production before this runs.
 Slice: migration-only
 ```
 
-(Geen `Tests` of `Red-then-green` vereist bij `migration-only`.)
+(No `Tests` or `Red-then-green` required for `migration-only`.)
 
-### Voorbeeld 5: spec-only opt-out
+### Example 5: spec-only opt-out
 
 ```
 Add failing specs for enrollment race-condition fix
@@ -281,9 +282,9 @@ exist yet; these specs are the red phase.
 Slice: spec-only
 ```
 
-(Geen `Tests` of `Red-then-green` vereist bij `spec-only`.)
+(No `Tests` or `Red-then-green` required for `spec-only`.)
 
-### Voorbeeld 6: UI-aanraking met `Visual:` trailer
+### Example 6: UI touch with `Visual:` trailer
 
 ```
 Render onboarding banner above tab strip
@@ -297,16 +298,16 @@ Red-then-green: yes
 Visual: doc/screenshots/onboarding-banner.png
 ```
 
-`Visual:` mag ook `n/a (reden)` zijn voor false positives van de
-heuristiek of bij commits waar wel UI-bestanden gewijzigd worden maar
-zonder pixel-effect (bv. een geherorganiseerd component zonder render
-wijziging):
+`Visual:` may also be `n/a (reason)` for false positives of the
+heuristic or for commits where UI files are changed but
+without a pixel effect (e.g. a reorganized component without render
+change):
 
 ```
 Extract OnboardingBanner into its own file
 
-Pure organisatorische split; render-output is byte-identiek aan de
-vorige versie. Geen screenshot nodig.
+Pure organizational split; render output is byte-identical to the
+previous version. No screenshot needed.
 
 Tests: spec/views/onboarding_view_spec.rb
 Slice: frontend layer
@@ -314,7 +315,7 @@ Red-then-green: yes
 Visual: n/a (extract only, render output unchanged)
 ```
 
-### Voorbeeld 7: wip commit (en de pre-push gate die hem tegenhoudt)
+### Example 7: wip commit (and the pre-push gate that holds it back)
 
 ```
 Sketch enrollment race-condition fix
@@ -325,19 +326,19 @@ before context switch.
 Slice: wip
 ```
 
-Dit commit gaat lokaal door. Een `git push` met dit commit in de range
-wordt geblokkeerd door de pre-push gate met:
+This commit goes through locally. A `git push` with this commit in the
+range is blocked by the pre-push gate with:
 
 ```
 wip-gate: commit <sha> has Slice: wip in push range
 Set GITGIT_ALLOW_WIP_PUSH=1 or add '# allow-wip-push' to bypass.
 ```
 
-## Escape-hatches
+## Escape hatches
 
-### `# vsd-skip: <reden>` in de commit body
+### `# vsd-skip: <reason>` in the commit body
 
-Voeg een commentaarregel toe aan de body (begint met `#`):
+Add a comment line to the body (starts with `#`):
 
 ```
 Fix typo in error message
@@ -345,171 +346,171 @@ Fix typo in error message
 # vsd-skip: trivial one-char fix, full schema not warranted
 ```
 
-De validator leest de commentaarregels (voor het strippen) en
-logt de reden naar `~/.claude/var/gitgit-skips.log`. De commit
-gaat door. De reden mag niet leeg zijn.
+The validator reads the comment lines (before stripping) and
+logs the reason to `~/.claude/var/gitgit-skips.log`. The commit
+goes through. The reason may not be empty.
 
-**`vsd-skip` werkt niet op UI-touched commits.** Wanneer de UI-touch
-heuristiek vuurt (SwiftUI/UIKit/AppKit, `.tsx`/`.jsx`/`.vue`/`.svelte`,
+**`vsd-skip` does not work on UI-touched commits.** When the UI-touch
+heuristic fires (SwiftUI/UIKit/AppKit, `.tsx`/`.jsx`/`.vue`/`.svelte`,
 `.html`/`.css`/`.scss`, `.erb`/`.haml`/`.slim`, `.storyboard`/`.xib`,
-`.xcassets/`) wordt het magic comment afgewezen met
-`vsd-skip-ui-touch`. Gebruik dan `Visual: <pad>` (screenshot in de repo)
-of `Visual: n/a (rationale)`. De opt-out blijft beschikbaar voor
-backend-, spec- en migratie-commits.
+`.xcassets/`), the magic comment is rejected with
+`vsd-skip-ui-touch`. Use `Visual: <path>` (screenshot in the repo)
+or `Visual: n/a (rationale)` instead. The opt-out remains available for
+backend, spec, and migration commits.
 
 ### `GITGIT_AUTONOMOUS=1`
 
-Striktere variant voor unattended commits (rover, autonomous-loop). Zet
-de env var voordat `git commit` runt. Twee extra regels:
+Stricter variant for unattended commits (rover, autonomous-loop). Set
+the env var before `git commit` runs. Two extra rules:
 
-1. `# vsd-skip` wordt onvoorwaardelijk afgewezen met
+1. `# vsd-skip` is rejected unconditionally with
    `vsd-skip-autonomous`.
-2. `Visual: n/a (rationale)` wordt afgewezen op UI-touched commits met
-   `visual-na-autonomous`. Alleen `Visual: <pad>` blijft toegestaan; het
-   pad moet ook bestaan (bestaande `visual-path-not-found` regel).
+2. `Visual: n/a (rationale)` is rejected on UI-touched commits with
+   `visual-na-autonomous`. Only `Visual: <path>` remains allowed; the
+   path must also exist (existing `visual-path-not-found` rule).
 
-Backend-only commits zijn niet geraakt; `Visual: n/a (rationale)` blijft
-daar geldig.
+Backend-only commits are not affected; `Visual: n/a (rationale)` remains
+valid there.
 
 ### `--no-verify`
 
-`git commit --no-verify` slaat alle git-native hooks over. De PreToolUse:Bash
-guard onderschept dit patroon niet (de flag is in de command-string, niet een
-aparte hook). De post-commit hook logt `--no-verify`-gebruik naar
-`~/.claude/var/gitgit-no-verify.log` voor achteraf auditing.
+`git commit --no-verify` skips all git-native hooks. The PreToolUse:Bash
+guard does not intercept this pattern (the flag is in the command string, not a
+separate hook). The post-commit hook logs `--no-verify` usage to
+`~/.claude/var/gitgit-no-verify.log` for after-the-fact auditing.
 
-**Race-window beperking:** de detector gebruikt een trace-venster van 30
-seconden. Gelijktijdige commits in een andere shell kunnen de trace verversen
-en een bypass in deze shell maskeren. Lange test-runs (>30s tussen het starten
-van commit-msg en het vuren van post-commit) kunnen false positives opleveren.
-Het audit-log is best-effort, niet autoritatief.
+**Race window limitation:** the detector uses a trace window of 30
+seconds. Concurrent commits in another shell can refresh the trace
+and mask a bypass in this shell. Long test runs (>30s between starting
+commit-msg and post-commit firing) can produce false positives.
+The audit log is best-effort, not authoritative.
 
 ### `GITGIT_ALLOW_AI_COAUTHOR=1`
 
-De `commit-trailers.sh` guard blokkeert `Co-Authored-By:` trailers met een
-`@anthropic.com`-e-mailadres. Stel `GITGIT_ALLOW_AI_COAUTHOR=1` in om dat
-specifieke blokkade te omzeilen (bijv. bij expliciete attributie-vereisten).
+The `commit-trailers.sh` guard blocks `Co-Authored-By:` trailers with an
+`@anthropic.com` e-mail address. Set `GITGIT_ALLOW_AI_COAUTHOR=1` to
+bypass that specific block (e.g. for explicit attribution requirements).
 
-### `GITGIT_ALLOW_WIP_PUSH=1` of `# allow-wip-push`
+### `GITGIT_ALLOW_WIP_PUSH=1` or `# allow-wip-push`
 
-Omzeilt de pre-push wip-gate voor de huidige push. Beide vormen worden gelogd
-naar `~/.claude/var/gitgit-wip-pushes.log`. Gebruik de magic-comment-vorm
-als je de bypass in de command zelf wilt documenteren zonder een omgevingsvariabele
-te exporteren.
+Bypasses the pre-push wip-gate for the current push. Both forms are logged
+to `~/.claude/var/gitgit-wip-pushes.log`. Use the magic-comment form
+when you want to document the bypass in the command itself without
+exporting an environment variable.
 
-**Asymmetrie:** het `# allow-wip-push` magic comment werkt alleen wanneer
-Claude de push uitvoert (de PreToolUse:Bash guard leest de bash-commandstring).
-Voor pushes die je zelf in een terminal uitvoert werkt alleen
-`GITGIT_ALLOW_WIP_PUSH=1`; de git-native pre-push hook leest de
-commandstring niet.
+**Asymmetry:** the `# allow-wip-push` magic comment only works when
+Claude executes the push (the PreToolUse:Bash guard reads the bash command string).
+For pushes you run yourself in a terminal, only
+`GITGIT_ALLOW_WIP_PUSH=1` works; the git-native pre-push hook does not
+read the command string.
 
 ### `GITGIT_TRIVIAL_OK=1`
 
-Wordt automatisch gezet door de PreToolUse:Bash guard als de staged diff
-maximaal 1 bestand en maximaal 5 inserties telt. Kan ook handmatig
-gexporteerd worden om body-validatie voor een specifiek triviaal commit
-over te slaan. Niet persistent; geldt alleen voor de eerstvolgende commit.
+Set automatically by the PreToolUse:Bash guard when the staged diff has
+at most 1 file and at most 5 insertions. Can also be exported manually
+to skip body validation for a specific trivial commit.
+Not persistent; applies only to the next commit.
 
-**Beperking:** handmatige export van `GITGIT_TRIVIAL_OK=1` geldt alleen voor de
-PreToolUse:Bash laag. De git-native commit-msg hook leidt de trivial-flag
-opnieuw af uit de staged diff bij elke run; een extern geexporteerde waarde
-bypascht die hook niet. Gebruik voor triviale-maar-grotere commits op de
-git-native laag het `# vsd-skip: <reden>` magic comment in plaats van de
+**Limitation:** manual export of `GITGIT_TRIVIAL_OK=1` only applies to the
+PreToolUse:Bash layer. The git-native commit-msg hook re-derives the
+trivial flag from the staged diff on every run; an externally exported
+value does not bypass that hook. For trivial-but-larger commits at
+the git-native layer, use the `# vsd-skip: <reason>` magic comment instead of the
 environment variable.
 
 ## Troubleshooting
 
-**"De hook blokkeert mijn commit met missing-tests; hoe los ik dat op?"**
+**"The hook blocks my commit with missing-tests; how do I fix it?"**
 
-De `Tests:`-trailer ontbreekt of bevat geen geldig pad. Voeg een
-`Tests:`-regel toe met de paden van de specs die je gerund hebt, bijv.:
+The `Tests:` trailer is missing or contains no valid path. Add a
+`Tests:` line with the paths of the specs you ran, e.g.:
 
 ```
 Tests: spec/services/enrollment_spec.rb, spec/models/device_spec.rb
 ```
 
-De paden worden gecontroleerd tegen de HEAD-tree en de staged diff. Zorg
-dat de bestanden echt bestaan in het project. Als er geen tests zijn (bijv.
-pure config-wijziging), gebruik dan een passend opt-out token:
+The paths are checked against the HEAD tree and the staged diff. Make
+sure the files actually exist in the project. If there are no tests (e.g.
+pure config change), use a fitting opt-out token:
 `Slice: config-only`.
 
-**"Mijn body is wel duidelijk maar de hook zegt why-too-short"**
+**"My body is clear enough but the hook says why-too-short"**
 
-De WHY-paragraaf is te compact. De validator eist minimaal twee niet-lege
-regels OF minimaal 60 tekens eindigend op `.`, `!`, of `?`. Een
-eenregelige samenvatting van 30 tekens voldoet niet. Breek de zin op
-in twee regels of schijf een volledigere verklaring.
+The WHY paragraph is too compact. The validator requires at least two
+non-empty lines OR at least 60 characters ending in `.`, `!`, or `?`. A
+single-line summary of 30 characters does not qualify. Break the
+sentence into two lines or write a more complete explanation.
 
-**"Ik krijg duplicate-why; ik heb mijn body zelf geschreven"**
+**"I get duplicate-why; I wrote my body myself"**
 
-De SHA1 van jouw WHY-tekst (na whitespace-normalisatie) matcht precies
-die van een van de vijf meest recente commits op de huidige branch. Dit
-wijst op copy-paste van een eerder commit-bericht. Herschrijf de WHY voor
-dit specifieke commit; zelfs kleine tekstuele afwijkingen zijn voldoende.
+The SHA1 of your WHY text (after whitespace normalization) matches exactly
+that of one of the five most recent commits on the current branch. This
+points to copy-paste from an earlier commit message. Rewrite the WHY for
+this specific commit; even small textual deviations are enough.
 
-**"push geblokkeerd door wip-gate maar de wip-commit is al geamend"**
+**"push blocked by wip-gate but the wip commit was already amended"**
 
-Als je een `Slice: wip` commit hebt geamend naar een normaal schema-compliant
-commit, loopt de wip-gate soms over een stale reflog-entry. Controleer met
-`git log --oneline` of er nog een `Slice: wip` commit in de push-range zit.
-Als er geen meer is maar de gate nog blokkeert, stel `GITGIT_ALLOW_WIP_PUSH=1`
-in voor de push en meld de edge-case.
+If you have amended a `Slice: wip` commit into a normal schema-compliant
+commit, the wip-gate sometimes runs over a stale reflog entry. Check with
+`git log --oneline` whether there is still a `Slice: wip` commit in the push range.
+If there is none left but the gate still blocks, set `GITGIT_ALLOW_WIP_PUSH=1`
+for the push and report the edge case.
 
 ## Session-level kill-switch
 
-Wanneer je tijdelijk de gitgit guards uit wilt zonder de plugin globaal te
-disablen, gebruik `/gitgit:disable-discipline`. Dat schrijft een sentinel file in
-`~/.claude/var/` met je session-id; de dispatcher exit early op elke
-`git commit` of `git push`. Re-enable met `/gitgit:enable-discipline`. Status check met
-`/gitgit:discipline-status`. De skills zijn user-invocable; Claude roept ze niet zelf
-aan om de discipline te omzeilen.
+When you want to temporarily turn off the gitgit guards without disabling
+the plugin globally, use `/gitgit:disable-discipline`. That writes a sentinel file in
+`~/.claude/var/` with your session id; the dispatcher exits early on every
+`git commit` or `git push`. Re-enable with `/gitgit:enable-discipline`. Status check with
+`/gitgit:discipline-status`. The skills are user-invocable; Claude does not
+invoke them itself to bypass the discipline.
 
-## Architectuur
+## Architecture
 
-De enforcement bestaat uit twee parallelle lagen die dezelfde
-`hooks/lib/validate-body.sh` aanroepen:
+The enforcement consists of two parallel layers that call the same
+`hooks/lib/validate-body.sh`:
 
 ```
 git commit (via Claude Code)
     |
     v
 PreToolUse:Bash dispatcher (hooks/dispatch.sh)
-    |-- git-dash-c.sh       (blokkeert git -C <dir>)
-    |-- commit-format.sh    (editor-mode detectie)
-    |-- commit-subject.sh   (50/72 subject-regels)
-    |-- commit-body.sh      (body-schema, trivial-check)
+    |-- git-dash-c.sh       (blocks git -C <dir>)
+    |-- commit-format.sh    (editor-mode detection)
+    |-- commit-subject.sh   (50/72 subject rules)
+    |-- commit-body.sh      (body schema, trivial check)
     |-- commit-trailers.sh  (Co-Authored-By @anthropic.com)
-    |-- push-wip-gate.sh    (wip-commits bij git push)
+    |-- push-wip-gate.sh    (wip commits on git push)
     |
-    +-> validate-body.sh (gedeelde bibliotheek)
+    +-> validate-body.sh (shared library)
            |-- layer-classify.sh
            |-- example-synth.sh
            +-- wip-gate.sh
 
-git commit (buiten Claude, via CLI of IDE)
+git commit (outside Claude, via CLI or IDE)
     |
     v
-git-native hooks (geinstalleerd via /gitgit:install-hooks)
-    |-- commit-msg          -> validate-body.sh (zelfde lib)
+git-native hooks (installed via /gitgit:install-hooks)
+    |-- commit-msg          -> validate-body.sh (same lib)
     |-- prepare-commit-msg  -> layer-classify.sh (template-fill)
-    |-- post-commit         (logt --no-verify gebruik)
+    |-- post-commit         (logs --no-verify usage)
     +-- pre-push            -> wip-gate.sh
 ```
 
-De git-native hooks staan in
-`packages/gitgit/skills/commit-discipline/git-hooks/` en worden gekopieerd
-(niet gesymlinkt) door `install-hooks`.
+The git-native hooks live in
+`packages/gitgit/skills/commit-discipline/git-hooks/` and are copied
+(not symlinked) by `install-hooks`.
 
-## Migratie-resterend
+## Migration leftovers
 
-De commit-subject en commit-format guards zijn verhuisd vanuit `dont-do-that`
-naar `gitgit/hooks/guards/` (slice 2). De user-level git hooks
+The commit-subject and commit-format guards have moved from `dont-do-that`
+to `gitgit/hooks/guards/` (slice 2). The user-level git hooks
 (`block-coauthored-trailer.sh`, `warn-untested-commits.sh`,
-`block-git-dash-c.sh`) zijn geabsorbeerd in `gitgit/hooks/guards/` (slice 5).
-`~/.claude/hooks/` bevat geen git-rakende hooks meer na de migratie.
+`block-git-dash-c.sh`) have been absorbed into `gitgit/hooks/guards/` (slice 5).
+`~/.claude/hooks/` no longer contains any git-touching hooks after the migration.
 
-De audit-script zit in de plugin onder `bin/audit-no-body-commits`. Gebruik het
-als volgt om het altijd tegen de actieve plugin-versie te draaien:
+The audit script lives in the plugin under `bin/audit-no-body-commits`. Use it
+as follows to always run it against the active plugin version:
 
 ```bash
 GITGIT=$(jq -r '.plugins["gitgit@leclause"][0].installPath' \

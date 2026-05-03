@@ -6,7 +6,7 @@ snipe, rebase-latest-default, merge-to-default), and the hooks enforce a
 structured commit body schema across both Claude-driven commits
 (PreToolUse:Bash) and direct CLI commits (git-native hooks installed per repo).
 
-## Wat
+## What
 
 `gitgit` does two things at once:
 
@@ -125,7 +125,7 @@ to the bundled versions:
 /plugin uninstall rebase-latest-default@leclause
 ```
 
-## Voorbeeld commit-message
+## Example commit message
 
 ```
 Drop invalid meter reading on transaction events

@@ -8,35 +8,35 @@ allowed-tools: Bash(git symbolic-ref:*), Bash(git rev-parse:*), Bash(git status:
 
 Land the current branch on the project's default branch with a real `--no-ff` merge commit, the same shape GitHub's merge button produces. Pending working-tree changes ride along via `gitgit:commit-all-the-things`. On a conflict the source branch is rebased on the latest default and the merge is retried so the final state is a clean merge commit on top of an up-to-date default.
 
-## Wanneer
+## When
 
-- De huidige feature-branch is af en moet op `main` (of `master`) landen
-- De user typt `/gitgit:merge-to-default` of zegt "merge naar default", "merge to main", of "merge this into main"
-- Lokale workflow zonder PR-stap: het project doet trunk-based development of accepteert directe merges op de default branch
+- The current feature branch is done and needs to land on `main` (or `master`)
+- The user types `/gitgit:merge-to-default` or says "merge naar default", "merge to main", or "merge this into main"
+- Local workflow without a PR step: the project does trunk-based development or accepts direct merges on the default branch
 
-Niet voor remote-merges: deze skill produceert alleen lokale commits en pushed niet. Push gaat via een aparte expliciete user-actie.
+Not for remote merges: this skill produces only local commits and does not push. Push is a separate, explicit user action.
 
-## Stap 0: Detecteer default branch en huidige branch
+## Step 0: Detect default branch and current branch
 
-### 0a: Default branch naam
+### 0a: Default branch name
 
-Bepaal de naam van de default branch (`$DEFAULT`):
+Determine the name of the default branch (`$DEFAULT`):
 
-1. Probeer `git symbolic-ref refs/remotes/origin/HEAD` en pak het laatste pad-segment (bijv. `main`).
-2. Lukt dat niet (geen remote, of de ref is niet gezet), kijk lokaal: `git rev-parse --verify refs/heads/main` en `git rev-parse --verify refs/heads/master`. Voorkeur voor `main` als beide bestaan.
-3. Bestaat geen van beide, stop met de melding: `Cannot determine the default branch. Set origin/HEAD via `git remote set-head origin --auto` or create a local main/master.`
+1. Try `git symbolic-ref refs/remotes/origin/HEAD` and take the last path segment (e.g. `main`).
+2. If that fails (no remote, or the ref is not set), check locally: `git rev-parse --verify refs/heads/main` and `git rev-parse --verify refs/heads/master`. Prefer `main` if both exist.
+3. If neither exists, stop with the message: `Cannot determine the default branch. Set origin/HEAD via `git remote set-head origin --auto` or create a local main/master.`
 
-### 0b: Huidige branch
+### 0b: Current branch
 
 ```bash
 CURRENT=$(git symbolic-ref --short HEAD)
 ```
 
-Als `git symbolic-ref --short HEAD` faalt (detached HEAD), stop met de melding: `HEAD is detached. Switch to a branch before invoking /gitgit:merge-to-default.`
+If `git symbolic-ref --short HEAD` fails (detached HEAD), stop with the message: `HEAD is detached. Switch to a branch before invoking /gitgit:merge-to-default.`
 
-## Stap 1: No-op safeguard wanneer al op default
+## Step 1: No-op safeguard when already on default
 
-Als `$CURRENT` gelijk is aan `$DEFAULT`, doe niets. Toon een duidelijke TUI-waarschuwing en stop:
+If `$CURRENT` equals `$DEFAULT`, do nothing. Show a clear TUI warning and stop:
 
 ```
 ⚠  /gitgit:merge-to-default is a no-op on the default branch itself.
@@ -49,21 +49,21 @@ Als `$CURRENT` gelijk is aan `$DEFAULT`, doe niets. Toon een duidelijke TUI-waar
     here.
 ```
 
-Geen commit, geen merge, geen rebase. Exit cleanly.
+No commit, no merge, no rebase. Exit cleanly.
 
-## Stap 2: Pending werk wegcommitten via commit-all-the-things
+## Step 2: Commit pending work via commit-all-the-things
 
-Run `git status --porcelain`. Niet leeg → er is uncommitted werk op de feature-branch dat moet meeliften op de merge.
+Run `git status --porcelain`. Not empty means there is uncommitted work on the feature branch that should ride along on the merge.
 
-Invoke `gitgit:commit-all-the-things` via de Skill tool. Die sub-skill groepeert alle uncommitted wijzigingen in logische commits volgens de project- en user-CLAUDE.md conventies en commit ze op de huidige branch (`$CURRENT`). Wacht tot die skill klaar is voor je verder gaat.
+Invoke `gitgit:commit-all-the-things` via the Skill tool. That sub-skill groups all uncommitted changes into logical commits according to the project- and user-CLAUDE.md conventions and commits them on the current branch (`$CURRENT`). Wait until that skill is done before continuing.
 
-Na de invocatie: `git status --porcelain` is leeg, anders stop met de melding `commit-all-the-things left uncommitted changes; investigate before merging.`
+After the invocation: `git status --porcelain` is empty, otherwise stop with the message `commit-all-the-things left uncommitted changes; investigate before merging.`
 
-**Belangrijk om vooraf te weten:** de skill commit ALLES wat er staat, ook half-afgemaakt werk dat de user nog niet wilde vastleggen. Wie staged of working-tree wijzigingen heeft die niet bij de merge horen, zet die eerst opzij (`git stash push -m "wip"`, of een aparte snipe-commit op een ander branch) voordat `/gitgit:merge-to-default` aanroept. De skill heeft geen opt-out voor stap 2; dat is bewust, omdat een halve-merge met onuitgesproken pending wijzigingen de geschiedenis vertroebelt.
+**Important to know up front:** the skill commits EVERYTHING that is there, including half-finished work the user did not want to lock in yet. Anyone who has staged or working-tree changes that do not belong with the merge should set those aside first (`git stash push -m "wip"`, or a separate snipe commit on another branch) before invoking `/gitgit:merge-to-default`. The skill has no opt-out for step 2; that is deliberate, because a half-merge with unspoken pending changes muddies the history.
 
-## Stap 3: First-pass merge
+## Step 3: First-pass merge
 
-Bewaar eerst de tip van de source-branch, dan checkout en merge:
+First save the tip of the source branch, then checkout and merge:
 
 ```bash
 PRE_MERGE_TIP=$(git rev-parse "$CURRENT")
@@ -71,27 +71,27 @@ git checkout $DEFAULT
 git merge --no-ff --no-edit $CURRENT
 ```
 
-`PRE_MERGE_TIP` wordt later in Stap 5 gebruikt om te bevestigen dat de merge daadwerkelijk de source-tip integreerde, los van wat een ander proces (bijv. een andere shell) intussen met de `$CURRENT` ref doet.
+`PRE_MERGE_TIP` is used later in Step 5 to confirm that the merge actually integrated the source tip, independent of what some other process (e.g. another shell) does to the `$CURRENT` ref in the meantime.
 
-`--no-ff` dwingt een merge commit af (twee parents), zelfs als de default branch precies achter de feature-branch zit. Zo krijgt de geschiedenis dezelfde vorm als wat GitHub's "Create a merge commit" knop produceert; de iteratie op de feature-branch blijft zichtbaar in `git log --graph`. Een fast-forward of squash merge zou diezelfde iteratie afvlakken, daarom is `--no-ff` hier niet onderhandelbaar. Wie liever een fast-forward of een rebase-merge wil, gebruikt `git merge --ff-only` of `git rebase` direct vanaf de command line; deze skill is specifiek voor de github-merge-button vorm.
+`--no-ff` forces a merge commit (two parents), even when the default branch sits exactly behind the feature branch. This gives the history the same shape that GitHub's "Create a merge commit" button produces; the iteration on the feature branch stays visible in `git log --graph`. A fast-forward or squash merge would flatten that same iteration, which is why `--no-ff` is non-negotiable here. Anyone who prefers a fast-forward or a rebase merge can use `git merge --ff-only` or `git rebase` directly from the command line; this skill is specifically for the github-merge-button shape.
 
-`--no-edit` houdt de auto-gegenereerde merge subject (`Merge branch '<CURRENT>'`), dezelfde vorm die GitHub bij een lokale merge gebruikt. Dat is bewust niet de PR-merge subject (`Merge pull request #N from ...`), omdat deze skill geen PR aanmaakt en geen PR-nummer kent.
+`--no-edit` keeps the auto-generated merge subject (`Merge branch '<CURRENT>'`), the same shape GitHub uses for a local merge. That is deliberately not the PR-merge subject (`Merge pull request #N from ...`), because this skill does not create a PR and does not know a PR number.
 
-- **Slaagt schoon:** door naar Stap 5.
-- **Conflicten:** door naar Stap 4.
+- **Succeeds cleanly:** continue to Step 5.
+- **Conflicts:** continue to Step 4.
 
-## Stap 4: Conflict-pad via rebase
+## Step 4: Conflict path via rebase
 
-Wanneer de merge in stap 3 conflicten geeft, zit de source branch achter op de default of werd hetzelfde stuk code aan beide kanten gewijzigd. De skill kiest hier ALTIJD voor `rebase first, retry merge` boven handmatige conflictoplossing in een merge commit, omdat de uiteindelijke geschiedenis dan een clean merge commit op een actuele default toont.
+When the merge in step 3 produces conflicts, the source branch is behind on the default or the same piece of code was changed on both sides. The skill ALWAYS chooses `rebase first, retry merge` here over manual conflict resolution in a merge commit, because the resulting history then shows a clean merge commit on top of an up-to-date default.
 
 ```bash
 git merge --abort
 git checkout $CURRENT
 ```
 
-Invoke `gitgit:rebase-latest-default` via de Skill tool. Die sub-skill rebased `$CURRENT` op de freshest `$DEFAULT` (lokaal of `origin/$DEFAULT`, whichever is ahead) en lost trivial conflicts (whitespace, identieke edits, lockfile regenerations) automatisch op. Voor genuine ambiguïteiten stopt rebase-latest-default en surface die naar de user.
+Invoke `gitgit:rebase-latest-default` via the Skill tool. That sub-skill rebases `$CURRENT` on the freshest `$DEFAULT` (local or `origin/$DEFAULT`, whichever is ahead) and resolves trivial conflicts (whitespace, identical edits, lockfile regenerations) automatically. For genuine ambiguities, rebase-latest-default stops and surfaces them to the user.
 
-Na een geslaagde rebase: capture de nieuwe source-tip vóór de retry-checkout, dan terug naar Stap 3 voor de retry.
+After a successful rebase: capture the new source tip before the retry checkout, then back to Step 3 for the retry.
 
 ```bash
 PRE_MERGE_TIP=$(git rev-parse "$CURRENT")
@@ -99,40 +99,40 @@ git checkout $DEFAULT
 git merge --no-ff --no-edit $CURRENT
 ```
 
-Nu zou de merge schoon moeten verlopen. Faalt-ie nog steeds, surface de conflict en stop; dat betekent dat de rebase niet alle ambiguïteit kon oplossen en de user moet handmatig ingrijpen.
+The merge should run cleanly now. If it still fails, surface the conflict and stop; that means the rebase could not resolve all ambiguity and the user must intervene manually.
 
-### Wanneer rebase-latest-default zelf op een non-trivial conflict stopt
+### When rebase-latest-default itself stops on a non-trivial conflict
 
-`gitgit:rebase-latest-default` lost alleen trivial conflicts (whitespace, identieke edits, lockfile regenerations) automatisch op. Voor genuine ambiguïteit stopt die skill mid-rebase en wijst de user op de conflict bestanden. In dat geval is `merge-to-default` ook gestopt: de werktree zit mid-rebase op `$CURRENT`, `$DEFAULT` is onveranderd. De user heeft drie cleanup-opties:
+`gitgit:rebase-latest-default` only resolves trivial conflicts (whitespace, identical edits, lockfile regenerations) automatically. For genuine ambiguity, that skill stops mid-rebase and points the user at the conflicting files. In that case `merge-to-default` has also stopped: the worktree sits mid-rebase on `$CURRENT`, `$DEFAULT` is unchanged. The user has three cleanup options:
 
-- `git rebase --abort`: zet `$CURRENT` terug naar pre-rebase staat. Geen merge gebeurd. Daarna kan de user de conflict op een andere manier aanpakken.
-- Handmatig de conflict resolven, `git rebase --continue` per stap, en dan `/gitgit:merge-to-default` opnieuw aanroepen om de retry-merge uit te voeren.
-- `git checkout $DEFAULT` zonder verdere actie: de mid-rebase state op `$CURRENT` blijft staan, `$DEFAULT` is intact, de user beslist later wat te doen.
+- `git rebase --abort`: returns `$CURRENT` to the pre-rebase state. No merge happened. After that, the user can tackle the conflict differently.
+- Manually resolve the conflict, `git rebase --continue` per step, and then invoke `/gitgit:merge-to-default` again to run the retry merge.
+- `git checkout $DEFAULT` without further action: the mid-rebase state on `$CURRENT` remains, `$DEFAULT` is intact, the user decides later what to do.
 
-`merge-to-default` zelf maakt geen van deze keuzes voor de user; mid-rebase met genuine ambiguïteit is precies de plek waar handmatige resolutie de juiste manier is.
+`merge-to-default` itself does not make any of these choices for the user; mid-rebase with genuine ambiguity is exactly the place where manual resolution is the right way.
 
-## Stap 5: Lokale source-branch opruimen
+## Step 5: Clean up local source branch
 
-Na een geconfirmde merge ruimt de skill de lokale `$CURRENT` branch op. Geconfirmd betekent: HEAD zit op `$DEFAULT`, HEAD heeft twee parents, en de tweede parent komt overeen met `PRE_MERGE_TIP` (uit Stap 3) of, in het rebase-pad, met de tip die `$CURRENT` had vlak vóór de retry-merge in Stap 4. De skill checkt dat met:
+After a confirmed merge, the skill cleans up the local `$CURRENT` branch. Confirmed means: HEAD sits on `$DEFAULT`, HEAD has two parents, and the second parent matches `PRE_MERGE_TIP` (from Step 3) or, in the rebase path, the tip `$CURRENT` had right before the retry merge in Step 4. The skill checks that with:
 
 ```bash
 SECOND_PARENT=$(git rev-parse HEAD^2 2>/dev/null || true)
 [ "$SECOND_PARENT" = "$PRE_MERGE_TIP" ] || stop_with "merge confirmation failed; HEAD^2 ($SECOND_PARENT) does not match captured pre-merge source tip ($PRE_MERGE_TIP)"
 ```
 
-In het rebase-pad herhaalt Stap 4 de `PRE_MERGE_TIP=$(git rev-parse "$CURRENT")` capture na de rebase en vóór de retry-checkout, zodat de bevestigingscheck op de post-rebase tip vergelijkt. Door `PRE_MERGE_TIP` voor de checkout vast te leggen sluit de skill een race-window: een concurrent commit op `$CURRENT` na de checkout kan de live `git rev-parse "$CURRENT"` doen verschuiven, maar `PRE_MERGE_TIP` blijft staan op de waarde die de merge daadwerkelijk integreerde.
+In the rebase path, Step 4 repeats the `PRE_MERGE_TIP=$(git rev-parse "$CURRENT")` capture after the rebase and before the retry checkout, so the confirmation check compares against the post-rebase tip. By recording `PRE_MERGE_TIP` before the checkout, the skill closes a race window: a concurrent commit on `$CURRENT` after the checkout can shift the live `git rev-parse "$CURRENT"`, but `PRE_MERGE_TIP` stays at the value the merge actually integrated.
 
-Wanneer dat klopt: probeer de branch te deleten met `git branch -d "$CURRENT"`. Vóór dat command checkt de skill twee dingen:
+When that holds: try to delete the branch with `git branch -d "$CURRENT"`. Before that command, the skill checks two things:
 
-1. **Worktree safety.** `git worktree list --porcelain` toont één blok per worktree met `worktree <path>` en `branch refs/heads/<naam>`. De huidige worktree-root komt uit `git rev-parse --show-toplevel` (NIET `--git-dir`, dat geeft de `.git` directory en matcht nooit met het `worktree` veld). Wanneer een ander blok dan het eigen blok `branch refs/heads/$CURRENT` heeft, skip de delete en surface een TUI-regel: `⚠  Source branch '<CURRENT>' is checked out in worktree <path>; skipping local branch delete.` De merge commit op `$DEFAULT` blijft intact, alleen de lokale ref van `$CURRENT` blijft staan.
+1. **Worktree safety.** `git worktree list --porcelain` shows one block per worktree with `worktree <path>` and `branch refs/heads/<name>`. The current worktree root comes from `git rev-parse --show-toplevel` (NOT `--git-dir`, which gives the `.git` directory and never matches the `worktree` field). When some other block has `branch refs/heads/$CURRENT`, skip the delete and surface a TUI line: `⚠  Source branch '<CURRENT>' is checked out in worktree <path>; skipping local branch delete.` The merge commit on `$DEFAULT` stays intact, only the local ref of `$CURRENT` remains.
 
-2. **Geen `-D` force.** De skill gebruikt `-d` (lowercase), niet `-D`. `-d` faalt op niet-gemergede branches; in deze flow is `$CURRENT` per definitie gemerged in `$DEFAULT` via de merge commit, dus `-d` slaagt. Mocht `-d` toch falen (race-condition met user-input tussen stap 3/4 en stap 5), surface de error en stop zonder forceren.
+2. **No `-D` force.** The skill uses `-d` (lowercase), not `-D`. `-d` fails on un-merged branches; in this flow `$CURRENT` is by definition merged into `$DEFAULT` via the merge commit, so `-d` succeeds. If `-d` does fail (race condition with user input between step 3/4 and step 5), surface the error and stop without forcing.
 
-Remote branches raakt deze skill niet. De aanname is dat GitHub-workflows (branch protection rules met "delete head branch on merge") of een aparte cleanup-job de remote `origin/<CURRENT>` opruimen wanneer de PR-merge upstream landt. Mocht jouw repo dat niet doen, ruim de remote branch zelf op met `git push origin --delete <CURRENT>` na de push (dat zit niet in deze skill).
+This skill does not touch remote branches. The assumption is that GitHub workflows (branch protection rules with "delete head branch on merge") or a separate cleanup job clean up the remote `origin/<CURRENT>` when the PR merge lands upstream. If your repo does not do that, clean up the remote branch yourself with `git push origin --delete <CURRENT>` after the push (which is not part of this skill).
 
-## Stap 6: Rapportage
+## Step 6: Reporting
 
-Toon een korte samenvatting van wat er gebeurd is:
+Show a brief summary of what happened:
 
 ```
 ✓ Merged <CURRENT> into <DEFAULT>
@@ -142,6 +142,6 @@ Toon een korte samenvatting van wat er gebeurd is:
   Local source branch: deleted | kept (worktree at <path>)
 ```
 
-`<abbrev SHA>` komt uit `git rev-parse --short HEAD`. `Files changed`, insertions en deletions uit `git diff --shortstat $DEFAULT~1...$DEFAULT`. De `Local source branch` regel reflecteert wat Stap 5 deed: `deleted` als `git branch -d` slaagde, `kept (worktree at <path>)` als de safety-check de delete oversloeg, of `kept (delete failed: <reden>)` als `-d` om een andere reden faalde.
+`<abbrev SHA>` comes from `git rev-parse --short HEAD`. `Files changed`, insertions, and deletions come from `git diff --shortstat $DEFAULT~1...$DEFAULT`. The `Local source branch` line reflects what Step 5 did: `deleted` if `git branch -d` succeeded, `kept (worktree at <path>)` if the safety check skipped the delete, or `kept (delete failed: <reason>)` if `-d` failed for another reason.
 
-Push gebeurt NIET in deze skill. Een push naar de remote is een aparte user-go (de user-CLAUDE.md push-regime documenteert dit). De gebruiker pusht zelf wanneer hij gevalideerd heeft dat de merge klopt.
+Push does NOT happen in this skill. A push to the remote is a separate user-go (the user-CLAUDE.md push regime documents this). The user pushes themselves once they have validated the merge is correct.

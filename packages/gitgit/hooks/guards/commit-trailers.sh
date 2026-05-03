@@ -7,7 +7,7 @@
 # Behaviour mirrors the original block-coauthored-trailer.sh: only anthropic.com
 # trailers are blocked; human Co-Authored-By trailers (real teammates) pass.
 # Widen the scope later if the operator asks. The user-level CLAUDE.md text
-# rule "geen Co-Authored-By: trailer" is broader than this hook; the hook
+# rule "no Co-Authored-By: trailer" is broader than this hook; the hook
 # implements the historically-enforced subset.
 #
 # Bypass: set GITGIT_ALLOW_AI_COAUTHOR=1 in the environment for one bash call

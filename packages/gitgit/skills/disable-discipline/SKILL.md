@@ -11,37 +11,38 @@ argument-hint: ""
 
 # /gitgit:disable-discipline
 
-Schakel de gitgit PreToolUse:Bash guards uit voor de huidige sessie. Alle
+Disable the gitgit PreToolUse:Bash guards for the current session. All
 guards (commit-format, commit-subject, commit-body, commit-trailers,
-git-dash-c, push-wip-gate) worden gesloopt totdat de operator `/gitgit:enable-discipline`
-runt. Andere sessies zijn niet beinvloed; de sentinel is sessie-specifiek.
+git-dash-c, push-wip-gate) are torn down until the operator runs
+`/gitgit:enable-discipline`. Other sessions are not affected; the sentinel
+is session-specific.
 
-## Wanneer te gebruiken
+## When to use
 
-Alleen wanneer de operator dit commando expliciet typt. Gebruik dit nooit
-automatisch om langs een geblokkeerde commit te komen. De guards bestaan om
-een reden; het omzeilen ervan is de keuze van de operator, niet van Claude.
+Only when the operator explicitly types this command. Never use this
+automatically to get past a blocked commit. The guards exist for a
+reason; bypassing them is the operator's choice, not Claude's.
 
-Typisch gebruik: een sessie die bewust buiten het normale commit-schema werkt
-(bijv. een reeks triviale fixup-commits, een rebasing-sessie, of een
-experimentele branch waar de discipline tijdelijk niet geldt).
+Typical use: a session that deliberately works outside the normal commit
+schema (e.g. a series of trivial fixup commits, a rebasing session, or an
+experimental branch where the discipline does not apply temporarily).
 
-## Herstel
+## Recovery
 
-Zet de guards terug met `/gitgit:enable-discipline`. Controleer de status met
+Restore the guards with `/gitgit:enable-discipline`. Check the status with
 `/gitgit:discipline-status`.
 
-## Implementatie
+## Implementation
 
-Voer de volgende stappen uit:
+Perform the following steps:
 
-1. Bepaal de huidige session_id. Lees `$CLAUDE_SESSION_ID` uit de omgeving
-   als die beschikbaar is. Als alternatief: haal de session_id op via het
-   transcript-pad dat in de hook-context beschikbaar is, of deriveer hem uit
-   het meest recente JSONL-bestand onder `~/.claude/projects/`. Als geen van
-   beide werkt, val terug op de globale sentinel (zie hieronder).
+1. Determine the current session_id. Read `$CLAUDE_SESSION_ID` from the
+   environment if available. Alternatively: get the session_id from the
+   transcript path available in the hook context, or derive it from the
+   most recent JSONL file under `~/.claude/projects/`. If neither works,
+   fall back to the global sentinel (see below).
 
-2. Als session_id beschikbaar is:
+2. If session_id is available:
 
    ```bash
    mkdir -p "$HOME/.claude/var"
@@ -50,7 +51,7 @@ Voer de volgende stappen uit:
    echo "Re-enable with /gitgit:enable-discipline"
    ```
 
-3. Als session_id NIET beschikbaar is (fallback naar globale sentinel):
+3. If session_id is NOT available (fallback to the global sentinel):
 
    ```bash
    mkdir -p "$HOME/.claude/var"
@@ -60,7 +61,7 @@ Voer de volgende stappen uit:
    echo "Re-enable with /gitgit:enable-discipline"
    ```
 
-4. Bevestig aan de operator welke sentinel is aangemaakt en welk pad.
+4. Confirm to the operator which sentinel was created and at which path.
 
-Schrijf geen uitleg of caveats daarna. De operator heeft dit commando bewust
-getypt.
+Do not write further explanation or caveats afterwards. The operator
+typed this command deliberately.

@@ -10,30 +10,30 @@ argument-hint: ""
 
 # /gitgit:enable-discipline
 
-Heractiveer de gitgit PreToolUse:Bash guards voor de huidige sessie. Verwijdert
-de sentinel die `/gitgit:disable-discipline` heeft aangemaakt. Heeft geen effect als de
-guards al actief zijn.
+Re-enable the gitgit PreToolUse:Bash guards for the current session.
+Removes the sentinel that `/gitgit:disable-discipline` created. Has no
+effect if the guards are already active.
 
-## Wanneer te gebruiken
+## When to use
 
-Alleen wanneer de operator dit commando expliciet typt. Na het runnen van dit
-commando gelden de guards weer volledig voor alle volgende git-opdrachten in
-de huidige sessie.
+Only when the operator explicitly types this command. After running this
+command, the guards apply again in full to all subsequent git commands in
+the current session.
 
-## Status controleren
+## Check status
 
-Gebruik `/gitgit:discipline-status` om te zien welke sentinels actief zijn en wat de
-huidige guard-toestand is.
+Use `/gitgit:discipline-status` to see which sentinels are active and
+what the current guard state is.
 
-## Implementatie
+## Implementation
 
-Voer de volgende stappen uit:
+Perform the following steps:
 
-1. Bepaal de huidige session_id via dezelfde logica als `/gitgit:disable-discipline`:
-   eerst `$CLAUDE_SESSION_ID`, dan het meest recente JSONL-bestand onder
-   `~/.claude/projects/`, dan fallback naar global.
+1. Determine the current session_id via the same logic as `/gitgit:disable-discipline`:
+   first `$CLAUDE_SESSION_ID`, then the most recent JSONL file under
+   `~/.claude/projects/`, then fall back to global.
 
-2. Verwijder de sessie-specifieke sentinel als die bestaat:
+2. Remove the session-specific sentinel if it exists:
 
    ```bash
    SENTINEL="$HOME/.claude/var/gitgit-disabled-$SESSION_ID"
@@ -45,9 +45,9 @@ Voer de volgende stappen uit:
    fi
    ```
 
-3. Controleer ook de globale sentinel en verwijder die als de operator dit
-   bedoelt (d.w.z. als er geen sessie-specifieke sentinel was maar wel een
-   globale):
+3. Also check the global sentinel and remove it if the operator means
+   that (i.e. when there was no session-specific sentinel but there was
+   a global one):
 
    ```bash
    GLOBAL="$HOME/.claude/var/gitgit-disabled-global"
@@ -57,7 +57,7 @@ Voer de volgende stappen uit:
    fi
    ```
 
-4. Bevestig aan de operator welke sentinel(s) zijn verwijderd en welk pad.
+4. Confirm to the operator which sentinel(s) were removed and at which path.
 
-Schrijf geen uitleg of caveats daarna. De operator heeft dit commando bewust
-getypt.
+Do not write further explanation or caveats afterwards. The operator
+typed this command deliberately.

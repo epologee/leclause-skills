@@ -6,59 +6,59 @@ description: Use when committing changes and the working tree contains modificat
 
 # Commit Snipe
 
-Precisie-commits uit een working tree met gemixte wijzigingen. Stage alleen wat bij de huidige taak hoort, laat de rest onaangeraakt.
+Precision commits from a working tree with mixed changes. Stage only what belongs to the current task, leave the rest untouched.
 
-## Wanneer
+## When
 
-- `git status` toont wijzigingen die NIET van het huidige werk zijn
-- Meerdere logisch onafhankelijke taken hebben de working tree aangeraakt
-- De gebruiker zegt "commit" zonder te specificeren welke bestanden
+- `git status` shows changes that are NOT from the current work
+- Multiple logically independent tasks have touched the working tree
+- The user says "commit" without specifying which files
 
-## Core techniek
+## Core technique
 
 ```dot
 digraph snipe {
-  "User zegt commit" [shape=doublecircle];
+  "User says commit" [shape=doublecircle];
   "git status" [shape=box];
-  "Welke bestanden horen bij\nDEZE conversatie?" [shape=diamond];
-  "Stage alleen die bestanden\n(expliciete paden)" [shape=box];
-  "git diff --cached\nverificatie" [shape=box];
+  "Which files belong to\nTHIS conversation?" [shape=diamond];
+  "Stage only those files\n(explicit paths)" [shape=box];
+  "git diff --cached\nverification" [shape=box];
   "Commit" [shape=doublecircle];
 
-  "User zegt commit" -> "git status";
-  "git status" -> "Welke bestanden horen bij\nDEZE conversatie?";
-  "Welke bestanden horen bij\nDEZE conversatie?" -> "Stage alleen die bestanden\n(expliciete paden)";
-  "Stage alleen die bestanden\n(expliciete paden)" -> "git diff --cached\nverificatie";
-  "git diff --cached\nverificatie" -> "Commit";
+  "User says commit" -> "git status";
+  "git status" -> "Which files belong to\nTHIS conversation?";
+  "Which files belong to\nTHIS conversation?" -> "Stage only those files\n(explicit paths)";
+  "Stage only those files\n(explicit paths)" -> "git diff --cached\nverification";
+  "git diff --cached\nverification" -> "Commit";
 }
 ```
 
-1. **`git status`** bekijk alle wijzigingen in de working tree
-2. **Conversatie-analyse** welke bestanden heb je in DEZE sessie aangemaakt, bewerkt, of gegenereerd?
-3. **Selectief stagen** `git add` met expliciete bestandsnamen
-4. **Verificatie** `git diff --cached --stat` om te checken dat alleen de juiste bestanden gestaged zijn
-5. **Commit** volg bestaande conventies uit de project- en user-CLAUDE.md
+1. **`git status`** review all changes in the working tree
+2. **Conversation analysis** which files did you create, edit, or generate in THIS session?
+3. **Selective staging** `git add` with explicit file names
+4. **Verification** `git diff --cached --stat` to check that only the right files are staged
+5. **Commit** follow existing conventions from the project- and user-CLAUDE.md
 
-## Regels
+## Rules
 
-- **Invocatie IS commit intent.** `/gitgit:commit-snipe` betekent "commit nu". Geen bevestiging vragen, geen "wil je dit committen?". De user heeft zijn intent al gegeven door de skill aan te roepen.
-- **Bij twijfel, NIET stagen.** Een bestand dat je niet zeker kunt herleiden naar het huidige werk hoort niet in de commit.
-- **Nooit `git add .` of `git add -A`.** Altijd expliciete paden of hunks.
-- **Bestanden zijn een implementatiedetail.** De snipe kan twee regels
-  zijn in een bestand met veertig regels wijzigingen. Gebruik `git add -p`
-  om alleen de hunks te stagen die bij het huidige werk horen. Het gaat
-  om de functionaliteit, niet om het bestand.
-- **Geen vragen over welke bestanden.** De conversatiecontext IS de bron van waarheid. Je weet welke wijzigingen je hebt aangeraakt.
-- **Gegenereerde bestanden meetellen.** Als je een SVG bewerkte en daaruit PNG's genereerde, horen de PNG's erbij.
-- **Meerdere logische eenheden = meerdere commits.** Als het huidige werk uit onafhankelijke stappen bestaat, snipe per stap.
-- **Pre-existing wijzigingen ook snipen.** Wanneer de user expliciet zegt "wat er nog staat" of vergelijkbaar, commit alle uncommitted wijzigingen. Groepeer ze in logische commits, ook als ze niet van de huidige sessie zijn.
+- **Invocation IS commit intent.** `/gitgit:commit-snipe` means "commit now". Do not ask for confirmation, no "wil je dit committen?". The user has already given their intent by invoking the skill.
+- **When in doubt, do NOT stage.** A file you cannot confidently trace back to the current work does not belong in the commit.
+- **Never `git add .` or `git add -A`.** Always explicit paths or hunks.
+- **Files are an implementation detail.** The snipe might be two lines
+  inside a file with forty lines of changes. Use `git add -p`
+  to stage only the hunks that belong to the current work. It is about
+  the functionality, not the file.
+- **No questions about which files.** The conversation context IS the source of truth. You know which changes you touched.
+- **Count generated files.** If you edited an SVG and generated PNGs from it, the PNGs belong with it.
+- **Multiple logical units = multiple commits.** If the current work consists of independent steps, snipe per step.
+- **Snipe pre-existing changes too.** When the user explicitly says "wat er nog staat" or similar, commit all uncommitted changes. Group them into logical commits, even when they are not from the current session.
 
-## Anti-patronen
+## Anti-patterns
 
-| Fout | Correct |
+| Wrong | Correct |
 |------|---------|
-| Alles stagen omdat de user "commit" zei | Alleen bestanden van het huidige werk |
-| Vragen "welke bestanden wil je committen?" | Zelf bepalen uit conversatiecontext |
-| Bestanden vergeten die je indirect genereerde | Alle output mee: gegenereerde, gecompileerde, afgeleide bestanden |
-| `git add -A` en dan unstagen wat er niet bij hoort | `git add` met expliciete paden |
-| Ongewijzigde bestanden "per ongeluk" meenemen | `git diff --cached --stat` verifieert wat er daadwerkelijk gestaged is |
+| Stage everything because the user said "commit" | Only files from the current work |
+| Vragen "welke bestanden wil je committen?" | Determine yourself from conversation context |
+| Forget files you generated indirectly | Include all output: generated, compiled, derived files |
+| `git add -A` and then unstage what does not belong | `git add` with explicit paths |
+| Bring along unmodified files "by accident" | `git diff --cached --stat` verifies what is actually staged |

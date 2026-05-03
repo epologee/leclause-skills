@@ -25,80 +25,80 @@ re-shows the section on demand without touching the sentinel.
 
 # Commit All The Things
 
-Commit alle uncommitted wijzigingen in de working tree, gegroepeerd in logische commits met beschrijvende messages.
+Commit all uncommitted changes in the working tree, grouped into logical commits with descriptive messages.
 
-## Wanneer
+## When
 
-- De working tree bevat wijzigingen van meerdere sessies of taken
-- De user wil alles opruimen zonder zelf te sorteren
-- Tegenovergestelde van `commit-snipe` (die alleen de huidige sessie commit)
+- The working tree contains changes from multiple sessions or tasks
+- The user wants to clean everything up without sorting through it themselves
+- Opposite of `commit-snipe` (which only commits the current session)
 
-## Invocatie is intent
+## Invocation is intent
 
-`/gitgit:commit-all-the-things` IS de opdracht. Geen plan presenteren, geen bevestiging per commit, geen tussentijdse vragen. Doorwerken tot de working tree schoon is.
+`/gitgit:commit-all-the-things` IS the instruction. Do not present a plan, do not confirm per commit, do not ask intermediate questions. Keep working until the working tree is clean.
 
 ## Workflow
 
 ```dot
 digraph commit_all {
   "git status" [shape=box];
-  "Working tree schoon?" [shape=diamond];
-  "Identificeer coherent verhaal\nuit resterende wijzigingen" [shape=box];
-  "Stage bestanden van dit verhaal" [shape=box];
+  "Working tree clean?" [shape=diamond];
+  "Identify coherent story\nfrom remaining changes" [shape=box];
+  "Stage files for this story" [shape=box];
   "Commit" [shape=box];
-  "Rapporteer" [shape=doublecircle];
+  "Report" [shape=doublecircle];
 
-  "git status" -> "Working tree schoon?";
-  "Working tree schoon?" -> "Rapporteer" [label="ja"];
-  "Working tree schoon?" -> "Identificeer coherent verhaal\nuit resterende wijzigingen" [label="nee"];
-  "Identificeer coherent verhaal\nuit resterende wijzigingen" -> "Stage bestanden van dit verhaal";
-  "Stage bestanden van dit verhaal" -> "Commit";
+  "git status" -> "Working tree clean?";
+  "Working tree clean?" -> "Report" [label="yes"];
+  "Working tree clean?" -> "Identify coherent story\nfrom remaining changes" [label="no"];
+  "Identify coherent story\nfrom remaining changes" -> "Stage files for this story";
+  "Stage files for this story" -> "Commit";
   "Commit" -> "git status";
 }
 ```
 
-## Verhaal-herkenning
+## Story recognition
 
-Lees de diffs, niet alleen bestandsnamen. Signalen dat wijzigingen bij hetzelfde verhaal horen:
+Read the diffs, not just file names. Signals that changes belong to the same story:
 
-- Een script + zijn configuratie-entry (bijv. hook + settings.json hunk)
-- Bestanden in dezelfde feature-directory
-- Een skill SKILL.md + gerelateerde bestanden
-- Verwijderde bestanden van dezelfde opruimactie
-- Wijzigingen aan hetzelfde conceptuele onderdeel
+- A script plus its configuration entry (e.g. hook plus settings.json hunk)
+- Files in the same feature directory
+- A skill SKILL.md plus related files
+- Deleted files from the same cleanup action
+- Changes to the same conceptual component
 
-## Commit volgorde
+## Commit order
 
-Infra en opruiming eerst, features daarna:
+Infra and cleanup first, features after:
 
-1. Verwijderingen en opruiming
-2. Config en settings
-3. Nieuwe features (hooks, skills, plannen)
-4. Documentatie
+1. Deletions and cleanup
+2. Config and settings
+3. New features (hooks, skills, plans)
+4. Documentation
 
 ## Staging
 
-**Bestanden zijn een implementatiedetail.** De eenheid is de logische wijziging, niet het bestand. Gebruik `git add -p` om alleen de hunks te stagen die bij het huidige verhaal horen. Een bestand met wijzigingen voor twee verhalen wordt over twee commits gesplitst.
+**Files are an implementation detail.** The unit is the logical change, not the file. Use `git add -p` to stage only the hunks that belong to the current story. A file with changes for two stories is split across two commits.
 
 ```bash
-# Voorbeeld: twee hunks in settings.json, alleen de tweede stagen
+# Example: two hunks in settings.json, stage only the second
 printf 'n\ny\n' | git add -p settings.json
 ```
 
-Verifieer elke staging met `git diff --cached --stat` voordat je commit.
+Verify every staging with `git diff --cached --stat` before you commit.
 
 ## Commits
 
-Volg de commit-message conventies in project- en user-CLAUDE.md. Deze skill bepaalt alleen WAT er per commit gegroepeerd wordt, niet HOE de commit gemaakt wordt.
+Follow the commit message conventions in project- and user-CLAUDE.md. This skill determines only WHAT is grouped per commit, not HOW the commit is made.
 
-## Regels
+## Rules
 
-- **Nooit `git add .` of `git add -A`.** Altijd expliciete paden of hunks.
-- **Nooit pushen.** Alleen committen. Push is een aparte actie.
-- **Geen vragen.** Doorwerken tot de working tree schoon is.
-- **Eén verhaal per commit.** Liever te veel kleine commits dan te weinig grote.
-- **Bij twijfel over groepering:** splits. Twee gerelateerde commits zijn beter dan één incoherente.
+- **Never `git add .` or `git add -A`.** Always explicit paths or hunks.
+- **Never push.** Only commit. Push is a separate action.
+- **No questions.** Keep working until the working tree is clean.
+- **One story per commit.** Better too many small commits than too few large ones.
+- **When in doubt about grouping:** split. Two related commits are better than one incoherent one.
 
-## Rapportage
+## Reporting
 
-Na afloop: korte tabel met elke commit (hash + message). Geen uitleg per commit, de messages spreken voor zich.
+When done: short table with each commit (hash plus message). No explanation per commit, the messages speak for themselves.

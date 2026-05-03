@@ -12,18 +12,18 @@
 # Rule 3 is owned by commit-format and not in the rotation; its slot stays
 # empty so the index math lines up with the rule number.
 DD_RULE_PASSWORD=(
-  "gedrag"      # 1: subject = nieuw gedrag, geen git-actie
-  "effect"      # 2: WAT het systeem doet, niet de WAAROM-trigger
+  "gedrag"      # 1: subject = new behavior, not a git action
+  "effect"      # 2: WHAT the system does, not the WHY trigger
   ""            #  3: owned by commit-format, no rotation slot
-  "essentie"    # 4: body alleen 2-4 zinnen waarom
-  "dubbelop"    # 5: file listings dubbelen wat de diff toont
-  "proza"       # 6: prose, geen bullet dumps of meta-narrative
-  "atoom"       # 7: atomic commits, geen drift
-  "inferno"     # 8: nooit broken code committen met "fix in next"
-  "solist"      # 9: geen Co-Authored-By van AI tooling
-  "incognito"   # 10: geen Generated-with-Claude-Code footer
-  "loep"        # 11: review staged diff voor commit
-  "bewijsstuk"  # 12: commit-check is evidence, niet gut feel
-  "kralen"      # 13: bewaar history, geen squash merge
-  "voorwaarts"  # 14: geen amend, altijd nieuwe commit
+  "essentie"    # 4: body only 2-4 sentences of why
+  "dubbelop"    # 5: file listings duplicate what the diff shows
+  "proza"       # 6: prose, no bullet dumps or meta-narrative
+  "atoom"       # 7: atomic commits, no drift
+  "inferno"     # 8: never commit broken code with "fix in next"
+  "solist"      # 9: no Co-Authored-By from AI tooling
+  "incognito"   # 10: no Generated-with-Claude-Code footer
+  "loep"        # 11: review staged diff before commit
+  "bewijsstuk"  # 12: commit check is evidence, not gut feel
+  "kralen"      # 13: preserve history, no squash merge
+  "voorwaarts"  # 14: no amend, always a new commit
 )
