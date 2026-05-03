@@ -83,3 +83,42 @@ Eye-of-the-beholder is open diagnosis: look at what is there and name what is wr
 | Stopping at "looks like it" | "Looks like it" is not `yes` in the table. Looks-like-it is an open todo. |
 | Labeling a visual estimate as "measured" | Estimating a number from a screenshot without devtools is an assumption, not a measurement. Label it `estimated (~6px)` and note the measurement method. An estimated value may not lead to `yes` in the Match column; only devtools-computed-style or pixel-sample from a raw PNG counts as measured. |
 | Referring to a screenshot from an earlier turn | The evidence must be in the same response as the match claim. "I took it earlier above" is not evidence for the current claim; take fresh. |
+
+## Toolchain
+
+The skill ships three executable files under `scripts/` and two reference documents alongside this SKILL.md:
+
+- `scripts/ink-assert.mjs`: gating tool. Runs structural axes (frame, ink, padding, corner, bgDiag, aaDiag, edgeExt, bgExt, aaExt, halo, hist) plus multi-scale meanRGB and pixel-diff. Modes: default (per-axis report), `--json` (machine-readable), `--confidence` (score 0..100, exit 0 only at >=95).
+- `scripts/cases/`: validation corpus. Each subdirectory holds `reference.png`, `candidate.png`, and `verdict.txt` (one of `match`, `mismatch`, `borderline`).
+- `scripts/run-corpus.mjs`: self-test runner. Iterates `cases/`, runs ink-assert per case, prints a confusion matrix (truePass, trueFail, falsePass, falseFail, borderline), exits 0 only when falsePass=0 AND falseFail=0.
+- `direction-matrix.md`: per-axis direction effect of every tunable CSS knob (border-radius, padding, font-size, font-weight, letter-spacing, filter:blur, box-shadow). Tells you which knob to move when an axis fails in which direction.
+- `pipeline-floors.md`: per-axis irreducible delta when comparing CSS-pill against canvas-PNG-favicon. Tells you when a residual delta is the cross-pipeline rasterization floor versus a fixable axis.
+- `corpus-confidence-scores.md`: empirical calibration of the `--confidence` score against the validation corpus. Match cases score 100, mismatch cases score 0..61, borderline cases score 40..48 at the time of writing.
+
+### Axis glossary
+
+The tool emits axes whose short names are not self-evident on first contact. Reference list:
+
+- `frame.w` / `frame.h`: bounding box of the visible element (FRAME pixels plus INK plus EDGE).
+- `ink.w` / `ink.h`: bounding box of INK-classified pixels alone (typically the glyphs or icon).
+- `pad.{top,right,bottom,left}`: distance in device pixels from the frame bbox to the ink bbox.
+- `corner.{TL,TR,BL,BR}`: diagonal inset from the bbox corner to the first FRAME/INK pixel; the nearest-curve-point of the corner.
+- `bgDiag.{TL,TR,BL,BR}`: along the same diagonal walk, count of pixels classified BG before the first FRAME/INK. Sharp-cutoff width.
+- `aaDiag.{TL,TR,BL,BR}`: along the same diagonal walk, count of pixels classified EDGE (anti-aliased blend) before the first FRAME/INK. Soft-fade width.
+- `edgeExt.{TL,TR,BL,BR}`: along the corner row (horizontal walk along the bbox top/bottom), total non-FRAME/INK pixel count. Equal to bgExt + aaExt; kept for backward visibility.
+- `bgExt.{TL,TR,BL,BR}`: same row walk, BG-only count. Sharp-cutoff width along the edge.
+- `aaExt.{TL,TR,BL,BR}`: same row walk, EDGE-only count. Soft-fade width along the edge.
+- `halo.{TL,TR,BL,BR}`: count of EDGE-class pixels in the 5x5 corner block.
+- `hist.{INK,FRAME,EDGE,BG}`: percentage of frame area classified as that class.
+- `ms.WxH.meanRGB`: mean RGB color at progressively halved resolutions down to 1x1. The 1x1 meanRGB is a strict overall-color check; the larger ones are coarse-balance checks.
+- `pixel diff`: percentage of pixels where the per-channel max delta exceeds the threshold (default 24/255).
+
+The "diag" walk samples from the corner toward the center; the "ext" (extension) walk samples along the edge from the corner toward the opposite corner. Both expose the corner-curve geometry but from different angles.
+
+### Common runtime warnings
+
+- `autoBg corner spread is N RGB units (>30)`: the tool tried to detect the background color from the four corners of the input image and they disagreed. Pass `--bg R,G,B` explicitly. Sample the bg colour from a known-empty pixel of your reference (an image viewer's eyedropper tool works; ImageMagick's `magick file.png -resize 1x1 txt:` prints a single-pixel average).
+
+When `--confidence` reports below 95, consult `direction-matrix.md` for the knob to move and `pipeline-floors.md` for the floor on that axis. When all failing axes are at their floor, the gate has reached the irreducible cross-pipeline limit and a higher score requires changing the rendering pipeline (e.g., replacing the CSS pill with an inline SVG mirror of the canvas).
+
+The corpus is the regression suite. Every change to ink-assert or a new axis must be validated by running `run-corpus.mjs` and confirming `CORPUS CLEAN ✓`.
