@@ -248,6 +248,28 @@ validate_body() {
   local why_block
   why_block=$(_vb_why_block "$content" "$trailers")
 
+  # Rule: a commit body that names a review pass (pride pass, end-user
+  # pass, technical pass, review pass, review findings) is a review-pass
+  # commit. Those commits tend to bundle multiple unrelated findings
+  # behind one subject, which makes the resulting history hard to revert
+  # or read by finding. The check counts bullet-list lines in the WHY
+  # block; two or more bullets in a review-pass commit signals batched
+  # findings and is rejected. The author should split into one commit
+  # per finding. A review-pass commit that addresses exactly one
+  # finding has no list at all (the WHY paragraph names the finding
+  # in prose) and passes through.
+  local why_lower
+  why_lower=$(printf '%s' "$why_block" | tr '[:upper:]' '[:lower:]')
+  local review_pass_re='(pride pass|end-user pass|technical pass|review pass|review findings|pride contrarian|review contrarian)'
+  if [[ "$why_lower" =~ $review_pass_re ]]; then
+    local bullet_count
+    bullet_count=$(printf '%s\n' "$why_block" | grep -cE '^[[:space:]]*[-*][[:space:]]' || true)
+    if [[ "$bullet_count" -ge 2 ]]; then
+      printf 'review-pass-batch: WHY block names a review pass and lists %s findings as bullets. Split into one commit per finding so each fate (fix, second-pass reject) is its own reviewable change. Rewrite the WHY in prose for a single finding, or remove the review-pass keyword if this is not a review-pass commit.\n' "$bullet_count" >&2
+      return 1
+    fi
+  fi
+
   # Extract trailer values.
   local slice_value
   slice_value=$(_vb_trailer_value "$trailers" "Slice")
