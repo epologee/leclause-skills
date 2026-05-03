@@ -14,98 +14,98 @@ effort: low
 platform: macOS
 env:
   CLAUDE_CLI: >
-    Optioneel. Commando dat in het clipboard-commando wordt gezet om Claude
-    te starten in de nieuwe worktree. Default `claude`. Zet dit wanneer je een
-    eigen alias of wrapper gebruikt (bijvoorbeeld `export CLAUDE_CLI=mijn-wrapper`
-    in je shell rc). De var wordt door de doel-shell geëvalueerd op het moment
-    dat je het commando plakt, niet door bonsai.
+    Optional. Command that gets placed in the clipboard command to start
+    Claude in the new worktree. Default `claude`. Set this when you use
+    your own alias or wrapper (for example `export CLAUDE_CLI=my-wrapper`
+    in your shell rc). The var is evaluated by the target shell at the
+    moment you paste the command, not by bonsai.
 ---
 
 # /bonsai
 
-Worktree lifecycle manager. Twee commando's:
+Worktree lifecycle manager. Two commands:
 
-- **`/bonsai new <branch> [prompt]`**: maak worktree + branch, zet een `cd <worktree> && claude "..."` commando op je clipboard zodat je het in een nieuwe pane/tab/app naar keuze kunt plakken
-- **`/bonsai prune`**: ruim worktrees op (context-afhankelijk)
+- **`/bonsai new <branch> [prompt]`**: create worktree + branch, place a `cd <worktree> && claude "..."` command on your clipboard so you can paste it into a new pane/tab/app of your choice
+- **`/bonsai prune`**: clean up worktrees (context-dependent)
 
-## Vereisten
+## Requirements
 
-- **macOS**. `/bonsai new` gebruikt `pbcopy` om het start-commando op het clipboard te zetten. `/bonsai prune` werkt overal waar git draait.
-- **`claude` op je PATH** (of een eigen wrapper, zie hieronder).
+- **macOS**. `/bonsai new` uses `pbcopy` to put the start command on the clipboard. `/bonsai prune` works anywhere git runs.
+- **`claude` on your PATH** (or a custom wrapper, see below).
 
-### Optioneel: eigen Claude launcher via `CLAUDE_CLI`
+### Optional: custom Claude launcher via `CLAUDE_CLI`
 
-Gebruik je een alias of wrapper rond `claude` (bijvoorbeeld om logging, flags of een bepaald model te injecteren)? Zet de env var `CLAUDE_CLI` in je shell rc:
+Do you use an alias or wrapper around `claude` (for example to inject logging, flags or a particular model)? Set the env var `CLAUDE_CLI` in your shell rc:
 
 ```bash
-export CLAUDE_CLI=mijn-wrapper
+export CLAUDE_CLI=my-wrapper
 ```
 
-Bonsai zet de letterlijke string `${CLAUDE_CLI:-claude}` in het clipboard-commando, zodat de doel-shell de var op plak-moment evalueert. Geen eigen wrapper? Dan hoef je niks te doen.
+Bonsai puts the literal string `${CLAUDE_CLI:-claude}` in the clipboard command, so the target shell evaluates the var at paste time. No custom wrapper? Then you do not need to do anything.
 
-## Kernprincipe
+## Core principle
 
-Worktree verwijderen en branch prunen zijn **twee gescheiden acties**:
+Removing a worktree and pruning a branch are **two separate actions**:
 
-- **Worktree verwijderen**: veilig zolang er geen uncommitted changes zijn. De branch blijft bestaan.
-- **Lokale branch prunen**: alleen als het werk aantoonbaar geïntegreerd is in de default branch.
+- **Remove worktree**: safe as long as there are no uncommitted changes. The branch keeps existing.
+- **Prune local branch**: only when the work is demonstrably integrated into the default branch.
 
-Bij twijfel: in overleg. Nooit stilzwijgend werk weggooien.
+When in doubt: confer. Never silently throw work away.
 
-## Gedeeld: repo root en default branch
+## Shared: repo root and default branch
 
 ```bash
-# Repo root (altijd gebruiken als basis voor worktree paden)
+# Repo root (always use as the basis for worktree paths)
 REPO_ROOT=$(git worktree list | head -1 | awk '{print $1}')
 
 # Default branch
 DEFAULT=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's|refs/remotes/origin/||')
 ```
 
-Fallback voor default branch: check welke van `main` of `master` bestaat.
+Fallback for default branch: check which of `main` or `master` exists.
 
-## Directory conventie
+## Directory convention
 
-Alle worktrees leven in `$REPO_ROOT/worktrees/<naam>/`. Dit is de conventie, geen suggestie.
+All worktrees live in `$REPO_ROOT/worktrees/<name>/`. This is the convention, not a suggestion.
 
-- **grow** maakt altijd aan in `$REPO_ROOT/worktrees/<branch>`
-- **prune** herkent linked worktrees via `git worktree list`. Worktrees buiten `$REPO_ROOT/worktrees/` zijn onverwacht: meld ze maar raak ze niet aan.
-- **gitignore**: `$REPO_ROOT/worktrees/.gitignore` bevat alleen `*` (negeert alles inclusief zichzelf). Wordt aangemaakt bij de eerste `new` als het nog niet bestaat. Voorkomt dirty state in de parent repo zonder geneste checkouts te beïnvloeden.
+- **grow** always creates in `$REPO_ROOT/worktrees/<branch>`
+- **prune** recognises linked worktrees via `git worktree list`. Worktrees outside `$REPO_ROOT/worktrees/` are unexpected: report them but do not touch them.
+- **gitignore**: `$REPO_ROOT/worktrees/.gitignore` contains only `*` (ignores everything including itself). Created on the first `new` if it does not yet exist. Prevents dirty state in the parent repo without affecting nested checkouts.
 
-## Dev server poorten
+## Dev server ports
 
-De main worktree draait dev servers op de standaard poort (meestal 3000). Worktrees moeten een andere poort gebruiken om conflicten te voorkomen.
+The main worktree runs dev servers on the standard port (usually 3000). Worktrees must use a different port to prevent conflicts.
 
-**Poortberekening**: deterministisch op basis van de worktree naam, in het bereik 3100-3999:
+**Port calculation**: deterministic based on the worktree name, in the range 3100-3999:
 
 ```bash
-WORKTREE_PORT=$(( 3100 + $(echo -n "<worktree-naam>" | cksum | awk '{print $1}') % 900 ))
+WORKTREE_PORT=$(( 3100 + $(echo -n "<worktree-name>" | cksum | awk '{print $1}') % 900 ))
 ```
 
-**Gebruik**: de meeste dev servers respecteren de `PORT` env var. De agent in de nieuwe worktree moet zelf uitzoeken welk commando de dev server start in dit project (`bin/dev`, `npm run dev`, `rails server`, `go run`, `uvicorn`, etc.) en de `PORT` waarde meegeven.
+**Usage**: most dev servers respect the `PORT` env var. The agent in the new worktree must figure out itself which command starts the dev server in this project (`bin/dev`, `npm run dev`, `rails server`, `go run`, `uvicorn`, etc.) and pass along the `PORT` value.
 
-De berekende poort wordt opgenomen in de start prompt (zie stap 2) zodat de worktree agent weet welke poort te gebruiken. De agent hoeft de poort niet zelf te berekenen.
+The calculated port is included in the start prompt (see step 2) so the worktree agent knows which port to use. The agent does not have to calculate the port itself.
 
 ---
 
 ## /bonsai new
 
-Maak een nieuwe worktree met branch en zet een start-commando voor de Claude sessie op het clipboard.
+Create a new worktree with a branch and place a start command for the Claude session on the clipboard.
 
-**Input**: branch naam (optioneel), start prompt (optioneel), base ref (optioneel, default `origin/$DEFAULT`).
+**Input**: branch name (optional), start prompt (optional), base ref (optional, default `origin/$DEFAULT`).
 
-Wanneer geen branch naam is meegegeven, leid er een af uit de context:
-- GitHub issue URL in het gesprek → gebruik issue titel als basis
-- Lopend onderwerp → beschrijf het doel in 2-3 woorden
-- Naamgeving: kebab-case, intent-revealing, geen prefixes (`feature/`, `fix/`). Bijvoorbeeld: `digital-twin-chart`, `android-permissions`, `s2-reconnect-fix`.
+When no branch name is provided, derive one from context:
+- GitHub issue URL in the conversation, use the issue title as a basis
+- Ongoing topic, describe the goal in 2-3 words
+- Naming: kebab-case, intent-revealing, no prefixes (`feature/`, `fix/`). For example: `digital-twin-chart`, `android-permissions`, `s2-reconnect-fix`.
 
-Wanneer geen start prompt is meegegeven maar er is wel context (issue URL, beschrijving van het werk), genereer een beknopte prompt die de nieuwe Claude sessie op gang helpt.
+When no start prompt is provided but there is context (issue URL, description of the work), generate a concise prompt that gets the new Claude session going.
 
-De start prompt bevat altijd de worktree-poort (zie "Dev server poorten"). Voeg toe aan elke gegenereerde prompt: `Dev server poort voor deze worktree: PORT=<berekende-poort>. Zoek uit wat je moet doen om de dev server van dit project te starten en geef PORT=<poort> mee. Gebruik NOOIT de standaard poort, de main worktree draait daar al op.`
+The start prompt always contains the worktree port (see "Dev server ports"). Add to every generated prompt: `Dev server poort voor deze worktree: PORT=<berekende-poort>. Zoek uit wat je moet doen om de dev server van dit project te starten en geef PORT=<poort> mee. Gebruik NOOIT de standaard poort, de main worktree draait daar al op.`
 
-### Stap 0: Preconditie check
+### Step 0: Precondition check
 
-`/bonsai new` zet het start-commando op het clipboard via `pbcopy` (macOS-only). Check dat het beschikbaar is voordat je iets aanmaakt:
+`/bonsai new` puts the start command on the clipboard via `pbcopy` (macOS-only). Check that it is available before creating anything:
 
 ```bash
 if ! command -v pbcopy >/dev/null 2>&1; then
@@ -114,36 +114,36 @@ if ! command -v pbcopy >/dev/null 2>&1; then
 fi
 ```
 
-Faalt het: stop meteen, geen worktree aanmaken, geen half werk achterlaten.
+If it fails: stop immediately, do not create a worktree, do not leave half-done work behind.
 
-### Stap 1: Maak worktree
+### Step 1: Create worktree
 
 ```bash
-# Self-ignoring gitignore (alleen bij eerste worktree)
+# Self-ignoring gitignore (only on first worktree)
 [ -f $REPO_ROOT/worktrees/.gitignore ] || echo '*' > $REPO_ROOT/worktrees/.gitignore
 
 git worktree add $REPO_ROOT/worktrees/<dir> -b <branch> origin/$DEFAULT
 ```
 
-Gebruik altijd het absolute pad via `$REPO_ROOT`, ongeacht de huidige CWD. Directory naam = branch naam. Slashes in branch namen worden dashes in de directory (bijv. `feature/foo` → `worktrees/feature-foo`).
+Always use the absolute path via `$REPO_ROOT`, regardless of the current CWD. Directory name = branch name. Slashes in branch names become dashes in the directory (e.g. `feature/foo` becomes `worktrees/feature-foo`).
 
-### Stap 1b: Kopieer project-bestanden
+### Step 1b: Copy project files
 
-Sommige projecten hebben bestanden nodig die niet in git staan (databases, `.env`, etc.).
+Some projects need files that are not in git (databases, `.env`, etc.).
 
-**Als `$REPO_ROOT/.bonsai` niet bestaat**: scan `.gitignore`'d bestanden die wel bestaan in de working tree. Typische kandidaten: `*.sqlite3`, `*.db`, `.env*`, `config/master.key`, `credentials.yml.enc`. Kandidaten gevonden? Schrijf de `.bonsai` direct, toon wat erin staat, en ga door. Geen vragen, geen bevestiging. De user heeft `/bonsai new` gezegd, niet "analyseer of ik bestanden nodig heb". Geen kandidaten gevonden? Sla deze stap over zonder `.bonsai` aan te maken.
+**If `$REPO_ROOT/.bonsai` does not exist**: scan `.gitignore`'d files that do exist in the working tree. Typical candidates: `*.sqlite3`, `*.db`, `.env*`, `config/master.key`, `credentials.yml.enc`. Found candidates? Write the `.bonsai` directly, show what it contains, and proceed. No questions, no confirmation. The user said `/bonsai new`, not "analyse whether I need files". No candidates found? Skip this step without creating a `.bonsai`.
 
-`.bonsai` staat in de global gitignore (`~/.gitignore`), dus het bestand mag vrijuit aangemaakt en aangepast worden zonder de repo dirty te maken.
+`.bonsai` lives in the global gitignore (`~/.gitignore`), so the file may be freely created and modified without making the repo dirty.
 
-**Als `$REPO_ROOT/.bonsai` bestaat**: kopieer de genoemde bestanden van de main worktree naar de nieuwe.
+**If `$REPO_ROOT/.bonsai` exists**: copy the listed files from the main worktree to the new one.
 
-**`.bonsai` formaat**: plain text, één pad per regel relatief aan de project root. Lege regels en `#` commentaar worden genegeerd.
+**`.bonsai` format**: plain text, one path per line relative to the project root. Empty lines and `#` comments are ignored.
 
 ```
-# SQLite database nodig om te serveren
+# SQLite database needed to serve
 db/development.sqlite3
 
-# Environment variabelen
+# Environment variables
 .env.local
 ```
 
@@ -158,21 +158,21 @@ if [ -f $REPO_ROOT/.bonsai ]; then
 fi
 ```
 
-Bestanden die niet bestaan worden stilzwijgend overgeslagen. Geen foutmelding, geen blocker.
+Files that do not exist are silently skipped. No error message, no blocker.
 
-### Stap 1c: Bereken worktree-poort
+### Step 1c: Calculate worktree port
 
 ```bash
-WORKTREE_PORT=$(( 3100 + $(echo -n "<worktree-naam>" | cksum | awk '{print $1}') % 900 ))
+WORKTREE_PORT=$(( 3100 + $(echo -n "<worktree-name>" | cksum | awk '{print $1}') % 900 ))
 ```
 
-Voeg de poort toe aan de start prompt (zie stap 2).
+Add the port to the start prompt (see step 2).
 
-### Stap 1d: Installeer dependencies
+### Step 1d: Install dependencies
 
-`node_modules`, `vendor/bundle` en vergelijkbare dependency directories worden niet door git getrackt en niet door `.bonsai` gekopieerd (te groot, symlinks, platform-specifiek). Zonder installatie faalt elke test-run of dev server op ontbrekende packages, en de failure modes zijn verraderlijk: "vite kan niet builden" in plaats van "dependencies ontbreken". Het kost een paar minuten bij creatie, maar voorkomt tien minuten debuggen later.
+`node_modules`, `vendor/bundle` and similar dependency directories are not tracked by git and not copied by `.bonsai` (too big, symlinks, platform-specific). Without installation every test run or dev server fails on missing packages, and the failure modes are treacherous: "vite cannot build" instead of "dependencies missing". It costs a few minutes at creation time, but prevents ten minutes of debugging later.
 
-Scan de worktree tot twee niveaus diep naar `package.json` en `Gemfile`. Voor elke match: draai het bijbehorende install commando in die directory.
+Scan the worktree two levels deep for `package.json` and `Gemfile`. For every match: run the corresponding install command in that directory.
 
 ```bash
 find "$WORKTREE_PATH" -maxdepth 2 -name "package.json" -not -path "*/node_modules/*" | while read -r manifest; do
@@ -188,13 +188,13 @@ find "$WORKTREE_PATH" -maxdepth 2 -name "Gemfile" -not -path "*/vendor/*" | whil
 done
 ```
 
-Install failures (missing tool, network error) worden gemeld maar blokkeren niet: de worktree is aangemaakt en de user kan handmatig herstellen. Andere package managers (pnpm, yarn, poetry, cargo, go mod) zijn nog niet gedekt; voeg ze toe wanneer ze in een project voorkomen.
+Install failures (missing tool, network error) are reported but do not block: the worktree has been created and the user can recover manually. Other package managers (pnpm, yarn, poetry, cargo, go mod) are not yet covered; add them when they appear in a project.
 
-### Stap 2: Zet start-commando op het clipboard
+### Step 2: Place start command on the clipboard
 
-Bouw een `cd <worktree> && claude "<prompt>"` commando en pipe het naar `pbcopy`. De prompt zit in een single-quoted heredoc binnen het commando, dus de doel-shell hoeft niets te escapen en de prompt mag vrij multi-line zijn met `$`, `!`, backticks et cetera. `${CLAUDE_CLI:-claude}` blijft letterlijk in het clipboard zodat de doel-shell de var op plak-moment evalueert.
+Build a `cd <worktree> && claude "<prompt>"` command and pipe it to `pbcopy`. The prompt sits in a single-quoted heredoc inside the command, so the target shell does not have to escape anything and the prompt may freely be multi-line with `$`, `!`, backticks et cetera. `${CLAUDE_CLI:-claude}` stays literal in the clipboard so the target shell evaluates the var at paste time.
 
-Met start prompt:
+With start prompt:
 
 ```bash
 pbcopy <<CLIP
@@ -207,7 +207,7 @@ BONSAI_PROMPT
 CLIP
 ```
 
-Zonder start prompt:
+Without start prompt:
 
 ```bash
 pbcopy <<CLIP
@@ -215,171 +215,171 @@ cd <worktree-path> && \${CLAUDE_CLI:-claude}
 CLIP
 ```
 
-De buitenste heredoc is unquoted, zodat `<worktree-path>` (door bonsai zelf gevuld) gesubstitueerd wordt; de `$`-tekens die letterlijk op het clipboard moeten landen zijn ge-escaped met backslash. De binnenste heredoc-delimiter `BONSAI_PROMPT` is single-quoted, zodat de doel-shell niets in de prompt expandeert.
+The outer heredoc is unquoted, so `<worktree-path>` (filled in by bonsai itself) gets substituted; the `$` characters that must land literally on the clipboard are escaped with a backslash. The inner heredoc delimiter `BONSAI_PROMPT` is single-quoted, so the target shell expands nothing in the prompt.
 
-### Stap 3: Bevestiging
+### Step 3: Confirmation
 
-> Worktree `<branch>` aangemaakt in `worktrees/<dir>`. Start-commando staat op je clipboard: plak het in een nieuwe pane/tab/terminal naar keuze.
+> Worktree `<branch>` created in `worktrees/<dir>`. Start command is on your clipboard: paste it into a new pane/tab/terminal of your choice.
 
 ---
 
 ## /bonsai prune
 
-Detecteert automatisch de modus op basis van context:
+Automatically detects the mode based on context:
 
 ```dot
 digraph prune {
     "In linked worktree?" [shape=diamond];
-    "Prune deze worktree" [shape=box];
-    "Prune alle ongebruikte" [shape=box];
+    "Prune this worktree" [shape=box];
+    "Prune all unused" [shape=box];
 
-    "In linked worktree?" -> "Prune deze worktree" [label="ja"];
-    "In linked worktree?" -> "Prune alle ongebruikte" [label="nee (main worktree)"];
+    "In linked worktree?" -> "Prune this worktree" [label="yes"];
+    "In linked worktree?" -> "Prune all unused" [label="no (main worktree)"];
 }
 ```
 
-Linked worktree detectie: `git rev-parse --git-dir` bevat `.git/worktrees/`.
+Linked worktree detection: `git rev-parse --git-dir` contains `.git/worktrees/`.
 
 ---
 
-### Prune: enkele worktree (vanuit linked worktree)
+### Prune: single worktree (from a linked worktree)
 
 #### Safety checks
 
-Voer alle checks uit en toon als één overzicht.
+Run all checks and show as one overview.
 
 **Uncommitted changes:**
 ```bash
 git status --porcelain
 ```
-Output aanwezig → **blocker**.
+Output present, **blocker**.
 
 **Unpushed commits:**
 ```bash
 git log origin/<branch>..<branch> --oneline 2>/dev/null
 ```
 
-Als `origin/<branch>` niet bestaat:
+If `origin/<branch>` does not exist:
 ```bash
 git ls-remote --heads origin <branch>
 ```
 
-- Geen remote branch + lokale commits → **blocker**: "Branch bestaat alleen lokaal. Push eerst."
-- Remote branch + unpushed commits → **blocker**: "Unpushed commits. Push eerst."
+- No remote branch + local commits, **blocker**: "Branch only exists locally. Push first."
+- Remote branch + unpushed commits, **blocker**: "Unpushed commits. Push first."
 
-**Is het werk geïntegreerd?** (bepaalt of lokale branch gepruned mag worden, GEEN blocker voor worktree)
+**Is the work integrated?** (determines whether the local branch may be pruned, NOT a blocker for the worktree)
 
 ```bash
-# Is branch HEAD ancestor van origin/$DEFAULT?
+# Is branch HEAD an ancestor of origin/$DEFAULT?
 git merge-base --is-ancestor <branch> origin/$DEFAULT
-# Exit 0 = geïntegreerd
+# Exit 0 = integrated
 
-# Vangnet voor zeldzame squash merges:
+# Safety net for rare squash merges:
 gh pr list --head <branch> --state merged --json number,title --jq '.[0]'
 ```
 
-#### Toon resultaat
+#### Show result
 
 ```
 Branch:    my-feature
 Worktree:  worktrees/my-feature
 Status:    ✓ Clean
-Remote:    ✓ Gepusht
-Werk:      ✓ Geïntegreerd (PR #1234 gemerged)
+Remote:    ✓ Pushed
+Work:      ✓ Integrated (PR #1234 merged)
 
-→ Worktree verwijderen en lokale branch prunen.
+→ Remove worktree and prune local branch.
 ```
 
-Varianten:
-- `○ Niet geïntegreerd (PR #1234 open)` → "Worktree verwijderen. Lokale branch blijft."
-- `✗ Uncommitted changes` → "Kan niet opruimen." Stop.
+Variants:
+- `○ Not integrated (PR #1234 open)`, "Remove worktree. Local branch stays."
+- `✗ Uncommitted changes`, "Cannot clean up." Stop.
 
-#### Opruimen
+#### Cleanup
 
-Eerst terug naar de repo root, zodat de CWD blijft bestaan na verwijdering:
+First go back to the repo root, so the CWD keeps existing after removal:
 
 ```bash
 cd $REPO_ROOT
-git worktree remove <worktree-path>    # nooit --force
-git branch -d <branch>                 # alleen als geïntegreerd, nooit -D
+git worktree remove <worktree-path>    # never --force
+git branch -d <branch>                 # only when integrated, never -D
 git worktree prune
 git worktree list
 ```
 
-> 🌳✂️ Worktree `<branch>` opgeruimd. Sluit deze sessie, de werkcontext is weg.
+> 🌳✂️ Worktree `<branch>` cleaned up. Close this session, the work context is gone.
 
 ---
 
-### Prune: alle worktrees (vanuit main worktree)
+### Prune: all worktrees (from the main worktree)
 
-#### Inventariseer
+#### Inventory
 
 ```bash
 git worktree list
 ```
 
-`worktrees/$DEFAULT` is per definitie overbodig.
+`worktrees/$DEFAULT` is by definition redundant.
 
-#### Classificeer per worktree
+#### Classify per worktree
 
-Voer de safety checks (hierboven) uit per worktree. Voor worktrees die niet de CWD zijn, gebruik `cd <path> && git status --porcelain` (nooit `git -C`).
+Run the safety checks (above) per worktree. For worktrees that are not the CWD, use `cd <path> && git status --porcelain` (never `git -C`).
 
-Classificatie:
+Classification:
 
-- **Geïntegreerd + clean** → verwijderen (automatisch, geen bevestiging)
-- **Geïntegreerd + dirty of extra commits** → vraag bevestiging
-- **Niet geïntegreerd, open PR** → worktree mag weg, branch blijft. Meld PR.
-- **Niet geïntegreerd, geen PR** → bewaren. Niet voorstellen om te verwijderen.
-- **Blockers** → overslaan, melden
+- **Integrated + clean**, remove (automatic, no confirmation)
+- **Integrated + dirty or extra commits**, ask for confirmation
+- **Not integrated, open PR**, worktree may go, branch stays. Report PR.
+- **Not integrated, no PR**, keep. Do not propose removal.
+- **Blockers**, skip, report
 
-#### Toon overzicht
+#### Show overview
 
 ```
-Worktree                  Branch            Actie
-worktrees/master          master            Verwijderd (redundant)
-worktrees/my-feature      my-feature        Verwijderd (gemerged)
-worktrees/open-work       open-work         Bewaren (PR #123 open)
-worktrees/experiment      experiment        Bewaren (niet geïntegreerd)
+Worktree                  Branch            Action
+worktrees/master          master            Removed (redundant)
+worktrees/my-feature      my-feature        Removed (merged)
+worktrees/open-work       open-work         Keep (PR #123 open)
+worktrees/experiment      experiment        Keep (not integrated)
 ```
 
-#### Main dir naar default branch
+#### Main dir to default branch
 
-Als de main working directory niet op `$DEFAULT` staat:
+If the main working directory is not on `$DEFAULT`:
 
 ```bash
 git switch $DEFAULT
 ```
 
-#### Resultaat
+#### Result
 
-Tabel van resterende worktrees:
+Table of remaining worktrees:
 
 ```
-| Directory          | Branch (als afwijkend) | Laatste activiteit | Status                |
-|--------------------|------------------------|--------------------|------------------------|
-| (main)             |                        |                    | master ✓              |
-| android-update     |                        | 2 dagen geleden    | PR #7193 (open, 3↑)  |
-| digital-twin-demo  |                        | 3 weken geleden    | Lokaal werk (5↑)     |
+| Directory          | Branch (when different) | Last activity      | Status                |
+|--------------------|-------------------------|--------------------|------------------------|
+| (main)             |                         |                    | master ✓              |
+| android-update     |                         | 2 days ago         | PR #7193 (open, 3↑)  |
+| digital-twin-demo  |                         | 3 weeks ago        | Local work (5↑)      |
 ```
 
-Kolommen:
-- **Laatste activiteit**: `git log -1 --format="%cr" <branch>`
-- **Status**: PR referentie, commits ahead (↑) / behind (↓) via `git rev-list --left-right --count origin/$DEFAULT...<branch>`, dirty indicator via `cd <worktree-path> && git status --porcelain`
+Columns:
+- **Last activity**: `git log -1 --format="%cr" <branch>`
+- **Status**: PR reference, commits ahead (↑) / behind (↓) via `git rev-list --left-right --count origin/$DEFAULT...<branch>`, dirty indicator via `cd <worktree-path> && git status --porcelain`
 
 ---
 
-## .bonsai detectie (auto-trigger)
+## .bonsai detection (auto-trigger)
 
-Wanneer je een `.bonsai` bestand tegenkomt in een repository (via `git status`, `ls`, file exploration), check of het bestand geignored wordt:
+When you encounter a `.bonsai` file in a repository (via `git status`, `ls`, file exploration), check whether the file is being ignored:
 
 ```bash
 git check-ignore -q .bonsai
 ```
 
-Exit 0 = geignored (goed). Exit 1 = niet geignored (probleem).
+Exit 0 = ignored (good). Exit 1 = not ignored (problem).
 
-**Niet geignored?** Meld aan de user:
+**Not ignored?** Report to the user:
 
-> `.bonsai` staat niet in je gitignore. Dit bestand bevat paden naar lokale bestanden (databases, keys) en hoort niet in de repo. Voeg `.bonsai` toe aan je global gitignore (`git config --global core.excludesfile` toont het pad) of aan de `.gitignore` van dit project.
+> `.bonsai` is not in your gitignore. This file contains paths to local files (databases, keys) and does not belong in the repo. Add `.bonsai` to your global gitignore (`git config --global core.excludesfile` shows the path) or to this project's `.gitignore`.
 
-Niet stilzwijgend fixen. De user moet weten dat de setup incompleet is, zodat het op al hun machines klopt.
+Do not silently fix. The user must know that the setup is incomplete, so it is correct on all of their machines.
