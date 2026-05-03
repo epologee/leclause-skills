@@ -6,7 +6,7 @@ The classic five-whys exercise, but autonomous and slightly deeper. Useful when 
 
 ## Commands
 
-### `/whywhy [n] <vraag, doel, of stelling>`
+### `/whywhy [n] <question, goal, or statement>`
 
 Generates an `n`-deep "why?" chain (default 7), then analyzes the chain for:
 

@@ -2,91 +2,91 @@
 name: whywhy
 user-invocable: true
 description: Use when the user types /whywhy with a question or goal to drill N layers deep autonomously (default 7). Claude asks and answers "why?" itself, then analyzes the chain for a better direction toward the goal.
-args: "[aantal] <vraag, doel, of stelling>"
+args: "[count] <question, goal, or statement>"
 ---
 
 # Why
 
-Stel N keer "waarom?" aan jezelf en beantwoord elke laag zelf. Analyseer daarna de keten voor een richting die het oorspronkelijke doel beter benadert. Gebaseerd op Toyota's 5 Whys, standaard uitgebreid naar 7 lagen.
+Ask yourself "why?" N times and answer each layer yourself. Then analyze the chain for a direction that better approaches the original goal. Based on Toyota's 5 Whys, extended to 7 layers by default.
 
-## Argumenten
+## Arguments
 
-`/whywhy [aantal] <vraag>`
+`/whywhy [count] <question>`
 
-- Als het eerste token een puur geheel getal is (bv. `10`), gebruik dat als aantal lagen en de rest als stelling.
-- Anders: default naar 7 lagen en gebruik de volledige input als stelling.
-- Minimum 3 lagen, maximum 20. Buiten dat bereik: clamp naar de grens en benoem het kort voordat je begint.
+- If the first token is a pure integer (e.g. `10`), use that as the number of layers and the rest as the statement.
+- Otherwise: default to 7 layers and use the full input as the statement.
+- Minimum 3 layers, maximum 20. Outside that range: clamp to the boundary and mention it briefly before starting.
 
-Voorbeelden:
-- `/whywhy werkt dit nog?` → 7 lagen
-- `/whywhy 10 werkt dit nog?` → 10 lagen
-- `/whywhy 5 waarom is deze PR zo groot?` → 5 lagen
+Examples:
+- `/whywhy werkt dit nog?` → 7 layers
+- `/whywhy 10 werkt dit nog?` → 10 layers
+- `/whywhy 5 waarom is deze PR zo groot?` → 5 layers
 
-## Wanneer
+## When to use
 
-- Een beslissing voelt onhelder of ongemotiveerd
-- Het doel is vaag en heeft scherpte nodig
-- Root cause analyse van een probleem
-- Self-improvement: waarom werkt iets niet zoals gewenst
-- De user wil begrijpen wat er echt onder een vraag zit
+- A decision feels unclear or unmotivated
+- The goal is vague and needs sharpening
+- Root cause analysis of a problem
+- Self-improvement: why something is not working as desired
+- The user wants to understand what really underlies a question
 
 ## Workflow
 
-### 1. Formuleer laag 0
+### 1. Formulate layer 0
 
-Neem de vraag, het doel, of de stelling die de user meegeeft als laag 0.
+Take the question, goal, or statement the user provides as layer 0.
 
-### 2. Doorloop N lagen
+### 2. Walk through N layers
 
-Stel jezelf een scherpe "waarom?" en beantwoord die. Bouw elke volgende vraag voort op het vorige antwoord.
+Ask yourself a sharp "why?" and answer it. Build each next question on the previous answer.
 
-**Slechte waarom:** "Waarom?" (kaal, lui)
-**Goede waarom:** "Waarom is die snelheid belangrijker dan de structurele kwaliteit?" (specifiek, confronterend)
+**Bad why:** "Why?" (bare, lazy)
+**Good why:** "Why is that speed more important than structural quality?" (specific, confronting)
 
-De vragen mogen ongemakkelijk zijn. Het doel is diepte, niet comfort. Rationaliseer niet. Als een antwoord een ongemakkelijke waarheid bevat, benoem die in plaats van eromheen te praten.
+The questions may be uncomfortable. The goal is depth, not comfort. Do not rationalize. If an answer contains an uncomfortable truth, name it instead of talking around it.
 
-**Bronnen gebruiken.** De antwoorden mogen niet puur uit modelgewichten komen wanneer ze verifieerbaar zijn. Gebruik Grep, Read, WebSearch waar relevant. Een "waarom werkt onze deploy zo traag?" verdient een blik in de codebase, niet alleen redenering.
+**Use sources.** Answers must not come purely from model weights when they are verifiable. Use Grep, Read, WebSearch where relevant. A "why does our deploy run so slowly?" deserves a look at the codebase, not just reasoning.
 
-### 3. Toon de keten
+### 3. Show the chain
 
-Vervang `N` door het daadwerkelijke aantal lagen in de heading en in de laatste laag.
+Replace `N` with the actual number of layers in the heading and in the final layer.
 
 ```
-## Nx Why: [oorspronkelijke stelling]
+## Nx Why: [original statement]
 
-**0.** [stelling]
-**1.** Waarom [vraag]?
-   [antwoord]
-**2.** Waarom [vraag]?
-   [antwoord]
+**0.** [statement]
+**1.** Why [question]?
+   [answer]
+**2.** Why [question]?
+   [answer]
 ...
-**N.** Waarom [vraag]?
-   [antwoord]
+**N.** Why [question]?
+   [answer]
 ```
 
-### 4. Analyseer
+### 4. Analyze
 
-Zoek patronen in de keten:
+Look for patterns in the chain:
 
-| Patroon | Betekenis |
-|---------|-----------|
-| Convergentie | Meerdere lagen wijzen naar hetzelfde thema. Dat is de kern. |
-| Breukpunt | Een laag waar het antwoord van richting verandert. Daar zit een onuitgesproken aanname. |
-| Cirkel | Een antwoord herhaalt een eerdere laag. De cirkel zelf is het inzicht. |
-| Verdieping | Elk antwoord gaat een laag dieper. De laatste laag is het meest waardevol. |
+| Pattern | Meaning |
+|---------|---------|
+| Convergence | Multiple layers point to the same theme. That is the core. |
+| Breakpoint | A layer where the answer changes direction. An unspoken assumption lives there. |
+| Circle | An answer repeats an earlier layer. The circle itself is the insight. |
+| Deepening | Each answer goes one layer deeper. The final layer is the most valuable. |
 
-### 5. Herkadering en richting
+### 5. Reframing and direction
 
-Formuleer:
-1. **Wat opvalt** in de keten (patronen, breukpunten)
-2. **Herkadering** van het oorspronkelijke doel vanuit de diepste laag
-3. **Vervolgrichting**: een concrete suggestie om het doel beter te benaderen
+Formulate:
+1. **What stands out** in the chain (patterns, breakpoints)
+2. **Reframing** of the original goal from the deepest layer
+3. **Next direction**: a concrete suggestion to better approach the goal
 
-De richting is een voorstel, geen conclusie. De user beslist.
+The direction is a proposal, not a conclusion. The user decides.
 
-## Regels
+## Rules
 
-- **Eerlijk boven comfortabel.** Een waarom-keten die alleen bevestigt wat je al dacht is waardeloos.
-- **Specifiek boven abstract.** "Omdat het beter is" is geen antwoord. Beter hoe? Voor wie? Waarom?
-- **Geen herhaling.** Als een antwoord op laag 5 lijkt op laag 3, benoem de cirkel en breek erdoorheen.
-- **Kort per laag.** Elk antwoord maximaal 2-3 zinnen. De kracht zit in de keten, niet in de individuele antwoorden.
+- **Honest over comfortable.** A why-chain that only confirms what you already thought is worthless.
+- **Specific over abstract.** "Because it is better" is not an answer. Better how? For whom? Why?
+- **No repetition.** If an answer at layer 5 resembles layer 3, name the circle and break through it.
+- **Brief per layer.** Each answer at most 2-3 sentences. The power lies in the chain, not in the individual answers.
