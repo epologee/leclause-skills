@@ -337,7 +337,7 @@ validate_body() {
     done <<< "$tests_paths"
 
     # Validate path format for at least one entry.
-    local path_re='[a-zA-Z0-9_./-]+\.(rb|py|js|ts|go|sh|bash|bats|feature|tsx|jsx)$'
+    local path_re='[a-zA-Z0-9_./ -]+\.(rb|py|js|ts|go|sh|bash|bats|feature|tsx|jsx|swift)$'
     local has_valid_format=0
     while IFS= read -r path; do
       local clean_path="${path%%#*}"
