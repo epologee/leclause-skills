@@ -8,28 +8,28 @@ Reference baseline: 32x32 device-pixel canvas-PNG favicon, dark squircle plus or
 
 ## Floors
 
-| Axis | Floor (delta) | Type | Notes |
-|------|---------------|------|-------|
-| frame.w | 0 | reachable | Use `width:16px` and `flex-shrink:0` to lock the bbox. Without `flex-shrink:0` a parent flex container can squeeze the pill below 16. |
-| frame.h | 0 | reachable | Same as frame.w with `height:16px`. |
-| ink.w | 1 device px | irreducible | CSS-text and canvas-text differ on glyph advance widths by 1 device pixel for "31" at DPR 2. |
-| ink.h | 0..1 device px | reachable | Cap-height matches across pipelines for sans-serif at small sizes. |
-| pad.top/bottom | 0..1 device px | reachable | The 0.25 CSS-pixel asymmetry caused by font ascent vs descent rasterizes to 1 device px at DPR 2. Either accept (Arnheim bias up) or use `[&>span]:translate-y-[0.25px]` to shift the asymmetry. |
-| pad.left/right | 0..1 device px | reachable | Glyph metrics produce sub-pixel asymmetry similar to vertical. |
-| corner.TL/TR/BL/BR (diag) | 0 | reachable | Pure CSS border-radius can match the canvas's nearest-curve-point inset to within 1 px. |
-| bgDiag.* | irreducible to 0 | irreducible | At the corner pixel (0,0) of the frame bbox, CSS border-radius leaves a pure BG pixel where the canvas-PNG has an EDGE pixel due to AA. The corner pixel itself cannot be painted by any border-radius value. Only `filter:blur` or `box-shadow` can reduce this floor. |
-| aaDiag.* | irreducible to 0 | irreducible | Mirror of bgDiag. CSS border-radius produces 0 EDGE pixels in the corner; canvas-PNG produces 2-4. `filter:blur(0.3px)` reduces the floor at the cost of glyph blur. |
-| edgeExt.* (legacy) | 1-2 px | reachable | Sum of bgExt and aaExt; can be matched by tuning border-radius, but the SUM matches while the SPLIT does not (this is why the split exists). |
-| bgExt.* | irreducible without filter | irreducible | Same source as bgDiag: CSS hard cutoff vs canvas soft fade. |
-| aaExt.* | irreducible without filter | irreducible | Same source as aaDiag. |
-| halo.* | irreducible to ~3 EDGE pixels | irreducible | Canvas-PNG produces ~5-7 EDGE pixels in the 5x5 corner block; CSS produces 0-3. `filter:blur(0.3-0.5px)` raises CSS halo to match. |
-| hist.INK | reducible to <2% | reachable | Tune font-size and font-weight to match the favicon's ink area. |
-| hist.FRAME | reducible to <2% | reachable | Follows from hist.INK plus border-radius (corners trade FRAME for BG/EDGE). |
-| hist.EDGE | irreducible to ~3% delta | irreducible | CSS hard edges produce few EDGE pixels; canvas AA produces ~8%. `filter:blur` closes the gap. |
-| hist.BG | irreducible to ~2% delta | irreducible | Inverse of hist.EDGE: CSS leaves BG where canvas has EDGE. |
-| ms.32x32.meanRGB | <2 RGB units | reachable | Coarse-scale color balance is matchable. |
-| ms.1x1.meanRGB | <8 RGB units | irreducible-when-corner-AA-differs | When AA halos differ, the integrated color over the whole frame differs at 1x1. Floor follows the AA-axes. |
-| pixel diff | 15-25% | irreducible | Cross-pipeline AA on glyph and corner pixels produces inevitable per-pixel deltas at threshold 24/255. The exact floor depends on glyph rendering: bolder weights on the candidate close the digit-AA gap and lower the floor toward 15%; defaults sit around 20%. |
+| Axis | Floor (delta) | Type | Citation case | Notes |
+|------|---------------|------|---------------|-------|
+| frame.w | 0 | reachable | identical-favicon-twin: 0 | `width:16px` plus `flex-shrink:0` locks bbox. Parent flex without shrink-lock squeezes the pill. |
+| frame.h | 0 | reachable | identical-favicon-twin: 0 | Same with `height:16px`. |
+| ink.w | 5 px observed (typical 1-3) | irreducible | pill-radius-3-borderline: -5 | CSS-text and canvas-text differ on glyph advance for "31" at DPR 2. The 5-pixel delta is for the radius-3 borderline case where `font-size:9` did not match the favicon's `font-size:38` (downscaled). Even at matched sizes, expect a 1 px residual. |
+| ink.h | 1 px | reachable | pill-radius-3-borderline: 0 | Matched at default settings. |
+| pad.top/bottom | 1 device px | reachable | pill-radius-3-borderline: pad.top -1, pad.bottom +1 | 0.25 CSS-pixel asymmetry from font ascent vs descent rasterizes to 1 device px at DPR 2. |
+| pad.left/right | 2-3 device px | reachable | pill-radius-3-borderline: pad.right +3, pad.left +2 | Glyph metrics asymmetry. Closes with letter-spacing tuning. |
+| corner.TL/TR/BL/BR (diag) | 0 | reachable | pill-radius-3-borderline: corner.* all 0 | Border-radius matches the canvas's nearest-curve-point. |
+| bgDiag.* | 1-2 device px | irreducible | pill-radius-3-borderline: bgDiag.TL +2 | CSS border-radius leaves the (0,0) corner pixel pure BG; canvas-PNG paints it with AA. |
+| aaDiag.* | 1-2 device px | irreducible | pill-radius-3-borderline: aaDiag.TL -2 | Mirror of bgDiag: CSS produces 0 EDGE in the corner; canvas produces 2-4. `filter:blur(0.3px)` reduces at glyph-blur cost. |
+| edgeExt.* (legacy) | 1-2 px | reachable | pill-radius-3-borderline: edgeExt.TR +2 | Sum of bgExt and aaExt. The sum matches while the split exposes the cross-pipeline mismatch. |
+| bgExt.* | 1-3 device px | irreducible without filter | pill-radius-3-borderline: bgExt.TL +3 | Same source as bgDiag: CSS hard cutoff vs canvas soft fade. |
+| aaExt.* | 1-2 device px | irreducible without filter | pill-radius-3-borderline: aaExt.TL -2 | Same source as aaDiag. |
+| halo.* | 2-3 EDGE pixels | irreducible | pill-radius-3-borderline: halo.TR +3 | Canvas produces 5-7 EDGE pixels in the 5x5 corner block; CSS produces 0-3. `filter:blur(0.3-0.5px)` raises CSS halo. |
+| hist.INK | 2-3% | reachable | pill-radius-3-borderline: hist.INK -2.05 | Tune font-size and font-weight. |
+| hist.FRAME | 1-2% | reachable | pill-radius-3-borderline: hist.FRAME +0.20 | Follows hist.INK plus border-radius. |
+| hist.EDGE | 1-3% delta | irreducible | pill-radius-3-borderline: hist.EDGE -0.49 | Often passes; raises only when AA halos diverge sharply. |
+| hist.BG | 1-2% delta | reachable | pill-radius-3-borderline: hist.BG +0.69 | Inverse of hist.EDGE. |
+| ms.32x32.meanRGB | <5 RGB units | reachable | pill-radius-3-borderline: (-1.5, 2.5, 5.6) | Coarse-scale color balance matches. |
+| ms.1x1.meanRGB | <8 RGB units typical, up to 15 | irreducible-when-corner-AA-differs | favicon-vs-pill-radius-2-too-tight: 1x1 delta (5,4,5) | Integrated color follows the AA axes. |
+| pixel diff | 22-37% | irreducible | pill-radius-3-borderline: 30.37%, pill-radius-2: 30.08%, pill-radius-5: 37.60% | Cross-pipeline AA on glyph and corner pixels at threshold 24/255. |
 
 ## Implications for confidence
 

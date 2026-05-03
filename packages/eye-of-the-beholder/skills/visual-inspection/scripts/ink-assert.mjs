@@ -81,18 +81,20 @@ function cornerHaloCount(img, anchors, tol, fr, c) { const x0 = c==='TL'||c==='B
 function classCounts(img, anchors, tol, fr) { const c = { INK:0,FRAME:0,EDGE:0,BG:0 }; for (let y = fr.mny; y <= fr.mxy; y++) for (let x = fr.mnx; x <= fr.mxx; x++) c[classify(rgb(img, x, y), anchors, tol)]++; return c }
 function multiScale(p, fr, anchors, tol) { const cropPath = `${SCRATCH}/mscrop.png`; execSync(`ffmpeg -y -v error -i "${p}" -vf "crop=${fr.w}:${fr.h}:${fr.mnx}:${fr.mny}" "${cropPath}"`); const scales = []; let cw = fr.w, ch = fr.h, cp = cropPath, step = 0; while (cw>=1&&ch>=1) { const img = readImage(cp); let sR=0,sG=0,sB=0; const counts = {INK:0,FRAME:0,EDGE:0,BG:0}; for (let y=0;y<img.h;y++) for (let x=0;x<img.w;x++) { const c = rgb(img,x,y); sR+=c[0]; sG+=c[1]; sB+=c[2]; counts[classify(c, anchors, tol)]++ } const t = img.w*img.h; scales.push({step,w:img.w,h:img.h,mean:{r:round(sR/t,1),g:round(sG/t,1),b:round(sB/t,1)},counts,pct:{INK:100*counts.INK/t,FRAME:100*counts.FRAME/t,EDGE:100*counts.EDGE/t,BG:100*counts.BG/t}}); if (cw===1&&ch===1) break; const nw = Math.max(1,Math.round(cw/2)), nh = Math.max(1,Math.round(ch/2)); if (nw===cw&&nh===ch) break; const np = `${SCRATCH}/ms${step+1}.png`; execSync(`ffmpeg -y -v error -i "${cp}" -vf "scale=${nw}:${nh}:flags=area" "${np}"`); if (step>0) try { fs.unlinkSync(cp) } catch (_) {}; cw = nw; ch = nh; cp = np; step++ } try { fs.unlinkSync(cp) } catch (_) {}; try { fs.unlinkSync(cropPath) } catch (_) {}; return scales }
 function pixelDiff(refImg, candImg, threshold) { const rB = bbox(refImg, refImg.anchors, 60, k => k==='FRAME'||k==='INK'||k==='EDGE'); const cB = bbox(candImg, candImg.anchors, 60, k => k==='FRAME'||k==='INK'||k==='EDGE'); if (!rB||!cB) return { error: 'frame not found' }; const rC = `${SCRATCH}/r.png`, cC = `${SCRATCH}/c.png`; execSync(`ffmpeg -y -v error -i "${refImg.path}" -vf "crop=${rB.w}:${rB.h}:${rB.mnx}:${rB.mny}" "${rC}"`); execSync(`ffmpeg -y -v error -i "${candImg.path}" -vf "crop=${cB.w}:${cB.h}:${cB.mnx}:${cB.mny},scale=${rB.w}:${rB.h}:flags=bicubic" "${cC}"`); const r = readImage(rC), c = readImage(cC); let total = 0, diff = 0; for (let y=0;y<r.h;y++) for (let x=0;x<r.w;x++) { const i = (y*r.w+x)*3; const d = Math.max(Math.abs(r.px[i]-c.px[i]), Math.abs(r.px[i+1]-c.px[i+1]), Math.abs(r.px[i+2]-c.px[i+2])); total++; if (d > threshold) diff++ } fs.unlinkSync(rC); fs.unlinkSync(cC); return { total, diff, percent: 100*diff/total } }
-// autoBg averages the four bbox corners. If those four pixels disagree by more than 30 RGB units
-// (max channel range), the image background is non-uniform (gradient, transparency leak, neighbouring
-// UI bleeding into the crop) and the auto-detected anchor will silently misclassify pixels. Print a
-// warning to stderr so the caller knows to pass --bg explicitly. Does not throw, since the rest of the
-// pipeline can still produce useful per-axis numbers.
+// autoBg averages the four bbox corners. When those four pixels disagree, the image has a non-uniform
+// background (gradient, transparency leak, neighbouring UI bleeding into the crop) and the auto-detected
+// anchor will silently misclassify pixels. AUTO_BG_SPREAD_THRESHOLD is the max acceptable per-channel
+// range across the four corners; values above it warn to stderr. The threshold is set just below the
+// classify() tolerance default (60) to catch cases where the bg uncertainty would already affect class
+// boundaries; tighter would chatter on benign jpeg-style noise, looser would silently pass real bleed.
+const AUTO_BG_SPREAD_THRESHOLD = 30
 function autoBg(img) {
   const c = [rgb(img,0,0), rgb(img,img.w-1,0), rgb(img,0,img.h-1), rgb(img,img.w-1,img.h-1)]
   const mn = c[0].map((_, i) => Math.min(...c.map((p) => p[i])))
   const mx = c[0].map((_, i) => Math.max(...c.map((p) => p[i])))
   const spread = Math.max(mx[0]-mn[0], mx[1]-mn[1], mx[2]-mn[2])
-  if (spread > 30) {
-    console.error(`ink-assert: warning: autoBg corner spread is ${spread} RGB units (>30). Background is non-uniform; pass --bg R,G,B explicitly to avoid silent misclassification. Corners:`, c.map((p) => `(${p.join(',')})`).join(' '))
+  if (spread > AUTO_BG_SPREAD_THRESHOLD) {
+    console.error(`ink-assert: warning: autoBg corner spread is ${spread} RGB units (>${AUTO_BG_SPREAD_THRESHOLD}). Background is non-uniform; pass --bg R,G,B explicitly to avoid silent misclassification. Corners:`, c.map((p) => `(${p.join(',')})`).join(' '))
   }
   return c.reduce((a,x) => [a[0]+x[0],a[1]+x[1],a[2]+x[2]], [0,0,0]).map(s => Math.round(s/4))
 }

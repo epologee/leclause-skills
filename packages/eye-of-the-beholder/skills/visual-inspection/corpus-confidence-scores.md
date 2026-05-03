@@ -31,8 +31,10 @@ Re-run after any of these changes and overwrite this file:
 
 The procedure is the bash loop documented in the comment of this file's source commit; the `corpus-confidence-scores` artefact is empirical, not derived.
 
-## Calibration goals
+## What this document is, and is not
 
-The 95-threshold serves a specific purpose: it is the bar above which a candidate is interchangeable with the reference for the operator's eye. A bit-perfect twin must score 100. A clear mismatch must score below 95. Borderline cases must score below 95 but well above 0; their distance from 95 is a measure of how far the candidate sits from the irreducible cross-pipeline floor.
+This is a descriptive snapshot of how the current weights score the current corpus. It is not a validation that the weights generalise. The weights were chosen by hand, then sanity-checked on the corpus that already existed. There is no held-out validation set; the corpus and the weights co-evolved.
 
-The current weights satisfy these constraints on the corpus. If a future case violates them (a clear mismatch scoring above 95, or a perfect twin scoring below 95), that case is the trigger to revisit the weights, not a reason to widen the threshold.
+That means: a future case the corpus does not yet cover (a different glyph, a different reference pipeline, a different display size) may score in a band that surprises the operator. The corpus is small. The numbers above describe today's behaviour on today's cases, no more.
+
+The 95-threshold is a design intent: a candidate that scores 95+ should be interchangeable with the reference for the operator's eye. The current scores satisfy that intent on the current corpus. They were not derived to satisfy it; they were tuned until they did. The distinction matters for honest expectations.
