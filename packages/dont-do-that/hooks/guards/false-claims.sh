@@ -22,5 +22,5 @@ guard_false_claims() {
     | grep -qiE "pre-existing (failure|test|error|bug|issue|problem)|bestond(en)? al|reeds bestaand|al bestaand|niet gerelateerd aan (deze|mijn|onze) wijziging|known (issue|bug|flak)|bekende (bug|fout|issue)|was al (stuk|kapot|broken)|already fail" \
     || return 0
 
-  dd_emit_block pre-existing "Boy Scout: fix het. Uitzondering: parallel werk in zelfde dir (formuleer zo)."
+  dd_emit_block pre-existing "Boy Scout rule: fix it. Exception: parallel work in the same directory (formulate it that way)."
 }

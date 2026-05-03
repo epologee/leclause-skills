@@ -1,6 +1,6 @@
 #!/bin/bash
 # Stop guard. Blocks verification delegation to the user.
-# Pass by prefixing the conclusion with "Geverifieerd:" after actually verifying.
+# Pass by prefixing the conclusion with "Geverifieerd:" (verified) after actually verifying.
 
 guard_verify() {
   local input="$1"
@@ -24,11 +24,11 @@ guard_verify() {
   action=$(grep -ciE "(refresh de (pagina|browser)|herlaad de (pagina|browser)|probeer (het |de pagina |opnieuw)?(te |eens)?|restart de (server|app)|herstart de (server|app)|try (refreshing|reloading|again|it)|reload the (page|browser))" <<< "$filtered")
 
   if [ "$claim" -gt 0 ] 2>/dev/null; then
-    dd_emit_block verify "Onbewezen claim. Verifieer zelf, start met 'Geverifieerd:'."
+    dd_emit_block verify "Unverified claim. Verify yourself and start with 'Geverifieerd:'."
   elif [ "$check" -gt 0 ] 2>/dev/null; then
-    dd_emit_block verify "Verificatie delegeren. Doe zelf, start met 'Geverifieerd:'."
+    dd_emit_block verify "Verification delegated. Do it yourself and start with 'Geverifieerd:'."
   elif [ "$action" -gt 0 ] 2>/dev/null; then
-    dd_emit_block verify "Actie-delegatie. Doe zelf, start met 'Geverifieerd:'."
+    dd_emit_block verify "Action delegated. Do it yourself and start with 'Geverifieerd:'."
   fi
   return 0
 }

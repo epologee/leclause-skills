@@ -25,5 +25,5 @@ guard_compliance() {
     | grep -qiE "(bedoel je|do you mean|of (wil je|wilt u)|or (do you|would you)|is dit beter|is this better|welke (van|optie)|which (of|option)|[0-9]+ (issues|bestanden|items|punten|commits|stappen))" \
     && return 0
 
-  dd_emit_block compliance "'?' einde: dubbelcheck, geen zweep. Reflex-ask of afgebroken output? Beantwoord zelf op eigen tempo, of markeer bewust: 🧭 (genuine user-keuze), 🏁 (klaar)."
+  dd_emit_block compliance "'?' ending: double-check, not a whip. Reflex-ask or truncated output? Answer it yourself at your own pace, or mark deliberately: 🧭 (genuine user-choice), 🏁 (done)."
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 # PreToolUse:Bash guard. Denies gh api POSTs whose body contains deferral
 # phrases ("follow-up", "wordt opgepakt", "buiten scope", ...) unless the
-# body starts with "Bewust uitgesteld:".
+# body starts with "Bewust uitgesteld:" (deliberate deferral escape token).
 # Passed: guard_followup "$INPUT_JSON"
 
 guard_followup() {
@@ -27,7 +27,7 @@ guard_followup() {
         case "$command" in
           *"Bewust uitgesteld:"*) return 0 ;;
         esac
-        dd_emit_deny followup "Deferral-taal ('$p') zonder goedkeuring. Prefix 'Bewust uitgesteld:' of fix nu."
+        dd_emit_deny followup "Deferral language ('$p') without approval. Prefix 'Bewust uitgesteld:' or fix it now."
         ;;
     esac
   done

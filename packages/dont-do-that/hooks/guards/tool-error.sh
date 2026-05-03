@@ -43,5 +43,5 @@ guard_tool_error() {
 
   echo "$((count + 1))" > "$nudge_file"
   echo "$current" > "$line_file"
-  dd_emit_block tool-error "Laatste tool call faalde. Analyseer de error en retry."
+  dd_emit_block tool-error "Last tool call failed. Analyse the error and retry."
 }

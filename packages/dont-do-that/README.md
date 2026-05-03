@@ -68,7 +68,7 @@ These hooks scan assistant transcripts for trigger phrases. Documenting or discu
 
 ## Language
 
-Trigger patterns match both Dutch and English phrasing. Messages are in Dutch.
+Trigger patterns match both Dutch and English phrasing. Messages are in English. Some escape tokens remain Dutch (`Bewust uitgesteld:`, `Geverifieerd:`) because they are deliberate trigger words that Claude must type verbatim to pass a guard.
 
 ## Tests
 

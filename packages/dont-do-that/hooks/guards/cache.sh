@@ -12,5 +12,5 @@ guard_cache() {
     | grep -qiE "(het probleem is|komt door|ligt aan|veroorzaakt door|schuld van).*(cache|gecachet)|(cache|gecachet).*(stale|verouderd|invalide|probleem|oorzaak)|wacht.*(cache|10 minuten).*invalideer|browser.*(cache|gecachet|oude.*versie)|hard.refresh|Cmd.*Shift.*R|esbuild.*watcher.*(niet|cache)|oude.*(JS|javascript|bundle|assets)" \
     || return 0
 
-  dd_emit_block cache "Cache is geen oorzaak op localhost. Zoek root cause."
+  dd_emit_block cache "Cache is not the cause on localhost. Find the actual root cause."
 }

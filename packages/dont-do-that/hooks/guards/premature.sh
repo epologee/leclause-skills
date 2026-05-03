@@ -18,7 +18,7 @@ guard_premature() {
       local has_prior
       has_prior=$(tail -200 "$tr" | jq -r 'select(.type == "assistant") | .type' 2>/dev/null | head -1)
       if [ -n "$has_prior" ]; then
-        dd_emit_block premature "Chain stopte zonder tekst. Schrijf wat je deed, de uitkomst, en of je doorgaat of klaar bent."
+        dd_emit_block premature "Chain stopped without text. Write what you did, the outcome, and whether you are continuing or done."
       fi
     fi
     return 0
@@ -32,10 +32,10 @@ guard_premature() {
   tail -c 500 <<< "$text" | grep -q '?' && has_question=1
 
   if [ "$has_flag" -eq 1 ] && [ "$has_question" -eq 1 ]; then
-    dd_emit_block premature "🏁 + ? tegenstrijdig. Klaar = geen vraag. Kies."
+    dd_emit_block premature "🏁 + ? contradictory. Done = no question. Choose."
   fi
   if [ "$has_gate" -eq 1 ] && [ "$has_question" -eq 1 ]; then
-    dd_emit_block premature "🚦 + ? dubbelvraag. 🚦 is al de vraag. Haal ? weg."
+    dd_emit_block premature "🚦 + ? double question. 🚦 is already the question. Remove the ?."
   fi
 
   # Hand off to compliance when a trailing question is present.
@@ -43,14 +43,14 @@ guard_premature() {
 
   if [ "$has_flag" -eq 1 ]; then
     _dd_premature_substance "$text" && return 0
-    dd_emit_block premature "🏁 alleen is geen afsluiting. Schrijf een volzin + 🏁."
+    dd_emit_block premature "🏁 alone is not a closing. Write a full sentence + 🏁."
   fi
   if [ "$has_gate" -eq 1 ]; then
     _dd_premature_substance "$text" && return 0
-    dd_emit_block premature "🚦 alleen is geen pauze. Schrijf een volzin waarop je wacht + 🚦. Eenmaal surface is genoeg; daarna 🏁 ook prima."
+    dd_emit_block premature "🚦 alone is not a pause. Write a full sentence stating what you are waiting for + 🚦. One surface is enough; 🏁 works fine after that."
   fi
 
-  dd_emit_block premature "Werk door, of eindig met 🏁 (klaar, ook met onpushed commits) / 🚦 (wacht op externe go) + volzin."
+  dd_emit_block premature "Keep working, or end with 🏁 (done, including unpushed commits) / 🚦 (waiting on external go) + a full sentence."
 }
 
 # _dd_premature_substance <text>
