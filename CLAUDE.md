@@ -2,6 +2,19 @@
 
 # Instructions for Claude Code
 
+## Language
+
+This entire repository is in English: source code, comments, commit
+messages, READMEs, SKILL.md bodies, BATS test names, error messages,
+CHANGELOG entries, and any new documentation. The marketplace is
+consumed by users worldwide and frequently loaded into mixed-language
+Claude sessions, so the canonical language must be English even when
+the operator and the agent talk to each other in another language. A
+handful of Dutch key-phrases survive inside hook diagnostics (operator
+notes that the upstream maintainer kept Dutch on purpose); do not
+translate those, but never introduce new ones. When in doubt, write
+English.
+
 ## Authoring a new plugin
 
 Two rules that keep plugins portable across Mac, Linux, and Windows:
