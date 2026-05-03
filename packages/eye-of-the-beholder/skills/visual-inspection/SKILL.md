@@ -93,6 +93,7 @@ The skill ships three executable files under `scripts/` and two reference docume
 - `scripts/run-corpus.mjs`: self-test runner. Iterates `cases/`, runs ink-assert per case, prints a confusion matrix (truePass, trueFail, falsePass, falseFail, borderline), exits 0 only when falsePass=0 AND falseFail=0.
 - `direction-matrix.md`: per-axis direction effect of every tunable CSS knob (border-radius, padding, font-size, font-weight, letter-spacing, filter:blur, box-shadow). Tells you which knob to move when an axis fails in which direction.
 - `pipeline-floors.md`: per-axis irreducible delta when comparing CSS-pill against canvas-PNG-favicon. Tells you when a residual delta is the cross-pipeline rasterization floor versus a fixable axis.
+- `corpus-confidence-scores.md`: empirical calibration of the `--confidence` score against the validation corpus. Match cases score 100, mismatch cases score 0..61, borderline cases score 40..48 at the time of writing.
 
 When `--confidence` reports below 95, consult `direction-matrix.md` for the knob to move and `pipeline-floors.md` for the floor on that axis. When all failing axes are at their floor, the gate has reached the irreducible cross-pipeline limit and a higher score requires changing the rendering pipeline (e.g., replacing the CSS pill with an inline SVG mirror of the canvas).
 

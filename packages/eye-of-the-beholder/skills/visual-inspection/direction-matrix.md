@@ -27,9 +27,9 @@ Reference baseline for the matrix: a 32x32 device-pixel canvas-PNG favicon with 
 | hist.FRAME | ↑ | ↑ | ↓ | ↓ | ↓ | ↓ | ↑ |
 | hist.EDGE | ↑ | 0 | 0 | 0 | 0 | ↑ | ↑ |
 | hist.BG | ↓ | ↓ | 0 | 0 | 0 | ↓ | ↓ |
-| ms.32x32.meanRGB | 0 | ? | ? | ? | ? | ? | ? |
-| ms.1x1.meanRGB | ↕ | ↕ | ? | ? | ? | ? | ? |
 | pixel diff | ↕ | ↕ | ↕ | ↕ | ↕ | ↓ (small) | ↕ |
+
+The multi-scale meanRGB axes (`ms.32x32` through `ms.1x1`) are intentionally absent from this matrix. Their value at a given scale is an integral over the frame area, so the direction depends on which classes the integral happens to mix. A row marked `↕` everywhere is uninformative; the operator should read `ms.*` axes as final tightness checks rather than as iteration targets, and tune the structural axes above (frame, ink, padding, corners) to drive `ms.*` toward the reference indirectly.
 
 ## Notes
 

@@ -12,15 +12,17 @@ cases/<case-name>/
 
 ## Verdict semantics
 
-- **match**: the two images should pass the gate at default tolerances. The tool MUST classify this case as PASS or its accuracy is broken on the easy direction.
-- **mismatch**: the two images should fail the gate at default tolerances. The tool MUST classify this case as FAIL or its accuracy is broken on the hard direction.
-- **borderline**: the case sits at the cross-pipeline floor or close to a tolerance boundary. The tool MAY classify either way, but should expose the relevant axis as informational. Borderline cases are validation aids, not pass/fail anchors; they exist so the corpus runner can show that the tool's confidence score reflects the proximity to the floor.
+- **match**: the two images are visually equivalent at the resolution the operator viewed them. The corpus runner expects the tool to classify this case as PASS at default tolerances.
+- **mismatch**: the two images are visually distinguishable. The corpus runner expects the tool to classify this case as FAIL at default tolerances.
+- **borderline**: the case sits near a cross-pipeline floor or a tolerance boundary. Either binary classification is acceptable; the value of these cases is the confidence score they produce, which should land in a middle band. They are diagnostic aids, not pass/fail anchors.
 
-## When the corpus runner says "FAIL on case X"
+## When the corpus runner reports a misclassification
 
-If the tool classifies a `match` case as FAIL, the gate is too strict on the relevant axis (or the axis is wrong-direction). If the tool classifies a `mismatch` case as PASS, the axis-set is missing the dimension that distinguishes the two images. Either fix is a real change to the tool, not a tolerance shuffle.
+A `match` case classified as FAIL means a tolerance is too strict for the visual reality, or an axis points in the wrong direction. A `mismatch` case classified as PASS means the axis-set is missing the dimension that distinguishes the two images. Either is a real change to the tool, not a tolerance shuffle.
 
-The corpus is the regression suite: every new axis added must keep all `match` cases passing and all `mismatch` cases failing. Borderline cases stay borderline.
+## Corpus scope
+
+This corpus is small (single-digit case count) and focuses on one comparison: CSS pill against a canvas-PNG favicon at 16 CSS pixels. It is enough to catch axis-collapse regressions on this exact scenario and to validate that the tool's verdict aligns with operator-visible ground truth on the parent-session screenshots. It is not a generalised visual-equivalence test suite; expanding the corpus to other element types (icons, text labels, SVG vs canvas, dark mode) is how the tool's confidence on those scenarios grows. Adding a case is the documented procedure under "Adding a new case" below.
 
 ## Adding a new case
 

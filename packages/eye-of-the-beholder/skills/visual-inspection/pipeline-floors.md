@@ -33,9 +33,9 @@ Reference baseline: 32x32 device-pixel canvas-PNG favicon, dark squircle plus or
 
 ## Implications for confidence
 
-The default `--confidence` scoring penalises every failed axis without distinguishing reachable from irreducible failures. That is intentional for the first version: a confidence < 95 is a "we are not at the twin-grade match" signal, not a "the gate broke" signal. When the failures are all on the irreducible-floor axes, the operator should read the score as "the cross-pipeline floor was reached, anything closer requires changing the rendering pipeline of one side".
+The `--confidence` scoring penalises every failed axis without distinguishing reachable from irreducible failures. A confidence below 95 is a "we are not at the twin-grade match" signal, not a "the gate broke" signal. When the failures are all on the irreducible-floor axes, read the score as "the cross-pipeline floor was reached, anything closer requires changing the rendering pipeline of one side".
 
-If the score-vs-floor relationship matters more than that, we add a `--floor-aware` mode that subtracts the floor from each axis's penalty. Not built yet; the current scoring is treated as conservative until corpus growth shows the heuristic is wrong.
+The score-to-floor relationship is empirical: the corpus-measured calibration in `corpus-confidence-scores.md` shows what each case scores under the current weights, so the operator can compare a candidate's score against where the corpus's match, mismatch, and borderline cases land.
 
 ## How to extend this catalogue
 

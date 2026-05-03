@@ -64,7 +64,11 @@ function classify(expected, toolPass) {
 function main() {
   const args = parseArgs(process.argv.slice(2))
   const casesDir = args['cases-dir'] || path.join(__dirname, 'cases')
-  const maxDiff = args['max-diff'] || 25
+  // Default --max-diff matches ink-assert's own default (2.0). Caller can override per run.
+  // The previous default of 25 was inherited from a parent-session test harness and silently relaxed the
+  // pixel-diff axis below the tool's normal operating bar, which let cross-pipeline cases pass on a budget
+  // that no real consumer would use. Strict default; raise per case only if the verdict requires it.
+  const maxDiff = args['max-diff'] || 2.0
   const verbose = !!args.verbose
 
   if (!fs.existsSync(casesDir)) {
