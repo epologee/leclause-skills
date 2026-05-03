@@ -6,206 +6,206 @@ description: Use when producing or reviewing any visual layout, color system, or
 
 # Eye of the Beholder
 
-## Het echte probleem
+## The real problem
 
-Claude schrijft CSS en kijkt pas aan het eind naar het resultaat. En wanneer Claude kijkt, kijkt het bevestigend ("ik schreef padding, dus er is ruimte") in plaats van observerend ("wat zie ik?"). Een designer kijkt honderd keer tijdens het proces. Claude kijkt een keer.
+Claude writes CSS and only looks at the result at the end. And when Claude looks, it looks confirmingly ("I wrote padding, so there is space") rather than observationally ("what do I see?"). A designer looks a hundred times during the process. Claude looks once.
 
-De oplossing is niet meer regels. De oplossing is vaker kijken, en anders kijken.
+The solution is not more rules. The solution is looking more often, and looking differently.
 
-## De kern: observatie voor verklaring
+## The core: observation before explanation
 
-**Na elke layout-wijziging: screenshot. Beschrijf wat je ziet VOORDAT je terugkijkt naar de CSS.**
+**After every layout change: screenshot. Describe what you see BEFORE looking back at the CSS.**
 
-Niet: "de padding zou 0.6rem moeten zijn, ik zie ruimte, klopt."
-Wel: "ik zie tekst die tegen de bovenkant plakt." Dan pas: waarom? Welke CSS veroorzaakt dit?
+Not: "the padding should be 0.6rem, I see space, correct."
+Instead: "I see text pressing against the top edge." Only then: why? Which CSS causes this?
 
-Dit is het verschil tussen bevestigend kijken en observerend kijken. Een arts beschrijft eerst het symptoom, dan pas de diagnose. Een designer ziet eerst het resultaat, dan pas de code.
+This is the difference between confirmatory looking and observational looking. A doctor first describes the symptom, then the diagnosis. A designer first sees the result, then the code.
 
-## Wanneer
+## When
 
-Bij visueel werk is deze skill niet iets dat je aan het eind aanroept. Het is een werkwijze:
+In visual work, this skill is not something you call at the end. It is a working method:
 
-1. **Schrijf een blok layout CSS of een transitie** (een container, een sectie, een pagina-structuur, een state-overgang)
-2. **Screenshot of recording** (zelf nemen of van de user ontvangen). Voor transities: een GIF/MP4 of een reeks frames uit een headless browser.
-3. **Beschrijf wat je ziet** in het resultaat, zonder naar de CSS te kijken. Scan kloksgewijs: boven -> rechts -> onder -> links. Benoem per rand het dichtstbijzijnde element. Voor animaties: herhaal de scan op start-, mid-, en eind-frame.
-4. **Vergelijk observatie met intentie.** Plakt er iets? Voelt iets krap? Is er een leegte? Snapt er iets terwijl de rest animeert?
-5. **Fix en herhaal** vanaf stap 2.
+1. **Write a block of layout CSS or a transition** (a container, a section, a page structure, a state transition)
+2. **Screenshot or recording** (take it yourself or receive it from the user). For transitions: a GIF/MP4 or a series of frames from a headless browser.
+3. **Describe what you see** in the result, without looking at the CSS. Scan clockwise: top -> right -> bottom -> left. Name the nearest element at each edge. For animations: repeat the scan on the start, mid, and end frame.
+4. **Compare observation with intention.** Does something press against an edge? Does something feel cramped? Is there a void? Does something snap while the rest animates?
+5. **Fix and repeat** from step 2.
 
-Dit is design-TDD: het rendered resultaat is de test, de CSS is de implementatie.
+This is design-TDD: the rendered result is the test, the CSS is the implementation.
 
-## Hoe te kijken
+## How to look
 
-Wanneer je een screenshot bekijkt (zelf genomen of aangeleverd), stel deze vragen in deze volgorde:
+When examining a screenshot (taken yourself or provided), ask these questions in this order:
 
-**Eerst voelen, dan meten:**
+**Feel first, then measure:**
 
-1. **Knijp je ogen dicht.** Wat springt eruit? Waar voelt het krap? Waar voelt het leeg? Waar stopt je oog? Dit is Gestalt in actie: het brein ziet groepering, nabijheid, en spanning sneller dan het bewuste denken.
+1. **Squint your eyes.** What stands out? Where does it feel cramped? Where does it feel empty? Where does your eye stop? This is Gestalt in action: the brain perceives grouping, proximity, and tension faster than conscious thought.
 
-2. **Trace de randen.** Boven -> rechts -> onder -> links. Wat is het dichtstbijzijnde element aan elke rand? Hoeveel ruimte zit ertussen? Raakt iets de rand?
+2. **Trace the edges.** Top -> right -> bottom -> left. What is the nearest element to each edge? How much space is between them? Does anything touch the edge?
 
-   **Trace is fractaal.** Doe dit op elk niveau waar iets een rand heeft:
-   - Pagina vs. viewport
+   **Trace is fractal.** Do this at every level where something has an edge:
+   - Page vs. viewport
    - Container vs. parent padding
-   - Component vs. eigen border/padding
-   - Glyph of icon vs. viewBox of bounding box
+   - Component vs. its own border/padding
+   - Glyph or icon vs. viewBox or bounding box
    - Path/stroke vs. pixel-grid
 
-   Dezelfde regels werken op elk niveau. Een icoon dat in zijn viewBox wordt geclipt is hetzelfde probleem als een titel die de paginarand raakt, alleen een zoomstap dieper.
+   The same rules work at every level. An icon clipped within its viewBox is the same problem as a title touching the page edge, just one zoom step deeper.
 
-3. **Zoek het ritme.** Zijn de afstanden tussen herhalende elementen (secties, kaarten, regels) consistent? Wordt het ritme ergens gebroken?
+3. **Look for the rhythm.** Are the distances between repeating elements (sections, cards, rows) consistent? Is the rhythm broken anywhere?
 
-   **Interne ritmiek is een apart oordeel.** Perimeter-padding meten ("content staat 32px van de rand") is niet hetzelfde als sibling-gaps meten. Loop binnen de container langs elk visueel blok (titel, paragraaf, tabel, lijst, citaat, signature, footer) en benoem de verticale ruimte tussen elk aangrenzend paar. Raken twee blokken elkaar? Is de gap kleiner dan de line-height van de body-font? Zijn de gaps onderling consistent? Een kaart met royale buitenmarges maar geplette interne blokken leest niet als document; het leest als gedumpte tekst in een doos. Dit is "collapsed padding": de buitenrand is in orde, de binnenhuishouding niet. Margin-collapse door de container-padding heen is een bekend mechanisme (eerste kind-margin collapseert door parent-padding-top als de parent geen border/padding/inline-content heeft boven het kind); als je dit vermoedt, check met DevTools of fix met `display: flow-root` / een expliciete border-top.
+   **Internal rhythm is a separate judgment.** Measuring perimeter padding ("content is 32px from the edge") is not the same as measuring sibling gaps. Walk through each visual block within the container (title, paragraph, table, list, quote, signature, footer) and name the vertical space between each adjacent pair. Do two blocks touch each other? Is the gap smaller than the line-height of the body font? Are the gaps mutually consistent? A card with generous outer margins but collapsed internal blocks does not read as a document; it reads as dumped text in a box. This is "collapsed padding": the outer edge is fine, the inner housekeeping is not. Margin-collapse through the container padding is a known mechanism (first child margin-top collapses through parent padding-top if the parent has no border/padding/inline-content above the child); if you suspect this, check with DevTools or fix with `display: flow-root` / an explicit border-top.
 
-4. **Zoek de vreemde eend.** Is er een element dat net anders is dan de rest? Iets dat bijna hetzelfde is maar niet helemaal? Dat is waarschijnlijk een bug, geen variatie.
+4. **Look for the odd one out.** Is there an element that is just slightly different from the rest? Something that is almost the same but not quite? That is probably a bug, not a variation.
 
-5. **Benoem elke aanraking.** Welke elementen raken elkaar? Welke elementen raken een rand? Welke elementen vallen buiten hun container? Lijst ze op. Voor elk: is dit intentioneel? Een border die de container raakt is meestal bewust. Tekst die de paginarand raakt is dat bijna nooit. Bewuste aanrakingen zijn expliciet (bijv. een `bleed` class), onbewuste zijn bugs.
+5. **Name every touch.** Which elements touch each other? Which elements touch an edge? Which elements fall outside their container? List them. For each: is this intentional? A border touching its container is usually deliberate. Text touching the page edge almost never is. Intentional touches are explicit (e.g. a `bleed` class), unintentional ones are bugs.
 
-6. **Glyph- en icoon-check.** Voor elk vector-icoon of glyph in de screenshot: past de inhoud binnen zijn eigen container? Een icoon dat aan één rand "afgesneden" voelt is bijna altijd een path die buiten zijn viewBox loopt. SVG heeft default `overflow: hidden`, dus de clip is stilletjes. Voor stroke-based iconen: tel de halve stroke-width op bij de path-bounds (bij `stroke-width="1.5"` ligt de werkelijke rand op `coördinaat ± 0.75`). Fix altijd door viewBox groter of path kleiner, nooit door `overflow="visible"` (dat verplaatst het probleem naar de parent).
+6. **Glyph and icon check.** For each vector icon or glyph in the screenshot: does the content fit within its own container? An icon that feels "cut off" at one edge is almost always a path running outside its viewBox. SVG has default `overflow: hidden`, so the clip is silent. For stroke-based icons: add half the stroke-width to the path bounds (with `stroke-width="1.5"` the actual edge lies at `coordinate ± 0.75`). Always fix by making the viewBox larger or the path smaller, never with `overflow="visible"` (that moves the problem to the parent).
 
-7. **Optische vs. mathematische bounds.** Cirkels, driehoeken en ronde glyphs wegen optisch minder dan vierkanten met dezelfde mathematische bounds. Designers compenseren met *overshoot*: een "O" is fractioneel groter dan een "H", een cirkel moet ~113% van een vierkant zijn om even groot te lezen, een driehoek moet met zijn scherpe punt buiten de baseline steken. Voelt een ronde vorm "kleiner" dan een vierkante buur van dezelfde pixel-grootte? Dat is geen illusie, dat is een ontbrekende overshoot.
+7. **Optical vs. mathematical bounds.** Circles, triangles, and round glyphs weigh optically less than squares with the same mathematical bounds. Designers compensate with *overshoot*: an "O" is fractionally larger than an "H", a circle must be ~113% of a square to read as equally large, a triangle must have its sharp point extend past the baseline. Does a round shape feel "smaller" than a square neighbor of the same pixel size? That is not an illusion, it is a missing overshoot.
 
-8. **Optisch centrum zit hoger dan geometrisch centrum (Arnheim).** Mathematisch gecentreerde content voelt top-heavy. Duw het visuele zwaartepunt 2-5% omhoog. Dit is waarom `align-items: center` in CSS vaak "net te laag" aanvoelt, het is mathematisch correct, niet optisch correct.
+8. **Optical center sits higher than geometric center (Arnheim).** Mathematically centered content feels top-heavy. Push the visual center of gravity 2-5% upward. This is why `align-items: center` in CSS often feels "just too low": it is mathematically correct, not optically correct.
 
-   **Uitzondering voor typografie in iconen-containers** (buttons, pills, badges): hier werkt de regel *omgekeerd*. Een digit of letter zit van nature al hoog binnen zijn line-box omdat font ascent groter is dan font descent (typisch 80/20). Cap-height center zit ~5% boven em-box center. Bij een pill met SVG-icoon dat wél symmetrisch is, voelt de tekst "te hoog" (meer witruimte eronder dan erboven). Spiekermann's regel: *align op cap-height center, niet op glyph bounding box*. Fix via micro-translate (~0.5-1px) of via `text-box-trim` / cap-height line-height libraries (Braid's capsize). Bij een review: zie je tekst en icoon die niet gelijk gecentreerd voelen in hun container, met tekst hoger dan icoon? Dat is font metric asymmetry, niet je brein.
+   **Exception for typography in icon containers** (buttons, pills, badges): here the rule works *in reverse*. A digit or letter naturally sits high within its line-box because font ascent is greater than font descent (typically 80/20). Cap-height center sits ~5% above em-box center. In a pill with an SVG icon that IS symmetrical, text feels "too high" (more whitespace below than above). Spiekermann's rule: *align to cap-height center, not to glyph bounding box*. Fix via micro-translate (~0.5-1px) or via `text-box-trim` / cap-height line-height libraries (Braid's capsize). In a review: do you see text and icon that do not feel equally centered in their container, with text higher than icon? That is font metric asymmetry, not your brain.
 
-9. **Vergelijk links met rechts, boven met onder.** Is de compositie in balans? Niet per se symmetrisch, maar intentioneel? Symmetrische compositie voelt vaak saai; asymmetrische balans via visuele weging (kleur, contrast, massa) is levendiger (Arnheim).
+9. **Compare left with right, top with bottom.** Is the composition balanced? Not necessarily symmetrical, but intentional? Symmetrical composition often feels dull; asymmetric balance via visual weighting (color, contrast, mass) is livelier (Arnheim).
 
-10. **Hoe wordt dit vastgehouden?** Het ontwerp grenst aan de fysieke wereld. Papier wordt vastgehouden met vingers die de randen bedekken. Een telefoonscherm heeft bezels (of niet meer). Een laptop heeft een rand. De marges van het ontwerp moeten rekening houden met wat de gebruiker fysiek bedekt.
+10. **How is this held?** The design borders on the physical world. Paper is held with fingers that cover the edges. A phone screen has bezels (or no longer does). A laptop has a frame. The design's margins must account for what the user physically covers.
 
-**Tschichold's margeverhoudingen voor gedrukt werk: 1:1:2:3** (binnen:boven:buiten:onder). De onderste marge is het grootst omdat handen daar het papier vasthouden. Het Van de Graaf canon uit middeleeuwse manuscripten: 2:3:4:6. Dezelfde logica, nog dramatischer.
+**Tschichold's margin ratios for printed work: 1:1:2:3** (inner:top:outer:bottom). The bottom margin is largest because hands hold the paper there. The Van de Graaf canon from medieval manuscripts: 2:3:4:6. The same logic, even more dramatic.
 
-**Het medium muteert.** Smartphone bezels waren vroeger dik, nu bijna onzichtbaar. Toen bezels dik waren, hoefde de UI-marge niet groot te zijn (vingers raakten plastic, niet pixels). Nu bezels weg zijn, bedekken vingers de interface, dus moeten UI-marges groter. Apple's safe area insets groeiden mee met krimpende bezels. Voor print geldt het omgekeerde: papier heeft geen bezel, alleen papier. De "bezel" is nul, dus de marge moet alles compenseren.
+**The medium mutates.** Smartphone bezels used to be thick, now nearly invisible. When bezels were thick, UI margins did not need to be large (fingers touched plastic, not pixels). Now bezels are gone, fingers cover the interface, so UI margins must grow. Apple's safe area insets grew along with shrinking bezels. For print the opposite is true: paper has no bezel, only paper. The "bezel" is zero, so the margin must compensate for everything.
 
-**Praktisch:** voor een los A4-vel dat in handen wordt gehouden, zijn de buitenste en onderste marges het belangrijkst. Een recept op het aanrecht wordt bovenaan of aan de zijkant vastgehouden. De marges moeten groot genoeg zijn dat vingers geen tekst bedekken.
+**Practically:** for a loose A4 sheet held in hands, the outer and bottom margins matter most. A recipe on the counter is held at the top or side. The margins must be large enough that fingers do not cover text.
 
-**Dan pas meten en fixen:**
+**Only then measure and fix:**
 
-**Meten én oordelen is één handeling, niet twee.** Een pixel-waarde opschrijven is geen voltooide observatie; pas wanneer die waarde is getoetst aan een standaard of ratio, is de bevinding compleet. "Er zit 20px padding" is een halve zin. "20px padding op 14px body-font = 1.4x, onder de 2.5x drempel voor comfortabele document-leesruimte" is een bevinding. De scan eindigt pas wanneer elke gemeten waarde een uitgesproken oordeel heeft: goed, krap, ruim, faalt.
+**Measuring and judging is one action, not two.** Writing down a pixel value is not a completed observation; only when that value has been tested against a standard or ratio is the finding complete. "There is 20px padding" is half a sentence. "20px padding on 14px body-font = 1.4x, below the 2.5x threshold for comfortable document reading" is a finding. The scan only ends when every measured value has an explicit verdict: good, cramped, generous, fails.
 
-**Default ratios om tegen te toetsen:**
-- Padding/gutter rond body-tekst: minimaal 2.5x body-font size. Onder die drempel voelt het krap, ook als het niet plakt.
-- Document-metafoor canvases (email-body, card-as-paper, editor-surface): Tschichold 1:1:2:3 (binnen:boven:buiten:onder) als startpunt. Web-style 16-24px rondom kwalificeert niet; een document wil 2-3rem+ ruimte rondom de tekst.
-- Sectie-gap vs interne gap: minimaal 2x verschil om hiërarchie te leveren. "14px vs 5px = 2.8:1" werkt; "14px vs 10px = 1.4:1" is ambigu.
-- Aangrenzende surface-niveaus: minimaal 1.07x luminance ratio (zie kleur-sectie).
+**Default ratios to test against:**
+- Padding/gutter around body text: minimum 2.5x body-font size. Below that threshold it feels cramped, even if nothing is touching.
+- Document-metaphor canvases (email-body, card-as-paper, editor-surface): Tschichold 1:1:2:3 (inner:top:outer:bottom) as starting point. Web-style 16-24px all around does not qualify; a document wants 2-3rem+ space around the text.
+- Section gap vs. internal gap: minimum 2x difference to convey hierarchy. "14px vs 5px = 2.8:1" works; "14px vs 10px = 1.4:1" is ambiguous.
+- Adjacent surface levels: minimum 1.07x luminance ratio (see color section).
 
-Druk problemen uit als verhoudingen, niet als pixels:
-- "De titel zit op 0px van de bovenkant, maar de body font is 12px. Daar hoort minimaal 2.5x fontgrootte (~30px) te zitten."
-- "De sectie-gap is 14px maar de interne gap is 5px. Dat is een 2.8:1 ratio, helder genoeg."
-- "Dit is een geprint A4-vel. Tschichold's ratio 1:1:2:3 geeft bij 1.5cm basis: boven 1.5cm, binnen 1.5cm, buiten 3cm, onder 4.5cm."
-- "Email-body kaartje heeft 20/24px padding op 14px body-font = 1.4x/1.7x. Onder 2.5x drempel, en ver onder Tschichold voor document-canvas. Krap."
+Express problems as ratios, not pixels:
+- "The title is at 0px from the top, but the body font is 12px. There should be at least 2.5x font size (~30px) there."
+- "The section gap is 14px but the internal gap is 5px. That is a 2.8:1 ratio, clear enough."
+- "This is a printed A4 sheet. Tschichold's ratio 1:1:2:3 at a 1.5cm base gives: top 1.5cm, inner 1.5cm, outer 3cm, bottom 4.5cm."
+- "Email-body card has 20/24px padding on 14px body-font = 1.4x/1.7x. Below the 2.5x threshold, and far below Tschichold for document canvas. Cramped."
 
-## Kleur: dezelfde discipline, andere as
+## Color: the same discipline, a different axis
 
-Ruimte is één as waarop je observerend kijkt. Kleur is een tweede. Dezelfde houding werkt: niet "deze twee cells hebben allebei een border dus ze zijn gescheiden" maar "zie ik het verschil?" Niet "er staat `text-muted` dus de tekst is leesbaar" maar "kan ik dit comfortabel lezen zonder te turen?"
+Space is one axis on which you look observationally. Color is a second. The same attitude works: not "these two cells both have a border so they are separated" but "do I see the difference?" Not "it says `text-muted` so the text is readable" but "can I comfortably read this without squinting?"
 
-### Visuele kleur-observatie
+### Visual color observation
 
-Voeg deze vragen toe aan de scan in "Hoe te kijken":
+Add these questions to the scan in "How to look":
 
-11. **Hoeveel grijstinten zie je?** Tel ze in de screenshot. Een gedisciplineerd systeem heeft er weinig en consistent gebruikt. Tien subtiele varianten is geen subtiliteit, het zijn tien losse keuzes die toevallig in dezelfde repo wonen.
+11. **How many shades of gray do you see?** Count them in the screenshot. A disciplined system has few and uses them consistently. Ten subtle variants is not subtlety; it is ten separate choices that happen to live in the same repo.
 
-12. **Aangrenzende oppervlakken.** Staan twee "verschillende" surfaces naast elkaar (canvas vs. list pane, list vs. detail)? Zie je het onderscheid direct, of moet je zoeken? Als je moet zoeken, is de luminance-delta te klein. Dit is vooral een val in dark mode.
+12. **Adjacent surfaces.** Are two "different" surfaces next to each other (canvas vs. list pane, list vs. detail)? Do you see the distinction immediately, or do you have to search? If you have to search, the luminance delta is too small. This is especially a trap in dark mode.
 
-13. **Kun je secundaire tekst lezen zonder te turen?** Metadata, timestamps, captions. Als je het instinctief vergroot of dichterbij schuift, faalt het WCAG AA niveau. Dat is geen smaakkwestie maar een structurele fout.
+13. **Can you read secondary text without squinting?** Metadata, timestamps, captions. If you instinctively enlarge it or lean closer, it fails WCAG AA. That is not a matter of taste but a structural error.
 
-14. **Waarschuwings- en statuskleuren.** Zijn "rood voor fout" en "groen voor ok" duidelijk genoeg? Failure text op een witte achtergrond moet AA halen, net als body text. Tailwind's `red-500` en `green-500` halen dat meestal net niet op wit. Donkerder (`red-700`, `green-700`) wel.
+14. **Warning and status colors.** Are "red for error" and "green for ok" clear enough? Failure text on a white background must pass AA, just like body text. Tailwind's `red-500` and `green-500` usually just barely fail on white. Darker (`red-700`, `green-700`) passes.
 
-### Onder de screenshot kijken: het tokensysteem
+### Looking beneath the screenshot: the token system
 
-Een screenshot kan er prima uitzien terwijl het systeem eronder rommelig is. Drie audits die je op code-niveau doet, niet op beeld:
+A screenshot can look fine while the system underneath is messy. Three audits done at code level, not on the image:
 
-**1. Token-vocabulaire scan.** Grep in de component-laag naar de omzeilings-patronen:
+**1. Token vocabulary scan.** Grep in the component layer for the bypass patterns:
 
-- Opacity modifiers op kleur-utilities (Tailwind `text-foo/50`, `bg-foo/20`): meestal een teken van een missende tint, niet een bewuste opacity. Developer had een derde tekstniveau nodig en er bestond er maar twee.
-- Palette-kleuren in app-code (`text-red-500`, `bg-blue-200`): omzeilt het semantische systeem. Elk gebruik is een vraag "waarom had `text-danger` hier niet gewerkt?"
-- Hardcoded hex/rgb/oklch in style blocks (`color: #94a3b8`): frameworkloze escape. Meestal omdat het tokensysteem geen passend woord had.
-- Undefined tokens die wel worden gebruikt (`bg-surface-muted` terwijl dat token niet bestaat): Tailwind v4 genereert dan geen class en valt stilletjes leeg terug. Zie je een lege achtergrond waar je kleur verwacht, check de theme definitie.
+- Opacity modifiers on color utilities (Tailwind `text-foo/50`, `bg-foo/20`): usually a sign of a missing tint, not a deliberate opacity. The developer needed a third text level and only two existed.
+- Palette colors in app code (`text-red-500`, `bg-blue-200`): bypasses the semantic system. Every use is a question "why wouldn't `text-danger` have worked here?"
+- Hardcoded hex/rgb/oklch in style blocks (`color: #94a3b8`): a framework-free escape. Usually because the token system had no suitable word.
+- Undefined tokens that are used anyway (`bg-surface-muted` when that token does not exist): Tailwind v4 generates no class and silently falls back to nothing. If you see an empty background where you expect color, check the theme definition.
 
-Elk van deze patronen signaleert een onvolledig tokensysteem. De fix is zelden "voeg een token toe" (reactief, herhaal probleem). De fix is "herzie de vocabulaire tot elke rol die in de UI voorkomt een eigen naam heeft."
+Each of these patterns signals an incomplete token system. The fix is rarely "add a token" (reactive, repeats the problem). The fix is "revise the vocabulary until every role that appears in the UI has its own name."
 
-**2. WCAG contrast math.** Voor elke gebruikte tekstkleur op elke gebruikte achtergrond, bereken de ratio. Je hoeft niet te turen; de wiskunde geeft het definitieve antwoord.
+**2. WCAG contrast math.** For each text color used on each background used, calculate the ratio. You do not need to squint; the math gives the definitive answer.
 
-Voor de AA/AAA drempel-tabel in het Engels, inclusief de argumentatie achter 4.5:1 en 3:1, zie impeccable's `reference/color-and-contrast.md`. De formule hieronder blijft hier omdat observationeel werk vaak ter plekke een ratio moet berekenen zonder tool-wissel.
+For the AA/AAA threshold table, including the reasoning behind 4.5:1 and 3:1, see impeccable's `reference/color-and-contrast.md`. The formula below stays here because observational work often needs to calculate a ratio on the spot without switching tools.
 
-WCAG 2.1 SC 1.4.3 formule:
+WCAG 2.1 SC 1.4.3 formula:
 
 ```
-Per kanaal c (R, G, B):
+Per channel c (R, G, B):
   c_norm = c / 255
   c_lin  = c_norm ≤ 0.03928 ? c_norm / 12.92 : ((c_norm + 0.055) / 1.055)^2.4
 
 Luminance:
   L = 0.2126 * R_lin + 0.7152 * G_lin + 0.0722 * B_lin
 
-Ratio van twee kleuren:
-  ratio = (L_lichter + 0.05) / (L_donkerder + 0.05)
+Ratio of two colors:
+  ratio = (L_lighter + 0.05) / (L_darker + 0.05)
 ```
 
-Drempels:
+Thresholds:
 
-| Gebruik                                         | AA     | AAA  |
+| Use                                             | AA     | AAA  |
 | ----------------------------------------------- | ------ | ---- |
 | Body text (< 18pt regular, < 14pt bold)         | 4.5:1  | 7:1  |
-| Large text (≥ 18pt, of ≥ 14pt bold)             | 3:1    | 4.5:1 |
+| Large text (≥ 18pt, or ≥ 14pt bold)             | 3:1    | 4.5:1 |
 | UI component boundary (button, input, control)  | 3:1    | -    |
-| Decoratieve dividers / non-functional borders   | vrijgesteld | -    |
+| Decorative dividers / non-functional borders    | exempt | -    |
 
-Een klein scriptje in Ruby, Python of JavaScript scheelt uren visuele twijfel. Draai het voor elke fg/bg combinatie die de app daadwerkelijk gebruikt, niet voor alle theoretische combinaties.
+A small script in Ruby, Python, or JavaScript saves hours of visual doubt. Run it for every fg/bg combination the app actually uses, not for all theoretical combinations.
 
-**3. Perceptuele surface-delta.** Aangrenzende surface-niveaus (canvas, list pane, detail pane, hover, active) moeten visueel onderscheidbaar zijn. Minimum: **1.07x luminance ratio** tussen aangrenzende niveaus. Onder die drempel pretendeert het systeem hiërarchie die er optisch niet is.
+**3. Perceptual surface delta.** Adjacent surface levels (canvas, list pane, detail pane, hover, active) must be visually distinguishable. Minimum: **1.07x luminance ratio** between adjacent levels. Below that threshold the system claims hierarchy that does not exist optically.
 
-Dit is vooral een val in dark mode. Absolute luminance-waarden zijn daar klein (typisch 0.003 - 0.02), dus een absolute delta van 0.004 ziet er in een spreadsheet substantieel uit maar is perceptueel nul. Check altijd de ratio, niet het verschil.
+This is especially a trap in dark mode. Absolute luminance values are small there (typically 0.003 - 0.02), so an absolute delta of 0.004 looks substantial in a spreadsheet but is perceptually zero. Always check the ratio, not the difference.
 
-**Light en dark zijn twee ontwerpen, niet één.** Als je een rol (`surface-1`) licht goed invult en dan dark mode "wel ergens donker" maakt, heb je twee verschillende semantische systemen die toevallig dezelfde naam delen. Elke rol moet in beide modes dezelfde betekenis dragen: als `surface-1` in licht het meest prominente leesoppervlak is, moet hij dat in donker ook zijn. Gebruik `light-dark(licht, donker)` in CSS custom properties zodat beide waarden naast elkaar staan in dezelfde regel en niet uit elkaar drijven.
+**Light and dark are two designs, not one.** If you fill a role (`surface-1`) correctly in light and then make dark mode "somewhere dark", you have two different semantic systems that happen to share a name. Every role must carry the same meaning in both modes: if `surface-1` is the most prominent reading surface in light, it must be that in dark too. Use `light-dark(light, dark)` in CSS custom properties so both values live side by side in the same rule and do not drift apart.
 
-## Animatie: dezelfde discipline, tijd als as
+## Animation: the same discipline, time as the axis
 
-Ruimte en kleur zijn twee assen. Tijd is een derde. Dezelfde houding werkt: niet "ik schreef een `transition: transform 200ms`, dus het animeert soepel" maar "wat zie ik tussen frame 0 en frame 12?" De screenshot wordt een *serie* screenshots. De randen-trace gebeurt op elk key-frame. Het ritme is de timing-curve. De "vreemde eend" is het ene element dat uit de maat valt.
+Space and color are two axes. Time is a third. The same attitude works: not "I wrote `transition: transform 200ms`, so it animates smoothly" but "what do I see between frame 0 and frame 12?" The screenshot becomes a *series* of screenshots. The edge trace happens on each key frame. The rhythm is the timing curve. The "odd one out" is the one element that falls out of sync.
 
-Een statisch eindbeeld dat klopt zegt niets over de reis ernaartoe. Een UI die voor en na het animeren keurig gelayout is kan ertussenin lelijk kapseizen.
+A static end state that looks correct says nothing about the journey to get there. A UI that is neatly laid out before and after animating can collapse badly in between.
 
-### Visuele animatie-observatie
+### Visual animation observation
 
-Voeg deze vragen toe aan de scan in "Hoe te kijken". Ze worden toegepast op een *reeks* frames (start, kwart, half, drie-kwart, eind) in plaats van op één screenshot:
+Add these questions to the scan in "How to look". They are applied to a *series* of frames (start, quarter, half, three-quarter, end) rather than a single screenshot:
 
-15. **Bewegen alle elementen die samen horen als één?** Wanneer een header en zijn content allebei op nieuwe posities eindigen, moeten ze tijdens de transitie hetzelfde *tempo* hebben. Snapt de header terwijl de content animeert, of stopt de ene bij 80% terwijl de ander bij 60% is? Dit is ritme op de tijd-as. Een component dat uit de maat loopt is de "vreemde eend" van animatie.
+15. **Do all elements that belong together move as one?** When a header and its content both end at new positions, they must have the same *tempo* during the transition. Does the header snap while the content animates, or does one stop at 80% while the other is at 60%? This is rhythm on the time axis. A component that falls out of sync is the "odd one out" of animation.
 
-16. **Wat gebeurt er met verdwijnende content?** Vervalt een element instant terwijl zijn container nog beweegt? Dat is een "teleporting element": het vertrekt voordat zijn vervoermiddel vertrokken is. Je verwacht dat content meereist tot de rit eindigt. Fix patroon: `transition: visibility 0s linear var(--duration)` op de hidden-state zodat de visibility-flip pas NA de beweging plaatsvindt. Spiegelbeeld: verschijnt content pas nadat zijn container al bewogen is? Dan is de entry gebroken, de visibility moet dan juist instant flippen.
+16. **What happens to disappearing content?** Does an element collapse instantly while its container is still moving? That is a "teleporting element": it departs before its vehicle has left. You expect content to travel along until the journey ends. Fix pattern: `transition: visibility 0s linear var(--duration)` on the hidden state so the visibility flip only happens AFTER the movement finishes. Mirror image: does content only appear after its container has already moved? Then the entry is broken; visibility must flip instantly instead.
 
-17. **Begint en eindigt alles op hetzelfde moment?** Check de transition delay, duration en easing van elk animerend element via `getComputedStyle`. Verschillende durations zijn soms intentioneel (stagger) maar vaker een bug. "Nav snapt, content animeert 200ms" is zelden expressief, meestal een vergeten `transition` regel op de nav.
+17. **Does everything start and end at the same moment?** Check the transition delay, duration, and easing of each animating element via `getComputedStyle`. Different durations are sometimes intentional (stagger) but more often a bug. "Nav snaps, content animates 200ms" is rarely expressive, usually a forgotten `transition` rule on the nav.
 
-18. **Is een cell die "hidden" is echt weg of alleen onzichtbaar?** Off-screen parken (visibility hidden bij volledige renderWidth) en collapsen naar 0 (width 0, display none) zien er op een statische screenshot hetzelfde uit. Onder beweging niet: een geparkeerde cell kan als één geheel mee-schuiven met de rest, een gecollapste cell snapt weg. Voor slide-achtige transities: park, niet collapse.
+18. **Is a cell that is "hidden" truly gone or just invisible?** Parking off-screen (visibility hidden with full renderWidth) and collapsing to 0 (width 0, display none) look the same in a static screenshot. Under movement they do not: a parked cell can slide as one unit with the rest, a collapsed cell snaps away. For slide-style transitions: park, do not collapse.
 
-19. **Timing versus afstand.** Een transitie van 200ms voelt snel voor een 50px shift en traag voor een 800px shift. Als er meerdere transities tegelijk lopen met verschillende afstanden, wordt dit zichtbaar. De vraag is niet "is de duration goed?" maar "klopt de SNELHEID (px/ms) voor wat ik vertel?" In grote column-shifts is een kortere duration soms expressiever dan hetzelfde 200ms dat je overal gebruikt.
+19. **Timing versus distance.** A 200ms transition feels fast for a 50px shift and slow for an 800px shift. When multiple transitions run simultaneously with different distances, this becomes visible. The question is not "is the duration right?" but "is the SPEED (px/ms) correct for what I am communicating?" In large column shifts a shorter duration is sometimes more expressive than the same 200ms you use everywhere.
 
-### Onder de screenshot kijken: timing en sync
+### Looking beneath the screenshot: timing and sync
 
-Een transitie kan er goed uitzien op één frame maar onder de motorkap uit sync zijn. Code-niveau audits, zoals bij de token-vocabulaire scan:
+A transition can look correct on a single frame but be out of sync under the hood. Code-level audits, just like the token vocabulary scan:
 
-**1. Timing-bron scan.** Grep naar hardcoded durations en easings in component code:
+**1. Timing source scan.** Grep for hardcoded durations and easings in component code:
 
-- Numerieke ms/s waarden in CSS (`200ms`, `0.3s`): meestal een ontbrekende custom property. Als twee elementen in dezelfde flow animeren en beiden apart `200ms` hardcoden, drijven ze bij de eerste refactor uit elkaar.
-- Hardcoded cubic-bezier of named ease (`ease`, `ease-out`, `cubic-bezier(...)`): zelfde probleem. Definieer een `--duration-*` en `--ease-*` vocabulaire en gebruik die overal.
-- `transition: all`: bijna altijd fout. "All" inclusief properties die je niet wilde animeren (kleur, border) en properties die layout triggeren (width, padding). Wees expliciet: `transition: transform var(--duration) var(--ease), opacity ...`.
-- Svelte/React animation libs op plekken waar CSS-transition volstaat: extra bundle, extra concept, meestal niet nodig voor state-to-state transitions.
+- Numeric ms/s values in CSS (`200ms`, `0.3s`): usually a missing custom property. If two elements in the same flow both hardcode `200ms` separately, they will drift apart at the first refactor.
+- Hardcoded cubic-bezier or named ease (`ease`, `ease-out`, `cubic-bezier(...)`): same problem. Define a `--duration-*` and `--ease-*` vocabulary and use it everywhere.
+- `transition: all`: almost always wrong. "All" includes properties you did not mean to animate (color, border) and properties that trigger layout (width, padding). Be explicit: `transition: transform var(--duration) var(--ease), opacity ...`.
+- Svelte/React animation libs in places where CSS transitions would suffice: extra bundle, extra concept, usually not needed for state-to-state transitions.
 
-**2. Sync-audit.** Voor een flow waar meerdere elementen samen moeten bewegen: lijst expliciet op wat wel en wat niet transitioneert. Een element dat een inline `style:width` krijgt zonder `transition` regel erop is een snapping element. Dat is het ene snelle controlepatroon dat je zelf via `grep -n "style:" --include="*.svelte"` kunt draaien.
+**2. Sync audit.** For a flow where multiple elements must move together: explicitly list what does and what does not transition. An element receiving an inline `style:width` without a `transition` rule on it is a snapping element. That is the one quick check pattern you can run yourself via `grep -n "style:" --include="*.svelte"`.
 
-**3. Compositor-only properties.** Transform en opacity worden door de compositor geanimeerd zonder layout. Width, top, left, padding, margin zijn layout-properties en triggeren reflow per frame. Voor kleine elementen is dat fine. Voor rijen van 5+ items of bij parallelle transities kan het janken. `contain: layout` op animerende children isoleert de reflow tot hun eigen box. `will-change: transform` (niet `will-change: width`, dat is een anti-pattern per MDN) promoot de strip naar een eigen layer.
+**3. Compositor-only properties.** Transform and opacity are animated by the compositor without layout. Width, top, left, padding, margin are layout properties and trigger reflow per frame. For small elements that is fine. For rows of 5+ items or with parallel transitions it can jank. `contain: layout` on animating children isolates the reflow to their own box. `will-change: transform` (not `will-change: width`, which is an anti-pattern per MDN) promotes the element to its own layer.
 
-De normatieve regel "transform en opacity only" voor animaties staat ook in impeccable's `reference/motion-design.md`. Wat hier blijft: de observationele diagnose (reflow-check op rijen, `contain: layout` als tactisch fix, `will-change: width` als specifieke anti-pattern) omdat die gaan over hoe je een bestaand probleem herkent, niet over welke regel je volgt tijdens het bouwen.
+The normative rule "transform and opacity only" for animations also lives in impeccable's `reference/motion-design.md`. What stays here: the observational diagnosis (reflow check on rows, `contain: layout` as a tactical fix, `will-change: width` as a specific anti-pattern) because those are about recognizing an existing problem, not about which rule to follow while building.
 
-### Zelf opnemen en dissecten
+### Recording and dissecting yourself
 
-Een animatie verifieren zonder hem op te nemen is hetzelfde als een layout verifieren zonder screenshot. Workflow:
+Verifying an animation without recording it is the same as verifying a layout without a screenshot. Workflow:
 
-**1. Reproduce.** User levert een GIF of MP4, OF je neemt zelf op. Zelf opnemen kan via:
+**1. Reproduce.** User provides a GIF or MP4, OR you record it yourself. Self-recording options:
 
-- **Headless browser test driver** (Cuprite, Playwright): `session.driver.save_screenshot(path, full: true)` in een loop met `sleep` ertussen, of sequentiele snapshots met expliciete viewport resizes.
-- **Screen recording** (macOS: CleanShot, Cmd+Shift+5): snel maar handmatig.
-- **Chrome DevTools Recorder**: structureel, als je een user flow wilt reproduceren.
+- **Headless browser test driver** (Cuprite, Playwright): `session.driver.save_screenshot(path, full: true)` in a loop with `sleep` in between, or sequential snapshots with explicit viewport resizes.
+- **Screen recording** (macOS: CleanShot, Cmd+Shift+5): quick but manual.
+- **Chrome DevTools Recorder**: structured, when you want to reproduce a user flow.
 
-Sla de recording op in `tmp/` of een scratch map die gitignored is.
+Save the recording to `tmp/` or a scratch directory that is gitignored.
 
 **2. Dissect.** Frame extraction via `ffmpeg`:
 
@@ -213,37 +213,37 @@ Sla de recording op in `tmp/` of een scratch map die gitignored is.
 ffmpeg -i capture.mp4 -vf "fps=15,scale=900:-1" /tmp/frame_%03d.png
 ```
 
-`fps=15` is genoeg voor 200-400ms transities (3-6 frames over de animatie). `scale=900:-1` houdt de file sizes klein zodat de Read tool de frames kan inzien. Voor langere of subtielere animaties: verhoog naar `fps=30` en leef met de grotere files.
+`fps=15` is enough for 200-400ms transitions (3-6 frames over the animation). `scale=900:-1` keeps file sizes small so the Read tool can view the frames. For longer or more subtle animations: increase to `fps=30` and live with the larger files.
 
-Read de frames via de Read tool. Per frame: doe de scan-vragen uit "Hoe te kijken" (randen, ritme, vreemde eend). Vergelijk frame N met frame N+1: wat is veranderd, wat had niet mogen veranderen, wat had WEL moeten veranderen?
+Read the frames via the Read tool. Per frame: apply the scan questions from "How to look" (edges, rhythm, odd one out). Compare frame N with frame N+1: what changed, what should not have changed, what SHOULD have changed?
 
-**3. Self-capture verificatie**. Na een fix: zelf een nieuwe recording maken om te bewijzen dat het probleem weg is. Dezelfde workflow.
+**3. Self-capture verification.** After a fix: record a new capture yourself to prove the problem is gone. Same workflow.
 
-**4. Mid-animation inspection.** Rest-state screenshots bewijzen alleen de eindposities, niet de reis. Voor tussentijdse inspectie:
+**4. Mid-animation inspection.** Rest-state screenshots only prove the end positions, not the journey. For intermediate inspection:
 
-- **Slow-mo truc**: override de duration custom property via JS in een test: `document.querySelector('.root').style.setProperty('--duration', '1s')`. Trigger de transitie, sleep 100-500ms, sample `getComputedStyle(element).transform` of `.visibility`. De 5x of 10x vertraging geeft je een ruim venster om mid-animation waardes te lezen.
-- **Multiple samples**: op t=50, 100, 150, 200ms een snapshot, verifieer dat de waardes monotoon interpoleren en dat samenhorende elementen op elk sample punt in sync zijn.
+- **Slow-mo trick**: override the duration custom property via JS in a test: `document.querySelector('.root').style.setProperty('--duration', '1s')`. Trigger the transition, sleep 100-500ms, sample `getComputedStyle(element).transform` or `.visibility`. The 5x or 10x slowdown gives you a wide window to read mid-animation values.
+- **Multiple samples**: at t=50, 100, 150, 200ms take a snapshot, verify that the values interpolate monotonically and that related elements are in sync at each sample point.
 
-**5. Rest-vs-mid testing**. Een animatie-test die alleen rest-state checkt is gebroken per definitie: hij kan niet falen op de helft-van-de-animatie bugs waar de klant last van heeft. Schrijf expliciet een mid-animation assertie als het kritisch is dat elementen synchroon lopen. De slow-mo truc maakt dat schrijfbaar in Cucumber/Playwright zonder race conditions.
+**5. Rest-vs-mid testing.** An animation test that only checks rest state is broken by definition: it cannot fail on the halfway-through-the-animation bugs the user actually experiences. Write an explicit mid-animation assertion when it is critical that elements run in sync. The slow-mo trick makes this writable in Cucumber/Playwright without race conditions.
 
-### Pixel-level animatie-sampling
+### Pixel-level animation sampling
 
-Wanneer je frames visueel bekijkt en de bewegingen ogen "ongeveer goed" of je kunt niet zien of een progress van 10% naar 5% terugtrekt, dan komt dat door het image-viewer limiet: een 4px-brede bar over een 60px-hoge rij rendert 5% verschil als 3 pixels. Op een schaal-gecomprimeerde image-view zie je dat niet. Je moet dan direct de pixel-data uit de frames lezen.
+When you look at frames visually and the movements seem "roughly right", or you cannot tell whether a progress bar is retreating from 10% to 5%, that is the image-viewer limit: a 4px-wide bar over a 60px-tall row renders a 5% difference as 3 pixels. You cannot see that in a scaled-compressed image view. You need to read the pixel data directly from the frames.
 
-**Techniek**: ffmpeg extract een 1-pixel brede verticale slice op de bar-positie, per frame. Decode de raw RGB bytes uit een PPM-header. Classificeer elke pixel als `P` (paars/selected), `A` (amber/unread), `.` (background) op basis van RGB-drempels. Count de P en A pixels per frame om een exact percentage te krijgen.
+**Technique**: ffmpeg extracts a 1-pixel-wide vertical slice at the bar position, per frame. Decode the raw RGB bytes from a PPM header. Classify each pixel as `P` (purple/selected), `A` (amber/unread), `.` (background) based on RGB thresholds. Count the P and A pixels per frame to get an exact percentage.
 
 ```javascript
 const { execSync } = require('child_process')
 const fs = require('fs')
 
-const X = 29  // bar x-positie in de GIF (meet vooraf via één slice)
+const X = 29  // bar x-position in the GIF (measure beforehand via a single slice)
 const gif = '/tmp/capture.gif'
 
 function classify(r, g, b) {
-  if (b > 150 && r < 180) return 'P'                    // paars/violet
+  if (b > 150 && r < 180) return 'P'                    // purple/violet
   if (r > 200 && g > 140 && g < 190 && b < 120) return 'A'  // amber
   if (r > 200 && g > 200 && b > 200) return '.'         // background
-  return '?'                                             // transitiestate
+  return '?'                                             // transition state
 }
 
 for (let n = 0; n < 50; n++) {
@@ -261,120 +261,120 @@ for (let n = 0; n < 50; n++) {
 }
 ```
 
-**De output geeft het waarheidsbeeld dat image-view niet levert.** Je ziet niet alleen dat de bar van amber naar paars gaat, je ziet exact dat er op frame 13 een sprong naar 28% is, op frame 14 een piek naar 33%, op frame 27 een laagste punt van 12%, etc. Pas met deze data kun je terugrekenen welke CSS-transition, $effect-race, of JS-reset de oorzaak is.
+**The output gives the true picture that image view cannot deliver.** You do not just see that the bar goes from amber to purple; you see exactly that on frame 13 there is a jump to 28%, on frame 14 a peak to 33%, on frame 27 a low of 12%, etc. Only with this data can you work backwards to determine which CSS transition, $effect race, or JS reset is the cause.
 
-**Wanneer gebruiken**:
-- Een user meldt een bug in een animatie die jij visueel niet ziet.
-- Je twijfelt of een progress-bar lineair vult of overshoot heeft.
-- Je ziet een piek/dal/oscillatie en wilt weten hoeveel het is.
-- Twee elementen animeren tegelijk en je wilt weten of ze synchroon lopen.
+**When to use**:
+- A user reports a bug in an animation that you cannot see visually.
+- You are unsure whether a progress bar fills linearly or has overshoot.
+- You see a peak/dip/oscillation and want to know how large it is.
+- Two elements animate simultaneously and you want to know whether they run in sync.
 
-**Wanneer niet nodig**:
-- Grove beweging (heel element verplaatst, opacity 0→1).
-- Een verschil van 20%+ dat je met het oog ziet.
+**When not needed**:
+- Gross movement (entire element repositions, opacity 0 to 1).
+- A difference of 20%+ that you can see with the naked eye.
 
-**Vuistregel**: als de user twee keer zegt "er zit nog een knipper/terugtrekking/jitter" en jij ziet het niet, ga van visueel inspecteren naar pixel-sampling. Image-view heeft sub-5% bewegingen gewoon niet in resolutie.
+**Rule of thumb**: if the user says "there is still a flicker/retreat/jitter" twice and you cannot see it, move from visual inspection to pixel sampling. Image view simply does not have the resolution for sub-5% movements.
 
-## Fundament
+## Foundation
 
-**Robin Williams (CRAP):** Contrast (maak verschil onmiskenbaar of maak het gelijk), Repetition (herhaal visuele keuzes voor samenhang), Alignment (alles moet visueel verbonden zijn met iets anders), Proximity (nabijheid impliceert relatie).
+**Robin Williams (CRAP):** Contrast (make differences unmistakable or make them equal), Repetition (repeat visual choices for coherence), Alignment (everything must be visually connected to something else), Proximity (nearness implies relation).
 
-**Gestalt (Wertheimer, Koffka):** Het brein zoekt de eenvoudigste interpretatie (Pragnanz). Gelijke elementen worden als groep gezien (Similarity). Dit is waarom een 12-jarige spacing-problemen "ziet" en Claude niet: het brein doet het automatisch, Claude moet het bewust doen.
+**Gestalt (Wertheimer, Koffka):** The brain seeks the simplest interpretation (Pragnanz). Equal elements are perceived as a group (Similarity). This is why a 12-year-old "sees" spacing problems and Claude does not: the brain does it automatically, Claude must do it deliberately.
 
-**Muller-Brockmann (Grid Systems):** Alle spacing-waarden afleiden van een gedeelde basis. Het grid is een discipline die willekeur voorkomt.
+**Muller-Brockmann (Grid Systems):** Derive all spacing values from a shared base. The grid is a discipline that prevents arbitrariness.
 
-**Tufte:** Maximaliseer de data-ink ratio. Elk visueel element moet bijdragen aan begrip. **Tschichold:** Witruimte is een actief ontwerpelement, niet wat overblijft.
+**Tufte:** Maximize the data-ink ratio. Every visual element must contribute to understanding. **Tschichold:** White space is an active design element, not what remains.
 
-**Arnheim (Art and Visual Perception):** Visueel zwaartepunt telt meer dan pixel-midden. Optisch centrum ligt boven geometrisch centrum. Asymmetrische balans via visuele weging (massa, contrast, kleur) is levendiger dan strikte symmetrie.
+**Arnheim (Art and Visual Perception):** Visual center of gravity matters more than pixel center. Optical center lies above geometric center. Asymmetric balance via visual weighting (mass, contrast, color) is livelier than strict symmetry.
 
-**Apple HIG / Material Design / Lucide (icon grids):** Elk icoon heeft twee bounding boxes. Een outer canvas en een inner "live area". Primaire content blijft binnen de live area, secundaire content mag tot de outer, nooit daarbuiten. Material: 24x24 canvas, 20x20 live area, 2 dp padding rondom. Lucide: 24x24 canvas, 22x22 live area, stroke-width 2 centered (wat de feitelijke rand nog een halve stroke naar buiten duwt). Apple SF Symbols: inner icon-grid box plus outer bounding box. Een icoon dat de outer raakt voelt out-of-place.
+**Apple HIG / Material Design / Lucide (icon grids):** Every icon has two bounding boxes. An outer canvas and an inner "live area". Primary content stays within the live area, secondary content may extend to the outer, never beyond. Material: 24x24 canvas, 20x20 live area, 2 dp padding all around. Lucide: 24x24 canvas, 22x22 live area, stroke-width 2 centered (which pushes the actual edge a further half-stroke outward). Apple SF Symbols: inner icon-grid box plus outer bounding box. An icon that touches the outer edge feels out of place.
 
-**Bjango / Spiekermann (optical adjustments):** Mathematisch identieke vormen zijn optisch ongelijk. Cirkels moeten overshooten baseline en x-height. Scherpe punten van driehoeken moeten buiten de bounding box steken. Verticale lijnen moeten dikker lijken dan horizontale om gelijk te wegen. Het is geen illusie die gefixt moet worden, het is hoe ogen werken.
+**Bjango / Spiekermann (optical adjustments):** Mathematically identical shapes are optically unequal. Circles must overshoot the baseline and x-height. Sharp points of triangles must extend outside the bounding box. Vertical lines must appear thicker than horizontal ones to weigh equally. It is not an illusion to be fixed, it is how eyes work.
 
-## Werkverdeling met art-director en impeccable
+## Division of labor with art-director and impeccable
 
-Eye-of-the-beholder is diagnostisch. Het kijkt naar wat er IS en vergelijkt dat met intentie. Twee zuster-skills zijn verantwoordelijk voor andere momenten in de keten.
+Eye-of-the-beholder is diagnostic. It looks at what IS there and compares it to intent. Two sister skills are responsible for other moments in the chain.
 
-**art-director** (zelfde plugin, sister-skill) werkt upstream. Voordat er CSS bestaat: definieer brand (wie zijn we), visuele taal (hoe klinken we visueel), en design-system-architectuur (hoe schaalt dit). Levert `brand.md`, `visual-language.md`, en een `design-system/` skeleton. Wanneer eye-of-the-beholder observeert dat een hue niet past of een spacing niet ritmeert, hoort de onderliggende standaard in art-director's artefacten te staan, niet in elke reviewer's hoofd.
+**art-director** (same plugin, sister skill) works upstream. Before CSS exists: define brand (who are we), visual language (how do we speak visually), and design-system architecture (how does this scale). Delivers `brand.md`, `visual-language.md`, and a `design-system/` skeleton. When eye-of-the-beholder observes that a hue does not fit or a spacing does not rhythm, the underlying standard should live in art-director's artifacts, not in every reviewer's head.
 
-**impeccable** (externe plugin) gebruikt de standaard tijdens het bouwen. Per feature. Bevat de normatieve regels in `reference/color-and-contrast.md`, `motion-design.md`, `typography.md`, `spatial-design.md`, en andere. Eye-of-the-beholder verwijst naar impeccable voor de regels; impeccable verwijst naar art-director's artefacten voor de concrete brand-keuzes binnen die regels.
+**impeccable** (external plugin) uses the standard while building. Per feature. Contains the normative rules in `reference/color-and-contrast.md`, `motion-design.md`, `typography.md`, `spatial-design.md`, and others. Eye-of-the-beholder refers to impeccable for the rules; impeccable refers to art-director's artifacts for the concrete brand choices within those rules.
 
-De keten in tijd: art-director eenmalig (bij nieuw product, brand refresh, eerste DS-foundation), impeccable per feature tijdens bouwen, eye-of-the-beholder per wijziging achteraf om visueel te verifieren. Wanneer eye-of-the-beholder een probleem signaleert dat niet in een losse view zit maar systeembreed voorkomt (bijv. een ongecoordineerde spacing-schaal), is dat een signaal dat art-director werk onvolledig of ontbrekend is.
+The chain over time: art-director once (for a new product, brand refresh, first DS foundation), impeccable per feature while building, eye-of-the-beholder per change afterward to verify visually. When eye-of-the-beholder signals a problem that does not sit in a single view but occurs system-wide (e.g. an uncoordinated spacing scale), that is a signal that art-director work is incomplete or missing.
 
-## Veelvoorkomende blinde vlekken
+## Common blind spots
 
-| Wat Claude doet | Wat er misgaat |
+| What Claude does | What goes wrong |
 |-----------------|----------------|
-| `padding: 0.6rem 0` schrijven | De 0 is nul ruimte links/rechts. Lees elke waarde. |
-| Element buiten de hoofdcontainer plaatsen | Dat element erft geen padding. Het heeft eigen spacing nodig. |
-| Naar het midden kijken, niet naar de randen | Het midden ziet er altijd goed uit. De fouten zitten aan de randen. |
-| Alleen perimeter-padding meten, niet sibling-gaps | Container heeft 32px rondom, maar paragraaf raakt tabel eronder. Collapsed padding. Loop expliciet langs elk sibling-paar binnen de container. |
-| `:host` / container padding doorgezogen door margin-collapse | Eerste kind-margin-top collapseert door parent-padding-top als de parent geen border/padding-tussen-ruimte heeft. Fix met `display: flow-root` of expliciete border-top. |
-| "Past het?" als evaluatiecriterium | Fit is niet kwaliteit. Iets kan passen en er tegelijk lelijk uitzien. |
-| Een fix doen en stoppen | Elke fix triggert een rescan van alle vier de randen. |
-| CSS lezen als bewijs | CSS beschrijft intentie, niet resultaat. De screenshot is de waarheid. |
-| Fontsizes verkleinen om te passen | Krimpen is altijd fout. Herstructureer de layout. |
-| SVG-pad vult de viewBox tot de rand | Default `overflow: hidden` clipt stilletjes. Laat 1-2 eenheden marge, of vergroot de viewBox. |
-| Stroke-width vergeten bij bounds-check | Centered stroke voegt `width/2` toe aan alle kanten. Een path tot y=16 met stroke=2 eindigt feitelijk op y=17. |
-| Glyph mathematisch centreren | Optisch centrum ligt hoger. Duw 2-5% omhoog. |
-| Ronde vorm gelijk maken aan vierkante | Cirkels moeten ~113% zijn om optisch gelijk te wegen. |
-| Alleen de pagina-randen tracen | Trace is fractaal. Elke container met randen verdient een edge-trace: component, glyph, pad, pixel. |
-| Tekst en icoon symmetrisch centreren in een pill | Font ascent > descent maakt digits optisch hoog. Align op cap-height center, niet bounding box. Micro-translate van 0.5-1px of cap-height line-height. |
-| Opacity modifier als derde tekstkleur (`text-foo/50`) | Je hebt een missend tertiary-niveau, geen halve tekst. Definieer een expliciet token. |
-| Palette-kleur in app-code (`text-red-500`) | Semantic bypass. Vervang door `text-danger` of vergelijkbaar. |
-| Hardcoded hex in een component style block | Missing token. Definieer een nieuwe rol, of gebruik een bestaand token dat past. |
-| "Dark mode ziet er wel ok uit" zonder math | Check de ratios. Surface delta onder 1.07x is onzichtbaar, text contrast onder 4.5 faalt AA. |
-| Twee aangrenzende surfaces waar je geen verschil ziet | Het verschil IS er niet. Vergroot de luminance-delta tot minstens 1.07x. |
-| Kleurwaarden voor licht zonder tegenwaarde voor donker | Beide modes zijn aparte ontwerpen. Gebruik `light-dark(L, D)` zodat ze naast elkaar leven. |
-| Alleen rest-state screenshots bij animatie | De reis is de bug. Neem frames of gebruik de slow-mo truc om mid-animation te inspecteren. |
-| Progress-animaties beoordelen op gewone screenshots | 5% verschillen in bar-fill zijn onzichtbaar op gewoon image-view. Sample pixels direct uit frames. Zie "Pixel-level animatie-sampling" sectie. |
-| Content die verdwijnt vóór zijn container | Teleporting element. Delay `visibility: hidden` met `transition: visibility 0s linear var(--duration)` op de hidden-state. |
-| Hardcoded ms/ease verspreid over componenten | Definieer `--duration-*` en `--ease-*` custom properties, gebruik overal. Anders drijven elementen bij eerste refactor uit elkaar. |
-| `transition: all` | Animeert ook kleur, border, layout-props. Expliciet: `transform var(--dur), opacity var(--dur)`. |
-| `will-change: width` | Anti-pattern per MDN. Width is een layout-property en krijgt geen GPU compositing. Gebruik alleen `will-change: transform` / `opacity`. |
-| Inline `style:width` zonder `transition` regel | Snapt instant. Grep op `style:` in componenten om snapping elements op te sporen. |
-| Cells die naar 0 collapseren ipv off-screen parken | Collapse forceert "van niets naar iets" sprongen. Park via visibility-hidden met behouden renderWidth. |
+| Writing `padding: 0.6rem 0` | The 0 is zero space left/right. Read every value. |
+| Placing an element outside the main container | That element inherits no padding. It needs its own spacing. |
+| Looking at the center, not the edges | The center always looks fine. The errors live at the edges. |
+| Measuring only perimeter padding, not sibling gaps | Container has 32px all around, but a paragraph touches the table below. Collapsed padding. Walk explicitly through each sibling pair inside the container. |
+| `:host` / container padding passed through by margin-collapse | First child margin-top collapses through parent padding-top if the parent has no border/padding between. Fix with `display: flow-root` or an explicit border-top. |
+| "Does it fit?" as an evaluation criterion | Fit is not quality. Something can fit and still look bad. |
+| Making a fix and stopping | Every fix triggers a rescan of all four edges. |
+| Reading CSS as evidence | CSS describes intent, not result. The screenshot is the truth. |
+| Shrinking font sizes to make things fit | Shrinking is always wrong. Restructure the layout. |
+| SVG path filling the viewBox to the edge | Default `overflow: hidden` clips silently. Leave 1-2 units of margin, or enlarge the viewBox. |
+| Forgetting stroke-width in a bounds check | Centered stroke adds `width/2` to all sides. A path to y=16 with stroke=2 effectively ends at y=17. |
+| Mathematically centering a glyph | Optical center is higher. Push 2-5% upward. |
+| Making a round shape equal to a square one | Circles must be ~113% to weigh optically equal. |
+| Only tracing the page edges | Trace is fractal. Every container with edges deserves an edge trace: component, glyph, path, pixel. |
+| Symmetrically centering text and icon in a pill | Font ascent > descent makes digits appear optically high. Align to cap-height center, not bounding box. Micro-translate of 0.5-1px or cap-height line-height. |
+| Opacity modifier as a third text color (`text-foo/50`) | You have a missing tertiary level, not half-text. Define an explicit token. |
+| Palette color in app code (`text-red-500`) | Semantic bypass. Replace with `text-danger` or equivalent. |
+| Hardcoded hex in a component style block | Missing token. Define a new role, or use an existing token that fits. |
+| "Dark mode looks fine" without math | Check the ratios. Surface delta below 1.07x is invisible, text contrast below 4.5 fails AA. |
+| Two adjacent surfaces where you see no difference | The difference IS not there. Increase the luminance delta to at least 1.07x. |
+| Color values for light without a counterpart for dark | Both modes are separate designs. Use `light-dark(L, D)` so they live side by side. |
+| Only rest-state screenshots for animation | The journey is the bug. Take frames or use the slow-mo trick to inspect mid-animation. |
+| Judging progress animations on regular screenshots | 5% differences in bar-fill are invisible on normal image view. Sample pixels directly from frames. See "Pixel-level animation sampling" section. |
+| Content disappearing before its container | Teleporting element. Delay `visibility: hidden` with `transition: visibility 0s linear var(--duration)` on the hidden state. |
+| Hardcoded ms/ease scattered across components | Define `--duration-*` and `--ease-*` custom properties, use everywhere. Otherwise elements drift apart at the first refactor. |
+| `transition: all` | Animates color, border, layout props too. Explicit: `transform var(--dur), opacity var(--dur)`. |
+| `will-change: width` | Anti-pattern per MDN. Width is a layout property and gets no GPU compositing. Only use `will-change: transform` / `opacity`. |
+| Inline `style:width` without a `transition` rule | Snaps instantly. Grep for `style:` in components to find snapping elements. |
+| Cells collapsing to 0 instead of parking off-screen | Collapse forces "from nothing to something" jumps. Park via visibility-hidden with retained renderWidth. |
 
 ## Output
 
-Na het bekijken van een screenshot:
+After viewing a screenshot:
 
 ```
-Observatie (voor ik naar de CSS kijk):
-- Boven: de titel raakt de bovenkant van de pagina
-- Rechts: voldoende ruimte
-- Onder: ~25% wit onderaan, voelt leeg
-- Links: de titel begint verder links dan de step-content
-- Ritme: stappen zijn gelijkmatig verdeeld
-- Vreemde eend: stap 3 heeft minder content, voelt smaller
+Observation (before I look at the CSS):
+- Top: the title touches the top of the page
+- Right: sufficient space
+- Bottom: ~25% white at the bottom, feels empty
+- Left: the title starts further left than the step-content
+- Rhythm: steps are evenly distributed
+- Odd one out: step 3 has less content, feels narrower
 
-Diagnose (na CSS check):
-- .print-header heeft padding: 0.6rem 0 (nul links/rechts)
-- .print-header heeft geen margin-top (plakt aan content-area top)
+Diagnosis (after CSS check):
+- .print-header has padding: 0.6rem 0 (zero left/right)
+- .print-header has no margin-top (presses against content-area top)
 
 Fix:
-- padding: 0.6rem 0.9rem (0.9rem = 3x basisunit, gelijk aan .main padding-x)
+- padding: 0.6rem 0.9rem (0.9rem = 3x base unit, equal to .main padding-x)
 ```
 
-Na het bekijken van een reeks frames (animatie):
+After viewing a series of frames (animation):
 
 ```
-Observatie per frame (voor ik naar de CSS kijk):
-- Frame 0 (start): nav toont 3 titels, content toont 3 cells, alles netjes in ritme.
-- Frame 3 (mid): nav staat al op de nieuwe layout met 2 titels, content is halverwege.
-  De nav-titels zijn gesnapt, de cells animeren nog.
-- Frame 6 (eind): nav en content beide in eindpositie.
-- Vreemde eend: de nav loopt niet in ritme met de content. Ze eindigen samen maar
-  beginnen niet samen.
-- Verdwijnende content: in frame 3 is de inhoud van de wegglijdende cell al hidden
-  terwijl zijn container nog beweegt. Teleporting element.
+Observation per frame (before I look at the CSS):
+- Frame 0 (start): nav shows 3 titles, content shows 3 cells, everything neatly in rhythm.
+- Frame 3 (mid): nav is already at the new layout with 2 titles, content is halfway.
+  The nav titles have snapped, the cells are still animating.
+- Frame 6 (end): nav and content both in final position.
+- Odd one out: the nav is not in rhythm with the content. They end together but
+  do not start together.
+- Disappearing content: in frame 3 the content of the sliding-away cell is already
+  hidden while its container is still moving. Teleporting element.
 
-Diagnose (na CSS check):
-- .nav-title heeft inline style:width maar geen `transition` regel in de CSS.
-- .cell-collapsed zet visibility: hidden instant zonder delay.
+Diagnosis (after CSS check):
+- .nav-title has inline style:width but no `transition` rule in the CSS.
+- .cell-collapsed sets visibility: hidden instantly without a delay.
 
 Fix:
-- .nav-title krijgt transition: width var(--duration) var(--ease).
-- .cell-collapsed krijgt transition: visibility 0s linear var(--duration), zodat
-  de visibility pas flipt nadat de beweging klaar is.
+- .nav-title gets transition: width var(--duration) var(--ease).
+- .cell-collapsed gets transition: visibility 0s linear var(--duration), so
+  the visibility only flips after the movement is complete.
 ```

@@ -1,95 +1,95 @@
-# Visual language: [Product naam]
+# Visual language: [Product name]
 
-Per as: wat heeft dit merk gekozen, waarom, met welke bron? Elk blok heeft vier velden. Vul in, vervang, verwijder de instructie-zinnen zodra de inhoud staat.
+Per axis: what has this brand chosen, why, with which source? Each block has four fields. Fill in, replace, remove the instruction sentences once the content is there.
 
 ## Type-as-voice
 
-**Principe**: *Een korte regel over wat type hier doet. Bijv. "Neutraal humanist sans voor UI, licht geometrische display voor koppen, mono voor code."*
+**Principle**: *A short rule about what type does here. E.g. "Neutral humanist sans for UI, lightly geometric display for headings, mono for code."*
 
-**Gekozen**:
-- Display: [family, gewicht, bron]
-- Body: [family, gewicht, bron]
-- Mono: [family, gewicht, bron]
+**Chosen**:
+- Display: [family, weight, source]
+- Body: [family, weight, source]
+- Mono: [family, weight, source]
 
-**Rationale**: *Waarom deze pairing? Koppel elk aan een brand-attribuut uit `brand.md`. Niet "elegant = serif". Wel "we kozen Inter omdat het een neutrale humanist sans is die schaalt zonder karakterverlies tussen UI en display, en omdat de brand 'helder maar niet clever' is willen we een type dat zijn eigen stem niet te sterk oplegt."*
+**Rationale**: *Why this pairing? Connect each to a brand attribute from `brand.md`. Not "elegant = serif". Instead "we chose Inter because it is a neutral humanist sans that scales without character loss between UI and display, and because the brand is 'clear but not clever' we want a type that does not impose its own voice too strongly."*
 
-**Referentie**: [Werk + hoofdstuk, bijv. Lupton *Thinking with Type*, H2 "Letter".]
+**Reference**: [Work + chapter, e.g. Lupton *Thinking with Type*, ch. 2 "Letter".]
 
 ---
 
 ## Color-as-mood
 
-**Principe**: *Een korte regel over wat kleur hier doet. Bijv. "60-30-10 met warme neutralen + een diepe accent-hue voor brand-momenten."*
+**Principle**: *A short rule about what color does here. E.g. "60-30-10 with warm neutrals + a deep accent hue for brand moments."*
 
-**Gekozen** (in OKLCH, perceptueel uniform):
-- Brand hue: `oklch(L C H)` [fysieke referentie, bijv. "oude bibliotheekrug, ruwe texture"]
-- Secundair accent: `oklch(L C H)` [referentie]
-- Neutraal-scale: [waardes voor surface-1 tot surface-5, eventueel via `light-dark()`]
-- Status groen: `oklch(L C H)`
-- Status geel: `oklch(L C H)`
-- Status rood: `oklch(L C H)`
+**Chosen** (in OKLCH, perceptually uniform):
+- Brand hue: `oklch(L C H)` [physical reference, e.g. "old library spine, rough texture"]
+- Secondary accent: `oklch(L C H)` [reference]
+- Neutral scale: [values for surface-1 to surface-5, optionally via `light-dark()`]
+- Status green: `oklch(L C H)`
+- Status yellow: `oklch(L C H)`
+- Status red: `oklch(L C H)`
 
-**Rationale**: *Waarom deze palette? Fysieke referenties, niet emotionele labels. Hoe stuurt het de brand-attributen?*
+**Rationale**: *Why this palette? Physical references, not emotional labels. How does it steer the brand attributes?*
 
-**Referentie**: [bijv. Albers *Interaction of Color* voor hoe kleuren in context verschuiven; Adams *Designer's Dictionary of Color* voor de specifieke hue.]
+**Reference**: [e.g. Albers *Interaction of Color* for how colors shift in context; Adams *Designer's Dictionary of Color* for the specific hue.]
 
 ---
 
 ## Form-as-attitude
 
-**Principe**: *Een korte regel. Bijv. "Zacht maar disciplined: 8 px radius, 1 px borders, geen shadows."*
+**Principle**: *A short rule. E.g. "Soft but disciplined: 8 px radius, 1 px borders, no shadows."*
 
-**Gekozen**:
-- Corner radius: [waarde + eventueel scale `--radius-sm`, `--radius-md`, `--radius-lg`]
-- Border weight: [waarde + "default" / "emphatic"]
-- Surface depth: [aantal niveaus + hun luminance-delta]
-- Shadow language: [flat / soft / hard + specs per niveau]
+**Chosen**:
+- Corner radius: [value + optional scale `--radius-sm`, `--radius-md`, `--radius-lg`]
+- Border weight: [value + "default" / "emphatic"]
+- Surface depth: [number of levels + their luminance delta]
+- Shadow language: [flat / soft / hard + specs per level]
 
-**Rationale**: *Hoe drukt deze geometrie de brand-attributen uit?*
+**Rationale**: *How does this geometry express the brand attributes?*
 
-**Referentie**: [bijv. Wathan & Schoger *Refactoring UI* H"Depth" voor shadow-beslissingen.]
+**Reference**: [e.g. Wathan & Schoger *Refactoring UI* ch. "Depth" for shadow decisions.]
 
 ---
 
 ## Motion-as-tempo
 
-**Principe**: *Een korte regel. Bijv. "Unhurried en zorgvuldig: 280 ms met expo-out voor de meeste state changes, 120 ms voor direct feedback zoals button-press."*
+**Principle**: *A short rule. E.g. "Unhurried and careful: 280 ms with expo-out for most state changes, 120 ms for direct feedback like button press."*
 
-**Gekozen**:
-- `--duration-instant`: [waarde]
-- `--duration-fast`: [waarde]
-- `--duration-base`: [waarde]
-- `--duration-slow`: [waarde]
-- `--ease-entrance`: [cubic-bezier of named]
-- `--ease-exit`: [cubic-bezier of named]
-- `--ease-standard`: [cubic-bezier of named]
+**Chosen**:
+- `--duration-instant`: [value]
+- `--duration-fast`: [value]
+- `--duration-base`: [value]
+- `--duration-slow`: [value]
+- `--ease-entrance`: [cubic-bezier or named]
+- `--ease-exit`: [cubic-bezier or named]
+- `--ease-standard`: [cubic-bezier or named]
 
-**Rationale**: *Welk tempo spreekt de brand-persoonlijkheid uit? Snelle ease-out = efficient, langere expo = overwogen, micro-bounce = speels.*
+**Rationale**: *Which tempo speaks the brand personality? Fast ease-out = efficient, longer expo = deliberate, micro-bounce = playful.*
 
-**Referentie**: [bijv. impeccable's `reference/motion-design.md` voor normatieve regels, Walter *Designing for Emotion* voor persoonlijkheid-koppeling.]
-
----
-
-## Photography en illustration tone
-
-**Principe**: *Een korte regel. Bijv. "Editorial product photography op neutrale achtergrond, geen stock, illustraties alleen als wayfinding."*
-
-**Gekozen**:
-- Photography register: [editorial / product / documentair / stock] + [met / zonder mensen]
-- Kleur-behandeling: [volledig gekleurd / monochroom / duotone]
-- Illustration register: [geometrisch / organisch / hand / flat] + [mono / gekleurd]
-- Mix-and-match regel: [waar photography, waar illustration, nooit samen / op welke manier samen]
-
-**Rationale**: *Waarom dit register? Hoe past het bij de brand-attributen en hoe onderscheidt het zich van concurrenten uit de competitive scan?*
-
-**Referentie**: [bijv. Wheeler *Designing Brand Identity* fase 3 designing identity voor touchpoint-consistentie.]
+**Reference**: [e.g. impeccable's `reference/motion-design.md` for normative rules, Walter *Designing for Emotion* for personality coupling.]
 
 ---
 
-## Decision log entries (toekomstige wijzigingen)
+## Photography and illustration tone
 
-*Bij elke wijziging in dit document: voeg een entry toe onderaan met datum, auteur, wat veranderde, waarom.*
+**Principle**: *A short rule. E.g. "Editorial product photography on neutral background, no stock, illustrations only as wayfinding."*
 
-| Datum | Auteur | As | Wijziging | Waarom |
-|-------|--------|----|-----------|--------|
-| [YYYY-MM-DD] | [naam/rol] | [Type/Color/Form/Motion/Photo] | [kort] | [brand-rationale] |
+**Chosen**:
+- Photography register: [editorial / product / documentary / stock] + [with / without people]
+- Color treatment: [full color / monochrome / duotone]
+- Illustration register: [geometric / organic / hand / flat] + [mono / color]
+- Mix-and-match rule: [where photography, where illustration, never together / how together]
+
+**Rationale**: *Why this register? How does it fit the brand attributes and how does it differentiate from competitors in the competitive scan?*
+
+**Reference**: [e.g. Wheeler *Designing Brand Identity* phase 3 designing identity for touchpoint consistency.]
+
+---
+
+## Decision log entries (future changes)
+
+*On every change to this document: add an entry at the bottom with date, author, what changed, why.*
+
+| Date | Author | Axis | Change | Why |
+|------|--------|------|--------|-----|
+| [YYYY-MM-DD] | [name/role] | [Type/Color/Form/Motion/Photo] | [short] | [brand rationale] |

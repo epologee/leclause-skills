@@ -1,67 +1,67 @@
-# Design system governance: [Product naam]
+# Design system governance: [Product name]
 
-Wie mag wat wijzigen, wanneer, via welk proces. Zonder governance wordt een design system binnen een jaar een kerkhof van half-geadopteerde tokens en duplicate componenten.
+Who may change what, when, via which process. Without governance a design system becomes a graveyard of half-adopted tokens and duplicate components within a year.
 
 ## Contribution model
 
-### Nieuw component voorstellen
+### Proposing a new component
 
-Via een PR naar deze repo met:
+Via a PR to this repo with:
 
-- **Design rationale**: waarom bestaat dit component? Wat lost het op dat een bestaand component niet kan?
-- **Alternatieven overwogen**: welke bestaande componenten heb je overwogen en waarom vielen ze af?
-- **Component contract** (zie `components/_example.md`): API, states, variants, slots, a11y, do/don't.
-- **Visual**: mockup of screenshot in drie states (rest / hover of focus / disabled).
-- **A11y checklist**: rol, keyboard support, screen-reader-namen, contrast-ratio's gecheckt tegen `reference/color-and-contrast.md` (WCAG AA).
+- **Design rationale**: why does this component exist? What does it solve that an existing component cannot?
+- **Alternatives considered**: which existing components did you consider and why did they fall short?
+- **Component contract** (see `components/_example.md`): API, states, variants, slots, a11y, do/don't.
+- **Visual**: mockup or screenshot in three states (rest / hover or focus / disabled).
+- **A11y checklist**: role, keyboard support, screen-reader names, contrast ratios checked against `reference/color-and-contrast.md` (WCAG AA).
 
-### Bestaand component wijzigen
+### Changing an existing component
 
-- **Impact assessment**: welke andere componenten en pagina's gebruiken dit?
-- **Breaking vs additive**: is deze wijziging breaking (prop verwijderd, default aangepast, visueel gedrag veranderd) of additive (nieuwe prop, nieuwe variant)?
-- **Migratiepad bij breaking**: voor hoe lang blijft de oude API beschikbaar? Wat is het communicatiepad?
+- **Impact assessment**: which other components and pages use this?
+- **Breaking vs additive**: is this change breaking (prop removed, default changed, visual behavior changed) or additive (new prop, new variant)?
+- **Migration path for breaking changes**: how long does the old API remain available? What is the communication path?
 
-### Nieuw token toevoegen
+### Adding a new token
 
-- **Primitive**: mag ieder teamlid per PR.
-- **Semantic**: review door design owner. Waarom is de bestaande semantic laag niet voldoende?
-- **Component**: alleen wanneer de semantic laag geen passend vocabulaire heeft. Als je vaak component tokens toevoegt, is de semantic laag incompleet; bespreek eerst met design owner.
+- **Primitive**: any team member may do this via a PR.
+- **Semantic**: review by design owner. Why is the existing semantic layer not sufficient?
+- **Component**: only when the semantic layer has no suitable vocabulary. If you frequently add component tokens, the semantic layer is incomplete; discuss with the design owner first.
 
 ## Review
 
-- **Design owner**: [rol of persoon].
-- **Technical owner**: [rol of persoon].
-- Elke design-system PR krijgt beide reviewers. Approve van één is niet voldoende; beide moeten approven.
-- **SLA voor review**: [bijv. binnen 2 werkdagen na aanvraag].
-- **Blocking vs non-blocking feedback**: expliciet in elke comment. Blocking = merge pas na fix. Non-blocking = follow-up PR mag.
+- **Design owner**: [role or person].
+- **Technical owner**: [role or person].
+- Every design-system PR gets both reviewers. Approval from one is not sufficient; both must approve.
+- **SLA for review**: [e.g. within 2 working days of request].
+- **Blocking vs non-blocking feedback**: explicit in every comment. Blocking = merge only after fix. Non-blocking = follow-up PR is allowed.
 
 ## Semver
 
-Design system volgt semantic versioning, op zowel tokens als componenten:
+Design system follows semantic versioning for both tokens and components:
 
-- **Major**: breaking change. Token hernoemd, component-API gewijzigd, visueel gedrag fundamenteel anders.
-- **Minor**: additive. Nieuw token, nieuwe variant, nieuwe component. Bestaand gedrag onveranderd.
-- **Patch**: bugfix, visuele verfijning zonder gedragsverandering, documentatie. Een brand-hue die 5 graden opschuift in OKLCH is patch als het perceptueel geen breuk voelt; major als het merk visueel anders leest.
+- **Major**: breaking change. Token renamed, component API changed, visual behavior fundamentally different.
+- **Minor**: additive. New token, new variant, new component. Existing behavior unchanged.
+- **Patch**: bugfix, visual refinement without behavior change, documentation. A brand hue that shifts 5 degrees in OKLCH is a patch if it does not feel like a perceptual break; major if the brand reads visually differently.
 
 ## Deprecation
 
-Een token of component wordt nooit stilletjes verwijderd. Proces:
+A token or component is never silently removed. Process:
 
-1. **Markeer als deprecated**: JSDoc of CSS comment `/* @deprecated: use --color-accent instead, removed in v3.0.0 */`.
-2. **Console warning of linter rule** op gebruik in de codebase.
-3. **Communicatie**: changelog entry, bericht in gedeelde kanalen, entry in design-system-roadmap.
-4. **Minimum window**: [bijv. 2 minor releases of 6 kalendermaanden], afhankelijk van product-releasecadans.
-5. **Verwijdering**: pas na de window. Bij verwijdering: changelog entry als breaking change + major bump.
+1. **Mark as deprecated**: JSDoc or CSS comment `/* @deprecated: use --color-accent instead, removed in v3.0.0 */`.
+2. **Console warning or linter rule** on usage in the codebase.
+3. **Communication**: changelog entry, message in shared channels, entry in design-system roadmap.
+4. **Minimum window**: [e.g. 2 minor releases or 6 calendar months], depending on product release cadence.
+5. **Removal**: only after the window. On removal: changelog entry as breaking change + major bump.
 
-## Review cadans
+## Review cadence
 
-- **Token audit**: [bijv. elke drie maanden]. Zijn er nog primitives in application code? Zijn er semantic tokens die niet gebruikt worden?
-- **Component audit**: [bijv. elke zes maanden]. Zijn er duplicate componenten ontstaan (twee soort-gelijke buttons, drie soort-gelijke cards)?
-- **Governance audit**: [bijv. jaarlijks]. Werkt dit proces nog voor het team?
+- **Token audit**: [e.g. every three months]. Are there still primitives in application code? Are there semantic tokens that are not used?
+- **Component audit**: [e.g. every six months]. Have duplicate components emerged (two similar buttons, three similar cards)?
+- **Governance audit**: [e.g. annually]. Does this process still work for the team?
 
 ---
 
-## Referenties gebruikt
+## References used
 
-- Kholmatova, *Design Systems* (Smashing): semver voor tokens, contribution model.
-- DesignBetter, *Design Systems Handbook*: team-organisatie en governance cadans.
-- Curtis, Eightshapes: DS team structures + rollen.
+- Kholmatova, *Design Systems* (Smashing): semver for tokens, contribution model.
+- DesignBetter, *Design Systems Handbook*: team organization and governance cadence.
+- Curtis, Eightshapes: DS team structures + roles.

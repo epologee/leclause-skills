@@ -1,83 +1,83 @@
-# Component: [Naam]
+# Component: [Name]
 
-Kopieer dit bestand per nieuw component naar `components/<name>.md`. Vul elke sectie volledig in. Als een sectie niet van toepassing is, schrijf "N.v.t." met een korte onderbouwing, laat de sectie niet weg. Compleetheid is de helft van de reden dat dit document bestaat.
+Copy this file per new component to `components/<name>.md`. Fill in every section completely. If a section does not apply, write "N/A" with a brief justification; do not omit the section. Completeness is half the reason this document exists.
 
-## Doel
+## Purpose
 
-*Eén tot twee zinnen. Wat lost dit component op, en voor welke gebruiker? Welk alternatief is niet goed genoeg en waarom?*
+*One to two sentences. What does this component solve, and for which user? Which alternative is not good enough and why?*
 
 ## API
 
 ### Props
 
-| Prop | Type | Default | Required | Beschrijving |
-|------|------|---------|:--------:|--------------|
-| `variant` | `"primary" \| "secondary" \| "danger"` | `"primary"` |  | Welke variant; zie Variants sectie. |
-| `size` | `"sm" \| "md" \| "lg"` | `"md"` |  | Visueel formaat. |
-| `disabled` | `boolean` | `false` |  | Interactie uit. |
-| `loading` | `boolean` | `false` |  | Laadstate; pairt met aria-busy. |
-| `leadingIcon` | `ReactNode` | | | Icoon voor de label. |
-| `trailingIcon` | `ReactNode` | | | Icoon na de label. |
+| Prop | Type | Default | Required | Description |
+|------|------|---------|:--------:|-------------|
+| `variant` | `"primary" \| "secondary" \| "danger"` | `"primary"` |  | Which variant; see Variants section. |
+| `size` | `"sm" \| "md" \| "lg"` | `"md"` |  | Visual size. |
+| `disabled` | `boolean` | `false` |  | Interaction off. |
+| `loading` | `boolean` | `false` |  | Loading state; pairs with aria-busy. |
+| `leadingIcon` | `ReactNode` | | | Icon before the label. |
+| `trailingIcon` | `ReactNode` | | | Icon after the label. |
 | `onClick` | `(e: MouseEvent) => void` | | | Handler. |
 
 ### Slots
 
-*Kan dit component children accepteren? Zo ja, welke? Met welke beperkingen? Voorbeeld:*
+*Can this component accept children? If so, which? With what constraints? Example:*
 
-- `children`: de label (tekst of ReactNode). Maximale lengte 40 tekens; langere labels falen in mobile layout.
+- `children`: the label (text or ReactNode). Maximum length 40 characters; longer labels fail in mobile layout.
 
 ## States
 
-Elke state expliciet documenteren. Per state: visuele beschrijving, a11y-annotaties.
+Document every state explicitly. Per state: visual description, a11y annotations.
 
-- **Rest**: default, geen interactie.
-- **Hover**: cursor boven, geen klik. Visueel: [bijv. background shift via `--button-bg-primary-hover`].
-- **Focus-visible**: keyboard focus. Visueel: [bijv. 2 px outline in `--color-accent`]. Screen reader: aria-label van `aria-describedby` gekoppeld waar nodig.
-- **Active**: ingedrukt. Visueel: [bijv. 1 px translate-y voor depth-feedback].
-- **Disabled**: uitgeschakeld. Visueel: [bijv. 40% opacity op label, cursor not-allowed]. A11y: `aria-disabled="true"`, NIET `disabled` attribute (anders wordt focus overgeslagen en mist de gebruiker context).
-- **Loading**: in progress. Visueel: [bijv. spinner vervangt leading-icon, label blijft staan]. A11y: `aria-busy="true"`.
-- **Error** (indien van toepassing): validatie gefaald. Visueel en a11y specs.
+- **Rest**: default, no interaction.
+- **Hover**: cursor above, no click. Visual: [e.g. background shift via `--button-bg-primary-hover`].
+- **Focus-visible**: keyboard focus. Visual: [e.g. 2 px outline in `--color-accent`]. Screen reader: aria-label from `aria-describedby` coupled where needed.
+- **Active**: pressed. Visual: [e.g. 1 px translate-y for depth feedback].
+- **Disabled**: disabled. Visual: [e.g. 40% opacity on label, cursor not-allowed]. A11y: `aria-disabled="true"`, NOT `disabled` attribute (otherwise focus is skipped and the user loses context).
+- **Loading**: in progress. Visual: [e.g. spinner replaces leading-icon, label stays]. A11y: `aria-busy="true"`.
+- **Error** (if applicable): validation failed. Visual and a11y specs.
 
 ## Variants
 
-Elke variant: wanneer gebruik je deze, met welke brand-rationale?
+Each variant: when do you use it, with which brand rationale?
 
-- **Primary**: de hoofdactie op de view. Eén per view. Brand-rationale: [bijv. "dit is waar we de gebruiker naartoe willen, dus visueel dominant"].
-- **Secondary**: alternatieve actie. Meerdere toegestaan. Brand-rationale: [bijv. "subsidiair, neutrale surface zonder brand-accent"].
-- **Danger**: destructieve actie. Gebruik spaarzaam. Brand-rationale: [bijv. "gebruikt status-danger kleur om de onomkeerbaarheid te signaleren"].
+- **Primary**: the main action on the view. One per view. Brand rationale: [e.g. "this is where we want to take the user, so visually dominant"].
+- **Secondary**: alternative action. Multiple allowed. Brand rationale: [e.g. "subsidiary, neutral surface without brand accent"].
+- **Danger**: destructive action. Use sparingly. Brand rationale: [e.g. "uses status-danger color to signal irreversibility"].
 
 ## A11y
 
-- **Role**: [bijv. button (native) of role="button" indien non-button element].
-- **Keyboard support**: Space en Enter activeren, Tab voegt toe aan tab-order, Shift+Tab gaat terug. Disabled skipt Tab niet als `aria-disabled`.
-- **Screen reader name**: via children tekst, of `aria-label` wanneer alleen icoon.
-- **Contrast ratios** (per variant, per state, tegen gebruikelijke achtergrond): minimaal WCAG AA (4.5:1 voor body text, 3:1 voor UI boundaries). Gecheckt tegen impeccable's `reference/color-and-contrast.md`.
-- **Reduced motion**: respecteert `prefers-reduced-motion: reduce`; animaties weg of instant.
-- **Minimum touch target**: 44x44 px op mobiel.
+- **Role**: [e.g. button (native) or role="button" if non-button element].
+- **Keyboard support**: Space and Enter activate, Tab adds to tab order, Shift+Tab goes back. Disabled does not skip Tab if `aria-disabled`.
+- **Screen reader name**: via children text, or `aria-label` when icon only.
+- **Contrast ratios** (per variant, per state, against typical background): minimum WCAG AA (4.5:1 for body text, 3:1 for UI boundaries). Checked against impeccable's `reference/color-and-contrast.md`.
+- **Reduced motion**: respects `prefers-reduced-motion: reduce`; animations removed or instant.
+- **Minimum touch target**: 44x44 px on mobile.
 
 ## Do
 
-- Gebruik Primary voor exact één hoofdactie per view.
-- Combineer leading-icon met een duidelijk label; icon-only buttons vereisen `aria-label`.
-- Gebruik Loading state bij acties met latency > 300 ms.
+- Use Primary for exactly one main action per view.
+- Combine leading-icon with a clear label; icon-only buttons require `aria-label`.
+- Use Loading state for actions with latency > 300 ms.
 
 ## Don't
 
-- Gebruik Danger voor niet-destructieve acties, ook niet "om op te vallen".
-- Zet meer dan 3 buttons naast elkaar; dat is een menu, geen button-rij.
-- Gebruik Primary + Secondary + Danger tegelijk in hetzelfde frame; kies hoogstens twee.
+- Use Danger for non-destructive actions, even "to stand out".
+- Place more than 3 buttons side by side; that is a menu, not a button row.
+- Use Primary + Secondary + Danger simultaneously in the same frame; choose at most two.
 
-## Visuele voorbeelden
+## Visual examples
 
-*Link of screenshot naar de showcase-route + een state-matrix (alle states als rij).*
+*Link or screenshot to the showcase route + a state matrix (all states as a row).*
 
 ![State matrix](../../../tmp/button-states.png)
 
 ---
 
-## Referenties gebruikt
+## References used
 
-- Frost, *Atomic Design*: button als atoom + combinatie-regels.
-- Kholmatova, *Design Systems*: states als onderdeel van component contract.
+- Frost, *Atomic Design*: button as atom + combination rules.
+- Kholmatova, *Design Systems*: states as part of component contract.
 - impeccable's `reference/color-and-contrast.md`: AA/AAA thresholds.
 - impeccable's `reference/interaction-design.md`: keyboard + focus patterns.

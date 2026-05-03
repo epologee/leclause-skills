@@ -1,12 +1,12 @@
-# Design tokens: [Product naam]
+# Design tokens: [Product name]
 
-Drie-laags taxonomie naar Nathan Curtis (medium.com/eightshapes-llc). Applicatiecode praat ALLEEN tegen de semantic laag. Primitives zijn de fysieke palet, components zijn per-component afleidingen.
+Three-layer taxonomy after Nathan Curtis (medium.com/eightshapes-llc). Application code talks ONLY to the semantic layer. Primitives are the physical palette, components are per-component derivations.
 
-## Laag 1: Primitive tokens
+## Layer 1: Primitive tokens
 
-*De fysieke palet. Betekenisloos voor het product: `--blue-500` zegt niets over waar het gebruikt wordt. Bestaat zodat de semantic laag ergens naar kan verwijzen.*
+*The physical palette. Meaningless for the product: `--blue-500` says nothing about where it is used. Exists so that the semantic layer has something to point to.*
 
-### Kleuren (OKLCH)
+### Colors (OKLCH)
 
 ```css
 --blue-50:  oklch(0.97 0.02 260);
@@ -21,7 +21,7 @@ Drie-laags taxonomie naar Nathan Curtis (medium.com/eightshapes-llc). Applicatie
 --neutral-700: oklch(0.42 0 0);
 --neutral-900: oklch(0.15 0 0);
 
-/* + overige kleuren uit visual-language.md */
+/* + remaining colors from visual-language.md */
 ```
 
 ### Spacing
@@ -38,7 +38,7 @@ Drie-laags taxonomie naar Nathan Curtis (medium.com/eightshapes-llc). Applicatie
 --space-16:  4rem;     /* 64 px */
 ```
 
-### Type-schaal
+### Type scale
 
 ```css
 --font-size-xs:  0.75rem;   /* 12 px */
@@ -79,29 +79,29 @@ Drie-laags taxonomie naar Nathan Curtis (medium.com/eightshapes-llc). Applicatie
 --ease-standard: cubic-bezier(0.4, 0.0, 0.2, 1);
 ```
 
-## Laag 2: Semantic tokens
+## Layer 2: Semantic tokens
 
-*Rol, niet kleur. Applicatiecode praat alleen met deze. Brand-wijziging = één semantic alias aanpassen, niet dertig componenten.*
+*Role, not color. Application code talks only to these. Brand change = update one semantic alias, not thirty components.*
 
 ```css
-/* Kleur: rol */
+/* Color: role */
 --color-accent:         var(--blue-500);
 --color-accent-hover:   var(--blue-700);
 --color-danger:         oklch(0.58 0.22 25);
 --color-success:        oklch(0.62 0.16 150);
 --color-warning:        oklch(0.78 0.15 80);
 
-/* Kleur: surface */
+/* Color: surface */
 --color-surface-0:      light-dark(var(--neutral-50),  var(--neutral-900));
 --color-surface-1:      light-dark(var(--neutral-100), oklch(0.19 0 0));
 --color-surface-2:      light-dark(oklch(0.93 0 0),    oklch(0.23 0 0));
 
-/* Kleur: text */
+/* Color: text */
 --color-text-primary:   light-dark(var(--neutral-900), var(--neutral-50));
 --color-text-secondary: light-dark(var(--neutral-500), oklch(0.72 0 0));
 --color-text-inverse:   light-dark(var(--neutral-50),  var(--neutral-900));
 
-/* Spacing: rol */
+/* Spacing: role */
 --space-inline-tight:  var(--space-2);
 --space-inline-base:   var(--space-3);
 --space-inline-loose:  var(--space-4);
@@ -110,30 +110,30 @@ Drie-laags taxonomie naar Nathan Curtis (medium.com/eightshapes-llc). Applicatie
 --space-stack-loose:   var(--space-6);
 --space-section:       var(--space-12);
 
-/* Type: rol */
+/* Type: role */
 --type-body:     var(--font-size-md) / var(--line-height-base);
 --type-caption:  var(--font-size-sm) / var(--line-height-base);
 --type-heading:  var(--font-size-2xl) / var(--line-height-tight);
 --type-display:  var(--font-size-3xl) / var(--line-height-tight);
 
-/* Radius: rol */
+/* Radius: role */
 --radius-control:  var(--radius-2);
 --radius-container: var(--radius-3);
 --radius-pill:     var(--radius-full);
 
-/* Motion: rol */
+/* Motion: role */
 --duration-enter: var(--duration-base);
 --duration-exit:  var(--duration-fast);
 ```
 
-Twee anti-patronen om te vermijden:
+Two anti-patterns to avoid:
 
-- **Applicatiecode die naar primitives verwijst**: `background: var(--blue-500)` in een `.button` selector is een bypass van de semantic laag. Altijd via `--color-accent`.
-- **Semantic names die primitives vermomd zijn**: `--color-blue-primary` is geen semantic naam. `--color-accent` wel. Als je de hue wilt verschuiven, moet je niet ook de naam hoeven te wijzigen.
+- **Application code referring to primitives**: `background: var(--blue-500)` in a `.button` selector bypasses the semantic layer. Always use `--color-accent`.
+- **Semantic names that are disguised primitives**: `--color-blue-primary` is not a semantic name. `--color-accent` is. If you want to shift the hue, you should not also need to change the name.
 
-## Laag 3: Component tokens (optioneel)
+## Layer 3: Component tokens (optional)
 
-*Alleen wanneer een component zijn eigen variatie nodig heeft die niet in de semantic laag thuishoort. Als je hier vaak nieuwe tokens toevoegt, is je semantic laag incompleet.*
+*Only when a component needs its own variation that does not belong in the semantic layer. If you frequently add new tokens here, your semantic layer is incomplete.*
 
 ```css
 /* Button */
@@ -153,8 +153,8 @@ Twee anti-patronen om te vermijden:
 
 ---
 
-## Referenties gebruikt
+## References used
 
-- Curtis, Eightshapes Medium: 3-laags model uit Module 3.1 van SKILL.md.
-- impeccable's `reference/color-and-contrast.md`: OKLCH + WCAG contrast thresholds (voor normatieve regels, verifieer je palet tegen AA/AAA na invullen).
-- eye-of-the-beholder's surface-delta 1.07x rule: voor surface-0 tot surface-2 ratio-check in dark mode.
+- Curtis, Eightshapes Medium: 3-layer model from Module 3.1 of SKILL.md.
+- impeccable's `reference/color-and-contrast.md`: OKLCH + WCAG contrast thresholds (for normative rules, verify your palette against AA/AAA after filling in).
+- eye-of-the-beholder's surface-delta 1.07x rule: for surface-0 to surface-2 ratio check in dark mode.

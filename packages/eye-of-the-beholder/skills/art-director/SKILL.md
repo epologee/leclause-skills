@@ -7,148 +7,148 @@ effort: high
 
 # Art Director
 
-## Het echte probleem
+## The real problem
 
-Claude start een product of feature en kiest visuele eigenschappen op gevoel. Een hue uit de Tailwind default scale, een radius die ergens tussen 4 en 12 px zit, een ease-curve die overgenomen is uit een eerdere repo. Dat voelt productief, maar er is geen brand om die keuzes tegen te ijken. "Past dit bij ons?" is niet beantwoordbaar als "ons" nog nooit gedefinieerd is.
+Claude starts a product or feature and picks visual properties by feel. A hue from the Tailwind default scale, a radius somewhere between 4 and 12 px, an ease curve borrowed from a previous repo. That feels productive, but there is no brand to calibrate those choices against. "Does this fit us?" is not answerable if "us" has never been defined.
 
-Hetzelfde geldt voor teams met een brand: als die brand in de hoofden van drie mensen zit en niet op papier, vindt elke nieuwe developer een iets ander paletje uit. Na een jaar heeft het product visuele slijtage door accumulatie van losse keuzes. Op code-niveau heet dat technische schuld; op brand-niveau heet het geen naam, maar het eruit trekken kost net zo veel.
+The same applies to teams that do have a brand: if that brand lives in three people's heads and not on paper, every new developer invents a slightly different palette. After a year the product has visual wear through accumulated loose choices. At the code level that is called technical debt; at the brand level it has no name, but extracting it costs just as much.
 
-**Art-director werkt vooraf.** De output is geen UI, maar een set artefacten die toekomstig UI-werk concreter en minder reflex-gestuurd maken. Brand brief, visuele taal, design-system architectuur. Daarna kan impeccable tijdens de bouw verwijzen naar die artefacten ("de brand hue is deze, niet die") in plaats van per feature opnieuw te kiezen. En eye-of-the-beholder kan achteraf verifieren tegen een bestaand ritme in plaats van een losse intuitie.
+**Art-director works upfront.** The output is not UI, but a set of artifacts that make future UI work more concrete and less reflex-driven. Brand brief, visual language, design-system architecture. After that impeccable can refer to those artifacts while building ("the brand hue is this one, not that one") instead of re-choosing per feature. And eye-of-the-beholder can verify afterward against an existing rhythm instead of a loose intuition.
 
-## Positionering
+## Positioning
 
-Art-director zit tussen discovery en productie. Drie skills, drie momenten:
+Art-director sits between discovery and production. Three skills, three moments:
 
-- **art-director**, definieer standaard. Vooraf, eenmalig per project of per brand refresh. Levert `brand.md`, `visual-language.md`, en een `design-system/` skeleton.
-- **impeccable**, gebruik standaard tijdens het bouwen. Per feature. Verwijst naar art-director's artefacten voor concrete keuzes ("pak de hue uit `visual-language.md`", niet "kies een warme accentkleur").
-- **eye-of-the-beholder**, verifieer na elke wijziging. Diagnostisch. Screenshot, observeer, vergelijk met intentie. Verwijst naar impeccable voor regels en naar art-director voor brand-context.
+- **art-director**, define the standard. Upfront, once per project or per brand refresh. Delivers `brand.md`, `visual-language.md`, and a `design-system/` skeleton.
+- **impeccable**, use the standard while building. Per feature. Refers back to art-director's artifacts for concrete choices ("take the hue from `visual-language.md`", not "choose a warm accent color").
+- **eye-of-the-beholder**, verify after every change. Diagnostic. Screenshot, observe, compare with intent. Refers to impeccable for rules and to art-director for brand context.
 
-De drie zijn niet inwisselbaar. Een design system zonder brand is een catalogus zonder stem. Brand zonder design system is een poster zonder uitvoering. Een UI zonder eye-of-the-beholder is een statisch correct plaatje dat onder beweging of in een ander scherm kapot gaat. Elke skill heeft zijn eigen moment.
+The three are not interchangeable. A design system without a brand is a catalog without a voice. Brand without a design system is a poster without execution. A UI without eye-of-the-beholder is a statically correct image that breaks under movement or on a different screen. Each skill has its own moment.
 
-## Wanneer
+## When
 
-Art-director mag NIET activeren bij elk stukje design-werk. Dat was de fout die eye-of-the-beholder niet wilde maken en die art-director ook niet wil maken. Actieve triage:
+Art-director must NOT activate on every piece of design work. That was the mistake eye-of-the-beholder did not want to make, and that art-director does not want to make either. Active triage:
 
-**Wel activeren:**
+**Activate:**
 
-- Nieuw product of nieuwe productlijn die nog geen brand heeft.
-- Brand refresh van een bestaand product (oude brand vervangen, niet aanvullen).
-- Eerste design-system-foundation leggen: de allereerste tokens, de allereerste atomaire componenten, het eerste governance-model.
-- User vraagt expliciet om "art direction", "brand work", "visual language", of "design system architecture".
+- New product or product line that has no brand yet.
+- Brand refresh of an existing product (replacing the old brand, not supplementing it).
+- Laying the first design-system foundation: the very first tokens, the very first atomic components, the first governance model.
+- User explicitly asks for "art direction", "brand work", "visual language", or "design system architecture".
 
-**Niet activeren:**
+**Do not activate:**
 
-- Kleine UI-tweak (spacing, kleur van een knop, nieuwe view in een bestaande flow). Dat is impeccable + eye-of-the-beholder.
-- Per-component visuele review. Dat is eye-of-the-beholder.
-- Anti-AI-slop check op een feature. Dat is impeccable.
-- Single-screen layout-fix. Dat is eye-of-the-beholder.
-- "Maak de kleuren wat mooier" zonder brand-context. Stuur door naar impeccable's `colorize` of `bolder` sub-skill.
+- Small UI tweak (spacing, color of a button, new view in an existing flow). That is impeccable + eye-of-the-beholder.
+- Per-component visual review. That is eye-of-the-beholder.
+- Anti-AI-slop check on a feature. That is impeccable.
+- Single-screen layout fix. That is eye-of-the-beholder.
+- "Make the colors a bit nicer" without brand context. Route to impeccable's `colorize` or `bolder` sub-skill.
 
-Als de vraag "bouw dit schermpje" is, is art-director het foute antwoord. Als de vraag "wat is de visuele identiteit van dit product" is, dan wel.
+If the question is "build this screen", art-director is the wrong answer. If the question is "what is the visual identity of this product", it is the right one.
 
 ## Module 1: Brand identity discovery
 
-Doel: vastleggen wie het product is voordat je tekent. Vijf fases, afgeleid van Alina Wheeler's vijf-fase model in *Designing Brand Identity* (Wiley, 6e editie). Volledige citatie in `references.md`.
+Goal: establish who the product is before you draw. Five phases, derived from Alina Wheeler's five-phase model in *Designing Brand Identity* (Wiley, 6th edition). Full citation in `references.md`.
 
 ### 1.1 Conducting research
 
-Voor je over visueel materiaal praat: leer de situatie kennen. Drie richtingen.
+Before talking about visual material: learn the situation. Three directions.
 
-- **Stakeholder interviews.** Wie heeft belang bij hoe dit product eruit ziet? Oprichters, gebruikers, investeerders, bestaande klanten, team. Drie tot vijf korte gesprekken (30-45 min). Vraag niet naar kleuren of fonts. Vraag naar: wat doet het product fundamenteel, voor wie, waarom nu? Wat zou het product nooit mogen worden? Welke concurrenten wekken irritatie en waarom?
-- **Competitive scan.** Lijst direct-concurrenten + aangrenzende categorieen. Voor elk: naam, visuele register (minimaal / maximalistisch, professioneel / casual, warm / koel), wat werkt wel, wat werkt niet. Doel is niet imiteren maar positionering. Je wilt weten waar je zelf gaat staan ten opzichte van dit landschap.
-- **Audit van bestaand materiaal.** Als het product al bestaat: screenshots van elke view, printouts waar van toepassing, marketing assets. Lijst inconsistenties. Wat zijn de vijf meest voorkomende kleuren in het huidige product? Komen die overeen met de intentie of zijn ze drift?
+- **Stakeholder interviews.** Who has a stake in how this product looks? Founders, users, investors, existing customers, team. Three to five short conversations (30-45 min). Do not ask about colors or fonts. Ask: what does the product fundamentally do, for whom, why now? What should the product never become? Which competitors cause irritation and why?
+- **Competitive scan.** List direct competitors and adjacent categories. For each: name, visual register (minimal / maximalist, professional / casual, warm / cool), what works, what does not. The goal is not imitation but positioning. You want to know where you will stand relative to this landscape.
+- **Audit of existing material.** If the product already exists: screenshots of every view, printouts where applicable, marketing assets. List inconsistencies. What are the five most common colors in the current product? Do they align with the intention or are they drift?
 
-Output: een rapport van 1-2 pagina's per stakeholder-groep + 1 pagina competitive scan + 1 pagina audit-bevindingen.
+Output: a 1-2 page report per stakeholder group + 1 page competitive scan + 1 page audit findings.
 
 ### 1.2 Clarifying strategy
 
-Uit de research rolt strategie. Wheeler's brand brief destilleert tot drie artefacten.
+Strategy rolls out of research. Wheeler's brand brief distills to three artifacts.
 
-- **Positionering.** In één zin, niet een alinea. Formule: "Voor \[doelgroep\] is \[product\] de \[categorie\] die \[waarde\]." Niet om op een homepage te plakken, maar om intern aan te toetsen.
-- **Persoonlijkheid.** Kies DRIE attributen + DRIE anti-attributen. "Helder" is een attribuut, "niet clever" is een anti-attribuut. Anti-attributen voorkomen dat attributen zo breed worden dat ze betekenisloos zijn. "Vriendelijk" kan voor een chatbot en voor een funeral home; "vriendelijk maar niet vrolijk" is scherper.
-- **Promise.** Wat belooft dit merk aan zijn gebruiker? Niet feature, maar uitkomst. Neumeier's *The Brand Gap* noemt dit de "onion": functional (wat), emotional (hoe voelt het), self-expressive (wat zegt het over mij als ik dit gebruik).
+- **Positioning.** In one sentence, not a paragraph. Formula: "For \[target audience\] \[product\] is the \[category\] that \[value\]." Not to paste on a homepage, but to test against internally.
+- **Personality.** Choose THREE attributes + THREE anti-attributes. "Clear" is an attribute, "not clever" is an anti-attribute. Anti-attributes prevent attributes from becoming so broad they lose meaning. "Friendly" can fit a chatbot and a funeral home; "friendly but not cheerful" is sharper.
+- **Promise.** What does this brand promise its user? Not a feature, but an outcome. Neumeier's *The Brand Gap* calls this the "onion": functional (what), emotional (how it feels), self-expressive (what it says about me when I use it).
 
-Output artefact: `brand.md` met secties Strategy / Positioning / Personality / Anti-personality / Voice / Touchpoints / Governance. Template in `templates/brand.md`.
+Output artifact: `brand.md` with sections Strategy / Positioning / Personality / Anti-personality / Voice / Touchpoints / Governance. Template in `templates/brand.md`.
 
 ### 1.3 Designing identity
 
-Nu pas komt visueel materiaal. Elk primitive vertaalt brand-strategie naar een visuele keuze.
+Only now comes visual material. Each primitive translates brand strategy into a visual choice.
 
-- **Logo.** Wordmark, symbol, of combo. David Airey's *Logo Design Love* (zie referenties) geeft het decision-framework: past het in een favicon? Kan het monochroom? Werkt het op een t-shirt? Niet elk product heeft een logo nodig; soms is een wordmark genoeg.
-- **Type.** Zie Module 2 voor de details. Hier: kies een pairing die brand-attributen belichaamt.
-- **Color.** Zie Module 2. Hier: kies een brand hue en secundaire palette.
-- **Voice.** Hoe klinken micro-copy, error messages, CTAs? Een merk dat "helder maar niet clever" is, schrijft geen puns in foutmeldingen. Een merk dat "warm en rustig" is, gebruikt geen uitroeptekens. Schrijf 5-10 voorbeelden van product-copy in de gekozen stem: een success toast, een 404-pagina, een onboarding hint, een email subject line. Die voorbeelden worden de ijkpunten.
+- **Logo.** Wordmark, symbol, or combo. David Airey's *Logo Design Love* (see references) gives the decision framework: does it fit in a favicon? Can it go monochrome? Does it work on a t-shirt? Not every product needs a logo; sometimes a wordmark is enough.
+- **Type.** See Module 2 for details. Here: choose a pairing that embodies brand attributes.
+- **Color.** See Module 2. Here: choose a brand hue and secondary palette.
+- **Voice.** How do micro-copy, error messages, CTAs sound? A brand that is "clear but not clever" does not write puns in error messages. A brand that is "warm and calm" does not use exclamation marks. Write 5-10 examples of product copy in the chosen voice: a success toast, a 404 page, an onboarding hint, an email subject line. Those examples become the calibration points.
 
 ### 1.4 Creating touchpoints
 
-Per medium waar het merk verschijnt: hoe gedraagt de identiteit zich daar? Web, mobiel, print, social, email, events, product packaging. Niet elk product heeft ze allemaal. Maar voor elk dat het product WEL gebruikt:
+Per medium where the brand appears: how does the identity behave there? Web, mobile, print, social, email, events, product packaging. Not every product uses all of them. But for each one the product DOES use:
 
-- Wat is de primaire visuele gedraging? (Bijv. op web: brand hue als accent op neutrale achtergrond. In email: een logo-mark en neutrale body.)
-- Wat zijn de anti-patronen? (Bijv. geen kleurverlopen op de logo, geen photo filters op product screenshots.)
-- Wie beheert dit touchpoint? (Wie mag dit wijzigen, wie mag alleen gebruiken?)
+- What is the primary visual behavior? (E.g. on web: brand hue as accent on neutral background. In email: a logo-mark and neutral body.)
+- What are the anti-patterns? (E.g. no color gradients on the logo, no photo filters on product screenshots.)
+- Who manages this touchpoint? (Who may change it, who may only use it?)
 
 ### 1.5 Managing assets
 
-Governance. Wie mag wat wijzigen en wanneer. Drie vragen:
+Governance. Who may change what and when. Three questions:
 
-- **Contribution model.** Kan iedereen in het team een nieuwe component voorstellen? Een nieuwe kleur-token toevoegen? Of loopt dat langs een ontwerp-review?
-- **Versioning.** Wanneer is een wijziging breaking vs additive? Nathan Curtis (zie referenties) heeft uitgebreid geschreven over semver voor design tokens: een token-rename is breaking, een token-toevoeging is additive, een waarde-tweak binnen perceptuele tolerantie is patch.
-- **Deprecation.** Hoe loopt een oude token of component af? Stilletjes verwijderen is een breaking change zonder waarschuwing. Een deprecation-window (6 maanden, 12 maanden) met console warnings op gebruik is de standaard.
+- **Contribution model.** Can everyone on the team propose a new component? Add a new color token? Or does that go through a design review?
+- **Versioning.** When is a change breaking vs additive? Nathan Curtis (see references) has written extensively about semver for design tokens: a token rename is breaking, a token addition is additive, a value tweak within perceptual tolerance is a patch.
+- **Deprecation.** How does an old token or component expire? Silently removing it is a breaking change without warning. A deprecation window (6 months, 12 months) with console warnings on usage is the standard.
 
 ## Module 2: Visual language translation
 
-Doel: van brand-attributen naar visuele vocabulaire. Vijf assen. Per as: kies, documenteer het principe, citeer de bron, leg vast in `visual-language.md`.
+Goal: from brand attributes to visual vocabulary. Five axes. Per axis: choose, document the principle, cite the source, record in `visual-language.md`.
 
 ### 2.1 Type-as-voice
 
-Type is de stem van een merk op pagina. Een pairing bestaat uit display (koppen, hero) en body (lopende tekst, UI). Soms een derde voor mono (code, data).
+Type is the voice of a brand on the page. A pairing consists of display (headings, hero) and body (running text, UI). Sometimes a third for mono (code, data).
 
-- **Niet "elegant = serif".** De reflex ("serif voelt klassiek, sans-serif voelt modern") is te grof. Een moderne didone zoals GT Super voelt anders dan een klassieke Garamond, allebei serifs. Een geometric sans zoals Futura voelt kouder dan een humanist sans zoals Inter. Kies op basis van brand-persoonlijkheid, niet op basis van de grofste classificatie.
-- **Documenteer het waarom.** "We kiezen Inter omdat het een neutrale humanist sans is die goed schaalt tussen UI (12-14px) en display (48-72px) zonder karakterverlies, en omdat de brand 'helder maar niet clever' is, willen we een type dat zijn eigen stem niet te sterk oplegt." Dat onderscheidt een typekeuze van een smaak-voorkeur.
-- **Referenties.** Ellen Lupton's *Thinking with Type* (2e ed.) is de canonieke intro. Jim Williams' *Type Matters!* geeft het pragmatische micro-typografie werkboek. Matthew Butterick's practicaltypography.com is online en pay-what-you-want, vooral sterk voor body-type. Klim Foundry case studies laten zien hoe een type-ontwerper voor specifieke merken werkt. Voor volledige citaties zie `references.md`.
+- **Not "elegant = serif".** The reflex ("serif feels classic, sans-serif feels modern") is too crude. A modern didone like GT Super feels different from a classic Garamond, both serifs. A geometric sans like Futura feels colder than a humanist sans like Inter. Choose based on brand personality, not on the coarsest classification.
+- **Document the why.** "We choose Inter because it is a neutral humanist sans that scales well between UI (12-14px) and display (48-72px) without character loss, and because the brand is 'clear but not clever', we want a type that does not impose its own voice too strongly." That is what distinguishes a type choice from a taste preference.
+- **References.** Ellen Lupton's *Thinking with Type* (2nd ed.) is the canonical introduction. Jim Williams' *Type Matters!* provides the pragmatic micro-typography workbook. Matthew Butterick's practicaltypography.com is online and pay-what-you-want, especially strong for body type. Klim Foundry case studies show how a type designer works for specific brands. For full citations see `references.md`.
 
 ### 2.2 Color-as-mood
 
-Kleur drukt stemming uit. Kleine nuances dragen ver.
+Color expresses mood. Small nuances carry far.
 
-- **Kies in OKLCH, niet in HSL.** OKLCH is perceptueel uniform: twee kleuren met dezelfde L-waarde voelen even licht, wat bij HSL niet geldt. Voor details, zie impeccable's `reference/color-and-contrast.md`. Hier gaat het erom dat je een brand hue kiest die perceptueel stabiel is over licht en donker.
-- **Documenteer fysieke referentie, niet emotionele labels.** "De brand hue is een diepe blauwgroen geinspireerd op oude bibliotheekruggen (ruwe texture, licht verweerd)" is sterker dan "een kalme blauwgroen". De eerste geeft een verifieerbaar mentaal beeld waar je tegen kunt toetsen bij een volgende keuze. De tweede is een emotioneel label dat bij elke volgende reviewer iets anders betekent.
-- **60-30-10 als startpunt.** Een vuistregel uit interieurontwerp die ook op schermkleur werkt: 60% neutraal, 30% secundair, 10% brand accent. Niet een wet, wel een eerste check op hoeveel van je scherm je aan het merk wilt opdragen.
-- **Secundair palette.** 2-4 kleuren die ondersteunend zijn. Eén status-groen, één warning-geel, één danger-rood, eventueel één extra accent. Kies ze in relatie tot de brand hue, niet los.
-- **Referenties.** Josef Albers' *Interaction of Color* (Yale, 50e anniversary ed.) voor hoe kleur in context verandert. Sean Adams' *The Designer's Dictionary of Color* voor per-kleur culturele context. Aarron Walter's *Designing for Emotion* voor hoe kleur met brand-persoonlijkheid samenhangt. Volledige citaties in `references.md`.
+- **Choose in OKLCH, not HSL.** OKLCH is perceptually uniform: two colors with the same L value feel equally light, which is not true with HSL. For details, see impeccable's `reference/color-and-contrast.md`. The point here is that you choose a brand hue that is perceptually stable across light and dark.
+- **Document a physical reference, not emotional labels.** "The brand hue is a deep blue-green inspired by old library spines (rough texture, lightly weathered)" is stronger than "a calm blue-green". The first gives a verifiable mental image to test against at a future choice. The second is an emotional label that means something slightly different to every next reviewer.
+- **60-30-10 as a starting point.** A rule of thumb from interior design that also works for screen color: 60% neutral, 30% secondary, 10% brand accent. Not a law, but a first check on how much of your screen you want to give to the brand.
+- **Secondary palette.** 2-4 colors that are supporting. One status green, one warning yellow, one danger red, optionally one extra accent. Choose them in relation to the brand hue, not independently.
+- **References.** Josef Albers' *Interaction of Color* (Yale, 50th anniversary ed.) for how color changes in context. Sean Adams' *The Designer's Dictionary of Color* for per-color cultural context. Aarron Walter's *Designing for Emotion* for how color relates to brand personality. Full citations in `references.md`.
 
 ### 2.3 Form-as-attitude
 
-Geometrie drukt houding uit. Corner radius, border weight, surface depth, shadow language.
+Geometry expresses attitude. Corner radius, border weight, surface depth, shadow language.
 
-- **Corner radius als spectrum.** 0 px is brutalist / industrieel / serieus. 2-4 px is geometrisch / zakelijk. 8-16 px is zacht / vriendelijk. Volledig pill (`9999px`) is speels / vriendelijk / tech-consumer. Kies een waarde die bij de persoonlijkheid past en documenteer dat in een regel: "Onze corner radius is 8 px omdat we zacht en benaderbaar willen zijn zonder kinderachtig te voelen."
-- **Border weight.** 1 px is default-web. 2-3 px voelt gewichtiger, soms brutalist. Geen border (alleen surface-delta) is rustiger.
-- **Surface depth.** Hoeveel niveaus heeft je interface? Background, canvas, panel, dialog, popover = 5 niveaus. Elk met zijn eigen luminance. Zie eye-of-the-beholder voor de 1.07x delta-regel om die niveaus perceptueel te scheiden.
-- **Shadow language.** Geen shadows (flat), zachte shadows (soft material), harde shadows (neubrutalism). Kies een stijl en houdt die consistent. Twee shadow-stijlen in een interface is altijd een bug.
+- **Corner radius as a spectrum.** 0 px is brutalist / industrial / serious. 2-4 px is geometric / businesslike. 8-16 px is soft / friendly. Full pill (`9999px`) is playful / friendly / tech-consumer. Choose a value that matches the personality and document it as a rule: "Our corner radius is 8 px because we want to feel soft and approachable without seeming childish."
+- **Border weight.** 1 px is default-web. 2-3 px feels weightier, sometimes brutalist. No border (surface delta only) is calmer.
+- **Surface depth.** How many levels does your interface have? Background, canvas, panel, dialog, popover = 5 levels. Each with its own luminance. See eye-of-the-beholder for the 1.07x delta rule to perceptually separate those levels.
+- **Shadow language.** No shadows (flat), soft shadows (soft material), hard shadows (neubrutalism). Choose a style and keep it consistent. Two shadow styles in one interface is always a bug.
 
 ### 2.4 Motion-as-tempo
 
-Tijd is de vierde ontwerpdimensie. Hoe snel iets beweegt vertelt over temperament.
+Time is the fourth design dimension. How fast something moves communicates temperament.
 
-- **Duration als brand-expressie.** Brand "unhurried, zorgvuldig" = langere durations (250-400 ms) met expo-out curves (ease die vroeg snel en laat zacht eindigt). Brand "snappy, efficient" = korte durations (120-180 ms) met standaard ease-out. Brand "speels" = micro-bounce easing op state changes.
-- **Ease-vocabulaire.** Definieer 3-5 named eases: `--ease-entrance`, `--ease-exit`, `--ease-gentle`, `--ease-snappy`. Voor de normatieve details over welke eases wanneer te gebruiken, zie impeccable's `reference/motion-design.md`.
-- **Referenties.** Zie de design-motion-principles documentatie (Emil Kowalski, Jakub Krehel, Jhey Tompkins) voor per-designer motion vocabularies. Walter's *Designing for Emotion* voor hoe motion met persoonlijkheid samenhangt.
+- **Duration as brand expression.** Brand "unhurried, careful" = longer durations (250-400 ms) with expo-out curves (eases that start fast and end softly). Brand "snappy, efficient" = shorter durations (120-180 ms) with standard ease-out. Brand "playful" = micro-bounce easing on state changes.
+- **Ease vocabulary.** Define 3-5 named eases: `--ease-entrance`, `--ease-exit`, `--ease-gentle`, `--ease-snappy`. For the normative details on which eases to use when, see impeccable's `reference/motion-design.md`.
+- **References.** See the design-motion-principles documentation (Emil Kowalski, Jakub Krehel, Jhey Tompkins) for per-designer motion vocabularies. Walter's *Designing for Emotion* for how motion relates to personality.
 
-### 2.5 Photography en illustration tone
+### 2.5 Photography and illustration tone
 
-Indien het product visuele content heeft: welke registers mag die content aannemen?
+If the product has visual content: which registers may that content take?
 
-- **Photography.** Editorial / product / documentair / stock. Met / zonder mensen. Gekleurd / monochroom. Documenteer dat "wij gebruiken editorial-style product photography op neutrale achtergronden, nooit stock-photos van mensen in kantoren" is duidelijk genoeg om een PR te rejecten op.
-- **Illustration.** Geometrisch / organisch / hand-gedraaid / flat. Mono-line / gekleurd. Als je illustrations gebruikt, zijn ze decoratief of narratief?
-- **Mix-and-match verbod.** De combinatie van photography en illustration in een product is riskant; veel merken kiezen één register. Als beide: definieer waar elk wordt ingezet en waarom.
+- **Photography.** Editorial / product / documentary / stock. With / without people. Color / monochrome. Documenting "we use editorial-style product photography on neutral backgrounds, never stock photos of people in offices" is specific enough to reject a PR on.
+- **Illustration.** Geometric / organic / hand-drawn / flat. Mono-line / color. If you use illustrations, are they decorative or narrative?
+- **Mix-and-match prohibition.** The combination of photography and illustration in a product is risky; many brands choose one register. If both: define where each is used and why.
 
 ## Module 3: Design system architecture
 
-Doel: van losse tokens en componenten naar een systeem dat schaalt zonder bij elke nieuwe developer opnieuw gedacht te moeten worden. Vijf elementen.
+Goal: from loose tokens and components to a system that scales without having to rethink at every new developer. Five elements.
 
-### 3.1 Token taxonomie in drie lagen (Curtis model)
+### 3.1 Token taxonomy in three layers (Curtis model)
 
-Nathan Curtis's drie-laags model is de standaard voor token-design. Zie zijn Eightshapes essays op medium.com/eightshapes-llc voor de volledige uitleg.
+Nathan Curtis's three-layer model is the standard for token design. See his Eightshapes essays on medium.com/eightshapes-llc for the full explanation.
 
 ```
 primitive:  --blue-500: oklch(0.62 0.18 260);
@@ -156,57 +156,57 @@ semantic:   --color-accent: var(--blue-500);
 component:  --button-bg: var(--color-accent);
 ```
 
-- **Primitive tokens** zijn de fysieke kleurenpalet, fysieke spacing-schaal, fysieke font-scale. Ze zijn betekenisloos ("blue-500" zegt niks over wat het is in je product). Ze bestaan zodat een semantic laag ergens naar kan verwijzen.
-- **Semantic tokens** geven rol. `--color-accent`, `--color-danger`, `--color-text-primary`, `--color-surface-1`. Applicatiecode praat ALLEEN tegen deze laag. Als de brand hue verandert, wijzig je één alias: `--color-accent: var(--red-500)` in plaats van `var(--blue-500)`. Alle componenten volgen automatisch.
-- **Component tokens** zijn een derde, optionele laag voor componenten met eigen variatiebehoefte. `--button-primary-bg: var(--color-accent)` laat de button zijn eigen token definieren zonder de semantic laag te vervuilen.
+- **Primitive tokens** are the physical color palette, physical spacing scale, physical font scale. They are meaningless ("blue-500" says nothing about what it is in your product). They exist so that a semantic layer has something to point to.
+- **Semantic tokens** give role. `--color-accent`, `--color-danger`, `--color-text-primary`, `--color-surface-1`. Application code talks ONLY to this layer. When the brand hue changes, you update one alias: `--color-accent: var(--red-500)` instead of `var(--blue-500)`. All components follow automatically.
+- **Component tokens** are a third, optional layer for components with their own variation needs. `--button-primary-bg: var(--color-accent)` lets the button define its own token without polluting the semantic layer.
 
-Twee anti-patronen. Eerst: applicatie-code die rechtstreeks naar primitives verwijst (`background: var(--blue-500)` in een `.button` selector). Dat is een bypass van de semantic laag en maakt brand-wijzigingen duur. Tweede: semantic names die eigenlijk primitives zijn vermomd (`--color-blue-primary` is geen semantic naam, `--color-accent` wel).
+Two anti-patterns. First: application code that refers directly to primitives (`background: var(--blue-500)` in a `.button` selector). That bypasses the semantic layer and makes brand changes expensive. Second: semantic names that are actually disguised primitives (`--color-blue-primary` is not a semantic name, `--color-accent` is).
 
 ### 3.2 Component taxonomy (Frost atomic)
 
-Brad Frost's *Atomic Design* (Macmillan, 2016, gratis online op atomicdesign.bradfrost.com) geeft de vijf-laags structuur:
+Brad Frost's *Atomic Design* (Macmillan, 2016, free online at atomicdesign.bradfrost.com) gives the five-layer structure:
 
-- **Atoms.** De kleinste zinvolle unit: button, input, label, icon, badge.
-- **Molecules.** Atoms gecombineerd tot kleine functional units: search-field (input + button + icon), form-row (label + input + help text).
-- **Organisms.** Molecules samen in herkenbare secties: page-header (logo + nav + search), card-grid, comment-thread.
-- **Templates.** Layout-structuren zonder content: "a two-column settings page."
-- **Pages.** Templates met echte content.
+- **Atoms.** The smallest meaningful unit: button, input, label, icon, badge.
+- **Molecules.** Atoms combined into small functional units: search-field (input + button + icon), form-row (label + input + help text).
+- **Organisms.** Molecules together in recognizable sections: page-header (logo + nav + search), card-grid, comment-thread.
+- **Templates.** Layout structures without content: "a two-column settings page."
+- **Pages.** Templates with real content.
 
-Niet elke component valt schoon in één laag. Twijfel is OK. Wat telt: dat er een laag IS. Een design system zonder taxonomie heeft 80 components in een flat list die niemand kan terugvinden.
+Not every component falls cleanly into one layer. Uncertainty is OK. What matters: that there IS a layer. A design system without a taxonomy has 80 components in a flat list that nobody can find.
 
 ### 3.3 Component contract
 
-Voor elk component: wat belooft het? Document dat per component.
+For each component: what does it promise? Document that per component.
 
-- **API.** Welke props / slots / parameters? Types en defaults.
-- **States.** Hover, focus-visible, active, disabled, loading, error. Elk expliciet.
-- **Variants.** Primary / secondary / destructive / ghost. Elk met een brand-rationale: waarom bestaat deze variant en wanneer gebruik je hem?
-- **Slots.** Kan de component children accepteren? Welke? Met welke beperkingen?
-- **A11y requirements.** Rol, keyboard support, screen-reader-namen, contrast-ratio-minima. Voor de normatieve contrast-ratios zie impeccable's `reference/color-and-contrast.md`.
-- **Do / don't.** Twee korte lijstjes met gebruiks-voorbeelden. Niet alle combinaties beschrijven, alleen de meest voorkomende fouten voorkomen.
+- **API.** Which props / slots / parameters? Types and defaults.
+- **States.** Hover, focus-visible, active, disabled, loading, error. Each explicit.
+- **Variants.** Primary / secondary / destructive / ghost. Each with a brand rationale: why does this variant exist and when do you use it?
+- **Slots.** Can the component accept children? Which? With what constraints?
+- **A11y requirements.** Role, keyboard support, screen-reader names, contrast-ratio minimums. For the normative contrast ratios see impeccable's `reference/color-and-contrast.md`.
+- **Do / don't.** Two short lists with usage examples. Not describing all combinations, just preventing the most common mistakes.
 
 Template: `templates/design-system/components/_example.md`.
 
 ### 3.4 Governance
 
-Wie mag wat wijzigen en wanneer. Al aangeraakt in Module 1.5. Hier specifiek voor het design system.
+Who may change what and when. Already touched in Module 1.5. Here specifically for the design system.
 
-- **Contribution model.** Een nieuwe component voorstellen: via een PR met een design-rationale en een a11y-checklist. Een bestaande component wijzigen: via een PR met impact-assessment (welke andere components gebruiken dit?).
-- **Review criterium.** Eén design owner leest elke design-system PR. Geen technische reviewers-only. Code is niet het enige review-gebied.
-- **Semver voor tokens en components.** Een token hernoemen = major. Een nieuw token toevoegen = minor. Een token-waarde aanpassen (brand hue schuift 5 graden in OKLCH) = patch, tenzij de verschuiving zichtbaar genoeg is om als breaking te voelen. Dan is het major.
-- **Deprecation-window.** Minimum 2 minor releases of 6 kalendermaanden tussen "marked deprecated" en "verwijderd". Console warnings of linter warnings op gebruik van deprecated tokens.
+- **Contribution model.** Proposing a new component: via a PR with a design rationale and an a11y checklist. Changing an existing component: via a PR with an impact assessment (which other components use this?).
+- **Review criterion.** One design owner reads every design-system PR. Not technical reviewers only. Code is not the only review domain.
+- **Semver for tokens and components.** Renaming a token = major. Adding a new token = minor. Adjusting a token value (brand hue shifts 5 degrees in OKLCH) = patch, unless the shift is visible enough to feel breaking. Then it is major.
+- **Deprecation window.** Minimum 2 minor releases or 6 calendar months between "marked deprecated" and "removed". Console warnings or linter warnings on usage of deprecated tokens.
 
 ### 3.5 Living docs
 
-Een design system dat alleen in code leeft, kan niemand ontdekken. Levende documentatie:
+A design system that only lives in code is discoverable by nobody. Living documentation:
 
-- **Showcase-route.** Een `/design-system/` route in het product zelf, of een aparte Storybook / Histoire instance. Per component: een voorbeeld, een state-matrix (elke state zichtbaar), en de do/don't uit de component contract.
-- **Token reference.** Een pagina die alle semantic tokens zichtbaar maakt in light + dark. Niet alleen kleurwaarden, ook spacing-schaal, type-schaal, radius-waarden.
-- **Governance page.** De contributie-regels uit 3.4, toegankelijk voor iedereen die een PR overweegt.
+- **Showcase route.** A `/design-system/` route in the product itself, or a separate Storybook / Histoire instance. Per component: an example, a state matrix (every state visible), and the do/don't from the component contract.
+- **Token reference.** A page that makes all semantic tokens visible in light + dark. Not just color values, also spacing scale, type scale, radius values.
+- **Governance page.** The contribution rules from 3.4, accessible to everyone considering a PR.
 
-Referenties: Yesenia Perez-Cruz's *Expressive Design Systems* voor hoe je een systeem expressief maakt in plaats van steriel. DesignBetter's *Design Systems Handbook* (gratis op designbetter.co/design-systems-handbook) voor team-organisatie. Adam Wathan en Steve Schoger's *Refactoring UI* (self-published) voor concrete tactical rules. Volledige citaties in `references.md`.
+References: Yesenia Perez-Cruz's *Expressive Design Systems* for how to keep a system expressive rather than sterile. DesignBetter's *Design Systems Handbook* (free at designbetter.co/design-systems-handbook) for team organization. Adam Wathan and Steve Schoger's *Refactoring UI* (self-published) for concrete tactical rules. Full citations in `references.md`.
 
-Publieke referentie-systemen om te leren hoe anderen het oplossen:
+Public reference systems to study how others solve it:
 
 - **Polaris** (Shopify): polaris.shopify.com
 - **Carbon** (IBM): carbondesignsystem.com
@@ -215,30 +215,30 @@ Publieke referentie-systemen om te leren hoe anderen het oplossen:
 - **IBM Design Language**: ibm.com/design/language
 - **Atlassian Design System**: atlassian.design
 
-Niet om te kopieren, wel om patronen en taxonomieen te zien.
+Not to copy, but to study patterns and taxonomies.
 
-## Werkverdeling met eye-of-the-beholder en impeccable
+## Division of labor with eye-of-the-beholder and impeccable
 
-De drie skills zijn een keten. Volgorde in de projectlevensduur:
+The three skills are a chain. Order in the project lifecycle:
 
-- **art-director** (eenmalig, upstream). Levert `brand.md`, `visual-language.md`, en `design-system/` skeleton. Na deze stap bestaat "ons merk" op schrift.
-- **impeccable** (per feature, tijdens bouwen). Past de standaard toe. Verwijst terug naar art-director's artefacten voor concrete keuzes ("uit `visual-language.md`: hue is `oklch(0.62 0.18 260)`"). Voor de normatieve rules (contrast-ratios, transform/opacity-only, spacing-schaal) heeft impeccable zijn eigen reference-files.
-- **eye-of-the-beholder** (per wijziging, achteraf). Verifieert visueel. Screenshot, observeer, vergelijk met intentie. Verwijst naar impeccable voor regels en naar art-director voor brand-context. Past observatie-vragen toe die geen van beide andere skills stelt ("kun je secundaire tekst lezen zonder te turen?").
+- **art-director** (once, upstream). Delivers `brand.md`, `visual-language.md`, and `design-system/` skeleton. After this step "our brand" exists in writing.
+- **impeccable** (per feature, while building). Applies the standard. Refers back to art-director's artifacts for concrete choices ("from `visual-language.md`: hue is `oklch(0.62 0.18 260)`"). For the normative rules (contrast ratios, transform/opacity-only, spacing scale) impeccable has its own reference files.
+- **eye-of-the-beholder** (per change, afterward). Verifies visually. Screenshot, observe, compare with intent. Refers to impeccable for rules and to art-director for brand context. Applies observation questions that neither of the other two skills asks ("can you read secondary text without squinting?").
 
-Wat NIET art-director's terrein is: implementatie-CSS (impeccable + eye-of-the-beholder), per-component visuele review (eye-of-the-beholder), anti-AI-slop checklists (impeccable), single-screen layout fixes (eye-of-the-beholder).
+What is NOT art-director's territory: implementation CSS (impeccable + eye-of-the-beholder), per-component visual review (eye-of-the-beholder), anti-AI-slop checklists (impeccable), single-screen layout fixes (eye-of-the-beholder).
 
-## Output artefacten
+## Output artifacts
 
-Drie files, één directory. Templates leven in `templates/`.
+Three files, one directory. Templates live in `templates/`.
 
 - `brand.md`: strategy, personality, anti-personality, voice, touchpoints, governance.
-- `visual-language.md`: per-as decision log (type, color, form, motion, photo/illo) met principle + chosen value + rationale + referentie.
-- `design-system/tokens.md`: 3-laags Curtis model (primitive, semantic, component) met concrete waarden in OKLCH en andere units.
+- `visual-language.md`: per-axis decision log (type, color, form, motion, photo/illo) with principle + chosen value + rationale + reference.
+- `design-system/tokens.md`: 3-layer Curtis model (primitive, semantic, component) with concrete values in OKLCH and other units.
 - `design-system/components/<name>.md`: per component contract. Template in `_example.md`.
 - `design-system/governance.md`: contribution, review, semver, deprecation.
 
-Gebruik de templates uit `templates/` als startpunt. Iteraties zijn normaal; een brand-document uit ronde 1 is bijna nooit het document uit ronde 3.
+Use the templates from `templates/` as a starting point. Iterations are normal; a brand document from round 1 is almost never the document from round 3.
 
-## Referenties
+## References
 
-Zie `references.md` voor de volledige lijst van standaardwerken met ISBN, URL, en een eenregelige samenvatting per bron.
+See `references.md` for the full list of canonical works with ISBN, URL, and a one-line summary per source.
