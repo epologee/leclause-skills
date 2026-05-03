@@ -416,3 +416,17 @@ spec/util_spec.rb"
   run invoke_validator "$file"
   [ "$status" -eq 0 ]
 }
+
+@test "UI-touch + Visual: n/a vague rationale without recognized category fails" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="app/components/widget.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+
+  local rationale="some hand-wavy reason that does not classify"
+  use_trailers "$(_trailers_with_visual "n/a ($rationale)")"
+  local file
+  file=$(write_fixture "vis-vague.txt" "$(_body_with_visual "n/a ($rationale)")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"visual-rationale-vague"* ]]
+}

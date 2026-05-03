@@ -428,6 +428,18 @@ validate_body() {
         printf 'visual-rationale-defers: Visual: n/a rationale uses deferral language ("%s") that promises a screenshot at a future event. The trailer cannot validate that promise. Either supply Visual: <path> now, or rewrite the rationale to describe why a screenshot has no meaning for this change (extract-only refactor, accessibility metadata, debug-only surface, copy-only).\n' "$matched" >&2
         return 1
       fi
+      # Reject rationales that do not name a recognized non-applicable
+      # category. The trailer's two legitimate forms are Visual: <path>
+      # and Visual: n/a (CATEGORY ...). The category set is closed and
+      # describes WHY a screenshot has no meaning for this change. Free
+      # narrative rationales without one of these tokens read as the
+      # author hand-waving past the heuristic; the closed set forces the
+      # claim to be classified.
+      local positive_re='(extract[ -]?only|accessibility[ -]?only|accessibility metadata|debug[ -]?only|spec[ -]?only|test[ -]?only|copy[ -]?only|copy change|metadata[ -]?only|no behaviour change|no behavior change|no visual change|no ui change|no visual impact|no ui impact|byte[ -]?identical|render unchanged|pixel[ -]?identical|backend (rewrite|only)|no ui touched|sound[ -]?only|audio[ -]?only|log[ -]?only|telemetry[ -]?only)'
+      if ! [[ "$rationale_lower" =~ $positive_re ]]; then
+        printf 'visual-rationale-vague: Visual: n/a rationale must name a recognized category that explains why a screenshot has no meaning for this change. Recognized tokens (case-insensitive): extract-only, accessibility-only, accessibility metadata, debug-only, spec-only, test-only, copy-only, copy change, metadata-only, no behaviour change, no visual change, no ui change, byte-identical, render unchanged, pixel-identical, backend rewrite, backend only, no ui touched, sound-only, audio-only, log-only, telemetry-only. The rationale (got: "%s") matched none of those.\n' "$rationale" >&2
+        return 1
+      fi
       # Autonomous mode forbids n/a on UI-touched commits. A rover that
       # touched a SwiftUI view, .tsx component, or stylesheet can capture
       # a screenshot now; the n/a rationale was structurally a deferral
