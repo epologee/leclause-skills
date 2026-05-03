@@ -83,16 +83,25 @@ touches (e.g. `handler + service + spec`, `frontend + backend + migration`).
 `.rb`, `.py`, `.js`, `.ts`, `.go`, `.sh`, `.bash`, `.feature`, `.tsx`, `.jsx`.
 Anchor suffixes (`#method_name`) are stripped for the file existence check.
 
-**`Red-then-green` rules:** value `yes` is self-attestation that the test
-was seen in red state; no cache evidence is required or verified.
-Value `n/a (reason)` is allowed with a rationale of at least 10 characters.
-Bare `n/a` without rationale is rejected.
+**`Red-then-green` rules:** the trailer accepts four forms.
+
+| Form | Meaning | When |
+|------|---------|------|
+| `yes` | Self-attestation; not anchored to anything. | Always accepted outside `GITGIT_AUTONOMOUS=1`; rejected under autonomous mode (`red-then-green-autonomous`) because an unattended agent has every incentive to type `yes` without ever having seen a red phase. |
+| `<path>` | Names the spec file that was seen red. The path must end in a recognized spec extension (`.rb`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.go`, `.sh`, `.bash`, `.bats`, `.feature`, `.swift`) and must appear in `git diff --cached --name-only` so the claim is anchored to the change under review. | Stronger than `yes`: the file is at least named. |
+| `<path>:<test-name>` | Identifies WHICH test was seen red, by name. The validator reads the staged blob (`git show :<path>`) and matches the name against runner-specific patterns: `it "name"`, `describe "name"`, `context "name"`, `specify "name"`, `@test "name"`, `@Test("name")`, `Scenario: name`, `func name(`, `def name(`. First hit wins. | Strongest form: the commit says exactly which test went RED → GREEN. |
+| `<path>:<line-number>` | Numeric suffix; the staged blob must have at least that many lines. | Useful when the test name is awkward to quote in the trailer. |
+| `n/a (reason)` | Opt-out with a rationale of at least 10 characters. Bare `n/a` without rationale is rejected. | When no red-then-green sequence applies (e.g. log-line addition, copy change). |
 
 Structural limitation: the validator checks the presence and format
-of `Red-then-green`, not the truth of its content. That is a
-deliberate choice: a cache that automatically tracks evidence adds more
-complexity than it is worth. Attestation responsibility lies
-with the author.
+of `Red-then-green`, not the truth of its content. The `<path>:<test-name>`
+form anchors the claim to the staged diff and the staged file but cannot
+prove that the test was actually run red. That is a deliberate choice:
+a cache that automatically tracks evidence adds more complexity than
+it is worth. Attestation responsibility lies with the author; the validator
+closes the easiest leakage paths (`yes` without anchor under autonomous,
+random spec path not in this commit, hallucinated test name not in the
+staged file).
 
 **`Visual` rules:** a path value points to a screenshot or
 recording file that must exist in the worktree (`[[ -f "$path" ]]`). The
@@ -145,6 +154,9 @@ Error codes:
 | `visual-path-not-found` | Trailer is not an `n/a` form and the given path does not exist in the worktree |
 | `visual-rationale-defers` | The `n/a (rationale)` text uses deferral language (`later`, `follow-up`, `next iteration`, `to be captured`, `will capture`, `coming next`, `post-merge`, `saved for later`) that promises a screenshot at a future event. The trailer cannot validate that promise; either supply `Visual: <path>` now or rewrite the rationale to describe why a screenshot has no meaning for this change (extract-only refactor, accessibility metadata, debug-only surface, copy-only). |
 | `visual-rationale-vague` | The `n/a (rationale)` text does not name a recognized non-applicable category. The closed enum is: `extract-only`, `accessibility-only`, `accessibility metadata`, `debug-only`, `spec-only`, `test-only`, `copy-only`, `copy change`, `metadata-only`, `no behaviour change`, `no visual change`, `no ui change`, `byte-identical`, `render unchanged`, `pixel-identical`, `backend rewrite`, `backend only`, `no ui touched`, `sound-only`, `audio-only`, `log-only`, `telemetry-only`. The rationale must contain at least one of these tokens (case-insensitive) so the claim "no screenshot has meaning here" is classified rather than narrated. |
+| `red-then-green-path-not-in-staged` | Trailer names a spec path that is not in `git diff --cached --name-only`. Either name a spec file this commit actually touches, or fall back to `n/a (reason)`. |
+| `red-then-green-test-not-found` | Trailer is `<path>:<test-name>` (or `<path>:<line>`) but the staged blob has no matching `it`, `describe`, `context`, `specify`, `@test`, `@Test`, `Scenario:`, `func name(`, or `def name(` declaration (or fewer lines than the requested line number). Name the test as it appears in the file. |
+| `red-then-green-autonomous` | Bare `Red-then-green: yes` under `GITGIT_AUTONOMOUS=1`. Use `<path>` or `<path>:<test-name>`, or `n/a (reason)`. |
 | `review-pass-batch` | The WHY block names a review pass (`pride pass`, `end-user pass`, `technical pass`, `review pass`, `review findings`, `pride contrarian`, `review contrarian`) and lists two or more findings as bullets. Review-pass commits should land one finding per commit so each fate (fix, reject-with-evidence) is its own reviewable unit; rewrite the WHY in prose for one finding and split the others into separate commits, or remove the review-pass keyword if this is not a review-pass commit. |
 
 ### Optional trailers
@@ -382,6 +394,10 @@ the env var before `git commit` runs. Two extra rules:
 2. `Visual: n/a (rationale)` is rejected on UI-touched commits with
    `visual-na-autonomous`. Only `Visual: <path>` remains allowed; the
    path must also exist (existing `visual-path-not-found` rule).
+3. `Red-then-green: yes` is rejected with `red-then-green-autonomous`.
+   The agent must name the spec it saw red as `<path>` or
+   `<path>:<test-name>` (path in staged diff, test name in staged blob),
+   or fall back to `n/a (reason >= 10 chars)`.
 
 Backend-only commits are not affected; `Visual: n/a (rationale)` remains
 valid there.

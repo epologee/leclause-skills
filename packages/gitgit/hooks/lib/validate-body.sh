@@ -391,7 +391,16 @@ validate_body() {
 
     # Value must be "yes", "n/a", or "n/a (...)" with >=10 chars rationale.
     if [[ "$rtg_value" = "yes" ]]; then
-      : # Self-attestation: "yes" is accepted as-is; no cache evidence required.
+      # Self-attestation: "yes" is accepted as-is; no cache evidence required.
+      # Under autonomous mode the bare attestation is rejected: an unattended
+      # agent has every incentive to type "yes" without ever having seen a
+      # red phase. The strict form is <path>:<test-name> (or <path>:<line>),
+      # which the validator can anchor in the staged diff and the staged
+      # blob. n/a (reason) remains a legitimate opt-out.
+      if [[ "${GITGIT_AUTONOMOUS:-0}" = "1" ]]; then
+        printf 'red-then-green-autonomous: bare "yes" is not accepted under GITGIT_AUTONOMOUS=1. Name the spec that was seen red as "<path>" or "<path>:<test-name>" (the path must appear in the staged diff and the test name in the staged file). n/a (reason >= 10 chars) remains valid when no red-then-green sequence applies.\n' >&2
+        return 1
+      fi
     elif [[ "$rtg_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
       local rationale="${BASH_REMATCH[1]}"
       if [[ ${#rationale} -lt 10 ]]; then
@@ -409,11 +418,53 @@ validate_body() {
       local rtg_path_re='^([a-zA-Z0-9_./ -]+\.(rb|py|js|ts|tsx|jsx|go|sh|bash|bats|feature|swift))(:.*)?$'
       if [[ "$rtg_value" =~ $rtg_path_re ]]; then
         local rtg_path="${BASH_REMATCH[1]}"
+        local rtg_suffix="${BASH_REMATCH[3]#:}"
         local rtg_staged
         rtg_staged=$(git diff --cached --name-only 2>/dev/null || true)
         if ! grep -qF "$rtg_path" <<< "$rtg_staged" 2>/dev/null; then
           printf 'red-then-green-path-not-in-staged: Red-then-green path "%s" is not in the staged diff. Name a spec file that this commit actually touches, so the red-then-green claim is anchored to the change under review.\n' "$rtg_path" >&2
           return 1
+        fi
+        if [[ -n "$rtg_suffix" ]]; then
+          local rtg_blob
+          rtg_blob=$(git show ":$rtg_path" 2>/dev/null || true)
+          if [[ -z "$rtg_blob" ]] && [[ -f "$rtg_path" ]]; then
+            rtg_blob=$(cat "$rtg_path" 2>/dev/null || true)
+          fi
+          local rtg_found=0
+          if [[ "$rtg_suffix" =~ ^[0-9]+$ ]]; then
+            # Line-number form: file must have at least that many lines.
+            local rtg_lines
+            rtg_lines=$(printf '%s\n' "$rtg_blob" | wc -l | tr -d ' ')
+            if [[ "$rtg_lines" -ge "$rtg_suffix" ]]; then
+              rtg_found=1
+            fi
+          else
+            # Test-name form: try each known runner pattern. First hit wins.
+            # Quoted-name patterns (Quick / RSpec / Jest / Mocha / bats /
+            # Swift Testing / Cucumber Scenario): match the literal name
+            # inside the quotes or after the keyword. Function-name patterns
+            # (XCTest, pytest): match the bare identifier.
+            local rtg_esc
+            rtg_esc=$(printf '%s' "$rtg_suffix" | sed 's/[][\.*^$(){}+?|/]/\\&/g')
+            local rtg_patterns=(
+              "(it|describe|context|specify|@test|@Test\\()[[:space:]]*[\"']${rtg_esc}[\"']"
+              "Scenario:[[:space:]]*${rtg_esc}([[:space:]]|$)"
+              "func[[:space:]]+${rtg_esc}[[:space:]]*\\("
+              "def[[:space:]]+${rtg_esc}[[:space:]]*\\("
+            )
+            local pat
+            for pat in "${rtg_patterns[@]}"; do
+              if printf '%s' "$rtg_blob" | grep -Eq "$pat" 2>/dev/null; then
+                rtg_found=1
+                break
+              fi
+            done
+          fi
+          if [[ "$rtg_found" -eq 0 ]]; then
+            printf 'red-then-green-test-not-found: Red-then-green names "%s" in "%s", but no matching test (it/Scenario/@test/@Test/func/def) or line was found in the staged file. Name the test you actually saw red, in the form it appears in the file (the quoted description, the Scenario name, the func/def identifier, or a line number).\n' "$rtg_suffix" "$rtg_path" >&2
+            return 1
+          fi
         fi
       else
         printf 'missing-red-then-green: value must be "yes", "n/a (reason)", or a spec path present in the staged diff; got: "%s"\n' "$rtg_value" >&2
