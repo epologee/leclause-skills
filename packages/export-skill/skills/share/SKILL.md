@@ -13,67 +13,67 @@ effort: low
 
 # Share Skill
 
-Hand een verpakte skill over aan de user zodat die hem direct kan versturen. Opent de parent-directory in Finder, print eerst het export-rapport, en sluit af met een korte samenvatting zodat een opvolgende `/clipboard` alleen die samenvatting kopieert.
+Hand a packaged skill off to the user so they can send it directly. Opens the parent directory in Finder, prints the export report first, and closes with a short summary so a subsequent `/clipboard` copies only that summary.
 
-macOS-only: gebruikt `open` voor Finder. Op Linux/Windows vereist dit een port (zie `port`).
+macOS-only: uses `open` for Finder. On Linux/Windows this requires a port (see `port`).
 
-## Invocatie
+## Invocation
 
 ```
 /export-skill:share /tmp/skill-exports/say-SKILL.md  # single-file export
-/export-skill:share /tmp/skill-exports/say/          # directory (bron voor samenvatting)
+/export-skill:share /tmp/skill-exports/say/          # directory (source for summary)
 ```
 
-Enig argument: pad naar een directory met `SKILL.md` of naar een los `*-SKILL.md` bestand. Zip-bestanden worden niet gelezen (geen unzip-tool); roep deze skill aan voor het packagen, of wijs naar de bron-directory.
+Single argument: path to a directory containing `SKILL.md` or to a standalone `*-SKILL.md` file. Zip files are not read (no unzip tool); invoke this skill before packaging, or point to the source directory.
 
-## Stappen
+## Steps
 
-1. **Valideer** dat het pad bestaat en een `SKILL.md` bevat (of zelf een `*-SKILL.md` is).
-2. **Lees** de `SKILL.md` om de skill te begrijpen.
-3. **Schrijf samenvatting:** genereer een beknopte samenvatting in de taal van de SKILL.md body-tekst die je net las. Dat is voor een normale export de brontaal en voor een vertaalde export de doeltaal; in beide gevallen is het de taal die de ontvanger ziet. De samenvatting is bedoeld voor collega's, online posts, of een chatbericht.
-   - Wat de skill doet (1 tot 2 zinnen)
-   - Hoe je hem aanroept
-   - De belangrijkste features/stappen (beknopte lijst)
-   - Eventuele vereisten of beperkingen
-   - Geen PII, geen sanitisatie-details, geen rapport-informatie
-4. **Print de samenvatting als laatste inhoudelijke antwoord:** de chain-call van deze skill moet eindigen met de samenvatting als enige output, zodat een opvolgende `/clipboard` aanroep alleen de samenvatting kopieert. Geen meta-tekst, geen rapport-headers na de samenvatting.
-5. **Open in Finder:** `open {parent-dir}` zodat de user het bestand direct kan slepen of mailen. Dit gebeurt voor de samenvatting zodat Finder niet de laatst-gegenereerde tekst overschrijft.
-6. **Rapporteer** het pad en de locatie apart, boven de samenvatting.
+1. **Validate** that the path exists and contains a `SKILL.md` (or is itself a `*-SKILL.md`).
+2. **Read** the `SKILL.md` to understand the skill.
+3. **Write summary:** generate a concise summary in the language of the SKILL.md body text you just read. For a normal export that is the source language; for a translated export it is the target language; in both cases it is the language the recipient sees. The summary is intended for colleagues, online posts, or a chat message.
+   - What the skill does (1 to 2 sentences)
+   - How to invoke it
+   - The main features/steps (concise list)
+   - Any requirements or limitations
+   - No PII, no sanitization details, no report information
+4. **Print the summary as the last substantive reply:** the chain call to this skill must end with the summary as the only output, so that a subsequent `/clipboard` call copies only the summary. No meta-text, no report headers after the summary.
+5. **Open in Finder:** `open {parent-dir}` so the user can drag or email the file directly. This happens before the summary so Finder does not overwrite the last generated text.
+6. **Report** the path and location separately, above the summary.
 
-## Samenvattings-richtlijnen
+## Summary guidelines
 
-De samenvatting is expliciet verschillend van het sanitisatie-rapport:
+The summary is explicitly different from the sanitization report:
 
-- **Sanitisatie-rapport** (van `sanitize`) is gedetailleerd: wat is vervangen, welke security findings, welke binaries. Voor de user zelf.
-- **Samenvatting** (van deze skill) is deelbaar: wat doet de skill en hoe werkt hij. Voor ontvangers.
+- **Sanitization report** (from `sanitize`) is detailed: what was replaced, which security findings, which binaries. For the user themselves.
+- **Summary** (from this skill) is shareable: what the skill does and how it works. For recipients.
 
-Houd de samenvatting onder 10 regels. Inline formatting met backticks voor commando's en bestandsnamen.
+Keep the summary under 10 lines. Inline formatting with backticks for commands and filenames.
 
-## Rapport template
+## Report template
 
-De laatste regel van de uitvoer moet de laatste regel van de samenvatting zijn. Geen trailing "volgende stap" regel, geen afsluitend kopje, geen meta-tekst na de samenvatting: `/clipboard` kopieert tekst vanaf het laatste antwoord en alles na de samenvatting zou daarin terechtkomen.
+The last line of the output must be the last line of the summary. No trailing "next step" line, no closing header, no meta-text after the summary: `/clipboard` copies text from the last reply and anything after the summary would end up in it.
 
 ```
-## Klaar om te delen: {naam}
+## Ready to share: {name}
 
-**Bestand:** {pad}
+**File:** {path}
 **Type:** single-file-md | directory
 
-**Finder geopend op:** {parent-dir}
+**Finder opened at:** {parent-dir}
 
-Sleep het bestand uit Finder naar je chat/mail, of gebruik `/clipboard` om de samenvatting hieronder te plakken.
+Drag the file from Finder to your chat/mail, or use `/clipboard` to paste the summary below.
 
 ---
 
-{de samenvatting zoals gegenereerd, eindigend op de laatste inhoudelijke regel}
+{the summary as generated, ending on the last substantive line}
 ```
 
-## Compositie
+## Composition
 
 ```
 /export-skill:sanitize say                       # strip PII, output /tmp/skill-exports/say/
-/export-skill:package /tmp/skill-exports/say/    # zip of md
-/export-skill:share /tmp/skill-exports/say/      # samenvatting + Finder (wijs naar de dir, niet naar de zip)
+/export-skill:package /tmp/skill-exports/say/    # zip or md
+/export-skill:share /tmp/skill-exports/say/      # summary + Finder (point to the dir, not the zip)
 ```
 
-Of gebruik de `/export-skill` orchestrator voor de complete chain.
+Or use the `/export-skill` orchestrator for the complete chain.

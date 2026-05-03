@@ -16,64 +16,64 @@ effort: low
 
 # Package Skill
 
-Verpak een skill-directory tot een transporteerbare vorm. Mechanisch werk: een directory met alleen `SKILL.md` wordt een los `.md` bestand (leesbaar op iPhone zonder unzip). Een directory met meerdere bestanden wordt een `.zip`.
+Bundle a skill directory into a transportable form. Mechanical work: a directory containing only `SKILL.md` becomes a standalone `.md` file (readable on iPhone without unzip). A directory with multiple files becomes a `.zip`.
 
-Geen content-transformatie: deze skill verandert de tekst niet. Voor sanitisatie zie `sanitize`, voor vertaling `translate`, voor porting `port`.
+No content transformation: this skill does not change the text. For sanitization see `sanitize`, for translation `translate`, for porting `port`.
 
-## Invocatie
+## Invocation
 
 ```
-/export-skill:package /tmp/skill-exports/say/            # directory met meerdere bestanden -> say.zip
+/export-skill:package /tmp/skill-exports/say/            # directory with multiple files -> say.zip
 /export-skill:package /tmp/skill-exports/say-en/         # translated directory -> say-en.zip
-/export-skill:package ~/.claude/skills/saysay/           # directory met alleen SKILL.md -> saysay-SKILL.md (alleen voor lokaal gebruik; draai sanitize eerst voor delen)
+/export-skill:package ~/.claude/skills/saysay/           # directory with only SKILL.md -> saysay-SKILL.md (for local use only; run sanitize first before sharing)
 ```
 
-Enig argument: pad naar de directory die je wilt verpakken.
+Single argument: path to the directory you want to bundle.
 
-## Stappen
+## Steps
 
-1. **Valideer** dat het argument een bestaande directory is.
-2. **Tel** de tekstbestanden in de directory (gebruik `file`).
-3. **Beslis format:**
-   - Precies een tekstbestand, en dat bestand heet `SKILL.md`: emit `{parent}/{naam}-SKILL.md` door de SKILL.md directly te kopieren met de nieuwe naam.
-   - Anders: maak een zip.
-4. **Als zip:** run `cd {parent} && zip -r {naam}.zip {naam}/`. Daarna kan de intermediate directory weg, maar doe dat ALLEEN als de input onder `/tmp/skill-exports/` staat. Bronnen buiten die locatie nooit verwijderen.
-5. **Rapporteer** het resulterende bestand en of de intermediate directory is opgeruimd.
+1. **Validate** that the argument is an existing directory.
+2. **Count** the text files in the directory (use `file`).
+3. **Decide format:**
+   - Exactly one text file, and that file is named `SKILL.md`: emit `{parent}/{name}-SKILL.md` by copying SKILL.md directly with the new name.
+   - Otherwise: create a zip.
+4. **If zip:** run `cd {parent} && zip -r {name}.zip {name}/`. The intermediate directory can then be removed, but ONLY if the input is under `/tmp/skill-exports/`. Never remove sources outside that location.
+5. **Report** the resulting file and whether the intermediate directory was cleaned up.
 
-## Single-file vs zip regel
+## Single-file vs zip rule
 
-De regel is "leesbaar op iPhone zonder extra tools". Een los `SKILL.md` bestand opent in elke markdown viewer. Een zip met meer bestanden vereist unzippen. Daarom:
+The rule is "readable on iPhone without extra tools". A standalone `SKILL.md` file opens in any markdown viewer. A zip with more files requires unzipping. Therefore:
 
-- **Een tekstbestand, heet `SKILL.md`:** emit als `{naam}-SKILL.md`. De ontvanger renamed naar `SKILL.md` en plaatst in een `{naam}/` directory.
-- **Meer dan een tekstbestand, of het enige bestand heet anders:** zip de hele directory. Binaries, helpers, voorbeeld-bestanden horen bij elkaar.
+- **One text file, named `SKILL.md`:** emit as `{name}-SKILL.md`. The recipient renames it to `SKILL.md` and places it in a `{name}/` directory.
+- **More than one text file, or the only file has a different name:** zip the entire directory. Binaries, helpers, and example files belong together.
 
-## Output-beleid
+## Output policy
 
-- Output landt naast de input-directory.
-- Overschrijf een bestaand output-bestand niet stilzwijgend. Meld en stop als `{naam}.zip` of `{naam}-SKILL.md` al bestaat.
-- Ruim intermediate directories alleen op als de input onder `/tmp/skill-exports/` staat.
+- Output lands alongside the input directory.
+- Do not silently overwrite an existing output file. Report and stop if `{name}.zip` or `{name}-SKILL.md` already exists.
+- Clean up intermediate directories only if the input is under `/tmp/skill-exports/`.
 
-## Rapport template
+## Report template
 
 ```
-## Verpakt: {naam}
+## Packaged: {name}
 
-**Input:** {pad}
+**Input:** {path}
 **Format:** single-file | zip
-**Output:** {pad naar .md of .zip}
+**Output:** {path to .md or .zip}
 
-**Inhoud:**
-- {bestandsnaam}
-- {bestandsnaam}
+**Contents:**
+- {filename}
+- {filename}
 - ...
 
-**Opruim:** intermediate directory verwijderd | bron behouden
+**Cleanup:** intermediate directory removed | source preserved
 ```
 
-## Compositie
+## Composition
 
 ```
 /export-skill:sanitize say                       # strip PII
-/export-skill:package /tmp/skill-exports/say/    # maak say.zip of say-SKILL.md
+/export-skill:package /tmp/skill-exports/say/    # create say.zip or say-SKILL.md
 /export-skill:share /tmp/skill-exports/say.zip   # handoff
 ```

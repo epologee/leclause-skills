@@ -11,93 +11,93 @@ effort: low
 
 # Export Skill
 
-Exporteer een skill uit `~/.claude/skills/` als gesanitiseerd en verpakt bestand, klaar om te delen. Deze skill is een dunne orchestrator: elk nummer hieronder is exact een Skill-tool invocatie. Geen inline regels, geen eigen PII-matrix of platform-matrix: die leven in de sub-skills.
+Export a skill from `~/.claude/skills/` as a sanitized and packaged file, ready to share. This skill is a thin orchestrator: each step below is exactly one Skill tool invocation. No inline rules, no own PII matrix or platform matrix: those live in the sub-skills.
 
-## Invocatie
+## Invocation
 
 ```
-/export-skill say              # sanitiseer + verpak + handoff
-/export-skill say en           # sanitiseer + vertaal naar Engels + verpak + handoff
-/export-skill say nl           # sanitiseer + vertaal naar Nederlands + verpak + handoff
-/export-skill say linux        # sanitiseer + port naar Linux + verpak + handoff
-/export-skill say windows      # sanitiseer + port naar Windows + verpak + handoff
+/export-skill say              # sanitize + package + handoff
+/export-skill say en           # sanitize + translate to English + package + handoff
+/export-skill say nl           # sanitize + translate to Dutch + package + handoff
+/export-skill say linux        # sanitize + port to Linux + package + handoff
+/export-skill say windows      # sanitize + port to Windows + package + handoff
 ```
 
-Eerste argument: `{{NAME}}` = naam van een skill-directory in `~/.claude/skills/`.
-Tweede argument (optioneel): `{{SUFFIX}}` = doeltaal (`en`/`nl`) of doelplatform (`linux`/`windows`/`macos`).
+First argument: `{{NAME}}` = name of a skill directory in `~/.claude/skills/`.
+Second argument (optional): `{{SUFFIX}}` = target language (`en`/`nl`) or target platform (`linux`/`windows`/`macos`).
 
-## Orchestratie
+## Orchestration
 
-Elke stap is een `Skill` tool invocatie. De output van stap N is de input van stap N+1. Bij elke stap houd je de `CURRENT_PATH` variabele bij; die begint leeg en wordt na elke stap ingevuld met het pad dat de sub-skill produceerde.
+Each step is a `Skill` tool invocation. The output of step N is the input of step N+1. Track the `CURRENT_PATH` variable at each step; it starts empty and is set after each step to the path produced by the sub-skill.
 
-### Stap 1. Sanitiseren (altijd)
+### Step 1. Sanitize (always)
 
 ```
 Skill(skill="export-skill:sanitize", args="{{NAME}}")
 ```
 
-Verwachte output: directory `/tmp/skill-exports/{{NAME}}/`. Zet `CURRENT_PATH = /tmp/skill-exports/{{NAME}}/`.
+Expected output: directory `/tmp/skill-exports/{{NAME}}/`. Set `CURRENT_PATH = /tmp/skill-exports/{{NAME}}/`.
 
-### Stap 2. Transformeren (alleen als `{{SUFFIX}}` gegeven)
+### Step 2. Transform (only if `{{SUFFIX}}` given)
 
-Bij taal (`en`/`nl`):
+For language (`en`/`nl`):
 
 ```
 Skill(skill="export-skill:translate", args="{{CURRENT_PATH}} {{SUFFIX}}")
 ```
 
-Bij platform (`linux`/`windows`/`macos`):
+For platform (`linux`/`windows`/`macos`):
 
 ```
 Skill(skill="export-skill:port", args="{{CURRENT_PATH}} {{SUFFIX}}")
 ```
 
-Verwachte output: directory `/tmp/skill-exports/{{NAME}}-{{SUFFIX}}/`. Zet `CURRENT_PATH = /tmp/skill-exports/{{NAME}}-{{SUFFIX}}/`.
+Expected output: directory `/tmp/skill-exports/{{NAME}}-{{SUFFIX}}/`. Set `CURRENT_PATH = /tmp/skill-exports/{{NAME}}-{{SUFFIX}}/`.
 
-Sla stap 2 over als er geen tweede argument is.
+Skip step 2 if there is no second argument.
 
-### Stap 3. Verpakken
+### Step 3. Package
 
 ```
 Skill(skill="export-skill:package", args="{{CURRENT_PATH}}")
 ```
 
-Verwachte output: bestand `{{CURRENT_PATH%/}}.zip` of `{{CURRENT_PATH%/}}-SKILL.md` (afhankelijk van het aantal tekstbestanden in de directory). Zet `CURRENT_PATH` naar het nieuwe pad.
+Expected output: file `{{CURRENT_PATH%/}}.zip` or `{{CURRENT_PATH%/}}-SKILL.md` (depending on the number of text files in the directory). Set `CURRENT_PATH` to the new path.
 
-### Stap 4. Handoff
+### Step 4. Handoff
 
 ```
 Skill(skill="export-skill:share", args="{{CURRENT_PATH}}")
 ```
 
-share leest de bron-SKILL.md (uit een directory of een los `-SKILL.md` bestand), opent Finder op de parent, en eindigt met een samenvatting als laatste antwoord zodat `/clipboard` die kopieert.
+share reads the source SKILL.md (from a directory or a standalone `-SKILL.md` file), opens Finder on the parent, and ends with a summary as the last answer so that `/clipboard` copies it.
 
-Wanneer de input een `.zip` is, wijs `share` naar de oorspronkelijke directory (voor stap 3) of naar het single-file `-SKILL.md` alternatief. Zip-bestanden leest share niet.
+When the input is a `.zip`, point `share` to the original directory (from step 3) or to the single-file `-SKILL.md` alternative. share does not read zip files.
 
-### Foutafhandeling
+### Error handling
 
-Als een Skill-invocatie faalt of de verwachte output niet produceert, stop de chain en rapporteer de fout inclusief welke stap faalde en welk pad ontbrak. Spring niet naar de volgende stap.
+If a Skill invocation fails or does not produce the expected output, stop the chain and report the error including which step failed and which path was missing. Do not jump to the next step.
 
-## Standalone gebruik
+## Standalone use
 
-Elke sub-skill is ook zelfstandig user-invocable. Gebruik de sub-skills direct als je maar een deel van de workflow wilt:
+Each sub-skill is also independently user-invocable. Use the sub-skills directly if you only need part of the workflow:
 
-- `/export-skill:sanitize <naam>` om alleen PII te strippen.
-- `/export-skill:translate <pad> <en|nl>` om te vertalen.
-- `/export-skill:port <pad> <linux|windows|macos>` om te porten.
-- `/export-skill:package <pad>` om een willekeurige directory te zippen of als single-file md te emitten.
-- `/export-skill:share <pad>` om samenvatting + Finder handoff te doen op een bestaande export.
+- `/export-skill:sanitize <name>` to only strip PII.
+- `/export-skill:translate <path> <en|nl>` to translate.
+- `/export-skill:port <path> <linux|windows|macos>` to port.
+- `/export-skill:package <path>` to zip an arbitrary directory or emit it as a single-file md.
+- `/export-skill:share <path>` to do summary + Finder handoff on an existing export.
 
-De orchestrator is een gemak voor de meest voorkomende flow: "ik wil deze skill met iemand delen."
+The orchestrator is a convenience for the most common flow: "I want to share this skill with someone."
 
-### Veelvoorkomende combinaties
+### Common combinations
 
-- **Port voor eigen gebruik** (niet delen, geen Finder): `/export-skill:port <naam> linux`. Schrijft naar `~/.claude/skills/<naam>-linux/`, geen `/tmp/skill-exports/`, geen package, geen Finder.
-- **Vertaal EN port**: de orchestrator doet maar een transformatie tegelijk. Voor de combinatie chain je handmatig: `sanitize` -> `translate` -> `port` -> `package` -> `share`.
-- **Alleen repackagen** (bestaande geexporteerde dir opnieuw inpakken): `/export-skill:package /tmp/skill-exports/<naam>/`.
+- **Port for personal use** (not sharing, no Finder): `/export-skill:port <name> linux`. Writes to `~/.claude/skills/<name>-linux/`, no `/tmp/skill-exports/`, no package, no Finder.
+- **Translate AND port**: the orchestrator does only one transformation at a time. For the combination, chain manually: `sanitize` -> `translate` -> `port` -> `package` -> `share`.
+- **Repackage only** (re-bundle an already-exported dir): `/export-skill:package /tmp/skill-exports/<name>/`.
 
-## Validatie vooraf
+## Upfront validation
 
-- `{{NAME}}` moet corresponderen met een bestaande directory in `~/.claude/skills/`. Check met `ls ~/.claude/skills/{{NAME}}/`. Als hij niet bestaat, stop voor stap 1.
-- `{{SUFFIX}}` moet (als aanwezig) een van `en`, `nl`, `linux`, `windows`, `macos` zijn. Anders stop met een fout voor stap 2.
-- Als `/tmp/skill-exports/{{NAME}}/` al bestaat, stop met een duidelijke melding zodat de user handmatig kan opruimen.
+- `{{NAME}}` must correspond to an existing directory in `~/.claude/skills/`. Check with `ls ~/.claude/skills/{{NAME}}/`. If it does not exist, stop before step 1.
+- `{{SUFFIX}}` must (if present) be one of `en`, `nl`, `linux`, `windows`, `macos`. Otherwise stop with an error before step 2.
+- If `/tmp/skill-exports/{{NAME}}/` already exists, stop with a clear message so the user can clean up manually.

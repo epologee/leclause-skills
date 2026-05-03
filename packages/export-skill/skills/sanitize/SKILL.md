@@ -14,99 +14,99 @@ effort: low
 
 # Sanitize Skill
 
-Strip PII en security-issues uit een skill. De bronbestanden blijven ongemoeid; de gesanitiseerde versie wordt weggeschreven onder `/tmp/skill-exports/<naam>/`. Dit is de enige stap die een skill "veilig om van de machine te halen" maakt.
+Strip PII and security issues from a skill. Source files remain untouched; the sanitized version is written to `/tmp/skill-exports/<name>/`. This is the only step that makes a skill "safe to leave this machine."
 
-Voor vertaling zie `translate`. Voor platform-porting zie `port`. Voor inpakken zie `package`.
+For translation see `translate`. For platform porting see `port`. For packaging see `package`.
 
-## Invocatie
+## Invocation
 
 ```
-/export-skill:sanitize say                # bron: ~/.claude/skills/say/
-/export-skill:sanitize saysay             # bron: ~/.claude/skills/saysay/
-/export-skill:sanitize ./skills/my-skill  # bron: relatief pad
+/export-skill:sanitize say                # source: ~/.claude/skills/say/
+/export-skill:sanitize saysay             # source: ~/.claude/skills/saysay/
+/export-skill:sanitize ./skills/my-skill  # source: relative path
 ```
 
-Enig argument: skill-naam of pad.
+Single argument: skill name or path.
 
-## Input-resolutie
+## Input resolution
 
-- Als het argument geen `/`, `.`, of `~` bevat, interpreteer het als skill-naam en los op naar `~/.claude/skills/<naam>/`.
-- Als het een pad is (start met `/`, `./`, of `~`), gebruik het direct.
-- Volg symlinks. Als de bron niet bestaat, meld dit en stop.
+- If the argument contains no `/`, `.`, or `~`, interpret it as a skill name and resolve to `~/.claude/skills/<name>/`.
+- If it is a path (starts with `/`, `./`, or `~`), use it directly.
+- Follow symlinks. If the source does not exist, report this and stop.
 
-## Output-beleid
+## Output policy
 
-- Schrijf naar `/tmp/skill-exports/<naam>/`. Maak de directory aan als hij nog niet bestaat.
-- Als de doellocatie al bestaat, meld dit en stop zodat de user handmatig kan opruimen.
+- Write to `/tmp/skill-exports/<name>/`. Create the directory if it does not yet exist.
+- If the destination already exists, report this and stop so the user can clean up manually.
 
-## Stappen
+## Steps
 
-1. **Valideer** dat de bron bestaat.
-2. **Inventariseer** alle bestanden in de directory. Gebruik `file` om per bestand tekst of binary te bepalen.
-3. **Sanitiseer** elk tekstbestand volgens de checklist hieronder. Dit is LLM-werk: lees het bestand, analyseer op PII en security issues, en schrijf een schone versie. Geen regex-replace, maar begrip van context.
-4. **Kopieer** binaire bestanden as-is naar `/tmp/skill-exports/<naam>/`. Rapporteer een waarschuwing per binair bestand: deze zijn niet op PII gescand.
-5. **Rapporteer** per bestand wat er vervangen is en welke security findings er waren.
+1. **Validate** that the source exists.
+2. **Inventory** all files in the directory. Use `file` to determine whether each file is text or binary.
+3. **Sanitize** each text file according to the checklist below. This is LLM work: read the file, analyze for PII and security issues, and write a clean version. Not regex-replace; this requires context awareness.
+4. **Copy** binary files as-is to `/tmp/skill-exports/<name>/`. Report a warning per binary file: these have not been scanned for PII.
+5. **Report** per file what was replaced and what security findings there were.
 
-## Sanitisatie-checklist
+## Sanitization checklist
 
-### PII-categorieen
+### PII categories
 
-| Categorie | Vervanging |
-|-----------|-----------|
-| Home directory paden (`/Users/{username}`, `/home/{username}`) | `~` |
-| Persoonlijke namen | Verwijderen of generiek maken |
-| Project/organisatienamen | Generiek equivalent (`my-project`, `my-org`) |
-| Interne URLs en `.test` domeinen | `example.test` / `example.com` |
-| Email adressen | `user@example.com` |
-| Keychain service names en credential-referenties | Generiek maken |
-| GitHub repo paden die eigenaar/organisatie identificeren | Generiek maken (`my-org/my-repo`) |
-| Telefoonnummers, adressen, contactgegevens | Verwijderen |
+| Category | Replacement |
+|----------|-------------|
+| Home directory paths (`/Users/{username}`, `/home/{username}`) | `~` |
+| Personal names | Remove or make generic |
+| Project/organization names | Generic equivalent (`my-project`, `my-org`) |
+| Internal URLs and `.test` domains | `example.test` / `example.com` |
+| Email addresses | `user@example.com` |
+| Keychain service names and credential references | Make generic |
+| GitHub repo paths that identify owner/organization | Make generic (`my-org/my-repo`) |
+| Phone numbers, addresses, contact details | Remove |
 
-### Security checks (specifiek voor scripts)
+### Security checks (specific to scripts)
 
-- Hardcoded paden met gebruikersnamen
-- Embedded credentials, tokens, of API keys
-- Referenties naar interne services
-- Environment variable namen die architectuur lekken
+- Hardcoded paths with usernames
+- Embedded credentials, tokens, or API keys
+- References to internal services
+- Environment variable names that leak architecture
 - Webhook URLs
 - Keychain/credential access patterns
 
-### Vervangsysteem
+### Replacement system
 
-- Behoud structuur en logica, alleen waarden vervangen.
-- Gebruik leesbare generieke equivalenten, niet `[REDACTED]`.
-- Wees consistent: dezelfde waarde krijgt overal dezelfde vervanging.
-- Wanneer een waarde in meerdere bestanden voorkomt, gebruik dezelfde vervanging.
+- Preserve structure and logic, replace values only.
+- Use readable generic equivalents, not `[REDACTED]`.
+- Be consistent: the same value gets the same replacement everywhere.
+- When a value appears in multiple files, use the same replacement.
 
-## Rapport template
+## Report template
 
 ```
-## Sanitisatie: {naam}
+## Sanitization: {name}
 
-**Bron:** {pad}
-**Doel:** /tmp/skill-exports/{naam}/
+**Source:** {path}
+**Destination:** /tmp/skill-exports/{name}/
 
-### {bestandsnaam}
+### {filename}
 
-**PII verwijderd:**
-- {beschrijving van wat vervangen is}
+**PII removed:**
+- {description of what was replaced}
 
 **Security findings:**
-- {beschrijving, of "Geen"}
+- {description, or "None"}
 
-**Waarschuwingen:**
-- {binaries zonder PII-scan, handmatige review suggesties, of "Geen"}
+**Warnings:**
+- {binaries without PII scan, manual review suggestions, or "None"}
 ```
 
-Het rapport is bewust gedetailleerd: sanitisatie-findings wijzen vaak op verbeterpunten in de originele skill (hardcoded paden die variabelen hadden moeten zijn, credentials die via een secret manager hadden moeten lopen). Die verbeteringen vallen buiten de scope van deze skill, maar het rapport maakt ze zichtbaar.
+The report is deliberately detailed: sanitization findings often point to improvement opportunities in the original skill (hardcoded paths that should have been variables, credentials that should have gone through a secret manager). Those improvements are out of scope for this skill, but the report makes them visible.
 
-## Compositie
+## Composition
 
 ```
-/export-skill:sanitize say                            # stap 1: strip PII
-/export-skill:translate /tmp/skill-exports/say/ en    # stap 2 (optioneel): vertaal
-/export-skill:package /tmp/skill-exports/say/         # stap 3: verpak tot .zip of .md
-/export-skill:share /tmp/skill-exports/say.zip        # stap 4: handoff met clipboard + Finder
+/export-skill:sanitize say                            # step 1: strip PII
+/export-skill:translate /tmp/skill-exports/say/ en    # step 2 (optional): translate
+/export-skill:package /tmp/skill-exports/say/         # step 3: bundle to .zip or .md
+/export-skill:share /tmp/skill-exports/say.zip        # step 4: handoff with clipboard + Finder
 ```
 
-Of gebruik de `/export-skill` orchestrator voor de standaard chain.
+Or use the `/export-skill` orchestrator for the standard chain.

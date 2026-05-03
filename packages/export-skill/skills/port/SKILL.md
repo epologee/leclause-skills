@@ -14,42 +14,42 @@ effort: low
 
 # Port Skill
 
-Port platform-specifieke commands van een skill naar het doelplatform. De bronbestanden blijven ongemoeid; de geporte versie wordt ernaast geschreven. Geen sanitisatie, geen vertaling: alleen platform-transformatie. Voor sanitisatie zie `sanitize`; voor taalvertaling zie `translate`.
+Port platform-specific commands of a skill to the target platform. Source files remain untouched; the ported version is written alongside them. No sanitization, no translation: only platform transformation. For sanitization see `sanitize`; for language translation see `translate`.
 
-## Invocatie
+## Invocation
 
 ```
-/export-skill:port say linux                          # bron: ~/.claude/skills/say/, doel: Linux
-/export-skill:port saysay windows                     # bron: ~/.claude/skills/saysay/, doel: Windows
-/export-skill:port /tmp/skill-exports/say/ linux      # bron: geexporteerde directory
-/export-skill:port /tmp/skill-exports/say-SKILL.md macos    # bron: los bestand, reverse port naar macOS
+/export-skill:port say linux                          # source: ~/.claude/skills/say/, target: Linux
+/export-skill:port saysay windows                     # source: ~/.claude/skills/saysay/, target: Windows
+/export-skill:port /tmp/skill-exports/say/ linux      # source: exported directory
+/export-skill:port /tmp/skill-exports/say-SKILL.md macos    # source: standalone file, reverse port to macOS
 ```
 
-Eerste argument: skill-naam of pad. Tweede argument: doelplatform (`linux`, `windows`, of `macos`).
+First argument: skill name or path. Second argument: target platform (`linux`, `windows`, or `macos`).
 
-## Input-resolutie
+## Input resolution
 
-- Als het eerste argument geen `/`, `.`, of `~` bevat, interpreteer het als skill-naam en los op naar `~/.claude/skills/<naam>/`.
-- Als het een pad is (start met `/`, `./`, of `~`), gebruik het direct. Accepteer zowel directory als los bestand.
-- Volg symlinks. Als de bron niet bestaat, meld dit en stop.
+- If the first argument contains no `/`, `.`, or `~`, interpret it as a skill name and resolve to `~/.claude/skills/<name>/`.
+- If it is a path (starts with `/`, `./`, or `~`), use it directly. Accept both directory and standalone file.
+- Follow symlinks. If the source does not exist, report this and stop.
 
-## Output-beleid
+## Output policy
 
-- **Directory input:** schrijf naar `<bron-parent>/<naam>-<platform>/`. Bij `/tmp/skill-exports/` input, schrijf naast de bron: `/tmp/skill-exports/<naam>-<platform>/`.
-- **Los bestand input:** schrijf naast de bron met `.<platform>.md` suffix.
-- Overschrijf niets zonder waarschuwing. Als de doellocatie al bestaat, meld dit en stop.
+- **Directory input:** write to `<source-parent>/<name>-<platform>/`. For `/tmp/skill-exports/` input, write alongside the source: `/tmp/skill-exports/<name>-<platform>/`.
+- **Standalone file input:** write alongside the source with `.<platform>.md` suffix.
+- Never overwrite without warning. If the destination already exists, report this and stop.
 
-## Stappen
+## Steps
 
-1. **Valideer** bron bestaat en doelplatform is `linux`, `windows`, of `macos`.
-2. **Detecteer** bronplatform aan de hand van de gebruikte commands. De meeste skills zijn macOS-first, maar log dit expliciet.
-3. **Inventariseer** tekstbestanden in de bron (gebruik `file` voor text/binary detectie).
-4. **Port** elk tekstbestand volgens de platform-matrix hieronder. Dit is LLM-werk: vervang commands met hun equivalent, niet met regex.
-5. **Kopieer** binaire bestanden as-is; rapporteer ze als overgeslagen.
-6. **Schrijf** de geporte versie naar de doellocatie.
-7. **Rapporteer** welke commands vervangen zijn en welke handmatige aandacht nodig hebben.
+1. **Validate** source exists and target platform is `linux`, `windows`, or `macos`.
+2. **Detect** source platform based on the commands used. Most skills are macOS-first, but log this explicitly.
+3. **Inventory** text files in the source (use `file` for text/binary detection).
+4. **Port** each text file according to the platform matrix below. This is LLM work: replace commands with their equivalents, not via regex.
+5. **Copy** binary files as-is; report them as skipped.
+6. **Write** the ported version to the destination.
+7. **Report** which commands were replaced and which need manual attention.
 
-## Platform-matrices
+## Platform matrices
 
 ### macOS -> Linux
 
@@ -59,7 +59,7 @@ Eerste argument: skill-naam of pad. Tweede argument: doelplatform (`linux`, `win
 | `pbcopy` | `xclip -selection clipboard` / `xsel --clipboard` |
 | `pbpaste` | `xclip -selection clipboard -o` |
 | `open` | `xdg-open` |
-| `osascript` | Geen direct equivalent, beschrijf alternatief |
+| `osascript` | No direct equivalent, describe alternative |
 | `screencapture` | `scrot` / `gnome-screenshot` |
 | macOS Keychain (`security`) | `secret-tool` (GNOME Keyring) / `pass` |
 | `NSPasteboard` | X11/Wayland clipboard APIs |
@@ -78,45 +78,45 @@ Eerste argument: skill-naam of pad. Tweede argument: doelplatform (`linux`, `win
 | `osascript` | PowerShell |
 | macOS Keychain | Windows Credential Manager (`cmdkey`) |
 | `~/Library/...` | `$env:APPDATA\...` |
-| Shell scripts | PowerShell scripts of WSL notitie |
+| Shell scripts | PowerShell scripts or WSL note |
 
 ### Reverse: Linux/Windows -> macOS
 
-Voor reverse ports: gebruik de bovenstaande matrices omgekeerd. Wanneer de bron al (deels) macOS is, log dit en port alleen de niet-macOS delen.
+For reverse ports: use the matrices above in reverse. When the source is already (partially) macOS, log this and port only the non-macOS parts.
 
-## Port-richtlijnen
+## Porting guidelines
 
-- Vervang platform-specifieke commands volgens de matrix. Behoud structuur en logica van het script.
-- Wanneer een command geen direct equivalent heeft, voeg een comment toe met uitleg in plaats van stilzwijgend iets te verzinnen.
-- Test-instructies en installatiehints aanpassen aan het doelplatform (bijv. `brew install` wordt `apt install`).
-- Wanneer een script meerdere platform-specifieke commands gebruikt, overweeg een noot bovenaan met de vereiste packages op het doelplatform.
-- SKILL.md frontmatter `description` blijft ongewijzigd; platform wordt niet in de description gezet.
+- Replace platform-specific commands according to the matrix. Preserve the structure and logic of the script.
+- When a command has no direct equivalent, add a comment with an explanation rather than silently inventing something.
+- Adjust test instructions and install hints to the target platform (e.g. `brew install` becomes `apt install`).
+- When a script uses multiple platform-specific commands, consider adding a note at the top with the required packages on the target platform.
+- SKILL.md frontmatter `description` remains unchanged; platform is not added to the description.
 
-## Rapport template
+## Report template
 
 ```
-## Port: {naam} -> {platform}
+## Port: {name} -> {platform}
 
-**Bron:** {pad}
-**Doel:** {pad}
-**Gedetecteerd bronplatform:** {macos|linux|windows|mixed}
+**Source:** {path}
+**Destination:** {path}
+**Detected source platform:** {macos|linux|windows|mixed}
 
-### {bestandsnaam}
-- Vervangen commands: {lijst van command-paren}
-- Handmatige aandacht nodig: {commands zonder direct equivalent}
+### {filename}
+- Replaced commands: {list of command pairs}
+- Manual attention needed: {commands without direct equivalent}
 
 ### Binaries
-- {bestandsnaam}: gekopieerd zonder aanpassing
+- {filename}: copied without modification
 ```
 
-## Compositie
+## Composition
 
 ```
 /export-skill:sanitize say                            # strip PII, output /tmp/skill-exports/say/
-/export-skill:port /tmp/skill-exports/say/ linux      # port de gesanitiseerde directory
-/export-skill:package /tmp/skill-exports/say-linux/   # zip of md
+/export-skill:port /tmp/skill-exports/say/ linux      # port the sanitized directory
+/export-skill:package /tmp/skill-exports/say-linux/   # zip or md
 ```
 
-Of gebruik de orchestrator in een stap: `/export-skill say linux` doet sanitize + port + package + share.
+Or use the orchestrator in one step: `/export-skill say linux` does sanitize + port + package + share.
 
-Sanitiseren voor porten is belangrijk als je gaat delen: platform-specifieke paden kunnen zelf PII bevatten (bijv. `/Users/alice/Library/...`).
+Sanitizing before porting matters when sharing: platform-specific paths can themselves contain PII (e.g. `/Users/alice/Library/...`).
