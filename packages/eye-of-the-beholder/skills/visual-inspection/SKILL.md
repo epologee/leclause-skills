@@ -83,3 +83,17 @@ Eye-of-the-beholder is open diagnosis: look at what is there and name what is wr
 | Stopping at "looks like it" | "Looks like it" is not `yes` in the table. Looks-like-it is an open todo. |
 | Labeling a visual estimate as "measured" | Estimating a number from a screenshot without devtools is an assumption, not a measurement. Label it `estimated (~6px)` and note the measurement method. An estimated value may not lead to `yes` in the Match column; only devtools-computed-style or pixel-sample from a raw PNG counts as measured. |
 | Referring to a screenshot from an earlier turn | The evidence must be in the same response as the match claim. "I took it earlier above" is not evidence for the current claim; take fresh. |
+
+## Toolchain
+
+The skill ships three executable files under `scripts/` and two reference documents alongside this SKILL.md:
+
+- `scripts/ink-assert.mjs`: gating tool. Runs structural axes (frame, ink, padding, corner, bgDiag, aaDiag, edgeExt, bgExt, aaExt, halo, hist) plus multi-scale meanRGB and pixel-diff. Modes: default (per-axis report), `--json` (machine-readable), `--confidence` (score 0..100, exit 0 only at >=95).
+- `scripts/cases/`: validation corpus. Each subdirectory holds `reference.png`, `candidate.png`, and `verdict.txt` (one of `match`, `mismatch`, `borderline`).
+- `scripts/run-corpus.mjs`: self-test runner. Iterates `cases/`, runs ink-assert per case, prints a confusion matrix (truePass, trueFail, falsePass, falseFail, borderline), exits 0 only when falsePass=0 AND falseFail=0.
+- `direction-matrix.md`: per-axis direction effect of every tunable CSS knob (border-radius, padding, font-size, font-weight, letter-spacing, filter:blur, box-shadow). Tells you which knob to move when an axis fails in which direction.
+- `pipeline-floors.md`: per-axis irreducible delta when comparing CSS-pill against canvas-PNG-favicon. Tells you when a residual delta is the cross-pipeline rasterization floor versus a fixable axis.
+
+When `--confidence` reports below 95, consult `direction-matrix.md` for the knob to move and `pipeline-floors.md` for the floor on that axis. When all failing axes are at their floor, the gate has reached the irreducible cross-pipeline limit and a higher score requires changing the rendering pipeline (e.g., replacing the CSS pill with an inline SVG mirror of the canvas).
+
+The corpus is the regression suite. Every change to ink-assert or a new axis must be validated by running `run-corpus.mjs` and confirming `CORPUS CLEAN ✓`.
