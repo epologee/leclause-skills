@@ -28,7 +28,7 @@ Reference baseline: 32x32 device-pixel canvas-PNG favicon, dark squircle plus or
 | hist.EDGE | 1-3% delta | irreducible | pill-radius-3-borderline: hist.EDGE -0.49 | Often passes; raises only when AA halos diverge sharply. |
 | hist.BG | 1-2% delta | reachable | pill-radius-3-borderline: hist.BG +0.69 | Inverse of hist.EDGE. |
 | ms.32x32.meanRGB | <5 RGB units | reachable | pill-radius-3-borderline: (-1.5, 2.5, 5.6) | Coarse-scale color balance matches. |
-| ms.1x1.meanRGB | <8 RGB units typical, up to 15 | irreducible-when-corner-AA-differs | favicon-vs-pill-radius-2-too-tight: 1x1 delta (5,4,5) | Integrated color follows the AA axes. |
+| ms.1x1.meanRGB | <8 RGB units typical, up to 15 | irreducible-when-corner-AA-differs | pill-radius-2-too-tight: 1x1 delta (5,4,5) | Cited from a different case (radius-2 instead of radius-3) because radius-3 happens to balance corner misclassification across the integral; radius-2 reveals the floor more cleanly. |
 | pixel diff | 22-37% | irreducible | pill-radius-3-borderline: 30.37%, pill-radius-2: 30.08%, pill-radius-5: 37.60% | Cross-pipeline AA on glyph and corner pixels at threshold 24/255. |
 
 ## Implications for confidence
