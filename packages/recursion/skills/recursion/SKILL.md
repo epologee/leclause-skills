@@ -7,7 +7,7 @@ description: >
   or plan reject. Manages cron, state, focus, and the blocklist.
   Dispatches research runs to the research sub-skill of the same plugin.
   Does not perform research itself.
-argument-hint: "[now | on | off | status | focus <thema> | reject <file>]"
+argument-hint: "[now | on | off | status | focus <theme> | reject <file>]"
 allowed-tools:
   - Bash(date *)
   - Bash(stat *)
@@ -29,123 +29,123 @@ effort: high
 
 # Recursion
 
-Orchestrator voor de nightly improvement loop. Beheert cron, state,
-focus, blocklist en de reject-flow. Draait zelf geen research. Voor de
-daadwerkelijke research workflow en safety regels: zie de `research`
+Orchestrator for the nightly improvement loop. Manages cron, state,
+focus, blocklist, and the reject flow. Does not perform research itself. For
+the actual research workflow and safety rules: see the `research`
 sub-skill (`recursion:research`).
 
-## State eigenaarschap
+## State ownership
 
-Orchestrator is de enige schrijver van `schedule_id`, `focus`, en
-`blocklist.md` appends. De status-flip van een plan naar `rejected` is
-ook orchestrator-werk. Alle andere velden in `state.md` en `plans/*.md`
-zijn eigendom van de `research` sub-skill. Volledige ownership-tabel
-staat in `skills/research/SKILL.md § State contract`.
+The orchestrator is the sole writer of `schedule_id`, `focus`, and
+`blocklist.md` appends. The status flip of a plan to `rejected` is
+also orchestrator work. All other fields in `state.md` and `plans/*.md`
+belong to the `research` sub-skill. The full ownership table is in
+`skills/research/SKILL.md § State contract`.
 
-## Subcommando's
+## Subcommands
 
-| Argument | Actie |
-|----------|-------|
-| _(geen)_ | Eenmalige run vannacht om 1:03 (session-only) |
-| `now` | Direct starten in huidige sessie |
-| `on` | Permanente nachtelijke schedule |
-| `off` | Schedule stoppen |
-| `status` | Toon state, actieve plannen, schedule |
-| `focus <thema>` | Thematisch filter instellen |
-| `focus off` | Terug naar brede verkenning |
-| `reject <bestand>` | Markeer plan als rejected, voeg toe aan blocklist |
+| Argument | Action |
+|----------|--------|
+| _(none)_ | One-off run tonight at 1:03 (session-only) |
+| `now` | Start immediately in the current session |
+| `on` | Permanent nightly schedule |
+| `off` | Stop the schedule |
+| `status` | Show state, active plans, schedule |
+| `focus <theme>` | Set a thematic filter |
+| `focus off` | Return to broad exploration |
+| `reject <file>` | Mark plan as rejected, add to blocklist |
 
-## Delegatie naar research
+## Delegation to research
 
-Eén contract, twee paden (in-session versus achtergrond cron). Gebruik
-exact een van deze twee.
+One contract, two paths (in-session versus background cron). Use
+exactly one of these two.
 
-**In-session (synchrone Skill tool call):**
+**In-session (synchronous Skill tool call):**
 
 ```
 Skill(skill: "recursion:research")
 ```
 
-De Skill tool wacht tot de research run klaar is en retourneert de
-NOTIFY-output. Dit is het pad voor `/recursion now`.
+The Skill tool waits until the research run completes and returns the
+NOTIFY output. This is the path for `/recursion now`.
 
-**Cron / RemoteTrigger (verse sessie):**
+**Cron / RemoteTrigger (fresh session):**
 
-Verse sessies kunnen een sub-skill niet direct als slash-command
-aanroepen (research is niet user-invocable). Cron prompt daarom:
+Fresh sessions cannot invoke a sub-skill directly as a slash command
+(research is not user-invocable). The cron prompt is therefore:
 
 ```
 prompt: "Run /model sonnet first to downgrade this cron-spawned session. Then: /recursion now"
 ```
 
-De verse sessie laadt dan de orchestrator en die dispatcht via de Skill
-tool naar research. Eén ingang, één codepad. De `/model sonnet`
-prepend zorgt dat de loop-zelf en zijn synthese op Sonnet draaien;
-research's eigen Spoor B en ronde 2 kunnen daarbinnen verder
-delegeren naar Sonnet/Haiku zonder Opus-budget aan te raken.
+The fresh session then loads the orchestrator, which dispatches via the Skill
+tool to research. One entry point, one code path. The `/model sonnet`
+prepend ensures the loop itself and its synthesis run on Sonnet;
+research's own Track B and round 2 can further delegate within that to
+Sonnet/Haiku without touching the Opus budget.
 
-### `/recursion` (eenmalig vannacht)
+### `/recursion` (one-off tonight)
 
-1. Bereken cron voor vannacht 1:03: `3 1 <dag> <maand> *`
-2. CronCreate met `recurring: false` en prompt `Run /model sonnet first. Then: /recursion now`
-3. Waarschuw: session-only, verdwijnt als sessie sluit
+1. Calculate cron for tonight at 1:03: `3 1 <day> <month> *`
+2. CronCreate with `recurring: false` and prompt `Run /model sonnet first. Then: /recursion now`
+3. Warn: session-only, disappears when the session closes
 
 ### `/recursion now`
 
-1. Roep `Skill(skill: "recursion:research")` aan. Wacht synchroon op
-   terugkeer.
-2. Toon de NOTIFY-output die de research skill retourneert.
-3. Geen aparte state-updates in de orchestrator; de research skill
-   beheert zijn eigen state velden.
+1. Call `Skill(skill: "recursion:research")`. Wait synchronously for
+   the return.
+2. Show the NOTIFY output returned by the research skill.
+3. No separate state updates in the orchestrator; the research skill
+   manages its own state fields.
 
 ### `/recursion on` / `off`
 
-Gebruik RemoteTrigger via de `/schedule` skill. Cron: `3 1 * * *`.
-Prompt in de trigger: `Run /model sonnet first. Then: /recursion now`.
-Sla trigger ID op in state.md als `schedule_id`.
+Use RemoteTrigger via the `/schedule` skill. Cron: `3 1 * * *`.
+Prompt in the trigger: `Run /model sonnet first. Then: /recursion now`.
+Store the trigger ID in state.md as `schedule_id`.
 
-`off` stopt de trigger via `schedule_id` en wist het veld uit state.md.
+`off` stops the trigger via `schedule_id` and clears the field from state.md.
 
 ### `/recursion status`
 
-Toon: `last_run` en `total_runs` (gelezen uit state.md),
-actieve focus thema, schedule actief (`schedule_id` aanwezig?),
-en een overzicht van plannen per `status` veld
+Show: `last_run` and `total_runs` (read from state.md),
+active focus theme, schedule active (`schedule_id` present?),
+and an overview of plans per `status` field
 (`proposed`/`rejected`/`implemented`).
 
-Status is read-only voor de orchestrator: leest state.md en plan
-frontmatter, schrijft niets.
+Status is read-only for the orchestrator: reads state.md and plan
+frontmatter, writes nothing.
 
-### `/recursion reject <bestand>`
+### `/recursion reject <file>`
 
-1. Lees het plan in `~/.claude/recursion/plans/<bestand>`
-2. Wijzig alleen het `status` veld van `proposed` naar `rejected` in de
-   frontmatter. Raak de body niet aan.
-3. Voeg toe aan `~/.claude/recursion/blocklist.md` met datum en reden.
-4. Meld wat afgewezen en geblocklist is.
+1. Read the plan in `~/.claude/recursion/plans/<file>`
+2. Change only the `status` field from `proposed` to `rejected` in the
+   frontmatter. Do not touch the body.
+3. Append to `~/.claude/recursion/blocklist.md` with date and reason.
+4. Report what was rejected and blocklisted.
 
-### `/recursion focus <thema>` / `focus off`
+### `/recursion focus <theme>` / `focus off`
 
-Schrijf `focus` veld naar state.md. `focus off` wist het veld. Volgende
-research-run leest dit veld in PREPARE en stuurt thema-agents
-dienovereenkomstig aan.
+Write the `focus` field to state.md. `focus off` clears the field. The next
+research run reads this field in PREPARE and steers theme agents
+accordingly.
 
-## Schrijfrechten
+## Write permissions
 
-Orchestrator raakt alleen:
+The orchestrator only touches:
 
-- `~/.claude/recursion/state.md` velden `schedule_id` en `focus`
+- `~/.claude/recursion/state.md` fields `schedule_id` and `focus`
 - `~/.claude/recursion/blocklist.md` (append)
-- `~/.claude/recursion/plans/*.md` frontmatter `status` veld (alleen bij
+- `~/.claude/recursion/plans/*.md` frontmatter `status` field (only on
   reject)
 
-Alle andere writes in `~/.claude/recursion/` zijn onbevoegd. Nooit schrijven
-buiten `~/.claude/recursion/`.
+All other writes in `~/.claude/recursion/` are unauthorized. Never write
+outside `~/.claude/recursion/`.
 
-## Na de recursion (user-actie)
+## After the recursion (user action)
 
-| User beslissing | Actie |
-|-----------------|-------|
-| Akkoord | `/auto-loop ~/.claude/recursion/plans/<bestand>` |
-| Afwijzen | `/recursion reject <bestand>` (blocklist) |
-| Parkeren | Niets doen, plan blijft `proposed`, volgende run kan het herontdekken |
+| User decision | Action |
+|---------------|--------|
+| Approve | `/auto-loop ~/.claude/recursion/plans/<file>` |
+| Reject | `/recursion reject <file>` (blocklist) |
+| Park | Do nothing, plan stays `proposed`, next run can rediscover it |

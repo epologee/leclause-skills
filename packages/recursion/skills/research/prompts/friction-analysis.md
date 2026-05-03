@@ -1,205 +1,205 @@
 # Recursion Friction Analysis
 
-Instructies voor de friction-analyse agent. Je analyseert gesprekssessies om
-patronen te vinden waar user en Claude langs elkaar heen praten, doelen niet
-worden gehaald, of Claude herhaaldelijk gecorrigeerd moet worden.
+Instructions for the friction analysis agent. You analyze conversation sessions to
+find patterns where user and Claude talk past each other, goals are not
+reached, or Claude repeatedly needs to be corrected.
 
-## Doel
+## Goal
 
-Produceer concrete voorstellen voor CLAUDE.md aanpassingen of nieuwe skills
-die terugkerende friction patronen structureel aanpakken.
+Produce concrete proposals for CLAUDE.md adjustments or new skills
+that structurally address recurring friction patterns.
 
-## Databronnen
+## Data Sources
 
-### Primair: sessie-JSONLs (volledige gesprekken)
+### Primary: session JSONLs (full conversations)
 
-Locatie: `~/.claude/projects/<project-dir>/<session-id>.jsonl`
+Location: `~/.claude/projects/<project-dir>/<session-id>.jsonl`
 
-Formaat: line-delimited JSON. Elke regel heeft een `type` veld:
-- `type: "user"` en `type: "assistant"` bevatten gesprekscontent
-- Content zit in `d["message"]["content"]` (string of lijst van content blocks)
-- Content blocks: `{"type": "text", "text": "..."}` voor tekst
+Format: line-delimited JSON. Each line has a `type` field:
+- `type: "user"` and `type: "assistant"` contain conversation content
+- Content is in `d["message"]["content"]` (string or list of content blocks)
+- Content blocks: `{"type": "text", "text": "..."}` for text
 
-**Scoping:** Analyseer alleen sessies gewijzigd sinds de vorige recursion run.
-Check `last_run` in state.md en filter op file modification time.
+**Scoping:** Analyze only sessions modified since the previous recursion run.
+Check `last_run` in state.md and filter on file modification time.
 
-**Sampling:** Sessies >500 regels: lees eerste 150 en laatste 150 regels.
-Dit vangt zowel de initiële opzet als de afronding (waar friction vaak zit).
+**Sampling:** Sessions >500 lines: read first 150 and last 150 lines.
+This captures both the initial setup and the conclusion (where friction often lives).
 
-### Secundair: history.jsonl (alleen user-berichten)
+### Secondary: history.jsonl (user messages only)
 
-Locatie: `~/.claude/history.jsonl`
+Location: `~/.claude/history.jsonl`
 
-Formaat: `{"display": "...", "timestamp": ..., "project": "...", "sessionId": "..."}`
+Format: `{"display": "...", "timestamp": ..., "project": "...", "sessionId": "..."}`
 
-Gebruik voor snelle scan op correctie-patronen over alle projecten heen.
-Filter op timestamp sinds vorige run.
+Use for a quick scan of correction patterns across all projects.
+Filter on timestamp since the previous run.
 
-### Tertiair: git log
+### Tertiary: git log
 
-`git log --all --oneline` voor revert-patronen, fix-the-fix commits.
+`git log --all --oneline` for revert patterns, fix-the-fix commits.
 
-## Friction Patronen
+## Friction Patterns
 
-### 1. Correcties (severity: medium-high)
+### 1. Corrections (severity: medium-high)
 
-User corrigeert Claude direct na een antwoord.
+User corrects Claude directly after a response.
 
-**Signaalwoorden in user-berichten:**
+**Signal words in user messages (Dutch, since the user types in Dutch):**
 - "nee", "niet dat", "ik bedoelde", "dat klopt niet"
 - "stop met", "dat zei ik toch al", "lees nog eens"
-- Korte correcties na lange Claude-output (bijv. "X moet Y zijn")
-- Herformulering van dezelfde opdracht
+- Short corrections after long Claude output (e.g. "X moet Y zijn")
+- Reformulation of the same instruction
 
-**Analyse per gevonden correctie:**
-- Wat zei Claude dat gecorrigeerd moest worden?
-- Was dit een interpretatiefout (intent verkeerd gelezen)?
-- Was dit een kennisfout (feit onjuist)?
-- Was dit een conventie-schending (bestaande regel niet gevolgd)?
-- Is er een CLAUDE.md regel die dit had moeten voorkomen?
+**Analysis per correction found:**
+- What did Claude say that needed to be corrected?
+- Was this an interpretation error (intent misread)?
+- Was this a knowledge error (fact incorrect)?
+- Was this a convention violation (existing rule not followed)?
+- Is there a CLAUDE.md rule that should have prevented this?
 
 ### 2. Overclaimed Confidence (severity: high)
 
-Claude presenteert onzekere informatie als feit.
+Claude presents uncertain information as fact.
 
-**Signalen:**
-- User vraagt "weet je dat zeker?", "kun je dat onderbouwen?"
-- User vraagt om verificatie van een claim
-- Claude geeft toe dat iets "een gok" was
-- Claude trekt een eerdere bewering in
+**Signals (Dutch user phrases):**
+- User asks "weet je dat zeker?", "kun je dat onderbouwen?"
+- User asks for verification of a claim
+- Claude admits something "was een gok"
+- Claude retracts an earlier assertion
 
-**Analyse:** Dit is het gevaarlijkst wanneer het in externe output terechtkomt
-(GitHub issues, PR beschrijvingen, documenten). Markeer altijd of de
-overclaimed info in een extern artefact belandde.
+**Analysis:** This is most dangerous when it ends up in external output
+(GitHub issues, PR descriptions, documents). Always note whether the
+overclaimed information landed in an external artifact.
 
 ### 3. Compliance Reflex (severity: low-medium)
 
-Claude stopt en vraagt toestemming voor iets dat al in scope was.
+Claude stops and asks permission for something that was already in scope.
 
-**Signalen:**
-- "Wil je dat ik...?" na een expliciete opdracht
-- "Zal ik ook...?" voor iets dat de user al noemde
-- Samenvatting tussen twee tool calls in plaats van doorwerken
-- User antwoordt met "ja", "doe maar", "uiteraard"
+**Signals (Dutch user phrases):**
+- "Wil je dat ik...?" after an explicit instruction
+- "Zal ik ook...?" for something the user already mentioned
+- Summary between two tool calls instead of continuing
+- User responds with "ja", "doe maar", "uiteraard"
 
-**Analyse:** Check of de CLAUDE.md "doorwerken" sectie dit patroon al dekt.
-Zo ja: het is een compliance-probleem, geen regel-probleem. Zo nee: stel
-een regel voor.
+**Analysis:** Check whether the CLAUDE.md "keep working" section already
+covers this pattern. If yes: it is a compliance problem, not a rule problem.
+If no: propose a rule.
 
 ### 4. Premature Action (severity: medium)
 
-Claude begint te implementeren voordat de opdracht helder is.
+Claude starts implementing before the instruction is clear.
 
-**Signalen:**
-- User stelt een vraag, Claude maakt meteen wijzigingen
-- User zegt "laat maar" of "revert" kort na een wijziging
-- User herformuleert de opdracht na een eerste poging
+**Signals (Dutch user phrases):**
+- User asks a question, Claude immediately makes changes
+- User says "laat maar" or "revert" shortly after a change
+- User reformulates the instruction after a first attempt
 
-**Analyse:** Was de user aan het brainstormen of aan het opdracht geven?
-Verschil: vraagvorm ("willen we niet...?") vs. imperatiefvorm ("doe X").
+**Analysis:** Was the user brainstorming or giving an instruction?
+Difference: question form ("willen we niet...?") vs. imperative form ("doe X").
 
-### 5. Doel-abandonment (severity: high)
+### 5. Goal Abandonment (severity: high)
 
-Een gesprek begint met doel X maar eindigt zonder dat X bereikt is.
+A conversation starts with goal X but ends without X being achieved.
 
-**Signalen:**
-- Eerste user-bericht noemt een duidelijk doel
-- Laatste 10 berichten gaan over iets anders
-- Geen bevestiging dat het oorspronkelijke doel bereikt is
-- Sessie eindigt met een tangentieel onderwerp
+**Signals:**
+- First user message states a clear goal
+- Last 10 messages are about something else
+- No confirmation that the original goal was achieved
+- Session ends on a tangential topic
 
-**Analyse:** Was het doel expliciet verlaten (user koos andere richting) of
-impliciet verloren (afdwaling zonder bewuste keuze)?
+**Analysis:** Was the goal explicitly abandoned (user chose a different direction) or
+implicitly lost (drift without a conscious choice)?
 
-### 6. Downgrade-spiraal (severity: high)
+### 6. Downgrade Spiral (severity: high)
 
-Claude probeert aanpak A, dan B, dan C, met afnemende kwaliteit.
+Claude tries approach A, then B, then C, with decreasing quality.
 
-**Signalen:**
-- Drie of meer tool-calls met vergelijkbare intent maar andere aanpak
-- Revert-achtige patronen (code schrijven, dan terugdraaien, dan anders)
-- User zegt "probeer X" na een mislukte poging (reactief in plaats van proactief)
+**Signals:**
+- Three or more tool calls with similar intent but different approach
+- Revert-like patterns (write code, then undo it, then do it differently)
+- User says "probeer X" after a failed attempt (reactive instead of proactive)
 
-**Analyse:** Check of de CLAUDE.md "iteratief downgraden is verboden" dit
-patroon al dekt. Als de regel bestaat maar niet gevolgd wordt, is het een
-compliance-probleem. Als de regel niet dekt wat er gebeurde, stel een
-aanscherping voor.
+**Analysis:** Check whether the CLAUDE.md "iterative downgrading is forbidden" rule
+already covers this pattern. If the rule exists but is not followed, it is a
+compliance problem. If the rule does not cover what happened, propose a
+tightening.
 
-### 7. Herhaalde Instructie (severity: medium)
+### 7. Repeated Instruction (severity: medium)
 
-Dezelfde instructie komt in meerdere sessies terug.
+The same instruction recurs across multiple sessions.
 
-**Detectie via history.jsonl:** Zoek naar semantisch vergelijkbare user-berichten
-(niet letterlijk dezelfde tekst, maar dezelfde intentie) over meerdere sessies.
+**Detection via history.jsonl:** Look for semantically similar user messages
+(not literally the same text, but the same intent) across multiple sessions.
 
-**Analyse:** Als de user dezelfde instructie herhaaldelijk moet geven, ontbreekt
-er een CLAUDE.md regel, een skill, of een hook die dit automatisch afdwingt.
+**Analysis:** If the user repeatedly has to give the same instruction, there is
+a missing CLAUDE.md rule, skill, or hook that would enforce it automatically.
 
-### 8. Self-improvement Audit (severity: high, altijd uitvoeren)
+### 8. Self-improvement Audit (severity: high, always run)
 
-`/self-improvement` invocaties zijn de hoogste-signaal friction indicator:
-de user zegt letterlijk "dit moet structureel anders." Analyseer ELKE
-`/self-improvement` in de geanalyseerde sessies.
+`/self-improvement` invocations are the highest-signal friction indicator:
+the user is literally saying "this needs to change structurally." Analyze EVERY
+`/self-improvement` in the analyzed sessions.
 
-**Detectie:** Zoek in user-berichten naar `/self-improvement` (letterlijk).
+**Detection:** Search user messages for `/self-improvement` (literal string).
 
-**Per invocatie, analyseer de volledige keten:**
+**Per invocation, analyze the full chain:**
 
-1. **Trigger**: Wat was het friction-moment dat de invocatie uitlokte?
-   Lees de 3-5 user-berichten vóór de invocatie. Wat ging er mis?
-2. **Instructie**: Wat vroeg de user aan self-improvement om te doen?
-   Soms zit de instructie in hetzelfde bericht, soms in het bericht erna.
-3. **Uitvoering**: Wat deed self-improvement daadwerkelijk?
-   Lees de assistant-berichten na de invocatie. Welke bestanden werden
-   gewijzigd? Welke regels werden toegevoegd/aangepast?
-4. **Effectiviteit**: Loste de wijziging het oorspronkelijke probleem op?
-   - Check of hetzelfde friction-patroon in latere sessies terugkomt
-   - Check of de toegevoegde regel/skill concreet genoeg is om het
-     patroon te voorkomen (of te vaag/breed)
-   - Check of de regel op de juiste plek staat (CLAUDE.md vs. skill vs. hook)
-5. **Gemiste kansen**: Had self-improvement meer moeten doen?
-   - Was er een breder patroon dat niet geadresseerd werd?
-   - Had een hook het beter afgedwongen dan een CLAUDE.md regel?
-   - Had een bestaande skill aangescherpt moeten worden?
+1. **Trigger**: What was the friction moment that triggered the invocation?
+   Read the 3-5 user messages before the invocation. What went wrong?
+2. **Instruction**: What did the user ask self-improvement to do?
+   Sometimes the instruction is in the same message, sometimes in the next one.
+3. **Execution**: What did self-improvement actually do?
+   Read the assistant messages after the invocation. Which files were
+   changed? Which rules were added or adjusted?
+4. **Effectiveness**: Did the change solve the original problem?
+   - Check whether the same friction pattern recurs in later sessions
+   - Check whether the added rule or skill is concrete enough to prevent the
+     pattern (or too vague or broad)
+   - Check whether the rule is in the right place (CLAUDE.md vs. skill vs. hook)
+5. **Missed opportunities**: Should self-improvement have done more?
+   - Was there a broader pattern that was not addressed?
+   - Would a hook have enforced it better than a CLAUDE.md rule?
+   - Should an existing skill have been sharpened?
 
-**Output per invocatie:**
+**Output per invocation:**
 
 ```markdown
-#### Self-improvement: [korte beschrijving trigger]
-- **Trigger**: [wat ging er mis]
-- **Gevraagde actie**: [wat de user wilde]
-- **Uitgevoerde actie**: [wat er daadwerkelijk veranderde]
-- **Effectiviteit**: geslaagd / gedeeltelijk / gefaald
-- **Reden**: [waarom wel/niet effectief]
-- **Voorstel**: [vervolgactie als de fix onvolledig was]
+#### Self-improvement: [short description of trigger]
+- **Trigger**: [what went wrong]
+- **Requested action**: [what the user wanted]
+- **Executed action**: [what actually changed]
+- **Effectiveness**: succeeded / partial / failed
+- **Reason**: [why it was or was not effective]
+- **Proposal**: [follow-up action if the fix was incomplete]
 ```
 
-**Concentratie-analyse:** `/self-improvement` komt typisch in bursts:
-3-12 invocaties binnen 30-90 minuten, meerdere keren per dag. Dat is
-normaal gebruik, niet een alarmsignaal. De interessante vraag is niet
-frequentie maar *thematische herhaling*: komen dezelfde type correcties
-(bijv. taalkeuze, naming, tool gebruik) steeds terug over meerdere
-clusters heen? Dat duidt op een self-improvement die het onderliggende
-probleem niet structureel oploste. Analyseer per thema of eerdere
-fixes effectief waren, niet per tijdsinterval.
+**Concentration analysis:** `/self-improvement` typically comes in bursts:
+3-12 invocations within 30-90 minutes, multiple times per day. That is
+normal usage, not an alarm signal. The interesting question is not
+frequency but *thematic repetition*: do the same types of corrections
+(e.g. language choice, naming, tool usage) recur across multiple clusters?
+That indicates a self-improvement that did not structurally solve the
+underlying problem. Analyze per theme whether earlier fixes were effective,
+not per time interval.
 
-## Output Formaat
+## Output Format
 
 ```markdown
-## Friction Analyse [datum]
+## Friction Analysis [date]
 
-### Sessies Geanalyseerd
-- N sessies, M projecten, periode X-Y
+### Sessions Analyzed
+- N sessions, M projects, period X-Y
 
-### Bevindingen
+### Findings
 
 #### High Severity
-1. **[patroon-type]** sessie: beschrijving
-   - User-bericht: "quote"
-   - Claude-fout: wat er misging
-   - Root cause: waarom
-   - Voorstel: CLAUDE.md regel / skill / hook
-   - Impact: hoe vaak dit patroon voorkomt
+1. **[pattern type]** session: description
+   - User message: "quote"
+   - Claude error: what went wrong
+   - Root cause: why
+   - Proposal: CLAUDE.md rule / skill / hook
+   - Impact: how often this pattern occurs
 
 #### Medium Severity
 ...
@@ -208,21 +208,21 @@ fixes effectief waren, niet per tijdsinterval.
 ...
 
 ### Self-improvement Audit
-Per `/self-improvement` invocatie: trigger, actie, effectiviteit, voorstel.
-Bij concentratie (3+ in een week): overkoepelend patroon benoemen.
+Per `/self-improvement` invocation: trigger, action, effectiveness, proposal.
+On concentration (3+ in a week): name the overarching pattern.
 
-### Voorgestelde Acties
-Per voorstel:
-- Type: CLAUDE.md aanpassing / nieuwe skill / hook / bestaande skill wijziging
-- Beschrijving: concrete wijziging
-- Verwachte impact: welk friction patroon dit aanpakt
-- Risico: kans op false positives of ongewenste neveneffecten
+### Proposed Actions
+Per proposal:
+- Type: CLAUDE.md adjustment / new skill / hook / existing skill change
+- Description: concrete change
+- Expected impact: which friction pattern this addresses
+- Risk: chance of false positives or unwanted side effects
 ```
 
 ## Privacy
 
-- Citeer user-berichten alleen met genoeg context voor de analyse
-- Geen projectnamen, bedrijfsnamen, of persoonlijke namen in de output
-  die naar buiten gaat (recap, notificaties)
-- Sessie-IDs zijn intern, niet extern delen
-- Code-fragmenten uit sessies niet overnemen in voorstellen
+- Quote user messages only with enough context for the analysis
+- No project names, company names, or personal names in output
+  that goes outside (recap, notifications)
+- Session IDs are internal, do not share externally
+- Do not copy code fragments from sessions into proposals

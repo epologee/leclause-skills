@@ -6,7 +6,7 @@ The orchestrator does not perform research itself. The research machine does not
 
 ## Commands
 
-### `/recursion [now | on | off | status | focus <thema> | reject <file>]`
+### `/recursion [now | on | off | status | focus <theme> | reject <file>]`
 
 | Argument | Effect |
 |----------|--------|
@@ -15,7 +15,7 @@ The orchestrator does not perform research itself. The research machine does not
 | `on` | Schedule the nightly cron |
 | `off` | Cancel the nightly cron |
 | `status` | Current schedule, focus, blocklist |
-| `focus <thema>` | Constrain the next iteration to a theme |
+| `focus <theme>` | Constrain the next iteration to a theme |
 | `reject <file>` | Add a generated plan to the blocklist |
 
 ## Sub-skills (internal)

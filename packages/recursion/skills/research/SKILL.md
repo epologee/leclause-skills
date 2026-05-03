@@ -30,197 +30,196 @@ effort: high
 
 # Research
 
-Research machine achter de recursion improvement loop. Produceert
-kant-en-klare plannen door drie rondes deep research (verkenning,
-diepte, contrarian). Schrijft plannen in `~/.claude/recursion/plans/`.
-Voert de plannen niet uit.
+Research machine behind the recursion improvement loop. Produces
+ready-to-execute plans through three rounds of deep research (exploration,
+depth, contrarian). Writes plans to `~/.claude/recursion/plans/`.
+Does not execute the plans.
 
-Niet user-invocable. Altijd aangeroepen vanuit de `recursion` orchestrator
-of een geplande trigger.
+Not user-invocable. Always called from the `recursion` orchestrator
+or a scheduled trigger.
 
 ## State contract
 
-De `recursion` orchestrator en `research` skill delen
-`~/.claude/recursion/`. Om race conditions te voorkomen heeft elk
-state-veld één schrijver:
+The `recursion` orchestrator and `research` skill share
+`~/.claude/recursion/`. To prevent race conditions, each
+state field has exactly one writer:
 
-| Bestand / veld | Eigenaar | Andere skill mag |
-|----------------|----------|------------------|
-| `state.md` `schedule_id` | `recursion` | lezen |
-| `state.md` `focus` | `recursion` | lezen |
-| `state.md` `last_run` | `research` | lezen |
-| `state.md` `total_runs` | `research` | lezen |
-| `state.md` Knowledge Base | `research` | lezen |
-| `state.md` Sources Crawled | `research` | lezen |
-| `blocklist.md` | `recursion` (append bij reject) | lezen |
-| `plans/*.md` nieuwe bestanden | `research` | lezen |
-| `plans/*.md` `status` veld | `recursion` (flip naar rejected) | lezen |
+| File / field | Owner | Other skill may |
+|--------------|-------|-----------------|
+| `state.md` `schedule_id` | `recursion` | read |
+| `state.md` `focus` | `recursion` | read |
+| `state.md` `last_run` | `research` | read |
+| `state.md` `total_runs` | `research` | read |
+| `state.md` Knowledge Base | `research` | read |
+| `state.md` Sources Crawled | `research` | read |
+| `blocklist.md` | `recursion` (append on reject) | read |
+| `plans/*.md` new files | `research` | read |
+| `plans/*.md` `status` field | `recursion` (flip to rejected) | read |
 
-De plan-body (alle velden behalve `status`) is immutable na creatie.
+The plan body (all fields except `status`) is immutable after creation.
 
 ## Input
 
-Alle input komt uit state. Geen argumenten. Bij start leest de skill:
+All input comes from state. No arguments. On start the skill reads:
 
-1. `last_run` timestamp uit `state.md` (bepaalt friction-analyse scope)
-2. `focus` thema uit `state.md` (bepaalt welke thema-agents spawnen)
-3. `blocklist.md` (bepaalt welke bevindingen geskipt worden)
-4. bestaande plan-slugs in `plans/` (voorkomt duplicaten)
+1. `last_run` timestamp from `state.md` (determines friction analysis scope)
+2. `focus` theme from `state.md` (determines which theme agents spawn)
+3. `blocklist.md` (determines which findings are skipped)
+4. existing plan slugs in `plans/` (prevents duplicates)
 
 ## Output
 
-- Nieuwe plan-bestanden in `~/.claude/recursion/plans/` volgens
+- New plan files in `~/.claude/recursion/plans/` following
   `${CLAUDE_SKILL_DIR}/prompts/plan-template.md`
-- Bijgewerkte `last_run`, `total_runs` velden in `state.md`
-- Bijgewerkte Knowledge Base en Sources Crawled secties in `state.md`
-- Console notificatie met aantal en titels van geschreven plannen
+- Updated `last_run`, `total_runs` fields in `state.md`
+- Updated Knowledge Base and Sources Crawled sections in `state.md`
+- Console notification with count and titles of written plans
 
 ## Workflow
 
-Vier top-level stappen, RESEARCH bevat drie onderzoeksrondes gescheiden
-door syntheses.
+Four top-level steps; RESEARCH contains three investigation rounds separated
+by syntheses.
 
 ```
-PREPARE → RESEARCH (ronde 1 → tussensynthese → ronde 2 → ronde 3 → eindsynthese) → PLAN → NOTIFY → STOP
+PREPARE → RESEARCH (round 1 → interim synthesis → round 2 → round 3 → final synthesis) → PLAN → NOTIFY → STOP
 ```
 
 ### 1. PREPARE
 
-1. Haal datum op: `date +%Y-%m-%d`
-2. Lees `state.md`. Noteer `last_run`, `total_runs`, en `focus`.
-3. Lees `blocklist.md` volledig in context (wordt als filter doorgegeven
-   aan Spoor A en B).
-4. Scan bestaande plannen: `ls ~/.claude/recursion/plans/*.md` om
-   slugs te verzamelen.
-5. Update `last_run` pas na een succesvolle PLAN fase, niet hier. Een
-   gefaalde run mag niet als geslaagd geregistreerd staan.
+1. Fetch the date: `date +%Y-%m-%d`
+2. Read `state.md`. Note `last_run`, `total_runs`, and `focus`.
+3. Read `blocklist.md` fully into context (passed as a filter to
+   Track A and B).
+4. Scan existing plans: `ls ~/.claude/recursion/plans/*.md` to
+   collect slugs.
+5. Update `last_run` only after a successful PLAN phase, not here. A
+   failed run must not be recorded as successful.
 
 ### 2. RESEARCH
 
-Dit is het hart. Grondig, radicaal, geen concessies. Spawn parallelle
-agents per onderzoeksrichting met model-keuze per ronde: Sonnet voor
-breedte-werk (Spoor A friction-grep, Spoor B verkenning, ronde 2
-diepte) en Opus voor de contrarian-rondes en de eindsynthese.
+This is the core. Thorough, radical, no shortcuts. Spawn parallel
+agents per research direction with model choice per round: Sonnet for
+breadth work (Track A friction grep, Track B exploration, round 2
+depth) and Opus for the contrarian rounds and the final synthesis.
 
-#### Ronde 1: Parallelle verkenning (Spoor A + Spoor B)
+#### Round 1: Parallel exploration (Track A + Track B)
 
-**Spoor A: Friction Analysis** (één agent, parallel met Spoor B)
+**Track A: Friction Analysis** (one agent, parallel with Track B)
 
-Spawn een Sonnet agent met de prompt uit
+Spawn a Sonnet agent with the prompt from
 `${CLAUDE_SKILL_DIR}/prompts/friction-analysis.md`.
-Analyseert sessie-JSONLs sinds `last_run` op friction patronen:
-correcties, overclaimed confidence, compliance reflex, premature action,
-doel-abandonment, downgrade-spiralen, herhaalde instructies,
-self-improvement audit. Transcript-grep en patroon-classificatie zijn
-mechanisch werk; Sonnet is hier kwalitatief gelijkwaardig en
-substantieel goedkoper.
+Analyzes session JSONLs since `last_run` for friction patterns:
+corrections, overclaimed confidence, compliance reflex, premature action,
+goal abandonment, downgrade spirals, repeated instructions,
+self-improvement audit. Transcript grep and pattern classification are
+mechanical work; Sonnet is qualitatively equivalent here and
+substantially cheaper.
 
-**Spoor B: Externe Research** (5-10 parallelle agents)
+**Track B: External Research** (5-10 parallel agents)
 
-Lees `${CLAUDE_SKILL_DIR}/prompts/explore.md` voor de volledige
-instructies en privacy regels.
+Read `${CLAUDE_SKILL_DIR}/prompts/explore.md` for the full
+instructions and privacy rules.
 
-Spawn agents met `model: "sonnet"`, elk gericht op één bron of
-invalshoek. Elke agent gaat DIEP: hele threads lezen, links volgen,
-discussies analyseren. Niet titels scrapen, maar argumenten begrijpen.
-Sonnet is voldoende voor scrape, samenvatting en argument-extractie;
-de eindsynthese in main loop weegt diepte tegen contrarian-rondes.
+Spawn agents with `model: "sonnet"`, each focused on one source or
+angle. Each agent goes DEEP: read full threads, follow links,
+analyze discussions. Do not scrape titles; understand arguments.
+Sonnet is sufficient for scraping, summarizing, and argument extraction;
+the final synthesis in the main loop weighs depth against the contrarian rounds.
 
-Verplichte agents:
+Required agents:
 
-| Agent | Opdracht |
-|-------|----------|
+| Agent | Task |
+|-------|------|
 | Skills ecosystem | awesome-agent-skills, agentskills.io, anthropics/skills |
-| Community | Reddit, HN, DEV Community discussies |
-| Blogs | Bekende auteurs (Hudson, Sundell, Majid, AvdLee, Fatbobman) |
-| Claude Code updates | Changelog, nieuwe features, breaking changes |
-| Concurrenten | Cursor, Windsurf, Copilot workflow vergelijking |
+| Community | Reddit, HN, DEV Community discussions |
+| Blogs | Known authors (Hudson, Sundell, Majid, AvdLee, Fatbobman) |
+| Claude Code updates | Changelog, new features, breaking changes |
+| Competitors | Cursor, Windsurf, Copilot workflow comparison |
 
-Wanneer `focus` gezet is in state.md: spawn bovenop de verplichte agents
-ook de thema-specifieke agents uit `explore.md § Thema-Specifieke
-Bronnen`. Wanneer `focus` leeg is: brede verkenning zonder thema-filter.
+When `focus` is set in state.md: spawn the theme-specific agents from
+`explore.md § Theme-Specific Sources` on top of the required agents.
+When `focus` is empty: broad exploration without a theme filter.
 
-#### Tussensynthese (synchroon, na ronde 1)
+#### Interim synthesis (synchronous, after round 1)
 
-Lees alle agent-rapporten. Identificeer:
+Read all agent reports. Identify:
 
-1. Meest interessante leads voor verdieping
-2. Kruisbestuivingskansen (friction + extern)
-3. Tegenstrijdigheden die opgelost moeten worden
-4. Concrete vervolgvragen voor ronde 2
+1. Most interesting leads for deeper investigation
+2. Cross-pollination opportunities (friction + external)
+3. Contradictions that need to be resolved
+4. Concrete follow-up questions for round 2
 
-#### Ronde 2: Gerichte diepte-agents (3-5 agents)
+#### Round 2: Targeted depth agents (3-5 agents)
 
-Elke agent krijgt een specifieke vervolgvraag uit de tussensynthese
-plus relevante bevindingen uit ronde 1. Spawn met `model: "sonnet"`;
-gerichte verdieping op een geformuleerde vraag is binnen Sonnet's
-sweet spot.
+Each agent receives a specific follow-up question from the interim synthesis
+plus relevant findings from round 1. Spawn with `model: "sonnet"`;
+targeted depth on a formulated question is within Sonnet's sweet spot.
 
-#### Ronde 3: Contrarian verificatie (2-3 agents)
+#### Round 3: Contrarian verification (2-3 agents)
 
-Het tegengewicht tegen confirmation bias. Spawn met `model: "opus"`;
-contrarian-werk vereist de capaciteit om de meest waarschijnlijke
-conclusie te weerstaan, en Sonnet 4.6 toont gedocumenteerde quality
-flux op precies dat patroon (claude-code issue 46935).
+The counterweight against confirmation bias. Spawn with `model: "opus"`;
+contrarian work requires the capacity to resist the most likely
+conclusion, and Sonnet 4.6 shows documented quality flux on exactly
+that pattern (claude-code issue 46935).
 
-- **Contrarian**: zoek bewijs dat conclusies niet kloppen
-- **Verificatie**: zijn bronnen onafhankelijk of echo chamber?
-- **Toepasbaarheid**: past dit bij onze constraints en filosofie?
+- **Contrarian**: find evidence that conclusions are wrong
+- **Verification**: are sources independent or an echo chamber?
+- **Applicability**: does this fit our constraints and philosophy?
 
-#### Eindsynthese
+#### Final synthesis
 
-Verwerk alle drie rondes tot definitief narratief. Per conclusie:
+Incorporate all three rounds into a definitive narrative. Per conclusion:
 
-- **Robuust**: 3+ onafhankelijke bronnen, contrarian weerlegde niet
-- **Waarschijnlijk**: 2+ bronnen, contrarian nuanceerde
-- **Fragiel**: 1 bron, relevante tegenargumenten
+- **Robust**: 3+ independent sources, contrarian did not refute
+- **Probable**: 2+ sources, contrarian nuanced
+- **Fragile**: 1 source, relevant counterarguments
 
-Schrijf synthese naar state.md Knowledge Base.
-Update Sources Crawled datums.
+Write synthesis to state.md Knowledge Base.
+Update Sources Crawled dates.
 
 ### 3. PLAN
 
-Vertaal elke concrete bevinding naar een atomair plan-bestand volgens
+Translate each concrete finding into an atomic plan file following
 `${CLAUDE_SKILL_DIR}/prompts/plan-template.md` (single source of truth
-voor schema en kwaliteitseisen).
+for schema and quality requirements).
 
-Per bevinding die de eindsynthese overleeft:
+Per finding that survives the final synthesis:
 
-1. Check blocklist (reeds ingelezen in PREPARE). Staat het erop? Skip.
-2. Check bestaande plan-slugs. Bestaat er al een met dezelfde strekking?
-   Update of skip.
-3. Schrijf nieuw plan-bestand naar `~/.claude/recursion/plans/` met
+1. Check blocklist (already loaded in PREPARE). Is it on there? Skip.
+2. Check existing plan slugs. Does one already exist with the same intent?
+   Update or skip.
+3. Write new plan file to `~/.claude/recursion/plans/` with
    `status: proposed`.
 
-Pas nu (na de laatste write) is de run echt voltooid. Werk
-`last_run` en `total_runs` bij in state.md.
+Only now (after the last write) is the run truly complete. Update
+`last_run` and `total_runs` in state.md.
 
 ### 4. NOTIFY
 
-Meld in de console welke plannen geschreven zijn:
+Report to the console which plans were written:
 
 ```
-Research klaar: N plannen geschreven.
+Research complete: N plans written.
 
-[titels]
+[titles]
 
 Plans: ~/.claude/recursion/plans/
-Run: /auto-loop ~/.claude/recursion/plans/<bestand>
+Run: /auto-loop ~/.claude/recursion/plans/<file>
 ```
 
-## Veiligheid
+## Safety
 
-Single source of truth voor privacy en safety regels. Ook van toepassing
-op de `recursion` orchestrator wanneer die via de Skill tool delegeert.
+Single source of truth for privacy and safety rules. Also applies to
+the `recursion` orchestrator when it delegates via the Skill tool.
 
-- Spoor B verkenning en ronde 2 diepte-agents draaien op Sonnet.
-  Ronde 3 contrarian en de eindsynthese MOETEN op Opus draaien;
-  daar weegt prompt-injection-resistentie en het kunnen weerstaan
-  van de meest waarschijnlijke conclusie het zwaarst.
-- Geen projectnamen, bedrijfsnamen of persoonlijke namen in zoekopdrachten
-  (zie `prompts/explore.md § Privacy Regels`).
-- Geen content uploaden naar externe diensten.
-- Research wijzigt GEEN code, skills, hooks of settings buiten
-  `~/.claude/recursion/`. Alleen plan-bestanden en state velden uit het
-  ownership tabel hierboven.
-- Blocklist items worden nooit opnieuw voorgesteld.
+- Track B exploration and round 2 depth agents run on Sonnet.
+  Round 3 contrarian and the final synthesis MUST run on Opus;
+  prompt injection resistance and the ability to resist the most likely
+  conclusion weigh most heavily there.
+- No project names, company names, or personal names in search queries
+  (see `prompts/explore.md § Privacy Rules`).
+- Do not upload content to external services.
+- Research DOES NOT modify code, skills, hooks, or settings outside
+  `~/.claude/recursion/`. Only plan files and state fields from the
+  ownership table above.
+- Blocklist items are never proposed again.
