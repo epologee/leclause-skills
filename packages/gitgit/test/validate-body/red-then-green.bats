@@ -83,6 +83,49 @@ MSG
   [ "$status" -eq 0 ]
 }
 
+# ---------------------------------------------------------------------------
+# Spec-path form (insight 1): the trailer names the spec file that was seen
+# red, and that path must be in the staged diff so the claim is anchored to
+# the commit instead of pointing at any file in the repo.
+# ---------------------------------------------------------------------------
+
+@test "Red-then-green: spec-path present in staged diff is accepted" {
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"$'\n'"app/services/session.rb"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb"
+
+  local file
+  file=$(write_fixture "rtg-path-staged.txt" "$(_body_with_rtg "spec/services/session_spec.rb")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+@test "Red-then-green: spec-path NOT in staged diff fails with red-then-green-path-not-in-staged" {
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="app/services/session.rb"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb"
+
+  local file
+  file=$(write_fixture "rtg-path-not-staged.txt" "$(_body_with_rtg "spec/services/session_spec.rb")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"red-then-green-path-not-in-staged"* ]]
+}
+
+@test "Red-then-green: garbage value (no extension, not yes/n/a) is rejected" {
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: probably"
+
+  local file
+  file=$(write_fixture "rtg-garbage.txt" "$(_body_with_rtg "probably")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing-red-then-green"* ]]
+}
+
 @test "Slice: spec-only does not require Red-then-green (Fix 2)" {
   use_trailers "Slice: spec-only"
   local body

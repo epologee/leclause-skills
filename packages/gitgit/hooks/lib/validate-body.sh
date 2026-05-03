@@ -402,8 +402,23 @@ validate_body() {
       printf 'missing-red-then-green: bare "n/a" requires a rationale in parens: n/a (reason >= 10 chars)\n' >&2
       return 1
     else
-      printf 'missing-red-then-green: value must be "yes" or "n/a (reason)"; got: "%s"\n' "$rtg_value" >&2
-      return 1
+      # Spec-path form: "<path>" or "<path>:<test-name-or-line>".
+      # The path must end in a recognized spec extension and must appear in
+      # the staged diff so the rote attestation "yes" cannot be replaced by
+      # an equally rote "name some random spec file in the repo".
+      local rtg_path_re='^([a-zA-Z0-9_./ -]+\.(rb|py|js|ts|tsx|jsx|go|sh|bash|bats|feature|swift))(:.*)?$'
+      if [[ "$rtg_value" =~ $rtg_path_re ]]; then
+        local rtg_path="${BASH_REMATCH[1]}"
+        local rtg_staged
+        rtg_staged=$(git diff --cached --name-only 2>/dev/null || true)
+        if ! grep -qF "$rtg_path" <<< "$rtg_staged" 2>/dev/null; then
+          printf 'red-then-green-path-not-in-staged: Red-then-green path "%s" is not in the staged diff. Name a spec file that this commit actually touches, so the red-then-green claim is anchored to the change under review.\n' "$rtg_path" >&2
+          return 1
+        fi
+      else
+        printf 'missing-red-then-green: value must be "yes", "n/a (reason)", or a spec path present in the staged diff; got: "%s"\n' "$rtg_value" >&2
+        return 1
+      fi
     fi
   fi
 
