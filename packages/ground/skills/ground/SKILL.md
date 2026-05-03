@@ -6,87 +6,87 @@ description: Use when the user challenges recent output accuracy, says "dat klop
 
 # Ground
 
-Verifieer je eigen recente output met externe bronnen wanneer de user twijfelt aan de juistheid. De user heeft in ~99% van de gevallen gelijk wanneer die sceptisch is. Dat betekent niet dat je dom bent, maar dat je getraind bent om net iets te snel een antwoord te geven met net te weinig context. Dat antwoord stuurt ons het verkeerde pad in, en dat is duurder dan een paar tokens verificatie.
+Verify your own recent output against external sources when the user doubts its accuracy. The user is right in ~99% of cases when they are skeptical. That does not mean you are unintelligent, but that you are trained to produce an answer slightly too fast with slightly too little context. That answer sends us down the wrong path, and that is more expensive than a few tokens of verification.
 
-## Kernprincipe
+## Core principle
 
-Genereren en verifiëren zijn aparte processen. Het model dat genereert is niet hetzelfde "proces" als het model dat verifieert, zelfs met dezelfde weights. De isolatie tussen generatie en verificatie is wat dit effectief maakt (Chain of Verification, Dhuliawala et al. 2023).
+Generation and verification are separate processes. The model that generates is not the same "process" as the model that verifies, even with the same weights. The isolation between generation and verification is what makes this effective (Chain of Verification, Dhuliawala et al. 2023).
 
 ## Workflow
 
 ```dot
 digraph ground {
   rankdir=TB;
-  "User twijfelt" -> "1. IDENTIFICEER";
-  "1. IDENTIFICEER" -> "2. ZOEK LOKAAL";
-  "2. ZOEK LOKAAL" -> "Gevonden?" [label=""];
-  "Gevonden?" -> "4. SYNTHETISEER" [label="ja, voldoende"];
-  "Gevonden?" -> "3. ZOEK EXTERN" [label="nee of onvoldoende"];
-  "3. ZOEK EXTERN" -> "4. SYNTHETISEER";
+  "User doubts" -> "1. IDENTIFY";
+  "1. IDENTIFY" -> "2. SEARCH LOCALLY";
+  "2. SEARCH LOCALLY" -> "Found?" [label=""];
+  "Found?" -> "4. SYNTHESIZE" [label="yes, sufficient"];
+  "Found?" -> "3. SEARCH EXTERNALLY" [label="no or insufficient"];
+  "3. SEARCH EXTERNALLY" -> "4. SYNTHESIZE";
 }
 ```
 
-### 1. IDENTIFICEER
+### 1. IDENTIFY
 
-Lees je eigen recente output opnieuw. Welke concrete claims zijn verifieerbaar? Formuleer per claim een scherpe verificatievraag. Niet: "klopt het?" Wel: "In welke versie is `Hash#dig` geïntroduceerd volgens de Ruby changelog?"
+Re-read your own recent output. Which concrete claims are verifiable? Formulate a sharp verification question per claim. Not: "is it correct?" But: "In which version was `Hash#dig` introduced according to the Ruby changelog?"
 
-**Prioriteer bij meerdere claims.** Wanneer je output veel verifieerbare claims bevat: begin bij de claim waar de user's scepsis het meest waarschijnlijk op slaat (dichtst bij de context van hun twijfel). Verifieer maximaal 3 claims per `/ground` invocatie. Als er meer zijn, meld welke je hebt geverifieerd en welke nog open staan.
+**Prioritize with multiple claims.** When your output contains many verifiable claims: start with the claim the user's skepticism most likely targets (closest to the context of their doubt). Verify at most 3 claims per `/ground` invocation. If there are more, report which ones you verified and which are still open.
 
-**Isolatie is verplicht.** Beantwoord de verificatievragen niet uit je modelgewichten. Dat is dezelfde bron die de oorspronkelijke claim produceerde. Je modelgewichten zijn de verdachte, niet de getuige.
+**Isolation is mandatory.** Do not answer the verification questions from your model weights. That is the same source that produced the original claim. Your model weights are the suspect, not the witness.
 
-### 2. ZOEK LOKAAL
+### 2. SEARCH LOCALLY
 
-Gebruik de tools die je hebt:
+Use the tools you have:
 
-| Bron | Tool | Voorbeeld |
-|------|------|-----------|
+| Source | Tool | Example |
+|--------|------|---------|
 | Codebase | Grep, Read | `Grep "has_many.*through"` in models |
-| Configuratie | Read | Gemfile.lock voor versienummers |
-| Tests | Read, Bash | Wat testen de specs daadwerkelijk? |
+| Configuration | Read | Gemfile.lock for version numbers |
+| Tests | Read, Bash | What do the specs actually test? |
 | Docs in repo | Read | README, CHANGELOG, inline docs |
 | Runtime | Bash | `ruby -e "puts ..."`, `rails runner "..."` |
 
-Voor knowledge-claims (versienummers, API gedrag, taalfeatures) is stap 2 vaak snel uitgeput. Dat is prima, ga door naar stap 3. Stap 2 schittert bij code-claims: "deze method doet X" is lokaal verifieerbaar door de code te lezen.
+For knowledge claims (version numbers, API behavior, language features) step 2 is often quickly exhausted. That is fine, move on to step 3. Step 2 shines for code claims: "this method does X" is locally verifiable by reading the code.
 
-### 3. ZOEK EXTERN
+### 3. SEARCH EXTERNALLY
 
-Wanneer lokale bronnen onvoldoende zijn:
+When local sources are insufficient:
 
-| Bron | Tool | Wanneer |
-|------|------|---------|
-| Officiële docs | WebFetch | API referentie, changelogs |
-| Stack Overflow | WebSearch | Bekende patronen, edge cases |
+| Source | Tool | When |
+|--------|------|------|
+| Official docs | WebFetch | API reference, changelogs |
+| Stack Overflow | WebSearch | Known patterns, edge cases |
 | GitHub issues/PRs | WebSearch | Bugs, breaking changes |
-| Blog posts | WebSearch + WebFetch | Praktijkervaring, tutorials |
+| Blog posts | WebSearch + WebFetch | Real-world experience, tutorials |
 
-De bron hoeft niet academisch te zijn. Een Stack Overflow antwoord met 200 upvotes is bruikbaar. Een obscure blog met een werkend codevoorbeeld ook. Het punt is: meer dan alleen modelgewichten.
+The source does not need to be academic. A Stack Overflow answer with 200 upvotes is usable. An obscure blog with a working code example too. The point is: more than just model weights.
 
-### 4. SYNTHETISEER
+### 4. SYNTHESIZE
 
-Presenteer het resultaat eerlijk:
+Present the result honestly:
 
-- **Fout:** "Ik zat fout. [Claim] klopt niet. [Bron] zegt [feit]."
-- **Nuance:** "Deels juist. [Deel A] klopt, maar [Deel B] zit anders: [feit + bron]."
-- **Bevestigd:** "Geverifieerd. [Bron] bevestigt [claim]. [Link/citaat]."
+- **Wrong:** "I was wrong. [Claim] is incorrect. [Source] says [fact]."
+- **Nuance:** "Partly correct. [Part A] holds, but [Part B] is different: [fact + source]."
+- **Confirmed:** "Verified. [Source] confirms [claim]. [Link/quote]."
 
-Geen hedging ("ik was niet helemaal precies"), geen herschrijven alsof je het altijd al goed bedoelde. Als je fout zat, zeg dat. De user weet het al.
+No hedging ("I wasn't entirely precise"), no rewriting as if you always meant it correctly. If you were wrong, say so. The user already knows.
 
-## Default houding
+## Default stance
 
-Wanneer de user `/ground` typt of twijfel uit, is de werkhypothese: **de user heeft gelijk en mijn output bevat een fout.** Dit is geen blinde gehoorzaamheid, het is Bayesiaans: de user heeft een track record van ~99% gelijk bij scepsis. Begin met zoeken naar waar je fout zit, niet met verdedigen waarom je gelijk hebt.
+When the user types `/ground` or expresses doubt, the working hypothesis is: **the user is right and my output contains an error.** This is not blind obedience, it is Bayesian: the user has a track record of being right ~99% of the time when skeptical. Start by looking for where you are wrong, not by defending why you are right.
 
-**Eerlijk in beide richtingen.** Wanneer verificatie je claim bevestigt, zeg dat ook. Blaas nuances niet op tot fouten omdat je verwacht fout te zitten. De default houding stuurt je zoekrichting (zoek naar fouten, niet naar bevestiging), maar de conclusie volgt het bewijs.
+**Honest in both directions.** When verification confirms your claim, say that too. Do not inflate nuances into errors because you expect to be wrong. The default stance directs your search (look for errors, not confirmation), but the conclusion follows the evidence.
 
-**Wanneer verificatie onmogelijk is.** Als lokale en externe bronnen uitgeput zijn zonder antwoord: zeg eerlijk "Ik kan dit niet verifiëren met de beschikbare tools. Mijn claim was gebaseerd op training data en ik kan niet bevestigen of die actueel is." Geen doen-alsof, geen hedging.
+**When verification is impossible.** If local and external sources are exhausted without an answer: honestly say "I cannot verify this with the available tools. My claim was based on training data and I cannot confirm whether it is current." No pretending, no hedging.
 
 ## Red Flags
 
-| Gedachte | Werkelijkheid |
-|----------|---------------|
-| "Ik weet vrij zeker dat dit klopt" | Dat dacht je ook toen je het schreef. Verifieer. |
-| "Ik nuanceer even mijn vorige antwoord" | Herschrijven is geen verificatie. Zoek een bron. |
-| "Dit is algemene kennis" | Algemene kennis is de #1 bron van confident fouten. |
-| "Laat me even uitleggen wat ik bedoelde" | De user vraagt niet om uitleg, maar om bewijs. |
-| "De user begrijpt mijn antwoord verkeerd" | Nee. Zoek eerst bewijs voordat je dat concludeert. |
-| "Even snel checken in mijn training data" | Dat IS je training data. Gebruik tools. |
-| "Het is maar een klein detail" | Kleine details sturen grote beslissingen. |
+| Thought | Reality |
+|---------|---------|
+| "I'm fairly sure this is correct" | You thought that when you wrote it too. Verify. |
+| "Let me nuance my previous answer" | Rewriting is not verification. Find a source. |
+| "This is general knowledge" | General knowledge is the #1 source of confident errors. |
+| "Let me explain what I meant" | The user is not asking for explanation, but for evidence. |
+| "The user misunderstands my answer" | No. Find evidence first before concluding that. |
+| "Quick check in my training data" | That IS your training data. Use tools. |
+| "It's just a minor detail" | Minor details drive major decisions. |
