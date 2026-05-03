@@ -248,6 +248,28 @@ validate_body() {
   local why_block
   why_block=$(_vb_why_block "$content" "$trailers")
 
+  # Rule: a commit body that names a review pass (pride pass, end-user
+  # pass, technical pass, review pass, review findings) is a review-pass
+  # commit. Those commits tend to bundle multiple unrelated findings
+  # behind one subject, which makes the resulting history hard to revert
+  # or read by finding. The check counts bullet-list lines in the WHY
+  # block; two or more bullets in a review-pass commit signals batched
+  # findings and is rejected. The author should split into one commit
+  # per finding. A review-pass commit that addresses exactly one
+  # finding has no list at all (the WHY paragraph names the finding
+  # in prose) and passes through.
+  local why_lower
+  why_lower=$(printf '%s' "$why_block" | tr '[:upper:]' '[:lower:]')
+  local review_pass_re='(pride pass|end-user pass|technical pass|review pass|review findings|pride contrarian|review contrarian)'
+  if [[ "$why_lower" =~ $review_pass_re ]]; then
+    local bullet_count
+    bullet_count=$(printf '%s\n' "$why_block" | grep -cE '^[[:space:]]*[-*][[:space:]]' || true)
+    if [[ "$bullet_count" -ge 2 ]]; then
+      printf 'review-pass-batch: WHY block names a review pass and lists %s findings as bullets. Split into one commit per finding so each fate (fix, second-pass reject) is its own reviewable change. Rewrite the WHY in prose for a single finding, or remove the review-pass keyword if this is not a review-pass commit.\n' "$bullet_count" >&2
+      return 1
+    fi
+  fi
+
   # Extract trailer values.
   local slice_value
   slice_value=$(_vb_trailer_value "$trailers" "Slice")
@@ -411,6 +433,33 @@ validate_body() {
       local rationale="${BASH_REMATCH[1]}"
       if [[ ${#rationale} -lt 10 ]]; then
         printf 'missing-visual: n/a rationale must be at least 10 chars (got: "%s")\n' "$rationale" >&2
+        return 1
+      fi
+      # Reject rationales that defer the screenshot to a future event.
+      # The trailer's purpose is to either capture the screenshot now
+      # (Visual: <path>) or document why no screenshot is meaningful at
+      # all (extract-only refactor, accessibility metadata, debug-only
+      # surface, copy-only). A rationale that promises a screenshot
+      # later silently turns the trailer into a TODO; the discipline
+      # then validates the format of the TODO instead of the evidence.
+      local rationale_lower
+      rationale_lower=$(printf '%s' "$rationale" | tr '[:upper:]' '[:lower:]')
+      local deferral_re='(later|deferred|follow[ -]?up|post[ -]?merge|next iteration|iteration when|to be captured|captured on next|captured later|saved for later|next pass|coming next|will capture|will add|will attach|will supply|will provide|will upload|will take|will make)'
+      if [[ "$rationale_lower" =~ $deferral_re ]]; then
+        local matched="${BASH_REMATCH[1]}"
+        printf 'visual-rationale-defers: Visual: n/a rationale uses deferral language ("%s") that promises a screenshot at a future event. The trailer cannot validate that promise. Either supply Visual: <path> now, or rewrite the rationale to describe why a screenshot has no meaning for this change (extract-only refactor, accessibility metadata, debug-only surface, copy-only).\n' "$matched" >&2
+        return 1
+      fi
+      # Reject rationales that do not name a recognized non-applicable
+      # category. The trailer's two legitimate forms are Visual: <path>
+      # and Visual: n/a (CATEGORY ...). The category set is closed and
+      # describes WHY a screenshot has no meaning for this change. Free
+      # narrative rationales without one of these tokens read as the
+      # author hand-waving past the heuristic; the closed set forces the
+      # claim to be classified.
+      local positive_re='(extract[ -]?only|accessibility[ -]?only|accessibility metadata|debug[ -]?only|spec[ -]?only|test[ -]?only|copy[ -]?only|copy change|metadata[ -]?only|no behaviour change|no behavior change|no visual change|no ui change|no visual impact|no ui impact|byte[ -]?identical|render unchanged|pixel[ -]?identical|backend (rewrite|only)|no ui touched|sound[ -]?only|audio[ -]?only|log[ -]?only|telemetry[ -]?only)'
+      if ! [[ "$rationale_lower" =~ $positive_re ]]; then
+        printf 'visual-rationale-vague: Visual: n/a rationale must name a recognized category that explains why a screenshot has no meaning for this change. Recognized tokens (case-insensitive): extract-only, accessibility-only, accessibility metadata, debug-only, spec-only, test-only, copy-only, copy change, metadata-only, no behaviour change, no visual change, no ui change, byte-identical, render unchanged, pixel-identical, backend rewrite, backend only, no ui touched, sound-only, audio-only, log-only, telemetry-only. The rationale (got: "%s") matched none of those.\n' "$rationale" >&2
         return 1
       fi
       # Autonomous mode forbids n/a on UI-touched commits. A rover that

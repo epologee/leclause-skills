@@ -143,6 +143,9 @@ Error codes:
 |------|------|
 | `missing-visual` | UI-touch detected but trailer is absent, or trailer is bare `n/a`, or `n/a (reason)` with too short a rationale |
 | `visual-path-not-found` | Trailer is not an `n/a` form and the given path does not exist in the worktree |
+| `visual-rationale-defers` | The `n/a (rationale)` text uses deferral language (`later`, `follow-up`, `next iteration`, `to be captured`, `will capture`, `coming next`, `post-merge`, `saved for later`) that promises a screenshot at a future event. The trailer cannot validate that promise; either supply `Visual: <path>` now or rewrite the rationale to describe why a screenshot has no meaning for this change (extract-only refactor, accessibility metadata, debug-only surface, copy-only). |
+| `visual-rationale-vague` | The `n/a (rationale)` text does not name a recognized non-applicable category. The closed enum is: `extract-only`, `accessibility-only`, `accessibility metadata`, `debug-only`, `spec-only`, `test-only`, `copy-only`, `copy change`, `metadata-only`, `no behaviour change`, `no visual change`, `no ui change`, `byte-identical`, `render unchanged`, `pixel-identical`, `backend rewrite`, `backend only`, `no ui touched`, `sound-only`, `audio-only`, `log-only`, `telemetry-only`. The rationale must contain at least one of these tokens (case-insensitive) so the claim "no screenshot has meaning here" is classified rather than narrated. |
+| `review-pass-batch` | The WHY block names a review pass (`pride pass`, `end-user pass`, `technical pass`, `review pass`, `review findings`, `pride contrarian`, `review contrarian`) and lists two or more findings as bullets. Review-pass commits should land one finding per commit so each fate (fix, reject-with-evidence) is its own reviewable unit; rewrite the WHY in prose for one finding and split the others into separate commits, or remove the review-pass keyword if this is not a review-pass commit. |
 
 ### Optional trailers
 
@@ -154,6 +157,17 @@ Error codes:
 
 Trailers are parsed via `git interpret-trailers --parse`. Order
 within the trailer block does not matter.
+
+### Subject conjunction
+
+The subject must not join two changes with a conjunction. The format
+guard rejects subjects containing ` and `, ` + ` (space-plus-space),
+or ` & ` because they signal that the author bundled multiple
+changes behind one subject. Split into separate commits, or rewrite
+the subject as one cohesive change. When the joined form is
+intentional (e.g. an atomic refactor that genuinely couples two
+verbs), set `GITGIT_ALLOW_CONJUNCTION=1` in the shell for the single
+commit, or add `# allow-conjunction: <reason>` to the body.
 
 ## Opt-out enum
 
@@ -371,6 +385,16 @@ the env var before `git commit` runs. Two extra rules:
 
 Backend-only commits are not affected; `Visual: n/a (rationale)` remains
 valid there.
+
+**Recommended default for AI-driven sessions.** Treat agent-authored
+sessions (Claude Code, Cursor, Aider, codex-rs, OpenCode) as autonomous
+by default and export `GITGIT_AUTONOMOUS=1` in the shell-init so every
+commit the agent makes runs under the stricter ruleset. The agent
+otherwise has every incentive to take the n/a-with-rationale escape on
+UI-touched commits ("evidence lands later") and the rationales pass
+the format check while never resolving into actual screenshots. The
+operator can still authorise an interactive opt-out for a specific
+commit via `unset GITGIT_AUTONOMOUS` in that single shell.
 
 ### `--no-verify`
 

@@ -44,6 +44,24 @@ guard_commit_format() {
       dd_emit_deny commit-format "Multi-line commit needs a blank line between subject and body."
     fi
 
+    # Subject must not join two changes with a conjunction. " and ",
+    # " + " (space-plus-space), and " & " all signal that the author
+    # bundled multiple changes behind one subject. Split into separate
+    # commits or rewrite as one cohesive change. Authors who genuinely
+    # need a conjunction set GITGIT_ALLOW_CONJUNCTION=1 in the shell
+    # for the single commit; the magic-comment escape lives in the
+    # body via "# allow-conjunction: <reason>".
+    if [[ $line_num -eq 1 ]]; then
+      local conjunction_re=' (and|\+|&) '
+      if [[ "$line" =~ $conjunction_re ]]; then
+        local matched="${BASH_REMATCH[1]}"
+        if [[ "${GITGIT_ALLOW_CONJUNCTION:-0}" != "1" ]] \
+            && ! grep -qE '^# allow-conjunction:[[:space:]]+\S' <<< "$message"; then
+          dd_emit_deny commit-format "Subject contains conjunction \" ${matched} \". Suggests two changes bundled behind one subject. Split into separate commits, rewrite as one cohesive change, or set GITGIT_ALLOW_CONJUNCTION=1 (or add '# allow-conjunction: <reason>' to the body) when the joined form is intentional."
+        fi
+      fi
+    fi
+
     [[ $line_num -eq 1 ]] && subject_len=${#line}
   done <<< "$message"
 

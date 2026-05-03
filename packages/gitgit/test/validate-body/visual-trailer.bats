@@ -371,3 +371,62 @@ spec/util_spec.rb"
   [ "$status" -eq 1 ]
   [[ "$output" == *"missing-visual"* ]]
 }
+
+# ---------------------------------------------------------------------------
+# Validator: deferral language in Visual: n/a rationale
+# ---------------------------------------------------------------------------
+
+@test "UI-touch + Visual: n/a rationale that defers to a future event fails" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="app/components/widget.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+
+  local rationale="visual diff captured on next iteration when needed"
+  use_trailers "$(_trailers_with_visual "n/a ($rationale)")"
+  local file
+  file=$(write_fixture "vis-defer.txt" "$(_body_with_visual "n/a ($rationale)")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"visual-rationale-defers"* ]]
+}
+
+@test "UI-touch + Visual: n/a rationale promising a follow-up screenshot fails" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="app/components/widget.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+
+  local rationale="screenshot to be captured later as follow-up"
+  use_trailers "$(_trailers_with_visual "n/a ($rationale)")"
+  local file
+  file=$(write_fixture "vis-followup.txt" "$(_body_with_visual "n/a ($rationale)")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"visual-rationale-defers"* ]]
+}
+
+@test "UI-touch + Visual: n/a rationale that describes the change passes" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="app/components/widget.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+
+  local rationale="extract-only refactor; render output byte-identical"
+  use_trailers "$(_trailers_with_visual "n/a ($rationale)")"
+  local file
+  file=$(write_fixture "vis-extract.txt" "$(_body_with_visual "n/a ($rationale)")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+@test "UI-touch + Visual: n/a vague rationale without recognized category fails" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="app/components/widget.tsx"
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
+
+  local rationale="some hand-wavy reason that does not classify"
+  use_trailers "$(_trailers_with_visual "n/a ($rationale)")"
+  local file
+  file=$(write_fixture "vis-vague.txt" "$(_body_with_visual "n/a ($rationale)")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"visual-rationale-vague"* ]]
+}
