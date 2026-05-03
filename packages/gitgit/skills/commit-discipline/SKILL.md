@@ -372,6 +372,16 @@ the env var before `git commit` runs. Two extra rules:
 Backend-only commits are not affected; `Visual: n/a (rationale)` remains
 valid there.
 
+**Recommended default for AI-driven sessions.** Treat agent-authored
+sessions (Claude Code, Cursor, Aider, codex-rs, OpenCode) as autonomous
+by default and export `GITGIT_AUTONOMOUS=1` in the shell-init so every
+commit the agent makes runs under the stricter ruleset. The agent
+otherwise has every incentive to take the n/a-with-rationale escape on
+UI-touched commits ("evidence lands later") and the rationales pass
+the format check while never resolving into actual screenshots. The
+operator can still authorise an interactive opt-out for a specific
+commit via `unset GITGIT_AUTONOMOUS` in that single shell.
+
 ### `--no-verify`
 
 `git commit --no-verify` skips all git-native hooks. The PreToolUse:Bash
