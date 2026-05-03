@@ -37,6 +37,19 @@ The `--confidence` scoring penalises every failed axis without distinguishing re
 
 The score-to-floor relationship is empirical: the corpus-measured calibration in `corpus-confidence-scores.md` shows what each case scores under the current weights, so the operator can compare a candidate's score against where the corpus's match, mismatch, and borderline cases land.
 
+## Evidence
+
+The values above were measured against the corpus on 2026-05-03 with `ink-assert.mjs` at the version of this commit. The reproduction recipe:
+
+```bash
+node packages/eye-of-the-beholder/skills/visual-inspection/scripts/ink-assert.mjs \
+  --reference packages/eye-of-the-beholder/skills/visual-inspection/scripts/cases/identical-favicon-twin/reference.png \
+  --candidate packages/eye-of-the-beholder/skills/visual-inspection/scripts/cases/pill-radius-3-borderline/candidate.png \
+  --max-diff 2
+```
+
+Re-run on every borderline and mismatch case in `cases/`; the per-axis delta column is the floor evidence for that axis. The numbers in the table above are the consistent observed deltas across the borderline-and-mismatch subset, not theoretical limits. When the corpus changes (new case, new axis), re-run and update the table; the catalogue is empirical, not derived.
+
 ## How to extend this catalogue
 
 When a new axis is added to `ink-assert`:
