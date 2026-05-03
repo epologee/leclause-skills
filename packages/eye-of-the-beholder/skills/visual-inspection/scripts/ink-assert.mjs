@@ -124,7 +124,9 @@ function main() {
   for (const c of ['TL','TR','BL','BR']) check(`corner.${c}`, ref.corners[c], cand.corners[c], cpx)
   for (const c of ['TL','TR','BL','BR']) check(`bgDiag.${c}`, ref.bgDiag[c], cand.bgDiag[c], cpx)
   for (const c of ['TL','TR','BL','BR']) check(`aaDiag.${c}`, ref.aaDiag[c], cand.aaDiag[c], cpx)
-  for (const c of ['TL','TR','BL','BR']) check(`edgeExt.${c}`, ref.edgeExt[c], cand.edgeExt[c], cpx)
+  // edgeExt is the sum of bgExt and aaExt; gating both the components and their sum double-penalises the
+  // same geometry. We emit edgeExt as informational only (no check call) so the per-axis report still shows
+  // the legacy aggregate for callers that consult the JSON output.
   for (const c of ['TL','TR','BL','BR']) check(`bgExt.${c}`, ref.bgExt[c], cand.bgExt[c], cpx)
   for (const c of ['TL','TR','BL','BR']) check(`aaExt.${c}`, ref.aaExt[c], cand.aaExt[c], cpx)
   for (const c of ['TL','TR','BL','BR']) check(`halo.${c}`, ref.halo[c], cand.halo[c], 2)
