@@ -6,159 +6,159 @@ description: Use when writing tests, debugging test failures, reviewing test str
 
 # Testing Philosophy
 
-Principes en conventies voor testen. Het kernprincipe: specs zijn specificaties van verwacht gedrag, geschreven voordat de implementatie bestaat. Niet verificaties achteraf. Dat verschil stuurt alles wat volgt.
+Principles and conventions for testing. The core principle: specs are specifications of expected behavior, written before the implementation exists. Not verifications after the fact. That distinction drives everything that follows.
 
-## Specs specificeren, ze verifiëren niet
+## Specs specify, they do not verify
 
-RSpec noemt het een "spec" om een reden: het is een specificatie, niet een test. De spec definieert wat "klaar" betekent voordat er code is geschreven. Zonder die definitie is "klaar" een subjectief oordeel van de implementeur. Code die compileert bewijst syntax. Code die een vooraf geschreven spec passeert bewijst semantiek.
+RSpec calls it a "spec" for a reason: it is a specification, not a test. The spec defines what "done" means before any code is written. Without that definition, "done" is a subjective judgment by the implementer. Code that compiles proves syntax. Code that passes a pre-written spec proves semantics.
 
-**NOOIT implementatie schrijven voordat je een falende spec hebt gezien.**
+**NEVER write implementation before you have seen a failing spec.**
 
-Dit is niet optioneel. Dit is niet "waar mogelijk". Dit is ALTIJD, voor elke feature, elke bugfix, en elke interface-wijziging.
+This is not optional. This is not "where possible". This is ALWAYS, for every feature, every bugfix, and every interface change.
 
 **Workflow:**
-1. **Red**: Schrijf spec die verwacht gedrag specificeert -> moet FALEN
-2. **Green**: Implementeer minimale code om spec te laten slagen
-3. **Refactor**: Cleanup met groene specs als vangnet
+1. **Red**: Write spec that specifies expected behavior -> must FAIL
+2. **Green**: Implement minimal code to make the spec pass
+3. **Refactor**: Clean up with green specs as a safety net
 
-**Bij bugfixes:**
-- Schrijf spec die de bug reproduceert (faalt)
-- Fix de bug (spec wordt groen)
-- Verifieer door fix te reverten -> spec MOET opnieuw falen
+**For bugfixes:**
+- Write a spec that reproduces the bug (fails)
+- Fix the bug (spec turns green)
+- Verify by reverting the fix -> spec MUST fail again
 
-**Bij interface-wijzigingen (renames, kolommen, constructor-signatures):**
-- Schrijf de spec met de nieuwe interface (faalt op de oude code)
-- Pas de implementatie aan (spec wordt groen)
-- "Mechanisch" en "triviaal" zijn geen vrijstellingen
+**For interface changes (renames, columns, constructor signatures):**
+- Write the spec with the new interface (fails against the old code)
+- Update the implementation (spec turns green)
+- "Mechanical" and "trivial" are not exemptions
 
-**Dit geldt altijd.** Zelfs voor "triviale" changes. Zelfs voor "urgent" fixes.
+**This always applies.** Even for "trivial" changes. Even for "urgent" fixes.
 
-**Een uitzondering: puur cosmetische wijzigingen.** CSS classes, kleuren, spacing, font sizes en andere visuele styling hoeven geen TDD dekking. Specs die specifieke CSS classes of design tokens asserteren maken het spec-harnas te rigide voor voortschrijdend design-inzicht. Specificeer het gedrag, niet de presentatie.
+**One exception: purely cosmetic changes.** CSS classes, colors, spacing, font sizes, and other visual styling do not need TDD coverage. Specs that assert specific CSS classes or design tokens make the spec harness too rigid for evolving design insight. Specify behavior, not presentation.
 
-**RED -> GREEN -> REFACTOR is een doorlopende flow.** Pauzeer niet tussen fases om toestemming te vragen. Als de gebruiker een opdracht heeft gegeven ("fix dit", "pas dat aan"), doorloop dan de volledige TDD cyclus zonder te stoppen. Het enige pauzemoment is NA de cyclus, wanneer het resultaat klaar is voor review.
+**RED -> GREEN -> REFACTOR is a continuous flow.** Do not pause between phases to ask for permission. If the user has given an instruction ("fix dit", "pas dat aan"), run the full TDD cycle without stopping. The only pause point is AFTER the cycle, when the result is ready for review.
 
-## Niet meer doen dan de spec voorschrijft
+## Do not do more than the spec prescribes
 
-De spec begrenst het werk. Als er geen spec voor is, bestaat het niet als vereiste. Wil je meer doen? Schrijf eerst een nieuwe spec. Dit voorkomt scope creep, gold plating, en de neiging om "even snel" iets extra's mee te nemen.
+The spec bounds the work. If there is no spec for it, it does not exist as a requirement. Want to do more? Write a new spec first. This prevents scope creep, gold plating, and the urge to "real quick" / "even snel" slip in something extra.
 
-## UI/UX bugs krijgen Cucumber scenarios
+## UI/UX bugs get Cucumber scenarios
 
-Wanneer een bug betrekking heeft op gebruikersinteractie (knoppen, formulieren, navigatie, confirm dialogs, statustransities in de browser): schrijf een Cucumber scenario, geen unit spec. Cucumber beschrijft het gedrag vanuit gebruikersperspectief en test de volledige stack inclusief JavaScript.
+When a bug involves user interaction (buttons, forms, navigation, confirm dialogs, status transitions in the browser): write a Cucumber scenario, not a unit spec. Cucumber describes behavior from the user's perspective and tests the full stack including JavaScript.
 
-Unit specs (RSpec requests, model specs) zijn voor server-side logica. Cucumber scenarios zijn voor alles wat een gebruiker ziet en doet.
+Unit specs (RSpec requests, model specs) are for server-side logic. Cucumber scenarios are for everything a user sees and does.
 
-## Gherkin scenarios zijn domein-documentatie
+## Gherkin scenarios are domain documentation
 
-Feature files beschrijven gedrag in domein-taal, niet UI-interacties. Ze zijn documentatie die toevallig executable is.
+Feature files describe behavior in domain language, not UI interactions. They are documentation that happens to be executable.
 
-**Declaratief (goed):** `When I create a todo "Buy groceries"` -> beschrijft intent, overleeft UI redesigns.
-**Imperatief (verboden):** `When I fill in the "title" field with "Buy groceries" And I click the "Add" button` -> breekt bij elke UI wijziging, leest als een testscript in plaats van documentatie.
+**Declarative (good):** `When I create a todo "Buy groceries"` -> describes intent, survives UI redesigns.
+**Imperative (forbidden):** `When I fill in the "title" field with "Buy groceries" And I click the "Add" button` -> breaks on every UI change, reads like a test script rather than documentation.
 
-De UI-mechaniek (welk veld, welke knop, hover voor verborgen elementen) leeft in step definitions, niet in feature files. Als de UI verandert, veranderen alleen step definitions. De scenarios, en daarmee de gedragsdocumentatie, blijven stabiel.
+The UI mechanics (which field, which button, hover for hidden elements) live in step definitions, not in feature files. When the UI changes, only step definitions change. The scenarios, and with them the behavior documentation, remain stable.
 
-**BRIEF principes:** Business language, Real data, Intention revealing, Essential, Focused, Brief (~5 regels per scenario).
+**BRIEF principles:** Business language, Real data, Intention revealing, Essential, Focused, Brief (~5 lines per scenario).
 
-## Spec scaffolding is geen voortgang
+## Spec scaffolding is not progress
 
-Een scenario dat je uitschrijft maar tagt als `@wip` of op een andere manier excludet van de suite, is geen spec. Het is een wensenlijst in code-formaat. Step definitions die alleen `PendingException` throwen zijn cruft bij geboorte.
+A scenario you write out but tag as `@wip` or otherwise exclude from the suite is not a spec. It is a wish list in code format. Step definitions that only throw `PendingException` are cruft from birth.
 
-De TDD-cyclus begint bij Red: een spec die je nooit rood hebt zien draaien heeft de cyclus niet doorlopen. Schrijf een scenario, implementeer de steps volledig, zie het groen worden. Dan het volgende scenario. Nooit meerdere lege scenario's tegelijk aanmaken.
+The TDD cycle starts at Red: a spec you have never seen run red has not completed the cycle. Write a scenario, implement the steps fully, watch it turn green. Then the next scenario. Never create multiple empty scenarios at once.
 
-Feature files die alleen uit ongeimplementeerde scenarios bestaan, horen niet te bestaan. Als je nog niet aan die feature toekomt, schrijf er geen spec voor. "De structuur alvast klaarzetten" is planning vermomd als code.
+Feature files that consist entirely of unimplemented scenarios should not exist. If you are not working on that feature yet, do not write a spec for it. "Setting up the structure in advance" is planning disguised as code.
 
-## Red Flags - Je bent aan het rationaliseren
+## Red Flags - You are rationalizing
 
-Als je jezelf betrapt op deze gedachten, STOP:
-- "Dit is te simpel om te specificeren"
-- "Ik schrijf de spec straks wel"
-- "Ik zet de structuur alvast klaar"
-- "Ik tag het als @wip, dan maken we het later af"
-- "Eerst even kijken of het werkt"
-- "Laat me de implementatie checken"
-- "De user heeft haast"
-- "Het is maar een rename"
-- "Dit is een mechanische aanpassing"
+If you catch yourself thinking these thoughts, STOP:
+- "This is too simple to specify"
+- "I'll write the spec later"
+- "I'm just setting up the structure in advance"
+- "I'll tag it as @wip, we'll finish it later"
+- "Let me first check whether it works" / "Eerst even kijken of het werkt"
+- "Let me check the implementation" / "Laat me de implementatie checken"
+- "The user is in a hurry"
+- "It's just a rename"
+- "This is a mechanical change"
 
--> Je bent aan het rationaliseren. Schrijf eerst de spec.
+-> You are rationalizing. Write the spec first.
 
-## Spec setup richtlijnen
+## Spec setup guidelines
 
-Minimaliseer spec-level memoization/setup. Geef de voorkeur aan lokale variabelen binnen de spec zelf.
+Minimize spec-level memoization/setup. Prefer local variables within the spec itself.
 
-## Main branch is altijd groen
+## Main branch is always green
 
-Neem nooit aan dat een spec zou kunnen falen op main. Als het op main staat, slaagt het. Bij het verifiëren van gedrag:
-- Schrijf een spec die het verwachte gedrag vastlegt
-- Bij het testen van een fix, pas de fix lokaal toe, run de spec, revert dan de fix om de spec te zien falen
-- Nooit main uitchecken om "te checken of deze spec daar faalt"
-- Bij het refereren naar main, gebruik altijd `origin/main` aangezien lokale main stale kan zijn
+Never assume a spec might fail on main. If it is on main, it passes. When verifying behavior:
+- Write a spec that captures the expected behavior
+- When testing a fix, apply the fix locally, run the spec, then revert the fix to see the spec fail
+- Never check out main to "even checken of het op main ook faalt"
+- When referencing main, always use `origin/main` since local main may be stale
 
-## Specs aanpassen is verboden
+## Modifying specs is forbidden
 
-Een falende spec betekent: fix de CODE, niet de spec. Nooit een spec verzwakken om hem groen te krijgen.
+A failing spec means: fix the CODE, not the spec. Never weaken a spec to make it pass.
 
-**Uitzondering:** Alleen wanneer requirements daadwerkelijk zijn veranderd, en dan alleen na expliciete bevestiging van de user.
+**Exception:** Only when requirements have actually changed, and only after explicit confirmation from the user.
 
-## Demo is geen spec
+## Demo is not a spec
 
-Handmatige verificatie (demo's, console output, "even proberen") is geen bewijs dat code werkt. Demo output varieert en is niet deterministisch.
+Manual verification (demos, console output, "let me try it" / "even proberen") is not proof that code works. Demo output varies and is not deterministic.
 
-**Verboden:** Een applicatie draaien om te verifiëren dat code werkt.
-**Verplicht:** Geautomatiseerde specs met voorspelbare input/output.
+**Forbidden:** Running an application to verify that code works.
+**Required:** Automated specs with predictable input/output.
 
-## Code lezen is geen spec
+## Reading code is not a spec
 
-Source code lezen om te deduceren of iets werkt is geen verificatie. Grep door implementatie vertelt je wat de code doet, niet of het gedrag klopt vanuit gebruikersperspectief. Wanneer de vraag is "werkt X?", is het antwoord een spec die X uitoefent, niet een code review die concludeert dat het zou moeten werken.
+Reading source code to deduce whether something works is not verification. Grepping through implementation tells you what the code does, not whether the behavior is correct from the user's perspective. When the question is "does X work?", the answer is a spec that exercises X, not a code review that concludes it should work.
 
-**Verboden:** `grep`/`read` door handlers en queries om te concluderen dat een feature werkt.
-**Verplicht:** Schrijf een spec die het gedrag vanuit de gebruiker exerceert. De spec is het bewijs.
+**Forbidden:** `grep`/`read` through handlers and queries to conclude that a feature works.
+**Required:** Write a spec that exercises the behavior from the user's side. The spec is the proof.
 
-## Flaky specs zijn een investering
+## Flaky specs are an investment
 
-**Definitie van flaky:** Non-deterministische specs die soms groen, soms rood zijn zonder code change.
+**Definition of flaky:** Non-deterministic specs that are sometimes green, sometimes red without a code change.
 
-**Flaky specs zijn NOOIT acceptabel:**
-- Kosten alle teamgenoten tijd op alle projecten
-- Eroderen vertrouwen in de suite
-- Maskeren echte regressies
-- Erin investeren om te fixen is altijd de juiste lange termijn beslissing
+**Flaky specs are NEVER acceptable:**
+- Cost every team member time across all projects
+- Erode trust in the suite
+- Mask real regressions
+- Investing in fixing them is always the right long-term decision
 
-**Gebruik "flaky" ALLEEN voor non-deterministische specs:**
-- Flaky: Spec faalt soms door race condition, timing issue, shared state
-- Niet flaky: Spec faalt altijd door missende mock/stub
-- Niet flaky: Spec faalt altijd door externe dependency (API, database)
-- Niet flaky: Spec faalt altijd door incomplete implementatie
+**Use "flaky" ONLY for non-deterministic specs:**
+- Flaky: Spec fails sometimes due to race condition, timing issue, shared state
+- Not flaky: Spec always fails due to missing mock/stub
+- Not flaky: Spec always fails due to external dependency (API, database)
+- Not flaky: Spec always fails due to incomplete implementation
 
-**Wanneer je een flaky spec tegenkomt:**
-1. Stop met huidige werk
-2. Verzamel context: spec path, command om te runnen, error output, failure rate
-3. Stel voor om dedicated onderzoek te starten met volledige context
-4. Genereer `claude -p` command met:
-   - Spec file path en regel nummer
-   - Exact commando om spec te runnen
-   - Error output van laatste failure
-   - Geschatte failure rate (bijv. "faalt ~30% van de tijd")
-   - Hypothese over oorzaak (race condition, timing, shared state, etc.)
-5. NOOIT automatisch proberen te fixen tijdens ander werk
-6. NOOIT "retry until green" of flakiness maskeren
+**When you encounter a flaky spec:**
+1. Stop current work
+2. Gather context: spec path, command to run it, error output, failure rate
+3. Propose starting dedicated investigation with full context
+4. Generate `claude -p` command with:
+   - Spec file path and line number
+   - Exact command to run the spec
+   - Error output from the last failure
+   - Estimated failure rate (e.g. "fails ~30% of the time")
+   - Hypothesis about the cause (race condition, timing, shared state, etc.)
+5. NEVER automatically try to fix it during other work
+6. NEVER "retry until green" or mask flakiness
 
-## Falende specs blokkeren alles
+## Failing specs block everything
 
-Wanneer de suite failures heeft, is het enige juiste antwoord: fixen. Niet deployen, niet committen, niet "dat zijn pre-existing failures". Falende specs zijn werk, net als warnings. Het maakt niet uit of ze van jouw wijziging komen of al bestonden.
+When the suite has failures, the only correct response is: fix them. Do not deploy, do not commit, do not say "those are pre-existing failures". Failing specs are work, just like warnings. It does not matter whether they come from your change or already existed.
 
-**Verboden:** Deployen of committen voorstellen terwijl de suite failures heeft.
-**Verboden:** Failures wegwuiven als "pre-existing" of "niet gerelateerd aan mijn wijziging".
-**Verplicht:** Failures onderzoeken, fixen, en de suite groen krijgen voordat je verder gaat.
+**Forbidden:** Proposing to deploy or commit while the suite has failures.
+**Forbidden:** Dismissing failures as "pre-existing" or "not related to my change".
+**Required:** Investigate failures, fix them, and get the suite green before moving on.
 
-**Red Flags bij spec failures:**
-- "Lijkt niet gerelateerd aan mijn wijzigingen" -> Irrelevant. Het faalt. Fix het.
-- "Laat me verifiëren dat het pre-existing is" -> Het doel is fixen, niet schuld toewijzen.
-- "Dit is een data-issue, geen [mijn ding]" -> Categoriseren is geen oplossen.
-- "Even checken of het op main ook faalt" -> Zelfs als dat zo is, is het nu jouw probleem.
-- git stash om te bewijzen dat het "niet van jou" is -> Verkeerde richting. Onderzoek de failure, niet de oorsprong.
+**Red Flags on spec failures:**
+- "Seems unrelated to my changes" -> Irrelevant. It fails. Fix it.
+- "Let me verify it's pre-existing" / "Laat me verifiëren dat het pre-existing is" -> The goal is fixing, not assigning blame.
+- "This is a data issue, not [my thing]" -> Categorizing is not solving.
+- "Quick check whether it also fails on main" / "Even checken of het op main ook faalt" -> Even if it does, it is now your problem.
+- git stash to prove it's "not yours" -> Wrong direction. Investigate the failure, not its origin.
 
-**Bij CI-failures die onverwacht breken:** Wanneer je ontdekt dat je wijzigingen specs breken op plekken die je niet had verwacht, is dat een signaal dat er meer onverwachte breakages kunnen zijn. Draai in die situatie de volledige suite voordat je de fix commit. Zeker niet amenden op een vorige commit voordat je weet dat het hele plaatje klopt.
+**On CI failures that break unexpectedly:** When you discover that your changes break specs in places you did not expect, that is a signal that there may be more unexpected breakages. In that situation, run the full suite before committing the fix. Definitely do not amend a previous commit before you know the full picture is correct.
 
-## Mass-verwijderen van tests is een SMELL bij refactors
+## Mass-deleting tests is a SMELL in refactors
 
-Wanneer een refactor een API leegmaakt, blijven de gedragingen die de oude tests documenteerden bestaan, alleen ergens anders. De tests moeten daarom mee migreren, niet geschrapt worden. Concreet: verwijder geen reeks tests zonder per testgeval aan te wijzen waar het gedrag nu gedekt is (andere unit-file, cucumber scenario, Playwright script, explicit `it.todo` met verwijzing). Kun je die mapping niet leggen? Dat is geen reden om te dunnen, dat is een blocker: het gedrag is of weg zonder vervanging (regressie), of ongedekt geworden (gat in het veiligheidsnet). Tienregels-diff-groter van je refactor is beter dan een test-crash later. Telt zelfs voor één test wanneer die het enige stuk documentatie is van een gedrag; geldt hard voor elk verwijderingspatroon van meer dan een paar cases tegelijk.
+When a refactor empties out an API, the behaviors the old tests documented still exist, just somewhere else. The tests must migrate with them, not be discarded. Concretely: do not remove a set of tests without identifying, per test case, where the behavior is now covered (another unit file, a Cucumber scenario, a Playwright script, an explicit `it.todo` with a reference). Cannot make that mapping? That is not a reason to thin, that is a blocker: the behavior is either gone without replacement (regression) or has become uncovered (gap in the safety net). A refactor diff that ends up ten lines larger is better than a test crash later. This applies even for a single test when it is the only piece of documentation for a behavior; it applies hard for any deletion pattern of more than a few cases at once.
