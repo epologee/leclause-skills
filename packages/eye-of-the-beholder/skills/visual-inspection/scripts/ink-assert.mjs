@@ -94,7 +94,7 @@ function autoBg(img) {
   const mx = c[0].map((_, i) => Math.max(...c.map((p) => p[i])))
   const spread = Math.max(mx[0]-mn[0], mx[1]-mn[1], mx[2]-mn[2])
   if (spread > AUTO_BG_SPREAD_THRESHOLD) {
-    console.error(`ink-assert: warning: autoBg corner spread is ${spread} RGB units (>${AUTO_BG_SPREAD_THRESHOLD}). Background is non-uniform; pass --bg R,G,B explicitly to avoid silent misclassification. Corners:`, c.map((p) => `(${p.join(',')})`).join(' '))
+    console.error(`ink-assert: warning: autoBg corner spread is ${spread} RGB units (>${AUTO_BG_SPREAD_THRESHOLD}). Background is non-uniform; pass --bg R,G,B explicitly to avoid silent misclassification. Sample the bg colour from a known-empty pixel of the reference image (image viewer's eyedropper, or run \`magick reference.png -resize 1x1 txt:\` for a single-pixel average). Corners:`, c.map((p) => `(${p.join(',')})`).join(' '))
   }
   return c.reduce((a,x) => [a[0]+x[0],a[1]+x[1],a[2]+x[2]], [0,0,0]).map(s => Math.round(s/4))
 }
