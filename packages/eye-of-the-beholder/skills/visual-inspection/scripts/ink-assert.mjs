@@ -92,6 +92,38 @@ function main() {
   }
   const pixelPass = !pR.error && pR.percent <= maxDiff
   const overall = checks.every(c => c.pass) && pixelPass
+  // Confidence score 0..100 derived from axis pass-rate and pixel diff. Structural axes weigh more than multiscale axes.
+  // Pixel diff contributes a noise-floor subtraction that recognises cross-pipeline irreducibility (capped at 30 since
+  // CSS-text vs canvas-text floor is around 15-20%).
+  function confidenceScore() {
+    // Weight per axis type. Critical structural axes weigh most; multiscale informational axes weigh least.
+    const weights = {
+      frame: 4, ink: 3, pad: 3, corner: 2, bgDiag: 2, aaDiag: 2,
+      edgeExt: 1, bgExt: 2, aaExt: 2, halo: 1, hist: 1, ms: 0.5,
+    }
+    function weightFor(name) {
+      const family = name.split('.')[0].replace(/^ms$/, 'ms')
+      return weights[family] !== undefined ? weights[family] : 1
+    }
+    let score = 100
+    for (const c of checks) {
+      if (c.pass) continue
+      const w = weightFor(c.name)
+      const tol = typeof c.tol === 'number' ? c.tol : 1
+      const deltaSize = typeof c.delta === 'number' ? Math.abs(c.delta) : tol + 1
+      const overshoot = Math.min(1.5, deltaSize / Math.max(1, tol))
+      score -= w * overshoot
+    }
+    // Pixel diff contributes a noise-floor subtraction. Cross-pipeline floor (~15-20%) is recognised by capping at 25.
+    if (!pR.error) score -= Math.min(25, pR.percent * 0.6)
+    return Math.max(0, Math.round(score))
+  }
+  const confidence = confidenceScore()
+  if (a.confidence) {
+    if (a.json) console.log(JSON.stringify({ confidence, overall, pixel: pR.error ? null : { percent: round(pR.percent, 3) } }))
+    else console.log(`confidence: ${confidence}`)
+    process.exit(confidence >= 95 ? 0 : 1)
+  }
   if (a.json) console.log(JSON.stringify({ checks, pixel: pR.error?{error:pR.error}:{percent:round(pR.percent,3),pass:pixelPass,threshold:maxDiff}, overall }, null, 2))
   else {
     console.log(`reference   ${path.basename(a.reference)}`)
@@ -100,7 +132,8 @@ function main() {
     for (const c of checks) console.log(`${c.name.padEnd(20)} | ${String(c.ref).padStart(15)} | ${String(c.cand).padStart(15)} | ${String(c.delta).padStart(15)} | ±${String(c.tol).padEnd(3)} | ${c.pass?'PASS':'FAIL'}`)
     if (pR.error) console.log(`pixel diff       | ERROR: ${pR.error}`)
     else console.log(`pixel diff           | ${round(pR.percent,2)}% differing | ≤${maxDiff}% | ${pixelPass?'PASS':'FAIL'}`)
-    console.log(`\nOVERALL: ${overall?'PASS ✓':'FAIL ✗'}`)
+    console.log(`\nconfidence: ${confidence}`)
+    console.log(`OVERALL: ${overall?'PASS ✓':'FAIL ✗'}`)
   }
   process.exit(overall ? 0 : 1)
 }
