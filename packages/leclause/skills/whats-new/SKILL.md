@@ -7,14 +7,14 @@ argument-hint: "[plugin-name]"
 
 # /leclause:whats-new
 
-Toon de CHANGELOG-sectie van een geïnstalleerde leclause-plugin zonder de
-post-update broadcast-sentinel te raken.
+Show the CHANGELOG section of an installed leclause plugin without touching
+the post-update broadcast sentinel.
 
-## Wat te doen
+## What to do
 
-Resolve het install-path van de gevraagde plugin via
-`~/.claude/plugins/installed_plugins.json` (canonieke bron). Wanneer de
-operator een plugin-naam meegeeft:
+Resolve the install path of the requested plugin via
+`~/.claude/plugins/installed_plugins.json` (canonical source). When the
+operator provides a plugin name:
 
 ```bash
 PLUGIN="<arg>"
@@ -32,10 +32,10 @@ fi
 node "$INSTALL/bin/check-broadcast" --force
 ```
 
-Plaats de output letterlijk in een markdown blok in je antwoord. Geen
-samenvatting, geen interpretatie; de CHANGELOG is canoniek.
+Place the output verbatim in a markdown block in your response. No
+summary, no interpretation; the CHANGELOG is canonical.
 
-Wanneer er GEEN argument is, geef een lijst:
+When there is NO argument, produce a list:
 
 ```bash
 jq -r '.plugins | to_entries[] | select(.key | endswith("@leclause")) | .key' \
@@ -49,15 +49,15 @@ jq -r '.plugins | to_entries[] | select(.key | endswith("@leclause")) | .key' \
 done
 ```
 
-Toon de lijst en de invocatie-vorm: "Roep `/leclause:whats-new <plugin>`
-aan voor de CHANGELOG van een specifieke plugin."
+Show the list and the invocation form: "Run `/leclause:whats-new <plugin>`
+for the CHANGELOG of a specific plugin."
 
-## Wat NIET te doen
+## What NOT to do
 
-- Geen edit op enige CHANGELOG vanuit deze skill. Auteurs onderhouden hun
-  CHANGELOG.md buiten Claude om.
-- Geen bewerking van sentinels in `~/.claude/var/leclause/`. `--force` raakt
-  ze niet; alleen de niet-force broadcast-blokken in de host-skills van een
-  plugin schrijven.
-- Geen aannames over welke plugins de broadcast-pattern hebben geadopteerd;
-  de aanwezigheid van `bin/check-broadcast` is de waarheid.
+- No edits to any CHANGELOG from within this skill. Authors maintain their
+  CHANGELOG.md outside Claude.
+- No modifications to sentinels in `~/.claude/var/leclause/`. `--force` does
+  not touch them; only the non-force broadcast blocks in a plugin's host
+  skills write them.
+- No assumptions about which plugins have adopted the broadcast pattern;
+  the presence of `bin/check-broadcast` is the source of truth.
