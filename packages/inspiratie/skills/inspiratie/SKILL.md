@@ -6,130 +6,130 @@ description: Use when tackling unfamiliar topics, designing something new, evalu
 
 # Inspiratie
 
-Online onderzoek dat antwoord geeft op: "hoe doen anderen dit?", "wat bestaat er al?", "wat kunnen we leren van gepubliceerde ervaring?" Resultaten vloeien terug in het gesprek als eigen kennis of als discussiepunt.
+Online research that answers: "how do others do this?", "what already exists?", "what can we learn from published experience?" Results flow back into the conversation as internalized knowledge or as a discussion point.
 
-## Wanneer gebruiken
+## When to use
 
 ### Triggers
 
-1. **Expliciet**: `/inspiratie` of `/inspiratie [onderwerp]`
-2. **Proactief**: Claude detecteert momenten waarop extern onderzoek waarde toevoegt
-3. **Impliciet**: user zegt iets als "hoe doen anderen dit?", "kijk even wat er bestaat", "wat is de standaard aanpak?"
+1. **Explicit**: `/inspiratie` or `/inspiratie [topic]`
+2. **Proactive**: Claude detects moments where external research adds value
+3. **Implicit**: user says something like "hoe doen anderen dit?", "kijk even wat er bestaat", "wat is de standaard aanpak?"
 
-### Proactieve detectiesignalen
+### Proactive detection signals
 
-- Onbekend terrein (nieuw framework, onbekende standaard, onbekend domein)
-- Ontwerpbeslissing met meerdere mogelijke richtingen
-- Evaluatieve vraag over een aanpak
-- Eerste keer dat een bepaald concept in het gesprek opduikt
+- Unfamiliar territory (new framework, unknown standard, unfamiliar domain)
+- Design decision with multiple possible directions
+- Evaluative question about an approach
+- First time a particular concept appears in the conversation
 
-### Niet zoeken wanneer
+### Do not search when
 
-- Routinewerk in een bekend domein
-- Vragen puur over de eigen codebase
-- User kiest expliciet voor snelheid ("doe maar gewoon", "geen research nodig")
+- Routine work in a familiar domain
+- Questions purely about the project's own codebase
+- User explicitly opts for speed ("doe maar gewoon", "geen research nodig")
 
-## Diepte
+## Depth
 
-Claude bepaalt op basis van complexiteit en user-signalen. Iteratief: doorzoeken tot er genoeg begrip is.
+Claude determines depth based on complexity and user signals. Iterative: keep searching until there is enough understanding.
 
-| Niveau | Wanneer | Zoekrondes |
-|--------|---------|------------|
-| Snel | Feitelijke vraag, consensus-onderwerp | 1-2 |
-| Normaal (default) | Ontwerpvraag, meerdere aanpakken | 2-4 |
-| Diep | User signaleert ("diepe duik"), complex domein | 4-8 |
+| Level | When | Search rounds |
+|-------|------|---------------|
+| Quick | Factual question, consensus topic | 1-2 |
+| Normal (default) | Design question, multiple approaches | 2-4 |
+| Deep | User signals ("diepe duik"), complex domain | 4-8 |
 
-**Diepte verhogen**: "diepe duik", "research dit grondig", "hoe pakken teams dit aan"
-**Diepte verlagen**: "snel even checken", "is er een standaard"
-**Automatische escalatie**: wanneer eerste ronde tegenstrijdige info of verrassingen oplevert.
+**Increase depth**: "diepe duik", "research dit grondig", "hoe pakken teams dit aan"
+**Decrease depth**: "snel even checken", "is er een standaard"
+**Automatic escalation**: when the first round surfaces contradictory information or surprises.
 
-## Onderzoekstools
+## Research tools
 
-Twee complementaire tools, beide volwaardig:
+Two complementary tools, both first-class:
 
-**WebSearch** voor brede verkenning: wat bestaat er, welke termen gebruiken mensen, welke bronnen komen bovendrijven. Startpunt voor onbekend terrein.
+**WebSearch** for broad exploration: what exists, what terms people use, which sources surface. Starting point for unfamiliar territory.
 
-**WebFetch** voor gericht lezen: documentatiepagina's, GitHub discussions, blog posts, Reddit/HN threads, framework-specifieke guides. Gebruik WebFetch wanneer:
-- WebSearch een veelbelovende bron oplevert (volledige pagina lezen, niet alleen snippet)
-- Je al weet waar de informatie staat (officiele docs, bekende community's)
-- Je dieper wilt graven in een specifiek perspectief of implementatie
+**WebFetch** for targeted reading: documentation pages, GitHub discussions, blog posts, Reddit/HN threads, framework-specific guides. Use WebFetch when:
+- WebSearch surfaces a promising source (read the full page, not just the snippet)
+- You already know where the information lives (official docs, known communities)
+- You want to dig deeper into a specific perspective or implementation
 
-WebFetch is geen bijzaak van WebSearch. Soms is WebFetch het startpunt (bekende documentatie-URL).
+WebFetch is not a secondary step after WebSearch. Sometimes WebFetch is the starting point (known documentation URL).
 
 ## Workflow
 
 ```
-1. FORMULEER
-   - Leid onderwerp af (uit argument of conversatiecontext)
-   - Check eerst lokale codebase (Grep/Glob) op bestaande patronen
-   - Bepaal startniveau (snel/normaal/diep)
-   - Formuleer 1-3 initiele zoekvragen
-   - Identificeer bekende bronnen die direct via WebFetch bereikbaar zijn
+1. FORMULATE
+   - Derive topic (from argument or conversation context)
+   - Check local codebase first (Grep/Glob) for existing patterns
+   - Determine starting level (quick/normal/deep)
+   - Formulate 1-3 initial search questions
+   - Identify known sources reachable directly via WebFetch
 
-2. ZOEK
-   - WebSearch voor brede verkenning
-   - WebFetch voor directe bronnen (docs, GitHub, forums)
-   - WebFetch voor diepere lezing van veelbelovende zoekresultaten
-   - Parallelliseer onafhankelijke zoekacties
+2. SEARCH
+   - WebSearch for broad exploration
+   - WebFetch for direct sources (docs, GitHub, forums)
+   - WebFetch for deeper reading of promising search results
+   - Parallelize independent search actions
 
-3. EVALUEER
-   - Consensus of diversiteit?
-   - Verrassingen of tegenspraken?
-   - Voldoende info voor het diepteniveau?
+3. EVALUATE
+   - Consensus or diversity?
+   - Surprises or contradictions?
+   - Enough information for the depth level?
 
-   Nee -> herformuleer, verhoog diepte, terug naar 2
-   Ja -> door naar 4
+   No -> reformulate, increase depth, back to 2
+   Yes -> proceed to 4
 
-4. BEPAAL OUTPUT MODUS
-   - Absorberen of Bespreken? (zie onder)
+4. DETERMINE OUTPUT MODE
+   - Absorb or Discuss? (see below)
 ```
 
-## Output modus
+## Output mode
 
-### Absorberen (geen discussie)
+### Absorb (no discussion)
 
-Wanneer:
-- Duidelijke consensus-aanpak gevonden
-- Bevestigt huidige richting
-- Eenduidig antwoord op feitelijke vraag
+When:
+- A clear consensus approach is found
+- Confirms the current direction
+- Unambiguous answer to a factual question
 
-Actie: kort noemen wat je gevonden hebt, toepassen, doorwerken. Geen rapport, geen opsomming van bronnen.
+Action: briefly mention what you found, apply it, keep working. No report, no list of sources.
 
-### Bespreken (opties voorleggen)
+### Discuss (present options)
 
-Wanneer:
-- Meerdere valide benaderingen met echte trade-offs
-- Keuze hangt af van projectspecifieke factoren
+When:
+- Multiple valid approaches with real trade-offs
+- Choice depends on project-specific factors
 
-Actie: beknopt presenteren met trade-offs en bronnen. Geen uitputtende lijst, alleen de opties die er echt toe doen. **Rangschik op kwaliteit van het eindresultaat, niet op implementatiegemak.** "De snelste weg" is geen aanbeveling, "de meest kansrijke" wel. Criteria: nauwkeurigheid, uitbreidbaarheid, community/momentum, en hoe goed het de user's einddoel dient.
+Action: present concisely with trade-offs and sources. No exhaustive list, only the options that genuinely matter. **Rank by quality of the end result, not by ease of implementation.** "The fastest path" is not a recommendation; "the most promising" is. Criteria: accuracy, extensibility, community/momentum, and how well it serves the user's end goal.
 
-### Bespreken (richting uitdagen)
+### Discuss (challenge direction)
 
-Wanneer:
-- Bevindingen stellen huidige aanpak in vraag
-- Significante risico's of anti-patterns ontdekt
+When:
+- Findings call the current approach into question
+- Significant risks or anti-patterns discovered
 
-Actie: presenteren als tegenspraak. Sluit aan bij de evaluatieve-vragen-regel in CLAUDE.md.
+Action: present as a counter-argument. Aligns with the evaluative-questions rule in CLAUDE.md.
 
-## Interactie met plan mode
+## Interaction with plan mode
 
-In plan mode: bevindingen als context-sectie in het plan opnemen, niet als losse output.
-Buiten plan mode: direct toepassen of bespreken, afhankelijk van output modus.
+In plan mode: include findings as a context section in the plan, not as standalone output.
+Outside plan mode: apply directly or discuss, depending on output mode.
 
 ## Red Flags
 
-Als je jezelf betrapt op een van deze gedachten, is dat het signaal dat je WEL moet zoeken:
+If you catch yourself thinking any of the following, that is the signal that you SHOULD search:
 
-| Gedachte | Realiteit |
-|----------|-----------|
-| "Mijn kennis is waarschijnlijk accuraat genoeg" | Waarschijnlijk is niet zeker. Zoek het op. |
-| "Dit is een stabiel protocol/framework, dat verandert niet" | Stabiel betekent niet dat jouw kennis compleet is. |
-| "Voor een architectuur gesprek is research niet nodig" | Architectuur gesprekken zijn JUIST waar research het meest oplevert. |
-| "Ik kan dit beantwoorden vanuit mijn training" | Dat kan, maar mis je dan niet bestaande libraries, community patterns, of bekende valkuilen? |
-| "Dit is te simpel om op te zoeken" | Simpele vragen hebben vaak verrassend genuanceerde antwoorden. |
-| "Research vertraagt het gesprek" | Een verkeerde richting kost meer tijd dan 30 seconden zoeken. |
-| "Ik zoek straks wel als het nodig is" | Het is nu nodig. De vraag is gesteld. |
-| "X is de snelste weg" | Snelste weg is niet de beste weg. Rangschik op kwaliteit van het eindresultaat. |
-| "X is de winnaar want het draait in de browser" | Implementatiegemak is geen kwaliteitscriterium. Wat levert het beste resultaat? |
+| Thought | Reality |
+|---------|---------|
+| "My knowledge is probably accurate enough" | Probably is not certain. Look it up. |
+| "This is a stable protocol/framework, it does not change" | Stable does not mean your knowledge is complete. |
+| "For an architecture discussion, research is not needed" | Architecture discussions are EXACTLY where research pays off most. |
+| "I can answer this from my training" | You can, but are you missing existing libraries, community patterns, or known pitfalls? |
+| "This is too simple to look up" | Simple questions often have surprisingly nuanced answers. |
+| "Research slows down the conversation" | A wrong direction costs more time than 30 seconds of searching. |
+| "I will look it up later if needed" | It is needed now. The question has been asked. |
+| "X is the fastest path" | Fastest is not best. Rank by quality of the end result. |
+| "X wins because it runs in the browser" | Ease of implementation is not a quality criterion. What delivers the best result? |
 
-**De kernregel**: wanneer je twijfelt of je moet zoeken, is dat het bewijs dat je moet zoeken. Twijfel = onzekerheid = research nodig.
+**The core rule**: when you are unsure whether to search, that uncertainty is the evidence that you should. Doubt = uncertainty = research needed.
