@@ -24,30 +24,78 @@
 // reference into the candidate's parent context (or vice versa) before screenshotting.
 
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
 import { execSync } from 'child_process'
 
+// Per-invocation scratch directory. Two simultaneous ink-assert processes with the same OS pid would otherwise
+// collide on /tmp/ink-${pid}-* paths, which becomes a real risk if a caller wraps run-corpus.mjs in Promise.all.
+// mkdtempSync gives each process a unique directory; the closeScratch() handler runs at exit to avoid leaks.
+const SCRATCH = fs.mkdtempSync(path.join(os.tmpdir(), 'ink-assert-'))
+function scratch(name) { return path.join(SCRATCH, name) }
+process.on('exit', () => { try { fs.rmSync(SCRATCH, { recursive: true, force: true }) } catch (_) {} })
+
 function parseArgs(argv) { const o = {}; for (let i = 0; i < argv.length; i++) { const a = argv[i]; if (!a.startsWith('--')) continue; const k = a.slice(2), n = argv[i+1]; if (n === undefined || n.startsWith('--')) o[k] = true; else { o[k] = n; i++ } } return o }
-function readImage(p) { const m = execSync(`ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "${p}"`).toString().trim().split(','); const tmp = `${p}.${process.pid}.raw`; execSync(`ffmpeg -y -v error -i "${p}" -f rawvideo -pix_fmt rgb24 "${tmp}"`); const px = fs.readFileSync(tmp); fs.unlinkSync(tmp); return { w: parseInt(m[0]), h: parseInt(m[1]), px } }
+let _readSeq = 0
+function readImage(p) { const m = execSync(`ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "${p}"`).toString().trim().split(','); const tmp = scratch(`r${++_readSeq}.raw`); execSync(`ffmpeg -y -v error -i "${p}" -f rawvideo -pix_fmt rgb24 "${tmp}"`); const px = fs.readFileSync(tmp); fs.unlinkSync(tmp); return { w: parseInt(m[0]), h: parseInt(m[1]), px } }
 function rgb(img, x, y) { const i = (y*img.w+x)*3; return [img.px[i], img.px[i+1], img.px[i+2]] }
 function dist(a, b) { return Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2) }
-function classify(c, anchors, tol) { const dI = dist(c, anchors.ink), dF = dist(c, anchors.frame), dB = dist(c, anchors.bg); const m = Math.min(dI, dF, dB); if (m > tol) return 'EDGE'; return m === dI ? 'INK' : (m === dF ? 'FRAME' : 'BG') }
+// Tie-break order on equal distances: INK > FRAME > BG. Documented because Math.min would otherwise
+// resolve ties by argument order silently and a 1-unit shift in tolerance could flip a pixel's class.
+function classify(c, anchors, tol) {
+  const dI = dist(c, anchors.ink), dF = dist(c, anchors.frame), dB = dist(c, anchors.bg)
+  const m = Math.min(dI, dF, dB)
+  if (m > tol) return 'EDGE'
+  if (dI === m) return 'INK'
+  if (dF === m) return 'FRAME'
+  return 'BG'
+}
 function bbox(img, anchors, tol, pred) { let mnx = img.w, mny = img.h, mxx = -1, mxy = -1; for (let y = 0; y < img.h; y++) for (let x = 0; x < img.w; x++) { const c = rgb(img, x, y), k = classify(c, anchors, tol); if (pred(k, c)) { if (x < mnx) mnx = x; if (x > mxx) mxx = x; if (y < mny) mny = y; if (y > mxy) mxy = y } } return mxx < 0 ? null : { mnx, mny, mxx, mxy, w: mxx-mnx+1, h: mxy-mny+1 } }
-function diagInset(img, anchors, tol, fr, c) { const sx = c==='TL'||c==='BL'?fr.mnx:fr.mxx, sy = c==='TL'||c==='TR'?fr.mny:fr.mxy, dx = c==='TL'||c==='BL'?+1:-1, dy = c==='TL'||c==='TR'?+1:-1; for (let i = 0; i < 30; i++) { const x = sx+dx*i, y = sy+dy*i; if (x<0||y<0||x>=img.w||y>=img.h) return -1; const k = classify(rgb(img, x, y), anchors, tol); if (k === 'FRAME' || k === 'INK') return i } return -1 }
-function edgeExtent(img, anchors, tol, fr, c) { const dx = c==='TL'||c==='BL'?+1:-1; const sx = c==='TL'||c==='BL'?fr.mnx:fr.mxx; const y = c==='TL'||c==='TR'?fr.mny:fr.mxy; let n = 0; for (let i = 0; i < 30; i++) { const x = sx+dx*i; if (x<0||x>=img.w) break; const k = classify(rgb(img, x, y), anchors, tol); if (k === 'FRAME' || k === 'INK') break; n++ } return n }
-// bgExtent: pixels classified BG along corner row before first FRAME. Sharp-cutoff width.
-// aaExtent: pixels classified EDGE along corner row before first FRAME. Soft-fade width.
-// edgeExtent stays as bgExtent + aaExtent (legacy combined view); the gate uses the split.
-function bgExtent(img, anchors, tol, fr, c) { const dx = c==='TL'||c==='BL'?+1:-1; const sx = c==='TL'||c==='BL'?fr.mnx:fr.mxx; const y = c==='TL'||c==='TR'?fr.mny:fr.mxy; let n = 0; for (let i = 0; i < 30; i++) { const x = sx+dx*i; if (x<0||x>=img.w) break; const k = classify(rgb(img, x, y), anchors, tol); if (k === 'FRAME' || k === 'INK') break; if (k === 'BG') n++ } return n }
-function aaExtent(img, anchors, tol, fr, c) { const dx = c==='TL'||c==='BL'?+1:-1; const sx = c==='TL'||c==='BL'?fr.mnx:fr.mxx; const y = c==='TL'||c==='TR'?fr.mny:fr.mxy; let n = 0; for (let i = 0; i < 30; i++) { const x = sx+dx*i; if (x<0||x>=img.w) break; const k = classify(rgb(img, x, y), anchors, tol); if (k === 'FRAME' || k === 'INK') break; if (k === 'EDGE') n++ } return n }
-// bgDiag / aaDiag: same split for the diagonal corner walk.
-function bgDiag(img, anchors, tol, fr, c) { const sx = c==='TL'||c==='BL'?fr.mnx:fr.mxx, sy = c==='TL'||c==='TR'?fr.mny:fr.mxy, dx = c==='TL'||c==='BL'?+1:-1, dy = c==='TL'||c==='TR'?+1:-1; let n = 0; for (let i = 0; i < 30; i++) { const x = sx+dx*i, y = sy+dy*i; if (x<0||y<0||x>=img.w||y>=img.h) break; const k = classify(rgb(img, x, y), anchors, tol); if (k === 'FRAME' || k === 'INK') break; if (k === 'BG') n++ } return n }
-function aaDiag(img, anchors, tol, fr, c) { const sx = c==='TL'||c==='BL'?fr.mnx:fr.mxx, sy = c==='TL'||c==='TR'?fr.mny:fr.mxy, dx = c==='TL'||c==='BL'?+1:-1, dy = c==='TL'||c==='TR'?+1:-1; let n = 0; for (let i = 0; i < 30; i++) { const x = sx+dx*i, y = sy+dy*i; if (x<0||y<0||x>=img.w||y>=img.h) break; const k = classify(rgb(img, x, y), anchors, tol); if (k === 'FRAME' || k === 'INK') break; if (k === 'EDGE') n++ } return n }
+// cornerWalk: walks inward from corner `c` along an axis ('row' = horizontal along bbox top/bottom,
+// 'diag' = diagonal toward bbox center), stopping at the first FRAME or INK pixel. With predicate=null,
+// returns the inward step at which FRAME/INK was found (the inset distance). With a predicate, counts
+// every non-FRAME pixel that matches the predicate during the walk and returns that count. This single
+// function backs five legacy variants (diagInset / edgeExtent / bgExtent / aaExtent / bgDiag / aaDiag).
+function cornerWalk(img, anchors, tol, fr, c, mode, predicate) {
+  const sx = c === 'TL' || c === 'BL' ? fr.mnx : fr.mxx
+  const sy = c === 'TL' || c === 'TR' ? fr.mny : fr.mxy
+  const dx = c === 'TL' || c === 'BL' ? +1 : -1
+  const dy = mode === 'row' ? 0 : (c === 'TL' || c === 'TR' ? +1 : -1)
+  let count = 0
+  for (let i = 0; i < 30; i++) {
+    const x = sx + dx * i, y = sy + dy * i
+    if (x < 0 || y < 0 || x >= img.w || y >= img.h) return predicate === null ? -1 : count
+    const k = classify(rgb(img, x, y), anchors, tol)
+    if (k === 'FRAME' || k === 'INK') return predicate === null ? i : count
+    if (predicate !== null && predicate(k)) count++
+  }
+  return predicate === null ? -1 : count
+}
+function diagInset(img, anchors, tol, fr, c) { return cornerWalk(img, anchors, tol, fr, c, 'diag', null) }
+function edgeExtent(img, anchors, tol, fr, c) { return cornerWalk(img, anchors, tol, fr, c, 'row', () => true) }
+function bgExtent(img, anchors, tol, fr, c) { return cornerWalk(img, anchors, tol, fr, c, 'row', (k) => k === 'BG') }
+function aaExtent(img, anchors, tol, fr, c) { return cornerWalk(img, anchors, tol, fr, c, 'row', (k) => k === 'EDGE') }
+function bgDiag(img, anchors, tol, fr, c) { return cornerWalk(img, anchors, tol, fr, c, 'diag', (k) => k === 'BG') }
+function aaDiag(img, anchors, tol, fr, c) { return cornerWalk(img, anchors, tol, fr, c, 'diag', (k) => k === 'EDGE') }
 function cornerHaloCount(img, anchors, tol, fr, c) { const x0 = c==='TL'||c==='BL'?fr.mnx:fr.mxx-4; const y0 = c==='TL'||c==='TR'?fr.mny:fr.mxy-4; let n = 0; for (let dy = 0; dy < 5; dy++) for (let dx = 0; dx < 5; dx++) { const x = x0+dx, y = y0+dy; if (x<0||y<0||x>=img.w||y>=img.h) continue; if (classify(rgb(img, x, y), anchors, tol) === 'EDGE') n++ } return n }
 function classCounts(img, anchors, tol, fr) { const c = { INK:0,FRAME:0,EDGE:0,BG:0 }; for (let y = fr.mny; y <= fr.mxy; y++) for (let x = fr.mnx; x <= fr.mxx; x++) c[classify(rgb(img, x, y), anchors, tol)]++; return c }
-function multiScale(p, fr, anchors, tol) { const cropPath = `/tmp/ink-${process.pid}-mscrop.png`; execSync(`ffmpeg -y -v error -i "${p}" -vf "crop=${fr.w}:${fr.h}:${fr.mnx}:${fr.mny}" "${cropPath}"`); const scales = []; let cw = fr.w, ch = fr.h, cp = cropPath, step = 0; while (cw>=1&&ch>=1) { const img = readImage(cp); let sR=0,sG=0,sB=0; const counts = {INK:0,FRAME:0,EDGE:0,BG:0}; for (let y=0;y<img.h;y++) for (let x=0;x<img.w;x++) { const c = rgb(img,x,y); sR+=c[0]; sG+=c[1]; sB+=c[2]; counts[classify(c, anchors, tol)]++ } const t = img.w*img.h; scales.push({step,w:img.w,h:img.h,mean:{r:round(sR/t,1),g:round(sG/t,1),b:round(sB/t,1)},counts,pct:{INK:100*counts.INK/t,FRAME:100*counts.FRAME/t,EDGE:100*counts.EDGE/t,BG:100*counts.BG/t}}); if (cw===1&&ch===1) break; const nw = Math.max(1,Math.round(cw/2)), nh = Math.max(1,Math.round(ch/2)); if (nw===cw&&nh===ch) break; const np = `/tmp/ink-${process.pid}-ms${step+1}.png`; execSync(`ffmpeg -y -v error -i "${cp}" -vf "scale=${nw}:${nh}:flags=area" "${np}"`); if (step>0) try { fs.unlinkSync(cp) } catch (_) {}; cw = nw; ch = nh; cp = np; step++ } try { fs.unlinkSync(cp) } catch (_) {}; try { fs.unlinkSync(cropPath) } catch (_) {}; return scales }
-function pixelDiff(refImg, candImg, threshold) { const rB = bbox(refImg, refImg.anchors, 60, k => k==='FRAME'||k==='INK'||k==='EDGE'); const cB = bbox(candImg, candImg.anchors, 60, k => k==='FRAME'||k==='INK'||k==='EDGE'); if (!rB||!cB) return { error: 'frame not found' }; const rC = `/tmp/ink-${process.pid}-r.png`, cC = `/tmp/ink-${process.pid}-c.png`; execSync(`ffmpeg -y -v error -i "${refImg.path}" -vf "crop=${rB.w}:${rB.h}:${rB.mnx}:${rB.mny}" "${rC}"`); execSync(`ffmpeg -y -v error -i "${candImg.path}" -vf "crop=${cB.w}:${cB.h}:${cB.mnx}:${cB.mny},scale=${rB.w}:${rB.h}:flags=bicubic" "${cC}"`); const r = readImage(rC), c = readImage(cC); let total = 0, diff = 0; for (let y=0;y<r.h;y++) for (let x=0;x<r.w;x++) { const i = (y*r.w+x)*3; const d = Math.max(Math.abs(r.px[i]-c.px[i]), Math.abs(r.px[i+1]-c.px[i+1]), Math.abs(r.px[i+2]-c.px[i+2])); total++; if (d > threshold) diff++ } fs.unlinkSync(rC); fs.unlinkSync(cC); return { total, diff, percent: 100*diff/total } }
-function autoBg(img) { const c = [rgb(img,0,0), rgb(img,img.w-1,0), rgb(img,0,img.h-1), rgb(img,img.w-1,img.h-1)]; return c.reduce((a,x) => [a[0]+x[0],a[1]+x[1],a[2]+x[2]], [0,0,0]).map(s => Math.round(s/4)) }
+function multiScale(p, fr, anchors, tol) { const cropPath = `${SCRATCH}/mscrop.png`; execSync(`ffmpeg -y -v error -i "${p}" -vf "crop=${fr.w}:${fr.h}:${fr.mnx}:${fr.mny}" "${cropPath}"`); const scales = []; let cw = fr.w, ch = fr.h, cp = cropPath, step = 0; while (cw>=1&&ch>=1) { const img = readImage(cp); let sR=0,sG=0,sB=0; const counts = {INK:0,FRAME:0,EDGE:0,BG:0}; for (let y=0;y<img.h;y++) for (let x=0;x<img.w;x++) { const c = rgb(img,x,y); sR+=c[0]; sG+=c[1]; sB+=c[2]; counts[classify(c, anchors, tol)]++ } const t = img.w*img.h; scales.push({step,w:img.w,h:img.h,mean:{r:round(sR/t,1),g:round(sG/t,1),b:round(sB/t,1)},counts,pct:{INK:100*counts.INK/t,FRAME:100*counts.FRAME/t,EDGE:100*counts.EDGE/t,BG:100*counts.BG/t}}); if (cw===1&&ch===1) break; const nw = Math.max(1,Math.round(cw/2)), nh = Math.max(1,Math.round(ch/2)); if (nw===cw&&nh===ch) break; const np = `${SCRATCH}/ms${step+1}.png`; execSync(`ffmpeg -y -v error -i "${cp}" -vf "scale=${nw}:${nh}:flags=area" "${np}"`); if (step>0) try { fs.unlinkSync(cp) } catch (_) {}; cw = nw; ch = nh; cp = np; step++ } try { fs.unlinkSync(cp) } catch (_) {}; try { fs.unlinkSync(cropPath) } catch (_) {}; return scales }
+function pixelDiff(refImg, candImg, threshold) { const rB = bbox(refImg, refImg.anchors, 60, k => k==='FRAME'||k==='INK'||k==='EDGE'); const cB = bbox(candImg, candImg.anchors, 60, k => k==='FRAME'||k==='INK'||k==='EDGE'); if (!rB||!cB) return { error: 'frame not found' }; const rC = `${SCRATCH}/r.png`, cC = `${SCRATCH}/c.png`; execSync(`ffmpeg -y -v error -i "${refImg.path}" -vf "crop=${rB.w}:${rB.h}:${rB.mnx}:${rB.mny}" "${rC}"`); execSync(`ffmpeg -y -v error -i "${candImg.path}" -vf "crop=${cB.w}:${cB.h}:${cB.mnx}:${cB.mny},scale=${rB.w}:${rB.h}:flags=bicubic" "${cC}"`); const r = readImage(rC), c = readImage(cC); let total = 0, diff = 0; for (let y=0;y<r.h;y++) for (let x=0;x<r.w;x++) { const i = (y*r.w+x)*3; const d = Math.max(Math.abs(r.px[i]-c.px[i]), Math.abs(r.px[i+1]-c.px[i+1]), Math.abs(r.px[i+2]-c.px[i+2])); total++; if (d > threshold) diff++ } fs.unlinkSync(rC); fs.unlinkSync(cC); return { total, diff, percent: 100*diff/total } }
+// autoBg averages the four bbox corners. If those four pixels disagree by more than 30 RGB units
+// (max channel range), the image background is non-uniform (gradient, transparency leak, neighbouring
+// UI bleeding into the crop) and the auto-detected anchor will silently misclassify pixels. Print a
+// warning to stderr so the caller knows to pass --bg explicitly. Does not throw, since the rest of the
+// pipeline can still produce useful per-axis numbers.
+function autoBg(img) {
+  const c = [rgb(img,0,0), rgb(img,img.w-1,0), rgb(img,0,img.h-1), rgb(img,img.w-1,img.h-1)]
+  const mn = c[0].map((_, i) => Math.min(...c.map((p) => p[i])))
+  const mx = c[0].map((_, i) => Math.max(...c.map((p) => p[i])))
+  const spread = Math.max(mx[0]-mn[0], mx[1]-mn[1], mx[2]-mn[2])
+  if (spread > 30) {
+    console.error(`ink-assert: warning: autoBg corner spread is ${spread} RGB units (>30). Background is non-uniform; pass --bg R,G,B explicitly to avoid silent misclassification. Corners:`, c.map((p) => `(${p.join(',')})`).join(' '))
+  }
+  return c.reduce((a,x) => [a[0]+x[0],a[1]+x[1],a[2]+x[2]], [0,0,0]).map(s => Math.round(s/4))
+}
 function parseRGB(s) { if (!s) return null; const a = s.split(',').map(Number); return a.length===3&&a.every(Number.isFinite)?a:null }
 function analyze(p, anchors) { const img = readImage(p); img.path = p; img.anchors = anchors; const tol = 60; const fr = bbox(img, anchors, tol, k => k==='FRAME'||k==='INK'||k==='EDGE'); const ink = bbox(img, anchors, tol, k => k==='INK'); if (!fr||!ink) return { error: 'frame or ink not found' }; const corners = { TL: diagInset(img,anchors,tol,fr,'TL'), TR: diagInset(img,anchors,tol,fr,'TR'), BL: diagInset(img,anchors,tol,fr,'BL'), BR: diagInset(img,anchors,tol,fr,'BR') }; const cornerSplit = (fn) => ({ TL: fn(img,anchors,tol,fr,'TL'), TR: fn(img,anchors,tol,fr,'TR'), BL: fn(img,anchors,tol,fr,'BL'), BR: fn(img,anchors,tol,fr,'BR') }); return { img, frame: fr, ink, padding: { top: ink.mny-fr.mny, right: fr.mxx-ink.mxx, bottom: fr.mxy-ink.mxy, left: ink.mnx-fr.mnx }, corners, bgDiag: cornerSplit(bgDiag), aaDiag: cornerSplit(aaDiag), edgeExt: cornerSplit(edgeExtent), bgExt: cornerSplit(bgExtent), aaExt: cornerSplit(aaExtent), halo: { TL: cornerHaloCount(img,anchors,tol,fr,'TL'), TR: cornerHaloCount(img,anchors,tol,fr,'TR'), BL: cornerHaloCount(img,anchors,tol,fr,'BL'), BR: cornerHaloCount(img,anchors,tol,fr,'BR') }, classCounts: classCounts(img, anchors, tol, fr), multiScale: multiScale(p, fr, anchors, tol) } }
 function round(n, d) { const f = Math.pow(10, d); return Math.round(n*f)/f }
