@@ -6,159 +6,159 @@ description: Use when user gives feedback on Claude behavior, says "remember thi
 
 # Self-Improvement
 
-Update skills, hook reasons, en CLAUDE.md-bestanden op basis van user feedback. Skills en hook reasons zijn de default-targets wanneer feedback ontstaat in hun context; CLAUDE.md is een laatste redmiddel voor skill-onafhankelijk gedrag. Detecteert duplicatie, bepaalt optimale locatie, kan CLAUDE.md-secties extraheren naar skills, en maakt nieuwe skills via TDD approach.
+Update skills, hook reasons, and CLAUDE.md files based on user feedback. Skills and hook reasons are the default targets when feedback arises in their context; CLAUDE.md is a last resort for skill-independent behavior. Detects duplication, determines optimal location, can extract CLAUDE.md sections to skills, and creates new skills via TDD approach.
 
-## STOP: eerst deze vraag beantwoorden
+## STOP: answer this question first
 
-**Voordat je iets scant of edit: ontstaat deze feedback uit een skill die net gedraaid heeft of genoemd wordt?** Zo ja, dan is de skill source de default target, niet CLAUDE.md. CLAUDE.md als default is het verkeerde antwoord. Het falende patroon is: feedback gaat over wat `/eye-of-the-beholder` (of welke skill dan ook) had moeten vangen, en een CLAUDE.md-regel wordt voorgesteld. CLAUDE.md wint niet van skill content in de context waar de skill draait; de skill wel.
+**Before you scan or edit anything: does this feedback arise from a skill that just ran or is being mentioned?** If so, the skill source is the default target, not CLAUDE.md. CLAUDE.md as default is the wrong answer. The failing pattern is: feedback is about what `/eye-of-the-beholder` (or any other skill) should have caught, and a CLAUDE.md rule gets proposed. CLAUDE.md does not win over skill content in the context where the skill runs; the skill does.
 
-Signalen dat dit skill-level feedback is:
-- De user noemt een skill letterlijk ("waarom vangt `/name` X niet").
-- De feedback gaat over de kwaliteit of volledigheid van wat een skill leverde.
-- De user heeft `/self-improvement` getriggerd na een skill-output, niet na een general-behavior observatie.
+Signals that this is skill-level feedback:
+- The user mentions a skill literally ("waarom vangt `/name` X niet").
+- The feedback concerns the quality or completeness of what a skill delivered.
+- The user triggered `/self-improvement` after a skill output, not after a general-behavior observation.
 
-Bij elk van deze signalen: ga rechtstreeks naar "Skill-gerelateerde feedback: skill content first" hieronder. Sla de CLAUDE.md-scan over tenzij je expliciet hebt vastgesteld dat de feedback skill-onafhankelijk is.
+On any of these signals: go directly to "Skill-related feedback: skill content first" below. Skip the CLAUDE.md scan unless you have explicitly determined that the feedback is skill-independent.
 
 ## Triggers
 
-Activeer wanneer de gebruiker:
-- Een skill wil aanpassen of verbeteren
-- Een nieuwe skill wil maken
-- Feedback geeft over Claude's gedrag tijdens of over een skill-invocatie
-- Feedback geeft over Claude's algemene gedrag ("doe dit voortaan anders")
-- Een patroon corrigeert dat zich herhaalt
-- Een conventie uitspreekt ("we doen het altijd zo")
-- Zegt "onthoud dit" of "dit moet in m'n CLAUDE"
-- Een CLAUDE.md sectie te groot/complex vindt
-- Vraagt om instructies te consolideren over projecten
+Activate when the user:
+- Wants to adjust or improve a skill
+- Wants to create a new skill
+- Gives feedback about Claude's behavior during or about a skill invocation
+- Gives feedback about Claude's general behavior ("doe dit voortaan anders")
+- Corrects a pattern that recurs
+- States a convention ("we doen het altijd zo")
+- Says "onthoud dit" or "dit moet in m'n CLAUDE"
+- Finds a CLAUDE.md section too large/complex
+- Asks to consolidate instructions across projects
 
 ## Scope
 
-Alles in het Claude Code ecosysteem is fair game:
+Everything in the Claude Code ecosystem is fair game:
 
-| Type | Locatie | Wanneer |
-|------|---------|---------|
-| **CLAUDE.md** | `~/.claude/README.md` | Algemene conventies (ALLEEN in persoonlijke context) |
-| **CLAUDE.md** | `~/projects/**/CLAUDE.md` | Project-specifiek |
+| Type | Location | When |
+|------|----------|------|
+| **CLAUDE.md** | `~/.claude/README.md` | General conventions (ONLY in personal context) |
+| **CLAUDE.md** | `~/projects/**/CLAUDE.md` | Project-specific |
 | **Skills** | `~/.claude/skills/**` | User-level workflows, tools |
-| **Skills** | `packages/<plugin>/skills/**` | Plugin-level workflows (in marketplace projecten) |
+| **Skills** | `packages/<plugin>/skills/**` | Plugin-level workflows (in marketplace projects) |
 | **Hooks** | `~/.claude/hooks/**` | User-level guards, enforcement |
-| **Hooks** | `packages/<plugin>/hooks/**` | Plugin-level guards (in marketplace projecten) |
-| **Hook reasons** | in hook scripts | Inline guidance die altijd zichtbaar is wanneer de hook firet |
+| **Hooks** | `packages/<plugin>/hooks/**` | Plugin-level guards (in marketplace projects) |
+| **Hook reasons** | in hook scripts | Inline guidance always visible when the hook fires |
 | **Settings** | `~/.claude/settings.json` | Permissions, allow/deny rules |
 | **Scripts** | `~/.claude/bin/**` | Helper scripts |
 
-## Plugin marketplace projecten
+## Plugin marketplace projects
 
-**KRITIEK:** Als het huidige project een publieke plugin marketplace is (indicatoren: `packages/*/` directory met `.claude-plugin/plugin.json` per package, of `.claude-plugin/marketplace.json` in root), dan zijn user-level CLAUDE.md wijzigingen GEEN geldige verbetering. User-level is persoonlijk aan één ontwikkelaar; een marketplace wordt door anderen gebruikt.
+**CRITICAL:** If the current project is a public plugin marketplace (indicators: `packages/*/` directory with `.claude-plugin/plugin.json` per package, or `.claude-plugin/marketplace.json` in root), then user-level CLAUDE.md changes are NOT a valid improvement. User-level is personal to one developer; a marketplace is used by others.
 
-In zo'n project gaan verbeteringen in de relevante plugin zelf:
-- Gedrag rond een plugin hook → hook reason aanscherpen in `packages/<plugin>/hooks/scripts/<hook>.sh`
-- Workflow/patroon dat bij de plugin hoort → skill in `packages/<plugin>/skills/<skill-name>/`
-- Algemene docs → `packages/<plugin>/README.md`
+In such a project, improvements go into the relevant plugin itself:
+- Behavior around a plugin hook, sharpen the hook reason in `packages/<plugin>/hooks/scripts/<hook>.sh`
+- Workflow/pattern that belongs to the plugin, skill in `packages/<plugin>/skills/<skill-name>/`
+- General docs, `packages/<plugin>/README.md`
 
-Check bij elke `/self-improvement` eerst: is dit een marketplace? `ls packages/*/.claude-plugin/plugin.json 2>/dev/null` geeft antwoord. Zo ja → zoek de plugin waar de feedback bij hoort, en verbeter daar.
+On every `/self-improvement`, check first: is this a marketplace? `ls packages/*/.claude-plugin/plugin.json 2>/dev/null` answers the question. If yes, find the plugin the feedback belongs to and improve there.
 
-## Hook-gerelateerde feedback: hook reason first
+## Hook-related feedback: hook reason first
 
-Wanneer feedback gaat over Claude's gedrag rond een hook (misbruik van escape hatches, onduidelijke reasons, ongewenst patroon in reactie), is de **hook reason** meestal de juiste plek om te verbeteren. Redenen:
+When feedback concerns Claude's behavior around a hook (misuse of escape hatches, unclear reasons, undesired pattern in response), the **hook reason** is usually the right place to improve. Reasons:
 
-1. De hook reason is de enige tekst die Claude GEGARANDEERD ziet wanneer de hook firet
-2. Een skill activeert alleen op description match (geen garantie dat hij ingrijpt bij een hook fire)
-3. Een CLAUDE.md regel bereikt alleen gebruikers van dezelfde CLAUDE.md
+1. The hook reason is the only text Claude is GUARANTEED to see when the hook fires
+2. A skill activates only on description match (no guarantee that it intervenes on a hook fire)
+3. A CLAUDE.md rule only reaches users of the same CLAUDE.md
 
-**Volgorde van interventies bij hook-feedback:**
+**Order of interventions for hook feedback:**
 
-1. **Eerst:** Scherp de hook reason aan. Expliciete anti-patronen benoemen in de tekst ("`🧭 dit was een reflex` is contradictair").
-2. **Daarna:** Skill in de plugin, alleen als de workflow te complex is voor een hook reason en het patroon breder is dan één hook fire.
-3. **Laatste redmiddel:** CLAUDE.md, alleen voor persoonlijke projecten, nooit voor marketplace plugins.
+1. **First:** Sharpen the hook reason. Name explicit anti-patterns in the text ("`🧭 dit was een reflex` is contradictory").
+2. **Next:** Skill in the plugin, only if the workflow is too complex for a hook reason and the pattern is broader than one hook fire.
+3. **Last resort:** CLAUDE.md, only for personal projects, never for marketplace plugins.
 
-## Skill-gerelateerde feedback: skill content first
+## Skill-related feedback: skill content first
 
-Wanneer feedback ontstaat tijdens (of over) een specifieke skill invocatie, is de **skill content** de juiste plek om te verbeteren, NIET CLAUDE.md. De skill bevat de instructies die de user wil aanscherpen; die instructies landen alleen in Claude's context wanneer de skill draait. Een CLAUDE.md-regel schieten op een skill-probleem mist het doel: de skill wint in zijn eigen context.
+When feedback arises during (or about) a specific skill invocation, the **skill content** is the right place to improve, NOT CLAUDE.md. The skill contains the instructions the user wants to sharpen; those instructions only land in Claude's context when the skill runs. Firing a CLAUDE.md rule at a skill problem misses the target: the skill wins in its own context.
 
-Signalen dat feedback skill-level is:
-- De user noemt de skill bij naam ("/eye-of-the-beholder vangt X niet", "waarom doet /inspiratie Y niet").
-- De observatie beschrijft een gat in wat een skill zou moeten vangen, niet een patroon in Claude's default-gedrag.
-- De feedback citeert skill-taal letterlijk.
+Signals that feedback is skill-level:
+- The user names the skill ("/eye-of-the-beholder vangt X niet", "waarom doet /inspiratie Y niet").
+- The observation describes a gap in what a skill should catch, not a pattern in Claude's default behavior.
+- The feedback quotes skill language verbatim.
 
-**Volgorde van interventies bij skill-feedback:**
+**Order of interventions for skill feedback:**
 
-1. **Eerst:** Localiseer de skill source. Plugin-skills leven onder `~/github.com/<owner>/<plugin-repo>/packages/<plugin>/skills/<name>/` of vergelijkbare plugin-source. De `~/.claude/plugins/cache/` is een cache en geen werkplek.
-2. **Scherp de skill aan.** Als het principe er al staat maar niet wordt gevolgd, maak het explicieter: koppel meten aan oordeel, voeg een checkpoint toe, geef een concreet tegenvoorbeeld uit de huidige situatie.
-3. **CLAUDE.md alleen als het gedrag skill-onafhankelijk is.** Alleen wanneer de feedback over Claude's algemene werkwijze gaat (bijv. "pas skills altijd volledig toe"), niet over een specifieke skill's inhoud.
+1. **First:** Locate the skill source. Plugin skills live under `~/github.com/<owner>/<plugin-repo>/packages/<plugin>/skills/<name>/` or comparable plugin source. The `~/.claude/plugins/cache/` is a cache and not a workplace.
+2. **Sharpen the skill.** If the principle is already there but is not being followed, make it more explicit: tie measurement to judgment, add a checkpoint, give a concrete counter-example from the current situation.
+3. **CLAUDE.md only when the behavior is skill-independent.** Only when the feedback concerns Claude's general working style (e.g., "always apply skills fully" / "pas skills altijd volledig toe"), not the content of a specific skill.
 
-Als de source niet lokaal staat, zoek het remote via de plugin cache (`git config --get remote.origin.url` in `~/.claude/plugins/marketplaces/<owner>/`). Vraag de user niet om de repo te clonen; kijk eerst of een sibling-org onder `~/github.com/` het heeft.
+If the source is not local, find it remotely via the plugin cache (`git config --get remote.origin.url` in `~/.claude/plugins/marketplaces/<owner>/`). Do not ask the user to clone the repo; first check whether a sibling org under `~/github.com/` has it.
 
-### Rationalizations die naar CLAUDE.md drijven (niet doen)
+### Rationalizations that drift toward CLAUDE.md (do not do)
 
-| Excuus | Realiteit |
-|--------|-----------|
-| "Dit is algemene Claude-gedrag dus CLAUDE.md" | Nee: de user triggerde het tijdens een skill. Het probleem is dat de skill de regel niet afdwong. |
-| "De skill staat in een cache, ik kan niet bij de bron" | De source staat onder `~/github.com/<owner>/<plugin-repo>/`. Zoek het, clone het niet opnieuw. |
-| "CLAUDE.md is sneller bereikbaar" | Sneller bereikbaar lost het probleem niet op. CLAUDE.md bereikt Claude niet op het moment dat de skill draait. |
-| "Het principe staat al in de skill, dus daar kan niks bij" | Als het principe er staat maar niet wordt gevolgd, is het te zwak geformuleerd. Aanscherpen. Zie "/self-improvement betekent ALTIJD een wijziging". |
-| "CLAUDE.md is een bredere vangst" | Breder is niet doel-treffender. De specifieke skill-context wint in zijn eigen runtime. |
-| "User zal het waarschijnlijk wel weer in CLAUDE.md willen" | Dat is een gok, niet een observatie. Lees de feedback: noemt hij een skill? Dan skill. |
+| Excuse | Reality |
+|--------|---------|
+| "This is general Claude behavior so CLAUDE.md" / "Dit is algemene Claude-gedrag dus CLAUDE.md" | No: the user triggered it during a skill. The problem is that the skill did not enforce the rule. |
+| "The skill is in a cache, I cannot reach the source" / "De skill staat in een cache, ik kan niet bij de bron" | The source is under `~/github.com/<owner>/<plugin-repo>/`. Find it, do not re-clone. |
+| "CLAUDE.md is faster to reach" / "CLAUDE.md is sneller bereikbaar" | Faster to reach does not solve the problem. CLAUDE.md does not reach Claude at the moment the skill runs. |
+| "The principle is already in the skill, so nothing can be added there" / "Het principe staat al in de skill, dus daar kan niks bij" | If the principle is there but is not being followed, it is too weakly worded. Sharpen it. See "/self-improvement ALWAYS means a change". |
+| "CLAUDE.md is a broader catch" / "CLAUDE.md is een bredere vangst" | Broader is not more on-target. The specific skill context wins in its own runtime. |
+| "The user will probably want it in CLAUDE.md again" / "User zal het waarschijnlijk wel weer in CLAUDE.md willen" | That is a guess, not an observation. Read the feedback: does it name a skill? Then skill. |
 
-### Red flags die je moet herkennen
+### Red flags to recognize
 
-Als je jezelf betrapt op een van deze gedachten tijdens /self-improvement, stop en ga naar de skill source:
+If you catch yourself on one of these thoughts during /self-improvement, stop and go to the skill source:
 
-- "Laat ik eerst even `~/.claude/README.md` lezen" terwijl de feedback een skill-naam noemt
-- "Ik voeg een rule toe aan Werkwijze" zonder eerst de genoemde skill te hebben opgezocht
-- "De scan begint met Glob op CLAUDE.md" voordat je hebt vastgesteld dat het CLAUDE.md-feedback is
-- Een Edit-call op `~/.claude/README.md` voorbereiden terwijl je nog geen skill source hebt gelokaliseerd
+- "Let me first read `~/.claude/README.md`" / "Laat ik eerst even `~/.claude/README.md` lezen" while the feedback names a skill
+- "I will add a rule to Werkwijze" / "Ik voeg een rule toe aan Werkwijze" without first having looked up the named skill
+- "The scan starts with Glob on CLAUDE.md" / "De scan begint met Glob op CLAUDE.md" before you have established that this is CLAUDE.md feedback
+- Preparing an Edit call on `~/.claude/README.md` while you have not yet located a skill source
 
-Default route voor skill-feedback: `find ~/github.com -type d -name "<skill-name>" -path "*/skills/*"` om de source te vinden, dan Edit daar.
+Default route for skill feedback: `find ~/github.com -type d -name "<skill-name>" -path "*/skills/*"` to find the source, then Edit there.
 
 ## Workflow
 
 ```dot
 digraph self_improvement {
-  "User uiting ontvangen" -> "Skill-feedback?"
-  "Skill-feedback?" -> "Localiseer skill source" [label="ja (default)"]
-  "Skill-feedback?" -> "Hook-feedback?" [label="nee"]
-  "Hook-feedback?" -> "Open hook script" [label="ja"]
-  "Hook-feedback?" -> "CLAUDE.md-feedback?" [label="nee"]
-  "CLAUDE.md-feedback?" -> "Scan alle CLAUDE.md" [label="ja"]
-  "CLAUDE.md-feedback?" -> "Overweeg nieuwe skill" [label="nee"]
-  "Localiseer skill source" -> "Scherp skill aan"
-  "Open hook script" -> "Scherp hook reason aan"
-  "Scan alle CLAUDE.md" -> "Check duplicatie"
-  "Check duplicatie" -> "Bepaal beste locatie"
-  "Bepaal beste locatie" -> "Bepaal taal"
-  "Scherp skill aan" -> "Bepaal taal"
-  "Scherp hook reason aan" -> "Bepaal taal"
-  "Bepaal taal" -> "Apply edit direct"
-  "Apply edit direct" -> "Toon wat toegepast is"
+  "User input received" -> "Skill feedback?"
+  "Skill feedback?" -> "Locate skill source" [label="yes (default)"]
+  "Skill feedback?" -> "Hook feedback?" [label="no"]
+  "Hook feedback?" -> "Open hook script" [label="yes"]
+  "Hook feedback?" -> "CLAUDE.md feedback?" [label="no"]
+  "CLAUDE.md feedback?" -> "Scan all CLAUDE.md" [label="yes"]
+  "CLAUDE.md feedback?" -> "Consider new skill" [label="no"]
+  "Locate skill source" -> "Sharpen skill"
+  "Open hook script" -> "Sharpen hook reason"
+  "Scan all CLAUDE.md" -> "Check duplication"
+  "Check duplication" -> "Determine best location"
+  "Determine best location" -> "Determine language"
+  "Sharpen skill" -> "Determine language"
+  "Sharpen hook reason" -> "Determine language"
+  "Determine language" -> "Apply edit directly"
+  "Apply edit directly" -> "Show what was applied"
 }
 ```
 
-### Stap 0: Classificeer de feedback
+### Step 0: Classify the feedback
 
-Voordat je iets scant: welk type is dit?
+Before you scan anything: which type is this?
 
-1. **Skill-feedback** (user noemt skill-naam, feedback gaat over skill-output kwaliteit, `/self-improvement` getriggerd direct na skill-invocatie): skip Stap 1, ga naar "Skill-gerelateerde feedback: skill content first" boven. Localiseer de skill source en edit daar.
-2. **Hook-feedback** (gedrag rond een hook, escape-hatch misbruik, onduidelijke hook reason): skip Stap 1, ga naar "Hook-gerelateerde feedback: hook reason first".
-3. **CLAUDE.md-feedback** (algemene Claude-werkwijze, skill-onafhankelijk patroon, conventies): door naar Stap 1.
+1. **Skill feedback** (user names a skill, feedback concerns skill output quality, `/self-improvement` triggered directly after a skill invocation): skip Step 1, go to "Skill-related feedback: skill content first" above. Locate the skill source and edit there.
+2. **Hook feedback** (behavior around a hook, escape-hatch misuse, unclear hook reason): skip Step 1, go to "Hook-related feedback: hook reason first".
+3. **CLAUDE.md feedback** (general Claude working style, skill-independent pattern, conventions): proceed to Step 1.
 
-Bij twijfel tussen (1) en (3): default naar skill. De skill wint in zijn eigen runtime; CLAUDE.md niet.
+In doubt between (1) and (3): default to skill. The skill wins in its own runtime; CLAUDE.md does not.
 
-### Stap 1: Scan (alleen voor CLAUDE.md-feedback)
+### Step 1: Scan (only for CLAUDE.md feedback)
 
-Gebruik Glob tool (niet find/bash):
+Use the Glob tool (not find/bash):
 
-**Voor CLAUDE.md:**
+**For CLAUDE.md:**
 ```
-# User-level (let op: CLAUDE.md is symlink naar README.md)
+# User-level (note: CLAUDE.md is a symlink to README.md)
 Glob: ~/.claude/README.md
 
-# Alle projecten
+# All projects
 Glob: ~/projects/**/CLAUDE.md
 ```
 
-**Voor Skills:**
+**For Skills:**
 ```
 # User-level skills
 Glob: ~/.claude/skills/**/SKILL.md
@@ -167,392 +167,392 @@ Glob: ~/.claude/skills/**/SKILL.md
 Glob: ~/projects/**/.claude/skills/**/SKILL.md
 ```
 
-**Symlink let op:** `~/.claude/CLAUDE.md` is een symlink naar `~/.claude/README.md`.
-Edits moeten naar `README.md`, niet naar de symlink.
+**Symlink note:** `~/.claude/CLAUDE.md` is a symlink to `~/.claude/README.md`.
+Edits must go to `README.md`, not to the symlink.
 
-Bouw een mentaal model:
-- Welke bestanden bestaan
-- Hiërarchie per project (repo-root vs subdir)
-- Voor skills: user-level vs project-level
-- Taal per bestand (eerste 50 regels lezen)
+Build a mental model:
+- Which files exist
+- Hierarchy per project (repo-root vs subdir)
+- For skills: user-level vs project-level
+- Language per file (read the first 50 lines)
 
-### Stap 2: Check duplicatie en conflicten
+### Step 2: Check duplication and conflicts
 
-Zoek of de nieuwe instructie al (deels) bestaat:
-- Exact dezelfde regel?
-- Zelfde concept, andere woorden?
-- Tegenstrijdige instructie?
+Look up whether the new instruction already (partially) exists:
+- Exact same line?
+- Same concept, different words?
+- Contradictory instruction?
 
-**Bij duplicatie:** Meld dit aan de user met locaties.
+**On duplication:** Report this to the user with locations.
 
-**Bij conflict:** Toon beide versies en stel voor om te synchroniseren.
+**On conflict:** Show both versions and propose synchronizing.
 
-### Stap 2b: Check staleness via git
+### Step 2b: Check staleness via git
 
-User-level (`~/.claude`) wordt vaker actueel gehouden dan project-level (projecten worden soms tijdelijk verlaten). Check timestamps:
+User-level (`~/.claude`) is kept current more often than project-level (projects are sometimes temporarily abandoned). Check timestamps:
 
 ```bash
-# User-level laatste wijziging
+# User-level last change
 git -C ~/.claude log -1 --format="%ci" -- README.md
 
-# Project-level laatste wijziging
+# Project-level last change
 git log -1 --format="%ci" -- CLAUDE.md
 ```
 
-**Staleness detectie:**
+**Staleness detection:**
 
-| User-level | Project-level | Actie |
-|------------|---------------|-------|
-| Recenter | Ouder | Project mogelijk stale - check op verouderde instructies |
-| Ouder | Recenter | OK - project heeft specifieke updates |
-| Conflict + user recenter | - | Stel voor om project te updaten naar user-level |
+| User-level | Project-level | Action |
+|------------|---------------|--------|
+| More recent | Older | Project possibly stale, check for outdated instructions |
+| Older | More recent | OK, project has specific updates |
+| Conflict + user more recent | - | Propose updating project to user-level |
 
-**Wanneer user-level vernieuwt:**
-Als je een instructie toevoegt/wijzigt in user-level, scan automatisch alle project CLAUDE.md's op:
-1. Conflicterende instructies (verouderde versie van hetzelfde concept)
-2. Redundante instructies (nu overbodig door user-level)
+**When user-level is renewed:**
+If you add/change an instruction in user-level, automatically scan all project CLAUDE.md's for:
+1. Conflicting instructions (outdated version of the same concept)
+2. Redundant instructions (now superfluous due to user-level)
 
-Stel voor om project-level te updaten of op te schonen.
+Propose to update or clean up project-level.
 
-### Stap 3: Bepaal beste locatie
+### Step 3: Determine best location
 
-**Eerst:** Is het huidige project een plugin marketplace (zie "Plugin marketplace projecten" hierboven)? Zo ja, dan zijn user-level paden UITGESLOTEN voor feedback die bij een plugin hoort. Verbeteringen landen in `packages/<plugin>/...`.
+**First:** Is the current project a plugin marketplace (see "Plugin marketplace projects" above)? If so, user-level paths are EXCLUDED for feedback that belongs to a plugin. Improvements land in `packages/<plugin>/...`.
 
-**Voor CLAUDE.md (niet-marketplace projecten):**
+**For CLAUDE.md (non-marketplace projects):**
 
-| Criterium | Locatie |
-|-----------|---------|
-| Geldt voor ALLE projecten | `~/.claude/README.md` (user-level) |
-| Geldt voor specifieke taal/framework | Project CLAUDE.md waar dat framework gebruikt wordt |
-| Geldt voor één specifiek project | Die project's CLAUDE.md |
-| Staat al in 3+ projecten identiek | Consolideer naar user-level |
+| Criterion | Location |
+|-----------|----------|
+| Applies to ALL projects | `~/.claude/README.md` (user-level) |
+| Applies to specific language/framework | Project CLAUDE.md where that framework is used |
+| Applies to one specific project | That project's CLAUDE.md |
+| Already in 3+ projects identically | Consolidate to user-level |
 
-**Voor Skills:**
+**For Skills:**
 
-| Criterium | Locatie |
-|-----------|---------|
-| Workflow bruikbaar in alle projecten, persoonlijk gebruik | `~/.claude/skills/` (user-level) |
-| Workflow hoort bij een plugin in een marketplace | `packages/<plugin>/skills/<name>/` (plugin-level) |
-| Project-specifieke workflow (niet-marketplace) | `~/projects/{owner}/{repo}/.claude/skills/` |
+| Criterion | Location |
+|-----------|----------|
+| Workflow usable in all projects, personal use | `~/.claude/skills/` (user-level) |
+| Workflow belongs to a plugin in a marketplace | `packages/<plugin>/skills/<name>/` (plugin-level) |
+| Project-specific workflow (non-marketplace) | `~/projects/{owner}/{repo}/.claude/skills/` |
 
-**Voor hook reasons (in marketplace of persoonlijk):**
+**For hook reasons (in marketplace or personal):**
 
-| Criterium | Locatie |
-|-----------|---------|
-| Feedback gaat over Claude's gedrag rond een hook | De hook script zelf, aanscherpen van de `reason` text |
+| Criterion | Location |
+|-----------|----------|
+| Feedback concerns Claude's behavior around a hook | The hook script itself, sharpen the `reason` text |
 
-**Hiërarchie binnen een project:**
-- Repo-root CLAUDE.md: algemene project conventies
-- Subdir CLAUDE.md: specifiek voor die subdir (bijv. webapp voor Rails)
+**Hierarchy within a project:**
+- Repo-root CLAUDE.md: general project conventions
+- Subdir CLAUDE.md: specific to that subdir (e.g., webapp for Rails)
 
-**Laadvolgorde en prioriteit:**
+**Load order and priority:**
 
-Claude Code laadt alle CLAUDE.md's en concateneert ze in de system prompt:
-1. User-level (`~/.claude/CLAUDE.md`) - eerst
-2. Project-level (repo root) - daarna
-3. Subproject-level (working directory) - laatst
+Claude Code loads all CLAUDE.md's and concatenates them in the system prompt:
+1. User-level (`~/.claude/CLAUDE.md`), first
+2. Project-level (repo root), next
+3. Subproject-level (working directory), last
 
-Er is **geen expliciete override-mechanisme**. Bij conflicten:
-- Latere instructies hebben vaak meer gewicht (recency bias), maar niet gegarandeerd
-- Specificiteit wint meestal van algemeenheid
-- **Expliciete afwijkingen werken het beste**
+There is **no explicit override mechanism**. On conflicts:
+- Later instructions often carry more weight (recency bias), but not guaranteed
+- Specificity usually wins over generality
+- **Explicit deviations work best**
 
-**Bij project-specifieke afwijkingen:**
+**For project-specific deviations:**
 ```markdown
-## Afwijking van user-level
+## Deviation from user-level
 
-In dit project gebruiken we WEL comments bij public API's
-(in tegenstelling tot de algemene "geen comments" regel).
+In this project we DO use comments on public APIs
+(contrary to the general "no comments" rule).
 ```
 
-### Project-Agnostische Formulering (voor user-level)
+### Project-Agnostic Phrasing (for user-level)
 
-User-level instructies moeten werken voor Ruby, Swift, Go, Python, JavaScript, etc. zonder verwarring.
+User-level instructions must work for Ruby, Swift, Go, Python, JavaScript, etc., without confusion.
 
-**Principes:**
+**Principles:**
 
-| Vermijd | Gebruik in plaats daarvan |
-|---------|---------------------------|
-| Taal-specifieke syntax | Conceptuele beschrijving |
-| Framework-specifieke tools | Generieke tool-categorieën |
-| Concrete voorbeelden uit één taal | Principe + "pas toe op jouw taal" |
+| Avoid | Use instead |
+|-------|-------------|
+| Language-specific syntax | Conceptual description |
+| Framework-specific tools | Generic tool categories |
+| Concrete examples from one language | Principle + "apply to your language" |
 
-**Transformatie voorbeelden:**
-
-```
-# Te specifiek (Swift)
-if rewind > threshold { skip }  // VERBODEN
-
-# Agnostisch
-Defensive filtering (waarden skippen/negeren) verbergt bugs.
-```
+**Transformation examples:**
 
 ```
-# Te specifiek (iTerm2)
-Kijk in pane 2 of het werkt -> VERBODEN
+# Too specific (Swift)
+if rewind > threshold { skip }  // FORBIDDEN
 
-# Agnostisch
-Verifieer zelf met beschikbare tools. Vraag niet aan de user om te kijken.
+# Agnostic
+Defensive filtering (skipping/ignoring values) hides bugs.
 ```
 
 ```
-# Te specifiek (RSpec)
-Vermijd let/let! memoizations, gebruik lokale variabelen
+# Too specific (iTerm2)
+Look in pane 2 to see if it works -> FORBIDDEN
 
-# Agnostisch
-Vermijd test-level memoization/setup waar lokale variabelen volstaan.
+# Agnostic
+Verify yourself with available tools. Do not ask the user to look.
 ```
 
-**Checklist voor user-level instructies:**
-
-- [ ] Bevat geen taal-specifieke keywords (`def`, `func`, `fn`, `function`)
-- [ ] Bevat geen framework-specifieke namen (Rails, SwiftUI, React)
-- [ ] Bevat geen tool-specifieke commands (bundle, swift, npm)
-- [ ] Principe is toepasbaar op elke taal/stack
-- [ ] Bij twijfel: "past dit bij een Go project? Een Ruby project? Een Swift project?"
-
-### Stap 4: Bepaal taal
-
-Detecteer de taal van het doelbestand:
-
 ```
-Als >50% Nederlandse woorden -> Nederlands
-Als >50% Engelse woorden -> Engels
-Bij twijfel -> check "Language" sectie in het bestand
+# Too specific (RSpec)
+Avoid let/let! memoizations, use local variables
+
+# Agnostic
+Avoid test-level memoization/setup where local variables suffice.
 ```
 
-**User-level (`~/.claude/`):** Altijd Nederlands. Dit geldt voor
-CLAUDE.md, README.md, EN alle user-level skills in `~/.claude/skills/`.
+**Checklist for user-level instructions:**
 
-**Project-level:** Volgt de projecttaal. Sommige project skills (`.claude/skills/`)
-zijn Engels omdat het project Engels voorschrijft voor code en configuratie.
+- [ ] Contains no language-specific keywords (`def`, `func`, `fn`, `function`)
+- [ ] Contains no framework-specific names (Rails, SwiftUI, React)
+- [ ] Contains no tool-specific commands (bundle, swift, npm)
+- [ ] Principle applies to any language/stack
+- [ ] When in doubt: "does this fit a Go project? A Ruby project? A Swift project?"
 
-Schrijf de nieuwe instructie in de taal van het doelbestand.
+### Step 4: Determine language
 
-### Stap 5: Apply direct
+Detect the language of the target file:
 
-Pas de wijziging direct toe met Edit tool. Geen approval vragen, de gebruiker heeft zijn intent al duidelijk gemaakt door de feedback te geven.
+```
+If >50% Dutch words -> Dutch
+If >50% English words -> English
+When in doubt -> check "Language" section in the file
+```
 
-**Check na edit:**
-- Bestand eindigt met newline
-- Geen dubbele lege regels ontstaan
-- Formatting consistent met rest van bestand
+**User-level (`~/.claude/`):** Always Dutch. This applies to
+CLAUDE.md, README.md, AND all user-level skills in `~/.claude/skills/`.
 
-### Stap 6: Toon wat toegepast is
+**Project-level:** Follows the project language. Some project skills (`.claude/skills/`)
+are English because the project prescribes English for code and configuration.
 
-Geef korte samenvatting van de wijziging:
-- **Bestand:** (path)
-- **Wat toegevoegd:** (1-2 zinnen)
-- **Rationale:** (waarom deze locatie)
+Write the new instruction in the language of the target file.
 
-Houd het kort - geen volledige diff tonen, alleen bevestigen wat er is gebeurd.
+### Step 5: Apply directly
 
-### Stap 7: Commit user-level wijzigingen
+Apply the change directly with the Edit tool. Do not ask for approval; the user has already made their intent clear by giving the feedback.
 
-`~/.claude` is tracked in git. Wijzigingen aan user-level CLAUDE.md of skills kunnen gecommit worden.
+**Check after edit:**
+- File ends with newline
+- No double blank lines created
+- Formatting consistent with the rest of the file
 
-**Commit workflow (zelfde als altijd):**
-1. Edit is toegepast en user heeft gevalideerd dat het klopt
-2. Vraag of user wil committen
-3. Bij "ja": commit met beschrijvende message
+### Step 6: Show what was applied
+
+Give a short summary of the change:
+- **File:** (path)
+- **What was added:** (1-2 sentences)
+- **Rationale:** (why this location)
+
+Keep it short, do not show a full diff, only confirm what happened.
+
+### Step 7: Commit user-level changes
+
+`~/.claude` is tracked in git. Changes to user-level CLAUDE.md or skills can be committed.
+
+**Commit workflow (same as always):**
+1. Edit has been applied and the user has validated that it is correct
+2. Ask whether the user wants to commit
+3. On "yes": commit with a descriptive message
 
 ```bash
-# Vanuit elke directory (geen cd nodig)
-git -C ~/.claude add README.md  # of skills/skill-name/
-git -C ~/.claude commit -m "Add principle: symptomen verbergen is verboden"
+# From any directory (no cd needed)
+git -C ~/.claude add README.md  # or skills/skill-name/
+git -C ~/.claude commit -m "Add principle: hiding symptoms is forbidden"
 ```
 
-**Let op:** Normale commit intent validatie geldt hier ook. De user moet bevestigen dat de wijziging correct is voordat je commit.
+**Note:** Normal commit intent validation applies here too. The user must confirm that the change is correct before you commit.
 
-## Consolidatie Mode
+## Consolidation Mode
 
-Wanneer je duplicatie detecteert over meerdere projecten:
+When you detect duplication across multiple projects:
 
 ```markdown
-## Duplicatie gedetecteerd
+## Duplication detected
 
-De volgende instructie staat in 3 projecten:
+The following instruction is in 3 projects:
 
-| Project | Bestand | Regel |
-|---------|---------|-------|
+| Project | File | Line |
+|---------|------|------|
 | my-project | CLAUDE.md | 45 |
 | my-other-project | CLAUDE.md | 23 |
 | my-app | CLAUDE.md | 31 |
 
-**Voorstel:** Consolideer naar ~/.claude/CLAUDE.md en verwijder uit project bestanden.
+**Proposal:** Consolidate to ~/.claude/CLAUDE.md and remove from project files.
 
-Akkoord?
+OK?
 ```
 
-## Voorbeelden
+## Examples
 
 **User:** "Voortaan geen emoji's in commit messages"
 
--> Scan -> Geen duplicaat -> User-level (algemeen) -> Nederlands
--> Voorstel: Toevoegen aan `~/.claude/CLAUDE.md` sectie "Git richtlijnen"
+-> Scan -> No duplicate -> User-level (general) -> Dutch
+-> Proposal: Add to `~/.claude/CLAUDE.md` section "Git richtlijnen"
 
 **User:** "In dit Rails project altijd `travel_to` gebruiken in specs"
 
--> Scan -> Geen duplicaat -> Project-level (Rails-specifiek) -> Engels (project taal)
--> Voorstel: Toevoegen aan project's `CLAUDE.md` sectie "Testing"
+-> Scan -> No duplicate -> Project-level (Rails-specific) -> English (project language)
+-> Proposal: Add to project's `CLAUDE.md` section "Testing"
 
 **User:** "Stop met die Co-Authored-By trailer"
 
--> Scan -> Staat al in user-level -> Meld: "Dit staat al in ~/.claude/CLAUDE.md regel 72"
+-> Scan -> Already in user-level -> Report: "This is already in ~/.claude/CLAUDE.md line 72"
 
-## /self-improvement betekent ALTIJD een wijziging
+## /self-improvement ALWAYS means a change
 
-Wanneer de user `/self-improvement` typt, is de verwachting dat er iets verandert. Altijd. Geen uitzonderingen.
+When the user types `/self-improvement`, the expectation is that something changes. Always. No exceptions.
 
-**"Het staat er al" is geen geldig antwoord.** Als het principe er al staat maar niet gevolgd wordt, dan is de formulering kennelijk niet sterk genoeg. Scherp de bestaande tekst aan, voeg een voorbeeld toe, of herformuleer zodat het wel werkt.
+**"It's already there" is not a valid answer.** If the principle is already there but is not being followed, the wording is apparently not strong enough. Sharpen the existing text, add an example, or rephrase so that it does work.
 
-**"Geen actie nodig" bestaat niet bij expliciete /self-improvement.** De user heeft bewust de skill getriggerd. Dat betekent dat er iets mis is in hoe het systeem werkt. Vind het en verbeter het.
+**"No action needed" does not exist on an explicit /self-improvement.** The user deliberately triggered the skill. That means something is wrong in how the system works. Find it and improve it.
 
-## /self-improvement samen met een werkverzoek
+## /self-improvement together with a work request
 
-De user typt vaak `/self-improvement` in combinatie met feedback over een concrete situatie. Dat betekent twee taken:
+The user often types `/self-improvement` in combination with feedback about a concrete situation. That means two tasks:
 
-1. **Config-wijziging:** pas CLAUDE.md of skill aan zodat het gedrag structureel verandert
-2. **Het werk zelf:** pas het principe toe op de huidige situatie
+1. **Config change:** adjust CLAUDE.md or skill so the behavior changes structurally
+2. **The work itself:** apply the principle to the current situation
 
-Doe altijd beide. Als het werk al gedaan is (in een eerdere stap van het gesprek), verifieer dat het correct is afgerond. Als niet: doe het alsnog. De config-wijziging zonder het werk toepassen is een halve oplossing. Het werk doen zonder de config aan te passen betekent dat het volgende gesprek dezelfde fout maakt.
+Always do both. If the work is already done (in an earlier step of the conversation), verify that it has been completed correctly. If not, do it anyway. The config change without applying the work is a half solution. Doing the work without adjusting the config means the next conversation makes the same mistake.
 
-## Geen CLAUDE.md update nodig
+## No CLAUDE.md update needed
 
-Soms is feedback niet geschikt voor CLAUDE.md (maar er verandert altijd iets, al is het in een skill):
-- Eenmalige correctie ("nee, ik bedoelde X") -> correctie toepassen
-- Projectkeuze ("gebruik library Y") -> toepassen
-- Feitelijke informatie ("de API endpoint is Z") -> toepassen
+Sometimes feedback is not suitable for CLAUDE.md (but something always changes, even if only in a skill):
+- One-off correction ("no, I meant X") -> apply correction
+- Project choice ("use library Y") -> apply
+- Factual information ("the API endpoint is Z") -> apply
 
 ---
 
-## CLAUDE.md -> Skill Extractie
+## CLAUDE.md -> Skill Extraction
 
-Wanneer een CLAUDE.md sectie te groot wordt, extraheer naar een skill.
+When a CLAUDE.md section becomes too large, extract it into a skill.
 
-### Wanneer extraheren?
+### When to extract?
 
-| Signaal | Actie |
-|---------|-------|
-| Sectie > 50 regels | Overweeg extractie |
-| Sectie bevat workflow met stappen | Extraheer naar skill |
-| Sectie bevat decision tree/flowchart | Extraheer naar skill |
-| Zelfde instructies in 3+ CLAUDE.md's | Consolideer naar user-level skill |
-| Instructies zijn context-afhankelijk | Houd in CLAUDE.md |
+| Signal | Action |
+|--------|--------|
+| Section > 50 lines | Consider extraction |
+| Section contains workflow with steps | Extract into skill |
+| Section contains decision tree/flowchart | Extract into skill |
+| Same instructions in 3+ CLAUDE.md's | Consolidate into user-level skill |
+| Instructions are context-dependent | Keep in CLAUDE.md |
 
 ### CLAUDE.md vs Skill
 
 | CLAUDE.md | Skill |
 |-----------|-------|
-| Passieve context, altijd geladen | Actieve workflow, opt-in |
-| Conventies, standaarden | Procedures, tools |
-| Kort en scanbaar | Uitgebreid met voorbeelden |
-| "Wat we doen" | "Hoe we het doen" |
+| Passive context, always loaded | Active workflow, opt-in |
+| Conventions, standards | Procedures, tools |
+| Short and scannable | Extensive with examples |
+| "What we do" | "How we do it" |
 
-### Extractie workflow
+### Extraction workflow
 
 ```dot
 digraph extraction {
-  "Sectie te groot?" -> "Bevat workflow?" [label="ja"]
-  "Bevat workflow?" -> "Extraheer naar skill" [label="ja"]
-  "Bevat workflow?" -> "Splits in subsecties" [label="nee"]
-  "Extraheer naar skill" -> "Vervang door skill referentie"
-  "Sectie te groot?" -> "Geen actie" [label="nee"]
+  "Section too large?" -> "Contains workflow?" [label="yes"]
+  "Contains workflow?" -> "Extract into skill" [label="yes"]
+  "Contains workflow?" -> "Split into subsections" [label="no"]
+  "Extract into skill" -> "Replace with skill reference"
+  "Section too large?" -> "No action" [label="no"]
 }
 ```
 
-**Na extractie:** Vervang de CLAUDE.md sectie door een korte referentie:
+**After extraction:** Replace the CLAUDE.md section with a short reference:
 
 ```markdown
 ## Git Workflow
 
-Zie `/git-workflow` skill voor commit en PR procedures.
+See `/git-workflow` skill for commit and PR procedures.
 ```
 
 ---
 
-## Skills Maken en Verbeteren
+## Creating and Improving Skills
 
 ### Skill Types
 
-| Type | Beschrijving | Voorbeeld |
-|------|--------------|-----------|
-| **Technique** | Concrete methode met stappen | `condition-based-waiting` |
-| **Pattern** | Manier van denken over problemen | `flatten-with-flags` |
+| Type | Description | Example |
+|------|-------------|---------|
+| **Technique** | Concrete method with steps | `condition-based-waiting` |
+| **Pattern** | Way of thinking about problems | `flatten-with-flags` |
 | **Reference** | API docs, syntax guides | `pptx` |
 
-### Skill Niveau Bepaling
+### Skill Level Determination
 
-| Criterium | Niveau | Locatie |
-|-----------|--------|---------|
-| Bruikbaar in alle projecten | User | `~/.claude/skills/{name}/` |
-| Specifiek voor een repo | Repo | `{repo}/.claude/skills/{name}/` |
-| Specifiek voor subproject | Subproject | `{repo}/{subdir}/.claude/skills/{name}/` |
+| Criterion | Level | Location |
+|-----------|-------|----------|
+| Usable in all projects | User | `~/.claude/skills/{name}/` |
+| Specific to a repo | Repo | `{repo}/.claude/skills/{name}/` |
+| Specific to subproject | Subproject | `{repo}/{subdir}/.claude/skills/{name}/` |
 
-**Voorbeelden:**
-- `vocal` (voice control) -> User-level (werkt overal)
-- `bump` (dependency updates) -> Repo-level (project-specifiek)
+**Examples:**
+- `vocal` (voice control) -> User-level (works everywhere)
+- `bump` (dependency updates) -> Repo-level (project-specific)
 - `screenshots` (Playwright) -> Subproject-level (webapp)
 
-### SKILL.md Structuur
+### SKILL.md Structure
 
 ```markdown
 ---
 name: skill-name-with-hyphens
 description: Use when [triggering conditions]. Third person, max 500 chars.
-user-invocable: true  # alleen als handmatig aanroepbaar
+user-invocable: true  # only if manually invocable
 ---
 
 # Skill Name
 
 ## Overview
-Wat is dit? Core principle in 1-2 zinnen.
+What is this? Core principle in 1-2 sentences.
 
 ## When to Use
-Bullet list met symptoms en use cases.
-Wanneer NIET gebruiken.
+Bullet list with symptoms and use cases.
+When NOT to use.
 
 ## Workflow
-[Flowchart indien niet-lineair]
+[Flowchart if non-linear]
 
 ## Quick Reference
-Tabel of bullets voor snel scannen.
+Table or bullets for quick scanning.
 
 ## Common Mistakes
-Wat gaat fout + fixes.
+What goes wrong + fixes.
 ```
 
-### Frontmatter Valkuilen
+### Frontmatter Pitfalls
 
-**`disable-model-invocation: true` blokkeert de Skill tool volledig.**
-Wanneer dit is ingesteld, kan Claude de skill niet laden via de Skill tool -- ook niet wanneer de user `/skillname` inline typt in een bericht. De skill is dan alleen bereikbaar via het `/` autocomplete menu in de CLI.
+**`disable-model-invocation: true` blocks the Skill tool entirely.**
+When this is set, Claude cannot load the skill via the Skill tool, not even when the user types `/skillname` inline in a message. The skill is then only reachable via the `/` autocomplete menu in the CLI.
 
-Gebruik `disable-model-invocation: true` NIET tenzij de skill:
-- Destructieve side effects heeft (deploy, delete, push)
-- Nooit automatisch getriggerd mag worden door Claude
+Do NOT use `disable-model-invocation: true` unless the skill:
+- Has destructive side effects (deploy, delete, push)
+- Must never be triggered automatically by Claude
 
-Voor skills die de user inline aanroept (bijv. `/clipboard` aan het eind van een bericht): laat `disable-model-invocation` weg.
+For skills that the user invokes inline (e.g., `/clipboard` at the end of a message): leave out `disable-model-invocation`.
 
-**`allowed-tools` werkt alleen wanneer de skill geladen is.**
-Als de skill niet laadt (door `disable-model-invocation` of andere reden), zijn de `allowed-tools` niet actief en verschijnt er alsnog een permission prompt.
+**`allowed-tools` works only when the skill is loaded.**
+If the skill does not load (due to `disable-model-invocation` or another reason), the `allowed-tools` are not active and a permission prompt still appears.
 
-### Permission Management bij Skill Creatie
+### Permission Management on Skill Creation
 
-Een skill zonder permissions is een skill met vijf approval prompts. Bij het maken of wijzigen van skills, ALTIJD twee dingen checken:
+A skill without permissions is a skill with five approval prompts. When creating or modifying skills, ALWAYS check two things:
 
 **1. `Skill()` in `~/.claude/settings.json` allowlist**
 
-Elke user-level skill die Claude mag laden moet in de allowlist staan:
+Every user-level skill that Claude may load must be in the allowlist:
 
 ```json
 "Skill(skill-name)"
 ```
 
-Zonder dit verschijnt er een prompt bij elke invocatie, ook al typt de user `/skill-name`.
+Without this, a prompt appears on every invocation, even if the user types `/skill-name`.
 
 **2. `allowed-tools` in SKILL.md frontmatter**
 
-Skills die tools gebruiken die NIET al globaal in de allowlist staan, moeten `allowed-tools` declareren:
+Skills that use tools that are NOT already globally in the allowlist must declare `allowed-tools`:
 
 ```yaml
 ---
@@ -563,185 +563,185 @@ allowed-tools:
 ---
 ```
 
-**Wanneer `allowed-tools` NIET nodig is:** als de skill alleen tools gebruikt die al globaal zijn toegestaan (bijv. `say`, `gh`, `git`, Read/Edit/Glob op `~/.claude/**`). Check de allowlist in `~/.claude/settings.json`.
+**When `allowed-tools` is NOT needed:** if the skill uses only tools that are already globally allowed (e.g., `say`, `gh`, `git`, Read/Edit/Glob on `~/.claude/**`). Check the allowlist in `~/.claude/settings.json`.
 
-**Wanneer `allowed-tools` WEL nodig is:** als de skill Edit/Write op project-bestanden doet, Task agents spawnt, of niet-standaard Bash commands gebruikt.
+**When `allowed-tools` IS needed:** if the skill does Edit/Write on project files, spawns Task agents, or uses non-standard Bash commands.
 
-**Bij het aanmaken van een nieuwe skill:**
-1. Schrijf de SKILL.md met correcte `allowed-tools`
-2. Voeg `Skill(name)` toe aan `~/.claude/settings.json` allowlist
-3. Beide stappen zijn nodig voor een promptvrije ervaring
+**When creating a new skill:**
+1. Write the SKILL.md with correct `allowed-tools`
+2. Add `Skill(name)` to the `~/.claude/settings.json` allowlist
+3. Both steps are needed for a prompt-free experience
 
 ### Description Best Practices
 
-**KRITIEK:** Description = wanneer te gebruiken, NIET wat de skill doet.
+**CRITICAL:** Description = when to use, NOT what the skill does.
 
 ```yaml
-# FOUT: Beschrijft workflow
+# WRONG: Describes workflow
 description: Dispatches subagent per task with code review between tasks
 
-# GOED: Beschrijft trigger
+# RIGHT: Describes trigger
 description: Use when executing implementation plans with independent tasks
 ```
 
-**Waarom:** Claude leest description om te beslissen of skill relevant is. Als description de workflow samenvat, kan Claude de samenvatting volgen in plaats van de volledige skill te lezen.
+**Why:** Claude reads the description to decide whether the skill is relevant. If the description summarizes the workflow, Claude may follow the summary instead of reading the full skill.
 
 ### Naming Conventions
 
-- **Gebruik hyphens:** `self-improvement` niet `self_improvement`
-- **Verb-first:** `creating-skills` niet `skill-creation`
-- **Gerunds werken goed:** `debugging-with-logs`, `testing-skills`
-- **Alleen letters, cijfers, hyphens:** geen speciale tekens
+- **Use hyphens:** `self-improvement` not `self_improvement`
+- **Verb-first:** `creating-skills` not `skill-creation`
+- **Gerunds work well:** `debugging-with-logs`, `testing-skills`
+- **Letters, digits, hyphens only:** no special characters
 
 ### Keyword Coverage (CSO)
 
-Gebruik woorden die Claude zou zoeken:
+Use words Claude would search for:
 - Error messages: "Hook timed out", "race condition"
 - Symptoms: "flaky", "hanging", "slow"
-- Tools: commando's, library namen
+- Tools: command names, library names
 
 ### File Organization
 
 ```
 skills/
   skill-name/
-    SKILL.md              # Hoofdbestand (verplicht)
-    supporting-file.*     # Alleen indien nodig (100+ regels reference)
+    SKILL.md              # Main file (required)
+    supporting-file.*     # Only if needed (100+ lines reference)
 ```
 
-**Inline houden:** Principes, code patterns < 50 regels
-**Apart bestand:** Heavy reference (API docs), reusable scripts
+**Keep inline:** Principles, code patterns < 50 lines
+**Separate file:** Heavy reference (API docs), reusable scripts
 
 ---
 
-## Nieuwe Skill Maken (TDD Approach)
+## Creating a New Skill (TDD Approach)
 
-Skills schrijven IS Test-Driven Development voor documentatie.
+Writing skills IS Test-Driven Development for documentation.
 
-### De Gouden Regel
+### The Golden Rule
 
 ```
-GEEN SKILL ZONDER FALENDE TEST EERST
+NO SKILL WITHOUT A FAILING TEST FIRST
 ```
 
-Schrijf skill voordat je test? Delete. Begin opnieuw.
+Wrote the skill before the test? Delete. Start over.
 
-### RED-GREEN-REFACTOR voor Skills
+### RED-GREEN-REFACTOR for Skills
 
-**RED: Baseline vastleggen (zonder skill)**
+**RED: Capture baseline (without skill)**
 
-Test met een subagent ZONDER de skill geladen:
+Test with a subagent WITHOUT the skill loaded:
 ```
 Task tool -> subagent_type: "general-purpose"
-Prompt: [scenario dat de skill moet adresseren]
+Prompt: [scenario the skill should address]
 ```
 
-Documenteer:
-- Wat deed de agent?
-- Welke foute keuzes maakte hij?
-- Welke rationalizations gebruikte hij? (letterlijk citeren)
+Document:
+- What did the agent do?
+- Which wrong choices did it make?
+- Which rationalizations did it use? (quote literally)
 
-**GREEN: Minimale skill schrijven**
+**GREEN: Write the minimal skill**
 
-Schrijf alleen wat nodig is om de baseline failures te fixen.
-- Adresseer de specifieke rationalizations uit RED
-- Geen hypothetische cases toevoegen
+Write only what is needed to fix the baseline failures.
+- Address the specific rationalizations from RED
+- Do not add hypothetical cases
 
-Test opnieuw MET skill. Agent moet nu correct handelen.
+Test again WITH the skill. The agent must now act correctly.
 
-**REFACTOR: Loopholes dichten**
+**REFACTOR: Close loopholes**
 
-Agent vond nieuwe rationalization? Voeg expliciete counter toe.
-Herhaal tot bulletproof.
+Did the agent find a new rationalization? Add an explicit counter.
+Repeat until bulletproof.
 
 ### Pressure Scenarios
 
-Voor discipline-enforcing skills (regels die gevolgd moeten worden):
+For discipline-enforcing skills (rules that must be followed):
 
-| Pressure Type | Voorbeeld |
-|---------------|-----------|
-| **Time** | "Dit moet snel af" |
-| **Sunk cost** | "Ik heb al zoveel gedaan" |
-| **Authority** | "De user zei dat het zo moest" |
-| **Exhaustion** | Aan het eind van lange taak |
+| Pressure Type | Example |
+|---------------|---------|
+| **Time** | "This needs to be done quickly" |
+| **Sunk cost** | "I've already done so much" |
+| **Authority** | "The user said it had to be this way" |
+| **Exhaustion** | At the end of a long task |
 
-Combineer 3+ pressures in test scenarios.
+Combine 3+ pressures in test scenarios.
 
 ### Rationalization Table
 
-Documenteer ELKE rationalization die agents gebruiken:
+Document EVERY rationalization that agents use:
 
 ```markdown
-| Excuse | Realiteit |
-|--------|-----------|
-| "Te simpel om te testen" | Simpele code breekt ook. Test duurt 30 sec. |
-| "Ik test straks wel" | Tests achteraf bewijzen niks. |
-| "Dit is anders omdat..." | Nee. Regels gelden altijd. |
+| Excuse | Reality |
+|--------|---------|
+| "Too simple to test" | Simple code breaks too. The test takes 30 seconds. |
+| "I'll test later" | Tests after the fact prove nothing. |
+| "This is different because..." | No. Rules apply always. |
 ```
 
-### Red Flags Sectie
+### Red Flags Section
 
-Voeg toe aan discipline skills:
+Add to discipline skills:
 
 ```markdown
-## Red Flags - STOP en Begin Opnieuw
+## Red Flags - STOP and Start Over
 
-Als je jezelf betrapt op:
-- [specifieke rationalization 1]
-- [specifieke rationalization 2]
-- "Dit is anders omdat..."
+If you catch yourself on:
+- [specific rationalization 1]
+- [specific rationalization 2]
+- "This is different because..."
 
--> Je bent aan het rationaliseren. Stop. Volg de skill.
+-> You are rationalizing. Stop. Follow the skill.
 ```
 
 ### Skill Creation Checklist
 
-**RED fase:**
-- [ ] Pressure scenario's bedacht (3+ pressures voor discipline skills)
-- [ ] Scenario's gerund ZONDER skill
-- [ ] Baseline gedrag gedocumenteerd (letterlijke quotes)
+**RED phase:**
+- [ ] Pressure scenarios designed (3+ pressures for discipline skills)
+- [ ] Scenarios run WITHOUT skill
+- [ ] Baseline behavior documented (literal quotes)
 
-**GREEN fase:**
-- [ ] Naam: alleen letters, cijfers, hyphens
-- [ ] Description: "Use when...", max 500 chars, GEEN workflow samenvatting
-- [ ] Adresseert specifieke baseline failures
-- [ ] Scenario's gerund MET skill - agent volgt nu correct
+**GREEN phase:**
+- [ ] Name: only letters, digits, hyphens
+- [ ] Description: "Use when...", max 500 chars, NO workflow summary
+- [ ] Addresses specific baseline failures
+- [ ] Scenarios run WITH skill, agent now follows correctly
 
-**REFACTOR fase:**
-- [ ] Nieuwe rationalizations geidentificeerd
-- [ ] Expliciete counters toegevoegd
-- [ ] Rationalization table compleet
-- [ ] Red flags sectie (voor discipline skills)
+**REFACTOR phase:**
+- [ ] New rationalizations identified
+- [ ] Explicit counters added
+- [ ] Rationalization table complete
+- [ ] Red flags section (for discipline skills)
 
 **Deploy:**
-- [ ] Commit naar git
-- [ ] Test in verse sessie
+- [ ] Commit to git
+- [ ] Test in fresh session
 
 ---
 
-## Skill Verbetering Workflow
+## Skill Improvement Workflow
 
-Wanneer een bestaande skill verbeterd moet worden:
+When an existing skill must be improved:
 
-1. **Lees huidige skill** volledig
-2. **Identificeer probleem:**
-   - Onduidelijke instructies?
-   - Ontbrekende edge cases?
-   - Verouderde informatie?
-3. **Apply direct** met Edit tool
-4. **Toon wat toegepast is** (bestand, sectie, wijziging)
+1. **Read current skill** fully
+2. **Identify the problem:**
+   - Unclear instructions?
+   - Missing edge cases?
+   - Outdated information?
+3. **Apply directly** with the Edit tool
+4. **Show what was applied** (file, section, change)
 
-### Voorbeeld Skill Verbetering
+### Example Skill Improvement
 
 **User:** "De vocal skill moet ook kunnen pauzeren"
 
 ```markdown
-## Voorstel
+## Proposal
 
-**Bestand:** ~/.claude/skills/vocal/SKILL.md
-**Sectie:** Invocation (bestaand)
+**File:** ~/.claude/skills/vocal/SKILL.md
+**Section:** Invocation (existing)
 
-### Toe te voegen na regel 12:
+### To add after line 12:
 
 \`\`\`diff
  - `/vocal` or `/vocal on` - Enter vocal mode
@@ -750,5 +750,5 @@ Wanneer een bestaande skill verbeterd moet worden:
 +- `/vocal resume` - Resume listening
 \`\`\`
 
-**Waarom hier:** Past bij bestaande invocation documentatie.
+**Why here:** Fits existing invocation documentation.
 ```
