@@ -11,37 +11,37 @@ allowed-tools:
 
 # Session Rename Suggestion
 
-Genereer een korte, beschrijvende sessienaam op basis van de conversatiecontext.
+Generate a short, descriptive session name based on the conversation context.
 
-## Instructies
+## Instructions
 
-1. **Analyseer de conversatie** en bepaal het kernonderwerp:
-   - Wat is er gedaan of besproken?
-   - Focus op WAT, niet HOE
-   - Wees specifiek genoeg om deze sessie te onderscheiden van andere
+1. **Analyze the conversation** and determine the core topic:
+   - What was done or discussed?
+   - Focus on WHAT, not HOW
+   - Be specific enough to distinguish this session from others
 
-2. **Genereer een beknopte naam** (3-6 woorden):
-   - Taal volgt de context van het gesprek (Nederlands gesprek -> Nederlandse naam, Engelse code context -> Engelse naam)
-   - Geen werkwoorden als "implementeer" of "fix" aan het begin
-   - Voorbeelden: `Thread tracking with emoji color codes`, `Unify search and payload commands`, `Session rename skill`
+2. **Generate a concise name** (3-6 words):
+   - Language follows the conversation context (Dutch conversation -> Dutch name, English code context -> English name)
+   - No verbs like "implement" or "fix" at the start
+   - Examples: `Thread tracking with emoji color codes`, `Unify search and payload commands`, `Session rename skill`
 
-3. **Validatie:** als de conversatie geen identificeerbaar kernonderwerp heeft (sessie te kort, te generiek, of uitsluitend over onderwerpen die niet onderscheidend zijn zoals "Claude configureren"), produceer geen verzonnen naam. Gebruik dan in stap 4 de placeholder `/rename <beschrijvende-naam>` en meld in één zin welke informatie ontbreekt om een passende naam te genereren.
+3. **Validation:** if the conversation has no identifiable core topic (session too short, too generic, or exclusively about topics that are not distinguishing such as "configuring Claude"), do not produce a made-up name. In that case use the placeholder `/rename <descriptive-name>` in step 4 and report in one sentence what information is missing to generate an appropriate name.
 
-4. **Kopieer het volledige `/rename <naam>` command naar het clipboard** via de `clipboard-copy` helper uit de `clipboard@leclause` plugin (macOS-only). Resolve de plugin eerst, source daarna `clipboard-paths.sh`; beide bronnen van falen (plugin niet geïnstalleerd; of wel geïnstalleerd maar de cache is oud) krijgen elk een duidelijke stderr-regel:
+4. **Copy the full `/rename <name>` command to the clipboard** via the `clipboard-copy` helper from the `clipboard@leclause` plugin (macOS-only). Resolve the plugin first, then source `clipboard-paths.sh`; both failure modes (plugin not installed; or installed but the cache is stale) each get a clear stderr line:
    ```bash
    IP=$(jq -r '.plugins["clipboard@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
    if [ -z "$IP" ]; then
      echo "rename-suggestion: clipboard@leclause is not installed; skipping clipboard step. Run: claude plugins install clipboard@leclause to enable." >&2
    elif . "$IP/bin/clipboard-paths.sh" && CLIPBOARD_COPY=$(resolve_clipboard_copy); then
-     printf '/rename <naam>\n' | "$CLIPBOARD_COPY"
+     printf '/rename <name>\n' | "$CLIPBOARD_COPY"
    fi
    ```
 
-   De clipboard-stap wordt overgeslagen wanneer de resolver faalt; de ghost-text suggestie werkt nog steeds omdat de `/rename` regel ook in de output staat.
+   The clipboard step is skipped when the resolver fails; the ghost-text suggestion still works because the `/rename` line also appears in the output.
 
-5. **Toon het rename command als allerlaatste regel:**
+5. **Show the rename command as the very last line:**
    ```
-   /rename <naam>
+   /rename <name>
    ```
 
-6. **Geen andere output na het command.** De `/rename` regel moet de allerlaatste tekst zijn, zodat de ghost text engine het als suggestie oppikt.
+6. **No other output after the command.** The `/rename` line must be the very last text, so the ghost text engine picks it up as a suggestion.
