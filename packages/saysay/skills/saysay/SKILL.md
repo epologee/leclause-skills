@@ -13,24 +13,24 @@ disable-model-invocation: true
 
 # Say Mode
 
-Spraakuitvoer als vervanging van het scherm. Wanneer say mode actief is, spreek je je antwoord uit via het macOS `say` command na elke response. Tekst verschijnt nog steeds op het scherm, maar de gebruiker kijkt niet mee. De spraak IS de output.
+Speech output as a replacement for the screen. When say mode is active, speak your response aloud via the macOS `say` command after every response. Text still appears on screen, but the user is not watching. Speech IS the output.
 
-## Activatie
+## Activation
 
 | Command | Effect |
 |---------|--------|
-| `/saysay` | Activeer say mode |
-| `/saysay off` | Deactiveer say mode |
+| `/saysay` | Activate say mode |
+| `/saysay off` | Deactivate say mode |
 
-Bij activatie: bevestig met spraak dat de modus actief is. Bij deactivatie: bevestig met spraak dat je stopt met praten.
+On activation: confirm with speech that the mode is active. On deactivation: confirm with speech that you are stopping.
 
-## Stem
+## Voice
 
-Altijd de systeemdefault stem, geen `-v` flag. Nooit. De Siri stem die in System Settings is ingesteld wordt gebruikt voor alles: Nederlands, Engels, code, alles.
+Always the system default voice, no `-v` flag. Ever. The Siri voice set in System Settings is used for everything: Dutch, English, code, all of it.
 
-Snelheid: `-r 240`
+Speed: `-r 240`
 
-**Fonetische preprocessor:** Engelse woorden die de default stem verkeerd uitspreekt, kunnen fonetisch vertaald worden via `say-phonetic`. Dit is een opt-in dictionary per gebruiker, opgeslagen in `$XDG_DATA_HOME/saysay/phonetics.json` (default: `~/.local/share/saysay/phonetics.json`). De meeste Anglicismen worden prima uitgesproken, alleen probleemgevallen worden toegevoegd.
+**Phonetic preprocessor:** English words that the default voice mispronounces can be phonetically translated via `say-phonetic`. This is an opt-in dictionary per user, stored in `$XDG_DATA_HOME/saysay/phonetics.json` (default: `~/.local/share/saysay/phonetics.json`). Most loanwords are pronounced correctly; only problem cases are added.
 
 ```bash
 say-phonetic add retake rietéék
@@ -38,100 +38,100 @@ say-phonetic remove retake
 say-phonetic list
 ```
 
-**Fonetiek via natuurlijke taal:** Wanneer de gebruiker een fonetische mapping aangeeft in gewone taal, voer het `say-phonetic` command uit. Herkenbare patronen:
+**Phonetics via natural language:** When the user specifies a phonetic mapping in plain language, run the `say-phonetic` command. Recognizable patterns:
 
 - "retake als rietéék" -> `say-phonetic add retake rietéék`
 - "spreek retake uit als rietéék" -> `say-phonetic add retake rietéék`
 - "retake niet meer fonetisch" -> `say-phonetic remove retake`
 
-Dit werkt ook midden in een `/saysay` sessie. Voeg het woord toe en gebruik het direct in de volgende spraakuitvoer.
+This also works mid-session during `/saysay`. Add the word and use it immediately in the next speech output.
 
-## Het say command
+## The say command
 
-**Gebruik altijd `saysay` in plaats van `say`.** `saysay` handelt de volledige keten af: fonetische preprocessing, serialisatie (meerdere sessies praten na elkaar, niet door elkaar), en een kort scheidingsgeluid (Pop) bij het begin van elk bericht.
+**Always use `saysay` instead of `say`.** `saysay` handles the full chain: phonetic preprocessing, serialization (multiple sessions speak in sequence, not simultaneously), and a short separator sound (Pop) at the start of each message.
 
 ```bash
-echo "De tekst die uitgesproken moet worden." | saysay --context "label"
+echo "The text to be spoken." | saysay --context "label"
 ```
 
-**Nooit dit:** `say -r 240` (direct say, geen serialisatie)
-**Nooit dit:** `say-phonetic process | say -r 240` (oude pipeline)
-**Nooit dit:** heredoc syntax (`saysay <<'SAY'`), dat sprawlt uit in de tool call display
-**Altijd dit:** `echo "tekst" | saysay --context "label"`
+**Never this:** `say -r 240` (direct say, no serialization)
+**Never this:** `say-phonetic process | say -r 240` (old pipeline)
+**Never this:** heredoc syntax (`saysay <<'SAY'`), that sprawls in the tool call display
+**Always this:** `echo "text" | saysay --context "label"`
 
-Default snelheid is `-r 240`. Overschrijfbaar: `echo "tekst" | saysay -r 180 --context "label"`.
+Default speed is `-r 240`. Overridable: `echo "text" | saysay -r 180 --context "label"`.
 
-`saysay` blokt in de shell: het wacht tot het bericht is uitgesproken. Maar roep het ALTIJD aan met `run_in_background: true` op de Bash tool call. Zo kan de tekst output en het prompt doorgaan terwijl de spraak loopt. De Bash call stopt automatisch wanneer het uitspreken klaar is.
+`saysay` blocks in the shell: it waits until the message has been spoken. But ALWAYS invoke it with `run_in_background: true` on the Bash tool call. That lets text output and the prompt continue while speech runs. The Bash call stops automatically when speaking is done.
 
-### Sessie-context
+### Session context
 
-Elke saysay-aanroep bevat `--context "label"` zodat de gebruiker bij meerdere parallelle sessies hoort welke sessie spreekt. Het label is max twee woorden en beschrijft het **thema** van het gesprek, niet de branch of directory.
+Every saysay call includes `--context "label"` so the user with multiple parallel sessions can hear which session is speaking. The label is at most two words and describes the **topic** of the conversation, not the branch or directory.
 
-Bij activatie van say mode: bepaal een kort thematisch label op basis van het gesprek tot nu toe. Gebruik dat label consistent in alle saysay-aanroepen van de sessie.
+On activation of say mode: determine a short thematic label based on the conversation so far. Use that label consistently in all saysay calls for the session.
 
-Voorbeelden:
-- Gesprek over saysay verbeteringen -> `--context "saysay fixes"`
-- Gesprek over een calculator feature -> `--context "calculator"`
-- Gesprek over hook configuratie -> `--context "hook config"`
+Examples:
+- Conversation about saysay improvements -> `--context "saysay fixes"`
+- Conversation about a calculator feature -> `--context "calculator"`
+- Conversation about hook configuration -> `--context "hook config"`
 
-Zonder `--context` valt saysay terug op git remote + branch (max 2 woorden). Met `--no-context` wordt de prefix helemaal weggelaten.
+Without `--context`, saysay falls back to git remote + branch (max 2 words). With `--no-context` the prefix is omitted entirely.
 
-## Vertalen naar spraak
+## Translating to speech
 
-De spraak vervangt het scherm. Dat betekent: niet voorlezen wat er staat, maar overbrengen wat de gebruiker moet weten. Dit is de kern van de skill.
+Speech replaces the screen. That means: do not read out what is there, but convey what the user needs to know. This is the core of the skill.
 
-### Principes
+### Principles
 
-- **Vat samen op het juiste niveau.** Een tabel met 10 rijen wordt niet cel voor cel voorgelezen. "Er zijn tien resultaten, de belangrijkste zijn X en Y" is beter.
-- **Structuur wordt intonatie.** Bullet points, headers, en secties bestaan niet in spraak. Gebruik overgangszinnen: "Verder is er nog...", "Het belangrijkste punt is..."
-- **Technische details doseren.** Een bestandspad of korte code snippet kan letterlijk. Een heel diff of lange stack trace niet. Beschrijf de essentie: "De error zit in regel 42 van het user model, een nil reference op het email veld."
-- **Leestekens weglaten.** Geen "punt", "komma", "aanhalingsteken". De tekst moet klinken als gesproken taal.
-- **Getallen en speciale tekens.** Spreek uit: `127.0.0.1` wordt "honderdzevenentwintig punt nul punt nul punt een". `$HOME` wordt "dollar HOME". Maar wees pragmatisch: als een waarde niet relevant is, noem het niet.
+- **Summarize at the right level.** A table with 10 rows is not read cell by cell. "There are ten results, the most important are X and Y" is better.
+- **Structure becomes intonation.** Bullet points, headers, and sections do not exist in speech. Use transitional phrases: "There is also...", "The most important point is..."
+- **Dose technical details.** A file path or short code snippet can be literal. An entire diff or long stack trace cannot. Describe the essence: "The error is on line 42 of the user model, a nil reference on the email field."
+- **Omit punctuation markers.** No "period", "comma", "quote mark". The text must sound like spoken language.
+- **Numbers and special characters.** Speak them out: `127.0.0.1` becomes "one twenty-seven dot zero dot zero dot one". `$HOME` becomes "dollar HOME". But be pragmatic: if a value is not relevant, skip it.
 
-### Wat WEL letterlijk
+### What IS literal
 
-- Korte code snippets (methodenaam, variabele, commando)
-- Foutmeldingen (de eerste regel)
-- Bestandsnamen en paden (wanneer de gebruiker ze nodig heeft)
-- Getallen die ertoe doen
+- Short code snippets (method name, variable, command)
+- Error messages (the first line)
+- File names and paths (when the user needs them)
+- Numbers that matter
 
-### Wat NIET letterlijk
+### What is NOT literal
 
 - Markdown formatting (`**`, `#`, `` ` ``, `---`)
-- Tabellen (beschrijf de inhoud)
-- Lange diffs (beschrijf wat er veranderd is)
-- Herhalende patronen ("en dan nog drie vergelijkbare entries")
-- URLs en links (staan al op het scherm, voorlezen voegt niets toe)
+- Tables (describe the contents)
+- Long diffs (describe what changed)
+- Repeating patterns ("and then three more similar entries")
+- URLs and links (already on screen, reading them aloud adds nothing)
 
 ### Tool calls
 
-Tijdens het werken (code schrijven, bestanden lezen, tests draaien) hoef je niet elke tool call uit te spreken. Spreek de conclusie uit, niet het proces. "Tests zijn groen" is genoeg, niet "ik run nu bundle exec rspec spec slash models en het resultaat is twaalf voorbeelden nul failures".
+While working (writing code, reading files, running tests) you do not need to speak every tool call. Speak the conclusion, not the process. "Tests are green" is enough, not "I am now running bundle exec rspec spec slash models and the result is twelve examples zero failures".
 
-Uitzondering: als een tool call faalt of iets onverwachts oplevert, spreek dat wel uit.
+Exception: if a tool call fails or produces something unexpected, do speak that.
 
-## Voorbeeld
+## Example
 
-Stel de gebruiker vraagt "wat is de status van de test suite?" en je runt de tests.
+Suppose the user asks "what is the status of the test suite?" and you run the tests.
 
-**Scherm (tekst output):**
+**Screen (text output):**
 ```
 Tests: 847 examples, 2 failures
 - spec/models/user_spec.rb:42 - expected nil to eq "test@example.com"
 - spec/services/billing_spec.rb:108 - timeout after 5 seconds
 ```
 
-**Spraak:**
+**Speech:**
 ```bash
-echo "De test suite heeft twee failures op achthonderdzevenenveertig tests. De eerste is in het user model, een nil waarde waar een emailadres verwacht wordt, op regel 42. De tweede is een timeout in de billing service op regel 108." | saysay
+echo "The test suite has two failures out of eight hundred and forty-seven tests. The first is in the user model, a nil value where an email address is expected, on line 42. The second is a timeout in the billing service on line 108." | saysay
 ```
 
-## Combinatie met andere skills
+## Combination with other skills
 
-Wanneer say mode actief is en een andere skill output produceert (recap, changelog, analyse), moet die output ook gesproken worden. Niet alleen een intro ("hier is de recap") maar de inhoud zelf, vertaald naar spraak. De tekst op het scherm bevat de details (tabellen, paden, lijsten), de spraak vat samen wat de user moet weten om te kunnen handelen.
+When say mode is active and another skill produces output (recap, changelog, analysis), that output must also be spoken. Not just an intro ("here is the recap") but the content itself, translated to speech. The text on screen contains the details (tables, paths, lists); speech summarizes what the user needs to know in order to act.
 
-**Fout:** `echo "Hier is de recap." | saysay` gevolgd door ongesproken tekst.
-**Goed:** `echo "We waren bezig met X. De status is Y. Er staan nog Z dingen open, namelijk..." | saysay` met de volledige inhoud vertaald naar spraak.
+**Wrong:** `echo "Here is the recap." | saysay` followed by unspoken text.
+**Right:** `echo "We were working on X. The status is Y. There are still Z things open, namely..." | saysay` with the full content translated to speech.
 
 ## Persistent mode
 
-Say mode blijft actief totdat de gebruiker `/saysay off` zegt. Elke response eindigt met een `say` call. Dit geldt ook voor korte antwoorden, foutmeldingen, en tussenstappen. Als je niks substantieels te melden hebt, hoef je niet te spreken (bijv. een pure tool call zonder conclusie).
+Say mode stays active until the user says `/saysay off`. Every response ends with a `say` call. This applies to short answers, error messages, and intermediate steps as well. If you have nothing substantial to report, you do not need to speak (e.g. a pure tool call without a conclusion).
