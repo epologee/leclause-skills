@@ -158,6 +158,17 @@ Error codes:
 Trailers are parsed via `git interpret-trailers --parse`. Order
 within the trailer block does not matter.
 
+### Subject conjunction
+
+The subject must not join two changes with a conjunction. The format
+guard rejects subjects containing ` and `, ` + ` (space-plus-space),
+or ` & ` because they signal that the author bundled multiple
+changes behind one subject. Split into separate commits, or rewrite
+the subject as one cohesive change. When the joined form is
+intentional (e.g. an atomic refactor that genuinely couples two
+verbs), set `GITGIT_ALLOW_CONJUNCTION=1` in the shell for the single
+commit, or add `# allow-conjunction: <reason>` to the body.
+
 ## Opt-out enum
 
 If `Slice` is one of these eight tokens, relaxed rules apply:
