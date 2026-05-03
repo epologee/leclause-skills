@@ -7,38 +7,38 @@ effort: low
 
 # Recap
 
-Geef een gestructureerd overzicht van waar we op dit moment staan.
+Provide a structured overview of where we currently stand.
 
-## Bronnen verzamelen
+## Gathering sources
 
-**Gesprekscontext is altijd de primaire bron.** Wat er in het huidige gesprek is besproken en besloten bepaalt het hoofdverhaal. Auto-loop bestanden en git status zijn aanvullend. Laat je niet afleiden door bestanden op disk die niets met het huidige werk te maken hebben. Een auto-loop bestand in OBSERVE met hoge watch_checks is achtergrondruis, niet het hoofdverhaal.
+**Conversation context is always the primary source.** What has been discussed and decided in the current conversation determines the main narrative. Auto-loop files and git status are supplementary. Do not get distracted by files on disk that have nothing to do with the current work. An auto-loop file in OBSERVE with high watch_checks is background noise, not the main narrative.
 
-Voer deze tool calls parallel uit:
+Run these tool calls in parallel:
 
-1. **Gesprekscontext** - wat er in het huidige gesprek is besproken en besloten
-2. **Git status** - `git status` en `git diff --stat` voor uncommitted changes, `git log --oneline -10` voor recente activiteit
-3. **Auto-loops** - `ls auto-loops/` in de project root. Alleen relevant als ze actief zijn (recente log entries, niet-OBSERVE phase, of lage watch_checks)
-4. **Cron jobs** - CronList voor draaiende achtergrondtaken
-5. **Taken** - TaskList voor lopende achtergrondprocessen
+1. **Conversation context** - what has been discussed and decided in the current conversation
+2. **Git status** - `git status` and `git diff --stat` for uncommitted changes, `git log --oneline -10` for recent activity
+3. **Auto-loops** - `ls auto-loops/` in the project root. Only relevant when they are active (recent log entries, non-OBSERVE phase, or low watch_checks)
+4. **Cron jobs** - CronList for running background tasks
+5. **Tasks** - TaskList for running background processes
 
-Niet elke bron levert iets op. Dat is prima. Presenteer wat er is.
+Not every source returns something. That is fine. Present what is there.
 
-## Output formaat
+## Output format
 
-Drie secties, kort en functioneel:
+Three sections, short and functional:
 
-**Bezig met**
-Het doel van het huidige werk in 1-2 zinnen. Niet de technische details, maar het verhaal: waarom zitten we hier, wat proberen we te bereiken.
+**Doing now**
+The goal of the current work in 1-2 sentences. Not the technical details, but the story: why are we here, what are we trying to achieve.
 
 **Status**
-Waar staan we nu? Fase (als auto-loop actief), wat is er gedaan, wat draait op de achtergrond. Noem branch en uncommitted changes als die er zijn.
+Where do we stand? Phase (if an auto-loop is active), what has been done, what is running in the background. Name the branch and any uncommitted changes if present.
 
-**Te doen**
-Wat staat er nog open? Wat wacht op input, wat draait autonoom, wat moet de user beslissen. Eindig met een concreet vervolgvoorstel.
+**To do**
+What is still open? What is waiting for input, what is running autonomously, what does the user need to decide. End with a concrete next-step proposal.
 
-## Richtlijnen
+## Guidelines
 
-- **Kort en concreet.** Geen bestandslijsten, geen technische opsommingen. Functionele beschrijving.
-- **Eerlijk over onzekerheid.** Als context verloren is door compaction, zeg dat. Niet gokken.
-- **Altijd actionable.** De user moet na het lezen weten wat de volgende concrete stap is.
-- **Geen samenvatting van de samenvatting.** Niet herhalen wat de user net zelf heeft getypt of gezien. Focus op wat niet zichtbaar is vanuit de herhalende output.
+- **Short and concrete.** No file listings, no technical enumerations. Functional description.
+- **Honest about uncertainty.** If context was lost to compaction, say so. Do not guess.
+- **Always actionable.** After reading, the user should know what the next concrete step is.
+- **No summary of the summary.** Do not repeat what the user has just typed or seen. Focus on what is not visible from the repetitive output.

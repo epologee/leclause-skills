@@ -1,5 +1,5 @@
 {
   "name": "recap",
   "description": "Structured status overview of the current session: what we are doing, where we are, what is next. Useful when returning to a session after idle time, after compaction, or after a long stretch of repetitive background output.",
-  "version": "1.0.7"
+  "version": "1.0.8"
 }
