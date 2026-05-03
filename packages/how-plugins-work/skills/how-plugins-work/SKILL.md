@@ -6,101 +6,101 @@ description: Use when diagnosing "Unknown command", slash-command autocomplete m
 
 # How Plugins Work
 
-Een levend document over hoe Claude Code plugin- en skill-namen door het systeem stromen. Gebaseerd op empirisch testen met de leclause marketplace in Claude Code 2.1.92.
+A living document on how Claude Code plugin and skill names flow through the system. Based on empirical testing with the leclause marketplace in Claude Code 2.1.92.
 
-## De drie namen
+## The three names
 
-Een skill in een marketplace-plugin heeft drie onafhankelijke namen:
+A skill in a marketplace plugin has three independent names:
 
-1. **Plugin name** (`plugin.json` > `name`): bepaalt de namespace.
-2. **Skill name** (directory naam onder `skills/`): bepaalt de identiteit.
-3. **Marketplace name** (marketplace.json > `name` of de `@marketplace` identifier): bepaalt de bron.
+1. **Plugin name** (`plugin.json` > `name`): determines the namespace.
+2. **Skill name** (directory name under `skills/`): determines the identity.
+3. **Marketplace name** (marketplace.json > `name` or the `@marketplace` identifier): determines the source.
 
-Deze drie namen zijn volledig onafhankelijk van elkaar. Claude Code combineert ze op verschillende manieren op verschillende plekken.
+These three names are completely independent of each other. Claude Code combines them in different ways in different places.
 
-## Waar verschijnt wat (empirisch geverifieerd)
+## Where each appears (empirically verified)
 
-| Context | Wat verschijnt | Voorbeeld |
-|---------|----------------|-----------|
+| Context | What appears | Example |
+|---------|--------------|---------|
 | `claude plugin list` | `<plugin>@<marketplace>` | `how-plugins-work@leclause` |
 | `claude plugin install` | `<plugin>@<marketplace>` | `claude plugin install how-plugins-work@leclause` |
 | `settings.json` enabledPlugins | `"<plugin>@<marketplace>": true` | `"how-plugins-work@leclause": true` |
 | `installed_plugins.json` key | `"<plugin>@<marketplace>"` | `"how-plugins-work@leclause": [...]` |
-| Plugin cache pad | `cache/<marketplace>/<plugin>/<version>/skills/<skill>/` | `cache/leclause/how-plugins-work/<version>/skills/how-plugins-work/` |
-| `skill-budget` SOURCE kolom | `<plugin>` | `how-plugins-work` |
-| `skill-budget` NAME kolom | `<skill>` | `how-plugins-work` |
+| Plugin cache path | `cache/<marketplace>/<plugin>/<version>/skills/<skill>/` | `cache/leclause/how-plugins-work/<version>/skills/how-plugins-work/` |
+| `skill-budget` SOURCE column | `<plugin>` | `how-plugins-work` |
+| `skill-budget` NAME column | `<skill>` | `how-plugins-work` |
 | System-reminder skill list | `<plugin>:<skill>` | `how-plugins-work:how-plugins-work` |
 | TUI autocomplete | `/<plugin>:<skill>` | `/how-plugins-work:how-plugins-work` |
-| Skill tool invocatie | `Skill("<plugin>:<skill>")` of bare `Skill("<skill>")` | `Skill("how-plugins-work")` |
-| Slash command (bare) | `/<skill>` (als uniek) | `/how-plugins-work` |
+| Skill tool invocation | `Skill("<plugin>:<skill>")` or bare `Skill("<skill>")` | `Skill("how-plugins-work")` |
+| Slash command (bare) | `/<skill>` (if unique) | `/how-plugins-work` |
 | `claude agents` | `<plugin>:<name> · <model>` | `gurus:sonnet-max · sonnet` |
-| Agent tool invocatie | `subagent_type: "<plugin>:<name>"` | `subagent_type: "gurus:sonnet-max"` |
+| Agent tool invocation | `subagent_type: "<plugin>:<name>"` | `subagent_type: "gurus:sonnet-max"` |
 | Plugin-shipped agent source | `packages/<plugin>/agents/<name>.md` | `packages/gurus/agents/sonnet-max.md` |
 
-### Observaties
+### Observations
 
-**Plugin name verschijnt in vijf contexten:** plugin list, settings.json, installed_plugins.json, skill-budget SOURCE, en als namespace-prefix in system-reminders en autocomplete.
+**Plugin name appears in five contexts:** plugin list, settings.json, installed_plugins.json, skill-budget SOURCE, and as namespace prefix in system-reminders and autocomplete.
 
-**Skill name verschijnt in drie contexten:** skill-budget NAME, als suffix na de dubbele punt in system-reminders, en als bare slash command.
+**Skill name appears in three contexts:** skill-budget NAME, as suffix after the colon in system-reminders, and as bare slash command.
 
-**Marketplace name verschijnt in twee contexten:** achter het `@` teken in plugin list en settings.json. Nooit in de skill-invocatie zelf.
+**Marketplace name appears in two contexts:** after the `@` sign in plugin list and settings.json. Never in the skill invocation itself.
 
-**De `<plugin>:<skill>` combinatie** is hoe het model de skill ziet in system-reminders en hoe het de Skill tool aanroept. Wanneer plugin en skill dezelfde naam hebben, krijg je `how-plugins-work:how-plugins-work`. De bare shortcut `/how-plugins-work` werkt als er geen naamconflicten zijn.
+**The `<plugin>:<skill>` combination** is how the model sees the skill in system-reminders and how it calls the Skill tool. When plugin and skill share the same name, you get `how-plugins-work:how-plugins-work`. The bare shortcut `/how-plugins-work` works when there are no name conflicts.
 
-## Uniqueness en conflicten
+## Uniqueness and conflicts
 
-### Binnen een marketplace
+### Within a marketplace
 
-De unieke sleutel is `<plugin.json name>@<marketplace>`. De plugin name komt uit `plugin.json`, niet uit de directory naam. Als twee packages dezelfde `name` in hun `plugin.json` hebben, claimen ze dezelfde sleutel en overschrijven ze elkaar bij installatie.
+The unique key is `<plugin.json name>@<marketplace>`. The plugin name comes from `plugin.json`, not from the directory name. If two packages have the same `name` in their `plugin.json`, they claim the same key and overwrite each other on install.
 
-Twee **verschillende plugins** in dezelfde marketplace mogen wel een skill met dezelfde naam bevatten. Ze worden genamespaced: `pluginA:review` vs `pluginB:review`. Maar bare `/review` wordt dan ambigu.
+Two **different plugins** in the same marketplace may contain a skill with the same name. They are namespaced: `pluginA:review` vs `pluginB:review`. But bare `/review` then becomes ambiguous.
 
-### Tussen marketplaces
+### Across marketplaces
 
-`superpowers@claude-plugins-official` en `superpowers@leclause` kunnen naast elkaar bestaan (verschillende sleutels). Maar `Skill("superpowers:brainstorming")` bevat geen marketplace, dus als beide een `brainstorming` skill hebben, is de resolutie onvoorspelbaar. Vermijd plugin-namen die al bestaan in andere geinstalleerde marketplaces.
+`superpowers@claude-plugins-official` and `superpowers@leclause` can coexist (different keys). But `Skill("superpowers:brainstorming")` contains no marketplace, so if both have a `brainstorming` skill the resolution is unpredictable. Avoid plugin names that already exist in other installed marketplaces.
 
 ## SKILL.md frontmatter
 
 ### name
 
-Optioneel. Wanneer aanwezig, moet deze matchen met de directory naam. Als ze niet matchen, zijn er gedocumenteerde bugs: het model kan de skill niet vinden bij invocatie (anthropics/claude-code#22063). De directory naam is altijd de bron van waarheid.
+Optional. When present it must match the directory name. If they do not match, documented bugs exist: the model cannot find the skill on invocation (anthropics/claude-code#22063). The directory name is always the source of truth.
 
 ### user-invocable
 
-**Altijd expliciet zetten.** Ondanks dat de binary code (hieronder) suggereert dat de default `true` is, toont de praktijk dat skills zonder expliciete `user-invocable: true` niet altijd in autocomplete verschijnen. Zet het veld altijd expliciet: `true` voor slash commands, `false` voor skills die alleen model-triggered zijn.
+**Always set explicitly.** Although the binary code (below) suggests the default is `true`, in practice skills without explicit `user-invocable: true` do not always appear in autocomplete. Always set the field explicitly: `true` for slash commands, `false` for skills that are model-triggered only.
 
-Binary code uit Claude Code 2.1.92 (de default `true` werkt niet betrouwbaar voor plugins):
+Binary code from Claude Code 2.1.92 (the default `true` is not reliable for plugins):
 ```javascript
 T = H["user-invocable"] === void 0 ? !0 : G0H(H["user-invocable"])
 ```
 
 ### disable-model-invocation
 
-Wanneer `true`: het model kan de skill niet automatisch activeren op basis van context. De skill is dan alleen bereikbaar via expliciete slash command. Nuttig voor skills die nooit auto-triggered moeten worden (bijv. `/clipboard`, `/saysay`). Verkleint het actieve context-budget in `skill-budget`.
+When `true`: the model cannot auto-activate the skill based on context. The skill is then only reachable via explicit slash command. Useful for skills that should never be auto-triggered (e.g. `/clipboard`, `/saysay`). Reduces the active context budget in `skill-budget`.
 
-## Model selectie
+## Model selection
 
-Een skill kan het session model NIET veranderen. Het model dat de user koos bij sessie-start (of via `/model`) draait door alle turns heen, inclusief turns die door cron worden gevuurd. Een skill die `/model haiku` als tekst output, gedraagt zich als een nep-user-input, is onbetrouwbaar, en blijft hangen na de skill-run, dus verneukt de user-sessie.
+A skill **cannot** change the session model. The model the user chose at session start (or via `/model`) runs through all turns, including turns fired by cron. A skill that outputs `/model haiku` as text behaves like a fake user input, is unreliable, and persists after the skill run, corrupting the user session.
 
-**Subagents wel.** De `Agent`/`Task` tool accepteert een `model` parameter (`haiku`, `sonnet`, `opus`). Een subagent draait in een aparte conversation context met zijn eigen model, returnt een result, en raakt het session model niet aan. Dit is het juiste mechanisme voor:
+**Subagents can.** The `Agent`/`Task` tool accepts a `model` parameter (`haiku`, `sonnet`, `opus`). A subagent runs in a separate conversation context with its own model, returns a result, and does not touch the session model. This is the correct mechanism for:
 
-- Token besparing in cron-driven loops (delegeer poll-werk aan een Sonnet- of Haiku-subagent)
-- Parallelle independent taken (meerdere agents op verschillende modellen tegelijk)
-- Het session model reserveren voor reasoning, terwijl mechanisch werk goedkoper draait
+- Token savings in cron-driven loops (delegate poll work to a Sonnet or Haiku subagent)
+- Parallel independent tasks (multiple agents on different models at the same time)
+- Reserving the session model for reasoning while mechanical work runs cheaper
 
-**Vuistregel:** session model = head, subagent = hand. Geef subagents het werk dat geen interpretatie vereist (commands runnen, files lezen en raw teruggeven, gh-scrapes doen). Houd interpretatie en beslissingen op de session model.
+**Rule of thumb:** session model = head, subagent = hand. Give subagents work that requires no interpretation (running commands, reading files and returning them raw, scraping gh). Keep interpretation and decisions on the session model.
 
-**Effort kan niet per invocatie.** De Agent tool accepteert alleen `model` inline, geen `effort`. De enige route om een subagent op `effort: max` (of welk niveau dan ook) te draaien is via een plugin-shipped of user-level agent definitie met het `effort` frontmatter veld. Zie "Plugin-shipped subagents" hieronder.
+**Effort cannot be set per invocation.** The Agent tool only accepts `model` inline, not `effort`. The only route to run a subagent at `effort: max` (or any other level) is via a plugin-shipped or user-level agent definition with the `effort` frontmatter field. See "Plugin-shipped subagents" below.
 
 ## Plugin-shipped subagents
 
-Naast skills kan een plugin ook subagent-definities shippen onder `packages/<plugin>/agents/<name>.md`. Dit is tegelijk de enige manier om een vooraf-geconfigureerde `model` + `effort` combinatie beschikbaar te maken voor runtime spawn, omdat de Agent tool alleen `model` inline accepteert.
+In addition to skills, a plugin can also ship subagent definitions under `packages/<plugin>/agents/<name>.md`. This is simultaneously the only way to make a pre-configured `model` + `effort` combination available for runtime spawn, because the Agent tool only accepts `model` inline.
 
 ### Frontmatter
 
-Ondersteund: `name`, `description`, `model` (`sonnet`/`opus`/`haiku`), `effort` (`low`/`medium`/`high`/`xhigh`/`max`). Voor security redenen genegeerd wanneer de agent uit een plugin komt: `hooks`, `mcpServers`, `permissionMode`. Wie die velden nodig heeft, kopieert de agent definitie naar `~/.claude/agents/` of `.claude/agents/`.
+Supported: `name`, `description`, `model` (`sonnet`/`opus`/`haiku`), `effort` (`low`/`medium`/`high`/`xhigh`/`max`). Ignored for security reasons when the agent comes from a plugin: `hooks`, `mcpServers`, `permissionMode`. If those fields are needed, copy the agent definition to `~/.claude/agents/` or `.claude/agents/`.
 
-Voorbeeld (empirisch werkend in de leclause marketplace):
+Example (empirically working in the leclause marketplace):
 
 ```markdown
 ---
@@ -113,18 +113,18 @@ effort: max
 Execute the invoker's prompt and return the result.
 ```
 
-### Invocatie
+### Invocation
 
-Plugin-shipped agents volgen dezelfde `<plugin>:<name>` namespace als skills. Aanroep via de `Agent`/`Task` tool met `subagent_type: "<plugin>:<name>"`. Voor de voorbeeld-agent in `packages/gurus/agents/sonnet-max.md`: `subagent_type: "gurus:sonnet-max"`.
+Plugin-shipped agents follow the same `<plugin>:<name>` namespace as skills. Call via the `Agent`/`Task` tool with `subagent_type: "<plugin>:<name>"`. For the example agent in `packages/gurus/agents/sonnet-max.md`: `subagent_type: "gurus:sonnet-max"`.
 
-**Bare name werkt NIET.** In tegenstelling tot skills, waar `/how-plugins-work` als bare slash command resolves wanneer uniek, vereist de Agent tool altijd de namespaced vorm voor plugin-shipped agents. Empirische bevestiging in Claude Code 2.1.92: `subagent_type: "sonnet-max"` faalt, `subagent_type: "gurus:sonnet-max"` werkt.
+**Bare name does NOT work.** Unlike skills, where `/how-plugins-work` resolves as a bare slash command when unique, the Agent tool always requires the namespaced form for plugin-shipped agents. Empirical confirmation in Claude Code 2.1.92: `subagent_type: "sonnet-max"` fails, `subagent_type: "gurus:sonnet-max"` works.
 
-### Verificatie zonder push
+### Verification without pushing
 
-Drie trappen, van lichtst naar zwaarst:
+Three levels, from lightest to heaviest:
 
-1. **`claude agents`.** Toont alle geladen agents in het `<plugin>:<name> · <model>` formaat. Draait tegen de huidige install cache; werkt dus pas na een geslaagde `claude plugin update`.
-2. **`claude --plugin-dir ./packages/<plugin> agents`.** Laadt de lokale plugin voor één CLI-sessie zonder de install cache te muteren. Snelst om een wijziging te testen voordat commit/install. Let op: de `--plugin-dir` flag is globaal; `claude agents --plugin-dir X` faalt met `unknown option`, `claude --plugin-dir X agents` werkt.
+1. **`claude agents`.** Shows all loaded agents in `<plugin>:<name> · <model>` format. Runs against the current install cache; only works after a successful `claude plugin update`.
+2. **`claude --plugin-dir ./packages/<plugin> agents`.** Loads the local plugin for one CLI session without mutating the install cache. Fastest way to test a change before commit/install. Note: the `--plugin-dir` flag is global; `claude agents --plugin-dir X` fails with `unknown option`, `claude --plugin-dir X agents` works.
 3. **Live spawn test via `claude -p`.**
 
    ```bash
@@ -132,45 +132,45 @@ Drie trappen, van lichtst naar zwaarst:
      "Use the Task tool with subagent_type '<plugin>:<name>'. Ask for the string PING_42."
    ```
 
-   De JSON output bevat een `modelUsage` sectie met het geconfigureerde model als aparte key (bijv. `claude-sonnet-4-6`). Twee modellen in `modelUsage` (sessie + subagent) is het sterkste bewijs dat de subagent echt gespawnd is met het gewenste model. De `effort` waarde is niet zichtbaar in `modelUsage` of elders in de CLI output; daarvoor rust het op een documentatie-aanname.
+   The JSON output contains a `modelUsage` section with the configured model as a separate key (e.g. `claude-sonnet-4-6`). Two models in `modelUsage` (session + subagent) is the strongest evidence that the subagent was truly spawned with the desired model. The `effort` value is not visible in `modelUsage` or elsewhere in the CLI output; for that it rests on a documentation assumption.
 
-   **Wat `claude -p` wel en niet test voor cron-driven features.** Print-mode is one-shot: één prompt, één antwoord, sessie afgelopen. De cron zelf firet niet in `-p` (die leeft op een idle interactieve REPL), dus automatisch-triggeren van ticks is uitgesloten. Wat `-p` wel goed kan: het per-tick gedrag testen door een pre-geconstrueerde state aan te bieden en de sessie te vragen "volg de Instructions voor de huidige Phase alsof een tick is gefired". Voor de autonomous rover: schrijf een stub loopfile met de gewenste Phase en (eventueel) een aged timestamp in de Log, start dan `claude -p "Read .autonomous/X.md and act on the current Phase as if a cron tick just fired."`. Dat valideert de fuse/timeout/backoff-logica zonder dat je wacht op echte wallclock. Wil je ook de cron-firing zelf bevestigen, val terug op een verse interactieve sessie (`claude` in een nieuwe terminal of iTerm2 pane). Claude heeft shell-toegang en kan `-p` zelf spawnen; niet de user dicteren dit te doen terwijl je het zelf kan draaien.
+   **What `claude -p` does and does not test for cron-driven features.** Print mode is one-shot: one prompt, one answer, session over. The cron itself does not fire in `-p` (it lives on an idle interactive REPL), so auto-triggering ticks is ruled out. What `-p` can do well: test per-tick behavior by supplying a pre-constructed state and asking the session to "follow the Instructions for the current Phase as if a tick was fired". For the autonomous rover: write a stub loopfile with the desired Phase and (optionally) an aged timestamp in the Log, then start `claude -p "Read .autonomous/X.md and act on the current Phase as if a cron tick just fired."`. That validates fuse/timeout/backoff logic without waiting for real wallclock. To also confirm cron-firing itself, fall back to a fresh interactive session (`claude` in a new terminal or iTerm2 pane). Claude has shell access and can spawn `-p` itself; do not dictate this to the user when you can run it yourself.
 
-### Lokale marketplace voor persistent installeren zonder push
+### Local marketplace for persistent install without pushing
 
-`claude plugin marketplace add ./` (met trailing slash of met expliciet pad) herpuntert een bestaande marketplace alias naar het lokale pad, mits `marketplace.json`'s `name` hetzelfde alias claimt. Concreet: een `marketplace.json` met `"name": "leclause"` in de lokale repo, gecombineerd met een bestaande `leclause` GitHub-marketplace, betekent dat `claude plugin marketplace add ./` de alias silent overschrijft naar de lokale directory. Daarna trekt `claude plugin update <plugin>@leclause` uit de lokale werkkopie in plaats van de remote. Nuttig voor end-to-end testen van plugin wijzigingen zonder eerst te pushen.
+`claude plugin marketplace add ./` (with trailing slash or an explicit path) re-points an existing marketplace alias to the local path, provided `marketplace.json`'s `name` claims the same alias. Concretely: a `marketplace.json` with `"name": "leclause"` in the local repo, combined with an existing `leclause` GitHub marketplace, means `claude plugin marketplace add ./` silently overwrites the alias to the local directory. After that, `claude plugin update <plugin>@leclause` pulls from the local working copy instead of the remote. Useful for end-to-end testing of plugin changes without pushing first.
 
-**Gotcha 1: cascade-uninstall bij marketplace remove.** `claude plugin marketplace remove <alias>` verwijdert niet alleen de marketplace-configuratie, het uninstallt ook elke plugin die via dat alias was geïnstalleerd. Empirisch getest in Claude Code 2.1.92: een leclause marketplace met 18 geïnstalleerde plugins crashte naar 0 na één `remove`. Bij het opnieuw toevoegen van de marketplace worden de plugins niet automatisch teruggezet; elk plugin moet expliciet met `claude plugin install <plugin>@<alias>` worden heringeroepen. Voor een lokale dev-sessie waar je wisselt tussen path-based en remote-based marketplace met hetzelfde alias: dit is een re-install van elk plugin dat van dat alias komt, niet slechts een config-wijziging.
+**Gotcha 1: cascade-uninstall on marketplace remove.** `claude plugin marketplace remove <alias>` does not only remove the marketplace configuration; it also uninstalls every plugin that was installed via that alias. Empirically tested in Claude Code 2.1.92: a leclause marketplace with 18 installed plugins crashed to 0 after a single `remove`. Re-adding the marketplace does not automatically restore the plugins; each plugin must be explicitly re-invoked with `claude plugin install <plugin>@<alias>`. For a local dev session where you switch between path-based and remote-based marketplace with the same alias: this means a re-install of every plugin that comes from that alias, not just a config change.
 
-**Terugvallen op remote: silent overwrite, geen cascade.** Het symmetrische pad van path-based terug naar remote werkt zonder `marketplace remove`: `claude plugins marketplace add <owner>/<repo>` (bijv. `claude plugins marketplace add epologee/leclause-skills`) overschrijft het bestaande alias's `source.source` veld in-place van `directory` naar `github`, mits `marketplace.json`'s `name` opnieuw hetzelfde alias claimt. Empirisch getest in Claude Code 2.1.119: alle 18 geïnstalleerde leclause plugins bleven intact; geen cascade-uninstall, geen re-install batch nodig. Het oude `path` veld blijft als residu in het settings.json record staan, maar de actieve `source.source: github` wint en `claude plugins update` trekt vanaf dan uit de remote. Dezelfde silent-overwrite mechaniek als gotcha-vrije overwrite naar path-based, alleen omgekeerd.
+**Reverting to remote: silent overwrite, no cascade.** The symmetric path from path-based back to remote works without `marketplace remove`: `claude plugins marketplace add <owner>/<repo>` (e.g. `claude plugins marketplace add epologee/leclause-skills`) overwrites the existing alias's `source.source` field in-place from `directory` to `github`, provided `marketplace.json`'s `name` claims the same alias again. Empirically tested in Claude Code 2.1.119: all 18 installed leclause plugins remained intact; no cascade-uninstall, no re-install batch needed. The old `path` field stays as residue in the settings.json record, but the active `source.source: github` wins and `claude plugins update` pulls from the remote from that point. Same silent-overwrite mechanism as the gotcha-free overwrite to path-based, just in reverse.
 
-## marketplace.json `source` moet een echt subpad zijn
+## marketplace.json `source` must be a real subpath
 
-Het `plugins[*].source` veld in `marketplace.json` doorloopt twee lagen, en het verschil daartussen kan misleidend zijn (Claude Code 2.1.119, empirisch tegen `epologee/apples`):
+The `plugins[*].source` field in `marketplace.json` passes through two layers, and the difference between them can be misleading (Claude Code 2.1.119, empirical against `epologee/apples`):
 
-- **Schema validation.** `"source": "."` faalt met `Invalid input` bij `claude plugin marketplace add`. `"source": "./"` slaagt en de marketplace landt in `~/.claude/settings.json` onder `extraKnownMarketplaces`. Het schema rejecteert dus de bare dot maar accepteert de slash-variant.
-- **Runtime resolution.** `"./"` overleeft schema-validation maar resolved niet. Symptomen:
-  - `claude plugin marketplace list` toont de marketplace niet.
-  - `claude plugin marketplace update <name>` zegt `Marketplace not found`.
-  - `claude plugin install <plugin>@<marketplace>` faalt met `Plugin "<plugin>" not found in marketplace`.
-  - De settings.json entry blijft achter als orphan; `enabledPlugins` heeft `<plugin>@<marketplace>: true` ondanks dat niets ooit installeerde.
+- **Schema validation.** `"source": "."` fails with `Invalid input` on `claude plugin marketplace add`. `"source": "./"` succeeds and the marketplace lands in `~/.claude/settings.json` under `extraKnownMarketplaces`. The schema therefore rejects the bare dot but accepts the slash variant.
+- **Runtime resolution.** `"./"` survives schema validation but does not resolve. Symptoms:
+  - `claude plugin marketplace list` does not show the marketplace.
+  - `claude plugin marketplace update <name>` says `Marketplace not found`.
+  - `claude plugin install <plugin>@<marketplace>` fails with `Plugin "<plugin>" not found in marketplace`.
+  - The settings.json entry remains as an orphan; `enabledPlugins` has `<plugin>@<marketplace>: true` even though nothing ever installed.
 
-**Conclusie.** `source` moet een echte subdirectory zijn, niet de marketplace-root. Werkende vormen in deze setup: `"./packages/<plugin>"` (leclause, tank), `"./plugins/<plugin>"` (stekker-brains). Single-plugin repo waar de plugin de root claimt: verplaats `.claude-plugin/plugin.json` en `skills/` naar bijvoorbeeld `./packages/<plugin>/` en update `source` overeenkomstig. De marketplace-level `.claude-plugin/marketplace.json` blijft op repo-root.
+**Conclusion.** `source` must be a real subdirectory, not the marketplace root. Working forms in this setup: `"./packages/<plugin>"` (leclause, tank), `"./plugins/<plugin>"` (stekker-brains). Single-plugin repo where the plugin claims the root: move `.claude-plugin/plugin.json` and `skills/` to e.g. `./packages/<plugin>/` and update `source` accordingly. The marketplace-level `.claude-plugin/marketplace.json` stays at repo root.
 
-**Local-vs-remote is geen factor.** De schema-test is alleen tegen een lokale directory uitgevoerd, maar zowel lokale (tank, brains-local) als remote (leclause, stekker-brains) marketplaces in de actieve setup gebruiken al subpaden. De regel is bron-onafhankelijk.
+**Local-vs-remote is not a factor.** The schema test was only run against a local directory, but both local (tank, brains-local) and remote (leclause, stekker-brains) marketplaces in the active setup already use subpaths. The rule is source-independent.
 
-**Diagnostische signaalketen.** Wanneer `claude plugin marketplace add` slaagt maar `claude plugin marketplace list` de marketplace niet toont en install faalt met "Plugin not found in marketplace", is `source` de eerste plek om te verifiëren. Schema-pass impliceert geen runtime-pass.
+**Diagnostic signal chain.** When `claude plugin marketplace add` succeeds but `claude plugin marketplace list` does not show the marketplace and install fails with "Plugin not found in marketplace", `source` is the first thing to verify. Schema pass does not imply runtime pass.
 
-## Env-vars uit settings.json lezen
+## Reading env vars from settings.json
 
-De `env` sectie van `~/.claude/settings.json` exporteert variabelen naar child bash-processes die Claude Code spawnt. Die waarden zijn **niet zichtbaar in Claude's conversation context**. Een skill die gedrag wil conditioneren op een env-var moet de waarde via bash opvragen. Claude "weet" de waarde niet uit zichzelf en gokt.
+The `env` section of `~/.claude/settings.json` exports variables to child bash processes that Claude Code spawns. Those values are **not visible in Claude's conversation context**. A skill that wants to condition behavior on an env var must query the value via bash. Claude does not "know" the value on its own and will guess.
 
-Twee antipatronen die vaak in combinatie voorkomen:
+Two anti-patterns that often occur together:
 
-1. **Impliciete check.** SKILL.md schrijft "als `VAR` niet gezet is, doe X" zonder een voorgeschreven bash-stap die de waarde opvraagt. Claude moet dan zelf inzien dat een check nodig is, en gokt meestal naar "unset".
-2. **Passieve code-fence.** SKILL.md zet de actie-bash in een ```bash-block zonder imperatieve label. Claude kan het lezen als voorbeeld en slaat de uitvoering over.
+1. **Implicit check.** SKILL.md writes "if `VAR` is not set, do X" without a prescribed bash step that queries the value. Claude must then realize a check is needed and usually guesses "unset".
+2. **Passive code fence.** SKILL.md puts the action bash in a ```bash block without an imperative label. Claude may read it as an example and skip execution.
 
-**Patroon:** één expliciete "RUN THIS FIRST"-stap die bash-check én actie combineert en een marker-output print waar de volgende stap op vertakt. Geen conditie-regel elders in de markdown die leunt op impliciete kennis over een env-waarde.
+**Pattern:** one explicit "RUN THIS FIRST" step that combines bash check and action and prints a marker output that the next step branches on. No condition line elsewhere in the markdown that leans on implicit knowledge about an env value.
 
 ```bash
 # First action of every invocation:
@@ -179,33 +179,33 @@ state="${VAR:-unset}"
 echo "state=$state"
 ```
 
-Daarna een beslistabel gedreven door `state`, niet door markdown-proza:
+Then a decision table driven by `state`, not by markdown prose:
 
-| `state` | Volgende actie |
-|---------|----------------|
-| `on` | Gewoon verder; geen reveal |
-| `off` | Gewoon verder; geen reveal |
-| `unset` | Append eenmalige reveal-PS aan einde |
+| `state` | Next action |
+|---------|-------------|
+| `on` | Continue normally; no reveal |
+| `off` | Continue normally; no reveal |
+| `unset` | Append one-time reveal-PS at end |
 
-**First-run reveal via de env-var zelf.** Een elegante mute zonder state-file op disk: `on`/`off` beide onderdrukken de hint, afwezig toont 'm eens. Alleen robuust als stap 1 de waarde hard uitleest; anders valt de elegantie weg en wordt de hint willekeurig wel/niet getoond.
+**First-run reveal via the env var itself.** An elegant mute without a state file on disk: `on`/`off` both suppress the hint, absent shows it once. Only robust if step 1 hard-reads the value; otherwise the elegance breaks and the hint is shown randomly.
 
-Empirisch geobserveerd in whywhy v1.0.10 (2026-04-22): reveal-PS verscheen bij een user met `WHYWHY_JINGLE=on` sinds 3 dagen in settings, terwijl de jingle niet speelde. Beide symptomen van Claude die de env-waarde niet had uitgelezen: de reveal-conditie gokte naar "unset", en de afplay-fence werd niet uitgevoerd.
+Empirically observed in whywhy v1.0.10 (2026-04-22): the reveal-PS appeared for a user who had had `WHYWHY_JINGLE=on` in settings for 3 days, while the jingle did not play. Both symptoms of Claude not having read the env value: the reveal condition guessed "unset", and the afplay fence was not executed.
 
-**Sessie-lifetime voetnoot.** Env-updates in `settings.json` worden pas door nieuwe Claude Code sessies gezien. Een sessie die vóór een settings-commit startte, houdt de oude waarden tot restart. Bij vreemde diagnostiek ("var staat op on maar skill gedraagt zich unset"), vergelijk de sessie-starttijd met de commit die de var toevoegde vóór je de skill zelf de schuld geeft.
+**Session-lifetime footnote.** Env updates in `settings.json` are only seen by new Claude Code sessions. A session that started before a settings commit keeps the old values until restart. When diagnosing strange behavior ("var is set to on but skill behaves as unset"), compare the session start time with the commit that added the var before blaming the skill itself.
 
-## Symlinks en cross-platform
+## Symlinks and cross-platform
 
-De leclause marketplace is symlink-free. Elke skill leeft op één plek onder `packages/<plugin>/skills/<skill>/`, zonder shared-source via symlinks. Pre-commit en CI weigeren symlinks in de repo. De reden is Windows: Git for Windows heeft `core.symlinks=false` als default, dus bij clone worden symlinks omgezet naar text-files met het doelpad als inhoud, en de runtime resolution in Claude Code faalt. Een symlink-vrije layout werkt op macOS, Linux en Windows zonder extra consumer-setup.
+The leclause marketplace is symlink-free. Every skill lives in one place under `packages/<plugin>/skills/<skill>/`, without shared source via symlinks. Pre-commit and CI reject symlinks in the repo. The reason is Windows: Git for Windows has `core.symlinks=false` as default, so on clone symlinks are converted to text files containing the target path, and runtime resolution in Claude Code fails. A symlink-free layout works on macOS, Linux, and Windows without extra consumer setup.
 
-Anthropic docs beschrijven wel dat Claude Code symlinks in de install cache bewaart ([Plugins reference, Plugin caching and file resolution](https://code.claude.com/docs/en/plugins-reference)), maar dat vereist dat de symlinks de clone überhaupt overleven. De drie alternatieven die in een eerder experiment zijn verkend (`git-subdir`, `rsync -aL` materialisatie via release branch, `CLAUDE_CODE_PLUGIN_SEED_DIR`) bleken allemaal meer consumer-setup te vereisen dan een vlakke, symlink-vrije layout. De repo is daarop afgestemd.
+Anthropic docs do mention that Claude Code preserves symlinks in the install cache ([Plugins reference, Plugin caching and file resolution](https://code.claude.com/docs/en/plugins-reference)), but that requires the symlinks to survive the clone in the first place. The three alternatives explored in an earlier experiment (`git-subdir`, `rsync -aL` materialization via release branch, `CLAUDE_CODE_PLUGIN_SEED_DIR`) all turned out to require more consumer setup than a flat, symlink-free layout. The repo is aligned accordingly.
 
 ## Hooks
 
-Hooks (SessionStart, PreToolUse, PostToolUse, Stop, en de andere lifecycle events) leven NIET in `plugin.json`. Een `hooks` key in `plugin.json` wordt door `claude plugins validate` afgewezen met `hooks: Invalid input`, en bij installatie silent gestript zonder runtime fout. Het werkende pad is een aparte `<plugin>/hooks/hooks.json` (of een custom locatie via `"hooks": "./path"` in plugin.json).
+Hooks (SessionStart, PreToolUse, PostToolUse, Stop, and the other lifecycle events) do NOT live in `plugin.json`. A `hooks` key in `plugin.json` is rejected by `claude plugins validate` with `hooks: Invalid input`, and on install silently stripped without a runtime error. The working path is a separate `<plugin>/hooks/hooks.json` (or a custom location via `"hooks": "./path"` in plugin.json).
 
 ### Schema
 
-Het schema heeft een dubbele `hooks` nesting die makkelijk fout te raden is. Werkend voorbeeld voor SessionStart:
+The schema has a double `hooks` nesting that is easy to get wrong. Working example for SessionStart:
 
 ```json
 {
@@ -226,66 +226,66 @@ Het schema heeft een dubbele `hooks` nesting die makkelijk fout te raden is. Wer
 }
 ```
 
-De buitenste `"hooks"` is het object dat events groepeert; per event entry zit er een **tweede** `"hooks": [...]` array waarin de daadwerkelijke commands staan. Vergeet die nesting en de plugin valideert wel maar het hook-array komt door de validator als verkeerd type.
+The outer `"hooks"` is the object that groups events; within each event entry there is a **second** `"hooks": [...]` array containing the actual commands. Omit that nesting and the plugin validates but the hook array comes through the validator as the wrong type.
 
 ### Matcher syntax
 
-`matcher` is altijd een regex string, geen object. Voor PreToolUse / PostToolUse matcht hij op tool-naam (`"Bash"`, `"Edit|Write"`). Voor SessionStart matcht hij op source: één van `startup`, `resume`, `clear`, `compact` (of een pipe-combinatie zoals `"startup|resume"`). `matcher` weglaten betekent fire op alle bronnen; voor een install-hook die op `/clear` of een auto-compact niets te doen heeft is `"matcher": "startup|resume"` de zuinige keuze.
+`matcher` is always a regex string, not an object. For PreToolUse / PostToolUse it matches on tool name (`"Bash"`, `"Edit|Write"`). For SessionStart it matches on source: one of `startup`, `resume`, `clear`, `compact` (or a pipe combination like `"startup|resume"`). Omitting `matcher` means fire on all sources; for an install hook that has nothing to do on `/clear` or an auto-compact, `"matcher": "startup|resume"` is the efficient choice.
 
-Bevestigd in Claude Code 2.x: `claude plugins validate` accepteert zowel een ontbrekende matcher als de regex string. Het object-formaat `{"source": [...]}` werkt NIET, ondanks dat sommige LLM-suggesties die vorm noemen.
+Confirmed in Claude Code 2.x: `claude plugins validate` accepts both a missing matcher and the regex string. The object format `{"source": [...]}` does NOT work, despite some LLM suggestions naming that form.
 
-### Validate vóór ship
+### Validate before shipping
 
-`claude plugins validate <pad>` is de canonical pre-ship sanity check voor elke plugin manifest- of hooks-wijziging. Het draait tegen het lokale source-pad (niet de install cache) en vangt schema-violations die anders pas bij de eerste install van een collega zichtbaar worden, vaak silent.
+`claude plugins validate <path>` is the canonical pre-ship sanity check for every plugin manifest or hooks change. It runs against the local source path (not the install cache) and catches schema violations that would otherwise only become visible on a colleague's first install, often silently.
 
 ```bash
 claude plugins validate ./packages/<plugin>
 ```
 
-Run het na ELKE wijziging aan `plugin.json` of `hooks/hooks.json`. Geen vervanging voor een echte install-test, wel een gratis eerste filter.
+Run it after EVERY change to `plugin.json` or `hooks/hooks.json`. Not a replacement for a real install test, but a free first filter.
 
 ## Versioning
 
-De `version` field in `plugin.json` wordt automatisch bijgewerkt door de leclause pre-commit hook. Het format is `1.0.{commits}` waar `{commits}` het aantal commits is dat `packages/<name>/` of `skills/<name>/` heeft geraakt.
+The `version` field in `plugin.json` is updated automatically by the leclause pre-commit hook. The format is `1.0.{commits}` where `{commits}` is the number of commits that touched `packages/<name>/` or `skills/<name>/`.
 
-## Wat landt er in de plugin cache
+## What lands in the plugin cache
 
-Claude Code installeert een plugin uit het repo-subpad dat in `marketplace.json` is opgegeven (meestal `packages/<plugin>/`) en dropt de volledige inhoud van dat subpad in de cache. Dat betekent: `.claude-plugin/`, `skills/`, de plugin-level `README.md`, `bin/`, **en** `hooks/` (inclusief het `hooks/hooks.json` manifest plus alle hook-scripts) landen allemaal mee. Bestanden buiten het subpad (bijvoorbeeld de repo-root `README.md` of de repo-root `bin/`) komen niet mee, want de plugin source start bij `packages/<plugin>/`, niet bij de repo-root.
+Claude Code installs a plugin from the repo subpath specified in `marketplace.json` (usually `packages/<plugin>/`) and drops the full contents of that subpath into the cache. That means: `.claude-plugin/`, `skills/`, the plugin-level `README.md`, `bin/`, **and** `hooks/` (including the `hooks/hooks.json` manifest plus all hook scripts) all land there. Files outside the subpath (for example the repo-root `README.md` or the repo-root `bin/`) do not come along, because the plugin source starts at `packages/<plugin>/`, not at the repo root.
 
-Empirisch getest tegen `autonomous@leclause` in versie 1.0.23:
+Empirically tested against `autonomous@leclause` version 1.0.23:
 
 ```
 $HOME/.claude/plugins/cache/leclause/autonomous/1.0.23/
 ├── .claude-plugin/
 │   └── plugin.json
-├── README.md            (plugin-level, niet repo-root)
+├── README.md            (plugin-level, not repo-root)
 ├── bin/
 │   └── relative-cron    (consumer-facing helper)
 └── skills/
     └── <skill>/...
 ```
 
-Oudere cache-versies van dezelfde plugin kunnen een andere layout hebben, afhankelijk van wat er in de repo stond op het moment van die installatie. Een cache-inspectie tegen een oude versie bewijst niets over de huidige source-layout; test tegen een fresh `claude plugins update`.
+Older cache versions of the same plugin may have a different layout, depending on what was in the repo at the time of that install. Inspecting a cache against an old version proves nothing about the current source layout; test against a fresh `claude plugins update`.
 
-## Het pad naar de actieve install
+## The path to the active install
 
-De authoritative bron voor "welke versie draait nu" is `~/.claude/plugins/installed_plugins.json`:
+The authoritative source for "which version is running now" is `~/.claude/plugins/installed_plugins.json`:
 
 ```bash
 jq -r '.plugins["<plugin>@<marketplace>"][0].installPath' ~/.claude/plugins/installed_plugins.json
 ```
 
-Dat pad is de **plugin-root in de cache**, niet de repo-root. Het bevat `.claude-plugin/`, `skills/`, `bin/` (als de plugin source die heeft) en de plugin-level `README.md`. Concrete pad-templates:
+That path is the **plugin root in the cache**, not the repo root. It contains `.claude-plugin/`, `skills/`, `bin/` (if the plugin source has it), and the plugin-level `README.md`. Concrete path templates:
 
-| Target | Correct pad | Fout pad |
+| Target | Correct path | Wrong path |
 |--------|-------------|----------|
 | Skill resource | `$installPath/skills/<skill>/<file>` | `$installPath/packages/<plugin>/skills/<skill>/<file>` |
-| Bin-script | `$installPath/bin/<script>` | `$installPath/packages/<plugin>/bin/<script>` |
-| Plugin manifest | `$installPath/.claude-plugin/plugin.json` | (geen andere) |
-| Hooks manifest | `$installPath/hooks/hooks.json` | `$installPath/.claude-plugin/plugin.json` (zie Hooks-sectie) |
-| Hook script | `$installPath/hooks/<script>` (referentie via `${CLAUDE_PLUGIN_ROOT}/hooks/<script>` in hooks.json) | (absolute paden; werken niet cross-machine) |
+| Bin script | `$installPath/bin/<script>` | `$installPath/packages/<plugin>/bin/<script>` |
+| Plugin manifest | `$installPath/.claude-plugin/plugin.json` | (no other) |
+| Hooks manifest | `$installPath/hooks/hooks.json` | `$installPath/.claude-plugin/plugin.json` (see Hooks section) |
+| Hook script | `$installPath/hooks/<script>` (referenced via `${CLAUDE_PLUGIN_ROOT}/hooks/<script>` in hooks.json) | (absolute paths; do not work cross-machine) |
 
-De `packages/<plugin>/`-prefix bestaat alleen in de source-repo, niet in de cache. De `ls -1dt ... | head -1` truc tegen `~/.claude/plugins/cache/<marketplace>/<plugin>/` wijst hetzelfde pad aan maar leunt op mtime-ordening en is daardoor niet stabiel; de `jq` lookup werkt deterministisch.
+The `packages/<plugin>/` prefix only exists in the source repo, not in the cache. The `ls -1dt ... | head -1` trick against `~/.claude/plugins/cache/<marketplace>/<plugin>/` points to the same path but relies on mtime ordering and is therefore not stable; the `jq` lookup works deterministically.
 
 ## Troubleshooting: "Unknown command: /xyz"
 
@@ -309,8 +309,8 @@ Never advise the user to prefix or de-prefix a slash command without having run 
 
 ## Experiment metadata
 
-- Oorspronkelijk experiment: `hpw@leclause` (korte plugin naam, 2026-04-06)
-- Hernoemd naar: `how-plugins-work@leclause` (plugin = skill naam, 2026-04-07)
-- Cache-layout + installPath-verificatie: 2026-04-19 (tegen `autonomous@leclause` 1.0.23)
-- Claude Code versie: 2.1.92
+- Original experiment: `hpw@leclause` (short plugin name, 2026-04-06)
+- Renamed to: `how-plugins-work@leclause` (plugin = skill name, 2026-04-07)
+- Cache layout + installPath verification: 2026-04-19 (against `autonomous@leclause` 1.0.23)
+- Claude Code version: 2.1.92
 - Marketplace: leclause (local directory)
