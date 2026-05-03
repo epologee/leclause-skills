@@ -1,0 +1,85 @@
+---
+name: visual-inspection
+user-invocable: true
+description: Use when the user names a specific existing element as a reference ("zoals de favicon", "zoals deze button", a screenshot, a Figma frame) AND either (a) states a match-intent like "exact hetzelfde", "zelfde uiterlijk als", "precies zo", "identiek aan", "dezelfde look als", "match X", "look like Y", or (b) names at least one visual property as the success criterion alongside that reference: padding, margin, space, ruimte, gap, align, alignment, grootte, size, pixels, corner radius, border radius, font, color, kleur. Both conditions must be present; routine styling work without a reference element does not trigger this skill. Forces a reference-screenshot + result-screenshot comparison loop on each named axis until visual match is reached. Stops Claude from declaring "match" based on CSS-reading instead of visual evidence.
+---
+
+# Visual inspection
+
+## The real problem
+
+The user points to an existing UI element ("ik wil dezelfde pillen als de favicon, qua corner radius, padding en font") and Claude writes CSS that comes close, reads back its own CSS, sees "padding is there", and declares done. The result does not look like it. No screenshot of the reference taken, no screenshot of the result taken, no comparison done on the axes the user explicitly named.
+
+This is a variant of the problem eye-of-the-beholder solves (confirmatory looking instead of observational looking), but more specific. The user has already named the axes. The work is not "check if it looks nice", the work is "place reference and result side by side and prove every named axis is equal".
+
+## When
+
+This skill activates when two things come together:
+
+1. **A reference**. The user explicitly points to an existing element or another existing UI ("zoals de favicon", "zoals de header", "zoals deze button", a screenshot, a Figma frame).
+2. **A match intent or a visual axis**. "Exact hetzelfde", "match", "zelfde uiterlijk", "precies zo", "identiek aan", "dezelfde look als", OR a specific visual property as criterion: padding, margin, space, ruimte, gap, align, alignment, grootte, size, pixels, corner radius, border radius, font, color, kleur.
+
+"In lijn met" alone is not a trigger. That phrase in Dutch is usually non-visual ("in lijn met de sprint planning", "in lijn met de API response"). Only when the object is demonstrably a UI element ("in lijn met de header-button") does it count as match intent.
+
+When both are present: this skill leads the work, not eye-of-the-beholder's open scan. The axes are given; the question is "klopt het met de referentie", not "what do I see".
+
+## The core: two screenshots, one table
+
+**Before you write a line of CSS:** screenshot of the reference. Not "I remember what the favicon looks like". Not "the CSS of the favicon says 8px padding". A PNG of the rendered element on screen.
+
+**After every change:** screenshot of the result. Next to the reference. Per named axis: equal, or not equal. No "looks like it", no "looks good". The axes the user named are the tests; all other axes are noise until the user names them.
+
+```
+Axis          | Reference        | Result           | Match
+--------------|------------------|------------------|------
+Corner radius | 6px (measured)   | 4px (measured)   | no
+Padding x     | 12px             | 8px              | no
+Padding y     | 4px              | 4px              | yes
+Font          | system-ui 13px   | -apple-system 12 | no
+```
+
+A row that says `no` is an open todo. Done means: all rows say `yes`, with screenshots as evidence.
+
+**Tolerance for `yes`.** Unless the user names a different threshold: rendered pixel values must agree within 1px for distances, padding, margin, gap, and radii. Font-family and font-weight must match exactly; font-size within 0.5pt. Color: same token or within 1 step on a delta-E ladder. "Looks close" is `no`. The user decides when a deviation is acceptable; you do not.
+
+## Steps
+
+1. **Identify the reference.** Which element does the user point to? Record a locator (CSS selector, aria-label, or bounding box on the page).
+2. **Identify the axes.** Read back the user's sentence. Which properties did they name? Write them out as columns in the table. Do not guess extra axes; do not add axes the user did not name.
+3. **Screenshot the reference.** Headless browser, devtools screenshot, or user-provided. Crop tightly around the element so neighboring UI does not distract. Preferably at the zoom factor the user is viewing.
+4. **Measure the reference per axis.** Devtools computed styles, or pixel measurement on the screenshot for properties that cannot be read from a one-liner (e.g. effective corner radius with nested borders). Put the values in the table.
+5. **Implement.** Write the CSS / SwiftUI / whatever.
+6. **Screenshot the result.** Same crop strategy. Same zoom.
+7. **Measure the result per axis.** Fill in the table.
+8. **Compare.** For each axis: equal or not. If not equal: back to step 5 with that specific axis as focus. Loop until all axes say `yes`.
+9. **Side-by-side evidence in the same response as the match claim.** The reference screenshot AND the result screenshot must be in the same response in which you claim "match". A screenshot from an earlier turn does not count; "I took it earlier" is not evidence. Take fresh, include both, then claim. Reading CSS is not evidence.
+
+## When screenshots are not possible
+
+If you cannot take a screenshot of BOTH the reference and the result, the work is blocked. Not "then I do it by feel".
+
+- **Neither screenshottable** (no browser tooling, no running server, no user screenshot): ask the user to provide both screenshots.
+- **Only the result screenshottable, reference not** (e.g. "match the favicon" without being able to render the favicon pill): ask the user for the reference screenshot. Building forward with only the result is the same as not screenshotting; the match claim has no counterpart.
+- **Only the reference screenshottable, result not**: do not build further until you can render the result too. A match that cannot be proven visually is not a match.
+
+Do not build forward without visual input from both sides when the user explicitly asked for a visual match; that is exactly the pattern this skill prevents.
+
+For terminal and CLI output this does not apply; there "match" is a text comparison, not a visual one.
+
+## Relation to eye-of-the-beholder
+
+Eye-of-the-beholder is open diagnosis: look at what is there and name what is wrong. Visual-inspection is directed: the user has already named the axes; the work is proving every axis is equal to a reference. When all axes match and you still feel uncertainty about the broader visual result, layer eye-of-the-beholder on top for the open scan.
+
+## Common blind spots
+
+| What Claude does | What goes wrong |
+|-----------------|----------------|
+| Reading the reference CSS and assuming "padding 8px" | The rendered padding can be affected by box-sizing, line-height, or a nested element. Measure the rendered result. |
+| Taking one screenshot after all changes | Without before/after you cannot see which change moved which axis. A fresh screenshot per iteration. |
+| Including extra axes the user did not name | Scope creep dressed as thoroughness. The user named three axes; work on those three. |
+| "Looks the same" without a table | No table = no evidence. A person can find two elements "the same" that measure 2px apart. |
+| Different zoom level for reference and result | One element at 100%, another at 125% makes every pixel measurement worthless. |
+| Cropping with a lot of neighboring UI | The eye adapts elements to their context. Crop tightly to compare only the two elements. |
+| Stopping at "looks like it" | "Looks like it" is not `yes` in the table. Looks-like-it is an open todo. |
+| Labeling a visual estimate as "measured" | Estimating a number from a screenshot without devtools is an assumption, not a measurement. Label it `estimated (~6px)` and note the measurement method. An estimated value may not lead to `yes` in the Match column; only devtools-computed-style or pixel-sample from a raw PNG counts as measured. |
+| Referring to a screenshot from an earlier turn | The evidence must be in the same response as the match claim. "I took it earlier above" is not evidence for the current claim; take fresh. |
