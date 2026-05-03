@@ -11,76 +11,76 @@ allowed-tools:
 effort: high
 ---
 
-> **Preflight.** De sub-skills dispatchen via `gurus:sonnet-max`. Die agent bestaat vanaf plugin-versie 1.0.8. Wanneer de dispatch faalt met "unknown subagent_type: gurus:sonnet-max", draai `claude plugins update gurus@leclause` en probeer opnieuw.
+> **Preflight.** The sub-skills dispatch via `gurus:sonnet-max`. That agent exists from plugin version 1.0.8 onward. If the dispatch fails with "unknown subagent_type: gurus:sonnet-max", run `claude plugins update gurus@leclause` and try again.
 
 # Gurus Orchestrator
 
-Twee panels leven onder deze plugin:
+Two panels live under this plugin:
 
-- **`gurus:software`** doet opinionated code review met acht engineering-personas (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). Consensus over 6+/8 levert een actieplan.
-- **`gurus:council`** doet kritiek op een beslissing of idee met vijf adversariële lenzen (pre-mortem, first-principles, opportunity-finder, stranger, action), anonieme peer review, chairman-synthese.
+- **`gurus:software`** does opinionated code review with eight engineering personas (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). Consensus across 6+/8 yields an action plan.
+- **`gurus:council`** critiques a decision or idea with five adversarial lenses (pre-mortem, first-principles, opportunity-finder, stranger, action), anonymous peer review, and chairman synthesis.
 
-Deze orchestrator kiest welk panel past bij de vraag.
+This orchestrator decides which panel fits the question.
 
 ## Routing
 
-### Impliciet signaal uit context
+### Implicit signal from context
 
-Lees eerst de context voordat je de user iets vraagt. Naast de conversatie mag je `git status`, `git log`, en `git diff` aanroepen om recente code-activiteit te checken; de frontmatter staat dat toe.
+Read the context before asking the user anything. Beyond the conversation you may call `git status`, `git log`, and `git diff` to check recent code activity; the frontmatter allows this.
 
-- **Software** is het juiste panel wanneer:
-  - De conversatie een diff, code change, of codebase review bespreekt
-  - De user een bestand of directory noemt om te reviewen
-  - Er recent commits zijn gezet en de vraag voelt als "is dit goed?"
-  - De user woorden gebruikt als "review", "refactor", "smell", "structure"
-  - De user een technische correctheidsvraag stelt ("doet deze regex X?", "klopt deze query?"); dit is geen beslissing maar een code-vraag en valt onder software
-  - De user een code-snippet plakt. Pass dat snippet als expliciete scope via `args`, zodat de software-skill niet per ongeluk de hele codebase scant
+- **Software** is the right panel when:
+  - The conversation discusses a diff, code change, or codebase review
+  - The user names a file or directory to review
+  - Recent commits exist and the question feels like "is dit goed?"
+  - The user uses words like "review", "refactor", "smell", "structure"
+  - The user asks a technical correctness question ("does this regex do X?", "is this query right?"); this is not a decision but a code question and falls under software
+  - The user pastes a code snippet. Pass that snippet as an explicit scope via `args` so the software skill does not accidentally scan the whole codebase
 
-- **Council** is het juiste panel wanneer:
-  - De vraag een afweging of beslissing is ("moet ik X of Y?"), geen vraag over code-correctheid
-  - Het onderwerp strategisch, product-gericht, of interpersoonlijk is
-  - De user twijfelt of Claude eerder alleen meeging ("was ik te hard voor je?" is een signaal)
-  - De vraag bevat geen concrete technische correctheidsvraag
+- **Council** is the right panel when:
+  - The question is a trade-off or decision ("moet ik X of Y?"), not a question about code correctness
+  - The topic is strategic, product-oriented, or interpersonal
+  - The user wonders whether Claude was just being agreeable ("was ik te hard voor je?" is a signal)
+  - The question contains no concrete technical correctness question
 
-**Tiebreaker wanneer beide signalen vuren.** Een "should I use a service object here?" mengt een beslissingsvorm ("should I") met code-context. In dat geval: default naar **software**, want de code is de grond van waarheid; noem in de proposal-regel dat council ook past en geef de override expliciet.
+**Tiebreaker when both signals fire.** A "should I use a service object here?" mixes a decision form ("should I") with code context. In that case: default to **software**, because the code is the ground truth; mention in the proposal line that council also fits and offer the override explicitly.
 
-Voorbeeld tiebreaker-proposal:
+Example tiebreaker proposal:
 
-> Je vraagt of je een service object moet gebruiken, en je hebt code in context. Twee panels passen. Ik routeer naar **software** (code als grond van waarheid). Typ `council` om in plaats daarvan een design-beslissings-review te krijgen.
+> You are asking whether to use a service object, and you have code in context. Two panels fit. Routing to **software** (code as ground truth). Type `council` to get a design-decision review instead.
 
-### Default en override
+### Default and override
 
-Bepaal een default op basis van de signalen en presenteer die aan de user. Voorbeeld:
+Determine a default based on the signals and present it to the user. Example:
 
-> Ik zie een recente diff op `packages/foo/`. Ik routeer naar **`gurus:software`**. Typ `council` om naar het adversariële panel om te schakelen.
+> I see a recent diff on `packages/foo/`. Routing to **`gurus:software`**. Type `council` to switch to the adversarial panel.
 
-Of:
+Or:
 
-> Je vraag leest als een strategische keuze zonder code-context. Ik routeer naar **`gurus:council`**. Typ `software` om code review te krijgen.
+> Your question reads as a strategic choice without code context. Routing to **`gurus:council`**. Type `software` to get a code review.
 
-Bij direct expliciet intent (user zei "council" of "software" in hun bericht) skip je deze check en dispatcht meteen.
+When there is direct explicit intent (the user said "council" or "software" in their message) skip this check and dispatch immediately.
 
-### Geen signaal
+### No signal
 
-Wanneer context leeg is of beide panels even plausibel zijn, stel één korte vraag:
+When context is empty or both panels are equally plausible, ask one short question:
 
-> Twee panels beschikbaar: `software` voor code review, `council` voor een beslissing of idee. Welke past?
+> Two panels available: `software` for code review, `council` for a decision or idea. Which fits?
 
-Stel deze vraag **één keer**. Het antwoord van de user is bindend; niet opnieuw bevestigen.
+Ask this question **once**. The user's answer is binding; do not confirm again.
 
 ## Dispatch
 
-Na routing: roep het gekozen panel aan via de Skill tool. Voor software gebruik je `skill="gurus:software"`; voor council `skill="gurus:council"`. De `args` bevatten de concrete vraag of scope die de user aanlevert.
+After routing: invoke the chosen panel via the Skill tool. For software use `skill="gurus:software"`; for council use `skill="gurus:council"`. The `args` contain the concrete question or scope the user provides.
 
-**Wanneer de user `/gurus:gurus` typte zonder begeleidende tekst**, is er geen letterlijke vraag om door te geven. Synthetiseer dan een één-zin samenvatting van het lopende onderwerp uit de conversatie (eventueel verrijkt met de output van `git status` of `git log -1`) en pass die als `args`. Houd de samenvatting neutraal; geen framing die het panel naar een bepaald oordeel stuurt.
+**When the user typed `/gurus:gurus` without accompanying text**, there is no literal question to pass on. Synthesize a one-sentence summary of the current topic from the conversation (optionally enriched with the output of `git status` or `git log -1`) and pass that as `args`. Keep the summary neutral; no framing that steers the panel toward a particular verdict.
 
-**Wanneer de user een code-snippet plakte**, pass dat snippet als expliciete scope in `args` zodat `gurus:software` niet de volledige codebase scant maar enkel het snippet (en eventueel het omringende bestand dat de user erbij noemde).
+**When the user pasted a code snippet**, pass that snippet as explicit scope in `args` so `gurus:software` does not scan the full codebase but only the snippet (and optionally the surrounding file the user mentioned).
 
-De sub-skills nemen het over. Deze orchestrator doet geen review zelf.
+The sub-skills take over. This orchestrator does not do any review itself.
 
-## Regels
+## Rules
 
-- **Routing is snel.** Maximaal één vraag aan de user voordat je dispatcht. Elke tweede vraag is een faalmodus.
-- **Expliciete intent wint.** Wanneer de user in de invocatie al `software` of `council` heeft genoemd, skip de routing-stap en dispatch direct.
-- **Niet zelf reviewen.** Deze skill presenteert alleen de keuze en delegeert. Inhoudelijke review gebeurt in de sub-skill.
-- **Blijf neutraal tussen panels.** Presenteer beide als legitiem; de context bepaalt welke past, niet welke panel "beter" is.
+- **Routing is fast.** At most one question to the user before dispatching. Every second question is a failure mode.
+- **Explicit intent wins.** When the user already named `software` or `council` in the invocation, skip the routing step and dispatch directly.
+- **Do not review yourself.** This skill only presents the choice and delegates. Substantive review happens in the sub-skill.
+- **Stay neutral between panels.** Present both as legitimate; the context determines which fits, not which panel is "better".

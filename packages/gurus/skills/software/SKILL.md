@@ -13,143 +13,143 @@ effort: high
 
 # Software Guru Panel
 
-> **Preflight.** Deze skill dispatcht acht parallelle `gurus:sonnet-max` agents. Die agent bestaat vanaf plugin-versie 1.0.8. Wanneer de dispatch faalt met "unknown subagent_type: gurus:sonnet-max", draai `claude plugins update gurus@leclause` en probeer opnieuw.
+> **Preflight.** This skill dispatches eight parallel `gurus:sonnet-max` agents. That agent exists from plugin version 1.0.8 onward. If the dispatch fails with "unknown subagent_type: gurus:sonnet-max", run `claude plugins update gurus@leclause` and try again.
 
-Acht opinionated engineers reviewen je code en zoeken consensus over wat beter moet. Wanneer 6+/8 het eens zijn, wordt een actieplan gemaakt. De waarde zit in de spanning tussen hun perspectieven: consensus ondanks fundamenteel verschillende stijlen is een sterk signaal.
+Eight opinionated engineers review your code and look for consensus on what should improve. When 6+/8 agree, an action plan is produced. The value lies in the tension between their perspectives: consensus despite fundamentally different styles is a strong signal.
 
-## Scope bepalen
+## Determining scope
 
-De default scope is altijd de **volledige codebase** (alle bronbestanden
-in de relevante directory). Agents lezen alle bestanden, niet alleen een
-diff. Een diff biased de review naar gewijzigde code en mist problemen
-in ongewijzigde bestanden.
+The default scope is always the **full codebase** (all source files
+in the relevant directory). Agents read all files, not just a
+diff. A diff biases the review toward changed code and misses problems
+in unchanged files.
 
-Wanneer de user expliciet een beperktere scope aangeeft (een bestand,
-directory, of commit range), gebruik die. Maar zonder expliciete scope:
-geef agents een bestandslijst en laat ze alles lezen.
+When the user explicitly specifies a narrower scope (a file,
+directory, or commit range), use that. But without explicit scope:
+give agents a file list and let them read everything.
 
-## Het panel
+## The panel
 
-| # | Guru | Zwaartepunt |
-|---|------|-------------|
-| 1 | **Thoughtbot** (quorum) | Testbaarheid, API design, developer experience, conventie-adherentie. Playbook-denken: iteratief, test-first, pragmatisch |
-| 2 | **Kent Beck** | Vier regels van simpel design, duplicatie elimineren, intentie onthullen. XP Explained, TDD By Example. "What's the simplest thing that could possibly work?" |
-| 3 | **Martin Fowler** | Code smells, refactoring kansen, domeinmodellering, ubiquitous language. Refactoring, PoEAA, bliki. "I smell Feature Envy here." |
-| 4 | **Uncle Bob** | Clean Code, SOLID, function/class grootte, naamgeving, architectuur boundaries, dependency direction. "This function does more than one thing." |
-| 5 | **DHH** | Pragmatisme, conventie boven configuratie, tegen over-abstractie en onnodige indirectie. Rails doctrine, Majestic Monolith. "You don't need a service object here. Ship it." |
-| 6 | **Sandi Metz** | Objectverantwoordelijkheid, composition over inheritance, dependency injection, Flocking Rules. POODR, 99 Bottles. "What does this class know that it shouldn't?" |
-| 7 | **Tobi Lutke** | Schaalbaarheid, pragmatische tradeoffs, system thinking, shipping culture. Shopify-schaal engineering. "Will this work at 10x scale?" |
-| 8 | **Rich Hickey** | Data-oriented design, immutability, simplicity als afwezigheid van complexiteit. Simple Made Easy, Clojure's filosofie. "Are we simplifying, or are we just making it easy?" Bevraagt OOP-aannames die de rest van het panel deelt. |
+| # | Guru | Focus |
+|---|------|-------|
+| 1 | **Thoughtbot** (quorum) | Testability, API design, developer experience, convention adherence. Playbook thinking: iterative, test-first, pragmatic |
+| 2 | **Kent Beck** | Four rules of simple design, eliminating duplication, revealing intent. XP Explained, TDD By Example. "What's the simplest thing that could possibly work?" |
+| 3 | **Martin Fowler** | Code smells, refactoring opportunities, domain modeling, ubiquitous language. Refactoring, PoEAA, bliki. "I smell Feature Envy here." |
+| 4 | **Uncle Bob** | Clean Code, SOLID, function/class size, naming, architecture boundaries, dependency direction. "This function does more than one thing." |
+| 5 | **DHH** | Pragmatism, convention over configuration, against over-abstraction and unnecessary indirection. Rails doctrine, Majestic Monolith. "You don't need a service object here. Ship it." |
+| 6 | **Sandi Metz** | Object responsibility, composition over inheritance, dependency injection, Flocking Rules. POODR, 99 Bottles. "What does this class know that it shouldn't?" |
+| 7 | **Tobi Lutke** | Scalability, pragmatic tradeoffs, system thinking, shipping culture. Shopify-scale engineering. "Will this work at 10x scale?" |
+| 8 | **Rich Hickey** | Data-oriented design, immutability, simplicity as the absence of complexity. Simple Made Easy, Clojure's philosophy. "Are we simplifying, or are we just making it easy?" Challenges OOP assumptions the rest of the panel shares. |
 
-**Kenmerkende spanningen**: DHH vs Uncle Bob op abstractieniveau. Beck's simplicity vs Fowler's patterns. Metz's kleine objecten vs DHH's pragmatisme. Lutke's schaaldenken vs Beck's YAGNI. Hickey vs het hele panel op OOP als default lens: zijn "just use data" staat haaks op Metz' objecten, Uncle Bob's abstracties, en Fowler's patterns. Wanneer 5+ het eens zijn ondanks deze spanningen, is dat een sterk signaal.
+**Characteristic tensions**: DHH vs Uncle Bob on level of abstraction. Beck's simplicity vs Fowler's patterns. Metz's small objects vs DHH's pragmatism. Lutke's scale thinking vs Beck's YAGNI. Hickey vs the whole panel on OOP as the default lens: his "just use data" is at odds with Metz's objects, Uncle Bob's abstractions, and Fowler's patterns. When 5+ agree despite these tensions, that is a strong signal.
 
 ## Workflow
 
-### Stap 1: Materiaal verzamelen
+### Step 1: Gather material
 
-Verzamel de bestandslijst voor de scope (default: alle bronbestanden).
-Geef agents de bestandslijst en laat ze zelf lezen. Geef GEEN diff mee
-als scope, tenzij de user expliciet om een diff-review vraagt.
+Collect the file list for the scope (default: all source files).
+Give agents the file list and let them read it themselves. Do NOT pass a diff
+as scope unless the user explicitly asks for a diff review.
 
-### Stap 2: Acht agents parallel dispatchen
+### Step 2: Dispatch eight agents in parallel
 
-Eén message met 8 parallelle `Agent` calls (`subagent_type: "gurus:sonnet-max"`). De agents reviewen alleen, ze wijzigen NIETS.
+One message with 8 parallel `Agent` calls (`subagent_type: "gurus:sonnet-max"`). The agents review only, they change NOTHING.
 
-**Prompt template per agent** (vul in per guru):
+**Prompt template per agent** (fill in per guru):
 
 ```
-Je bent [NAAM]. Je reviewt code vanuit het zwaartepunt van je eigen filosofie, gestoeld op je volledige oeuvre.
+You are [NAME]. You review code from the focus of your own philosophy, grounded in your complete body of work.
 
-[PERSONA: 2-3 zinnen die het zwaartepunt beschrijven, uit de tabel hierboven. Gebruik de genoemde werken en citaten als anker.]
+[PERSONA: 2-3 sentences describing the focus, from the table above. Use the cited works and quotes as anchors.]
 
-Je zit in een review panel met 7 andere experts: [OVERIGE NAMEN]. Jullie hebben fundamenteel verschillende stijlen maar zijn allemaal op de piek van jullie kunnen. Wees opinionated en direct. Geen diplomatie, geen "het hangt ervan af". Zeg wat je vindt.
+You are in a review panel with 7 other experts: [OTHER NAMES]. You have fundamentally different styles but are all at the peak of your ability. Be opinionated and direct. No diplomacy, no "it depends". Say what you think.
 
-## Te reviewen
+## To review
 
-[BESTANDSLIJST van alle bronbestanden in de scope]
+[FILE LIST of all source files in scope]
 
-Lees ALLE bestanden in de lijst volledig. Review de hele codebase, niet
-alleen wat recent is gewijzigd. Lees ook de CLAUDE.md in de project root
-(als die bestaat) voor projectconventies.
+Read ALL files in the list in full. Review the entire codebase, not
+just what was recently changed. Also read the CLAUDE.md in the project root
+(if it exists) for project conventions.
 
-## Output (volg dit formaat exact)
+## Output (follow this format exactly)
 
-### Wat deugt
-- [max 3 punten, kort en specifiek]
+### What works
+- [max 3 points, short and specific]
 
-### Wat beter moet
-Genummerde lijst. Per punt:
+### What needs improvement
+Numbered list. Per point:
 
-1. **[Korte titel]**
-   Locatie: `bestand:regel` of `bestand:functienaam`
-   Probleem: [wat is er mis, vanuit jouw specifieke perspectief]
-   Voorstel: [concreet, implementeerbaar verbetervoorstel]
+1. **[Short title]**
+   Location: `file:line` or `file:functionname`
+   Problem: [what is wrong, from your specific perspective]
+   Proposal: [concrete, implementable improvement]
 
-Wees specifiek. Verwijs naar concrete bestanden en regels. Geen algemeenheden. Maximaal 7 punten, focus op wat er het meest toe doet.
+Be specific. Reference concrete files and lines. No generalities. Maximum 7 points, focus on what matters most.
 ```
 
-### Stap 3: Synthese
+### Step 3: Synthesis
 
-Na ontvangst van alle 8 reviews:
+After receiving all 8 reviews:
 
-1. **Groepeer** semantisch vergelijkbare verbeterpunten. "Method too long" (Beck) en "violates SRP" (Uncle Bob) over dezelfde method zijn hetzelfde punt
-2. **Tel** hoeveel gurus elk gegroepeerd punt hebben benoemd
-3. **Sorteer** op consensus (hoogste eerst)
-4. **Splits** op de 6/8 drempel (6 of meer van de 8 panelleden)
-5. **Singleton-punten bewaren.** Een punt dat slechts 1/8 consensus haalt is niet per definitie ongeldig. Presenteer alle punten met 1+ gurus in de discussiesectie. Een hardcoded string array, een polymorfisme-kandidaat, of een vergeten guard is reëel ongeacht hoeveel gurus het benoemden. De user beslist wat er mee gebeurt, niet het consensus-niveau
+1. **Group** semantically similar improvement points. "Method too long" (Beck) and "violates SRP" (Uncle Bob) about the same method are the same point
+2. **Count** how many gurus named each grouped point
+3. **Sort** by consensus (highest first)
+4. **Split** at the 6/8 threshold (6 or more of the 8 panel members)
+5. **Preserve singleton points.** A point that reaches only 1/8 consensus is not by definition invalid. Present all points with 1+ gurus in the discussion section. A hardcoded string array, a polymorphism candidate, or a forgotten guard is real regardless of how many gurus named it. The user decides what to do with it, not the consensus level
 
-### Stap 4: Presenteer
+### Step 4: Present
 
-Gebruik dit formaat:
+Use this format:
 
 ```
 ## Guru Panel Review
 
-### Gereviewd
-[Branch of scope], [X bestanden, Y regels totaal als scope volledige codebase is; Y regels diff wanneer user expliciet een diff-scope vroeg]
+### Reviewed
+[Branch or scope], [X files, Y lines total if scope is full codebase; Y lines diff when user explicitly requested a diff scope]
 
 ---
 
-### Consensus (6+/8): Actieplan
+### Consensus (6+/8): Action plan
 
-1. **[Titel]** (X/8: [namen van gurus die het eens zijn])
-   [Synthese van het probleem vanuit de verschillende perspectieven]
-   **Locatie:** `bestand:regel`
-   **Voorstel:** [concrete verbetering, samengevoegd uit de voorstellen]
-
----
-
-### Discussiepunten (<6/8)
-
-2. **[Titel]** (X/8: [namen])
-   [Beschrijving]
-   **Voorstel:** [concrete verbetering]
-   *Dissent: [namen] vinden [tegenargument]*
+1. **[Title]** (X/8: [names of gurus who agree])
+   [Synthesis of the problem from the different perspectives]
+   **Location:** `file:line`
+   **Proposal:** [concrete improvement, merged from the proposals]
 
 ---
 
-### Wat deugt
-[Samenvatting van highlights die meerdere gurus benoemden]
+### Discussion points (<6/8)
+
+2. **[Title]** (X/8: [names])
+   [Description]
+   **Proposal:** [concrete improvement]
+   *Dissent: [names] think [counter-argument]*
 
 ---
 
-Typ **"doe het"** om de consensuspunten toe te passen, of **/auto-loop** voor autonome uitvoering.
+### What works
+[Summary of highlights that multiple gurus mentioned]
+
+---
+
+Type **"doe het"** to apply the consensus points, or **/auto-loop** for autonomous execution.
 ```
 
-### Stap 5: Uitvoering
+### Step 5: Execution
 
-Bij **"doe het"**:
-- Voer consensuspunten sequentieel uit
-- Eén commit per logisch onafhankelijk punt
-- Normale commit-regels (intent validatie)
+On **"doe het"**:
+- Execute consensus points sequentially
+- One commit per logically independent point
+- Normal commit rules (intent validation)
 
-Bij **/auto-loop**:
-- Start een auto-loop met de consensuspunten als taken
-- Autonome uitvoering
-- De auto-loop Context sectie moet aangeven dat de loop zichzelf
-  stopt (CronDelete + `/recap`) wanneer alle guru-punten zijn
-  afgewerkt en gecommit. Guru-werk is eindig: er is geen externe
-  input om op te wachten na het committen.
+On **/auto-loop**:
+- Start an auto-loop with the consensus points as tasks
+- Autonomous execution
+- The auto-loop Context section must indicate that the loop stops itself
+  (CronDelete + `/recap`) when all guru points have been
+  completed and committed. Guru work is finite: there is no external
+  input to wait for after committing.
 
-Discussiepunten worden alleen uitgevoerd als de user ze expliciet goedkeurt.
+Discussion points are only executed when the user explicitly approves them.
 

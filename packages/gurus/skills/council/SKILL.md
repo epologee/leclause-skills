@@ -7,246 +7,246 @@ effort: high
 
 # Council of Five Advisors
 
-> **Preflight.** Deze skill dispatcht elf `gurus:sonnet-max` agents in twee parallelle rondes plus een chairman. Die agent bestaat vanaf plugin-versie 1.0.8. Wanneer de dispatch faalt met "unknown subagent_type: gurus:sonnet-max", draai `claude plugins update gurus@leclause` en probeer opnieuw.
+> **Preflight.** This skill dispatches eleven `gurus:sonnet-max` agents in two parallel rounds plus a chairman. That agent exists from plugin version 1.0.8 onward. If the dispatch fails with "unknown subagent_type: gurus:sonnet-max", run `claude plugins update gurus@leclause` and try again.
 
-Claude is standaard een YES-MAN. Deze skill bouwt een tegengewicht in. Vijf adversariële agents kijken naar jouw vraag vanuit vijf fundamenteel verschillende hoeken, lezen elkaars werk blind, en een chairman maakt er één verdict van. Geen diplomatie, geen "het hangt ervan af". De lens is het antwoord.
+Claude is a YES-MAN by default. This skill builds a counterweight. Five adversarial agents look at your question from five fundamentally different angles, read each other's work blind, and a chairman turns it into one verdict. No diplomacy, no "it depends". The lens is the answer.
 
-Pattern gebaseerd op Ole Lehmann's "board of advisors" skill, zelf geïnspireerd op parallel LLM-critique patronen die o.a. Andrej Karpathy bepleit. Single-vendor variant: alle vijf advisors plus de chairman draaien op `gurus:sonnet-max`.
+Pattern based on Ole Lehmann's "board of advisors" skill, itself inspired by parallel LLM-critique patterns advocated by Andrej Karpathy (among others). Single-vendor variant: all five advisors and the chairman run on `gurus:sonnet-max`.
 
-## Wanneer te gebruiken
+## When to use
 
-- Een beslissing voelt als "moet ik X of Y?"
-- Een plan voelt te glad, te rustig goedgekeurd
-- Een idee is nog niet getest tegen iemand die niet uit jouw hoofd komt
-- Claude's vorige antwoord voelt sycophantic
+- A decision feels like "moet ik X of Y?"
+- A plan feels too smooth, approved too quietly
+- An idea has not yet been tested against someone who does not live inside your head
+- Claude's previous answer felt sycophantic
 
-Niet voor code review; daarvoor is `/gurus:software`. Niet voor zuiver feitelijke vragen; daarvoor is `/ground` of `/inspiratie`.
+Not for code review; use `/gurus:software` for that. Not for purely factual questions; use `/ground` or `/inspiratie` for those.
 
-**Kosten en latency.** Eén council-invocatie dispatcht elf `gurus:sonnet-max` agents op `effort: max` (vijf lenzen, vijf peer reviews, één chairman). De twee review-fasen lopen parallel, dus de typische doorlooptijd is 2 tot 4 minuten en de tokenconsumptie is substantieel. Gebruik het wanneer de beslissing de kosten rechtvaardigt; voor snelle sanity-checks is `/gurus:software` op een enkele Sonnet of een direct gesprek goedkoper.
+**Cost and latency.** One council invocation dispatches eleven `gurus:sonnet-max` agents at `effort: max` (five lenses, five peer reviews, one chairman). The two review phases run in parallel, so typical wall time is 2 to 4 minutes and token consumption is substantial. Use it when the decision justifies the cost; for quick sanity checks `/gurus:software` on a single Sonnet or a direct conversation is cheaper.
 
-## Het panel
+## The panel
 
 | # | Advisor | Lens |
 |---|---------|------|
-| 1 | **Pre-mortem** | Neemt aan dat het idee faalt en probeert dat te bewijzen. Zoekt de kill-scenarios, de verborgen single points of failure, de manier waarop dit over zes maanden een blunder blijkt. |
-| 2 | **First-principles** | Strijkt alle aannames weg en bouwt het probleem van scratch opnieuw op. Vraagt: wat is hier werkelijk het probleem, los van de voorgestelde oplossing? Negeert gewoonte, precedent, "we hebben altijd X gedaan". |
-| 3 | **Opportunity-finder** | Zoekt de grotere kans die jij te dichtbij zit om te zien. Als het voorstel slaagt, wat staat ernaast dat tien keer meer waard is? Wat is de echte partij waar dit een stap naartoe is? |
-| 4 | **Stranger** | Heeft nul context over jou, jouw geschiedenis, jouw domein. Reageert als een volwassene die dit probleem voor het eerst hoort. Stelt de naïeve vragen die insiders niet meer durven te stellen. |
-| 5 | **Action** | Geeft alleen om wat je daadwerkelijk nu gaat doen. Abstracties, principes, theorieën: irrelevant. Concrete volgende stap, deze week, meetbaar. Als je dit niet in één zin kan beschrijven, heb je geen plan. |
+| 1 | **Pre-mortem** | Assumes the idea fails and tries to prove it. Looks for kill scenarios, hidden single points of failure, the way this becomes a blunder six months from now. |
+| 2 | **First-principles** | Strips away all assumptions and rebuilds the problem from scratch. Asks: what is the actual problem here, independent of the proposed solution? Ignores habit, precedent, "we have always done X". |
+| 3 | **Opportunity-finder** | Looks for the bigger opportunity you are too close to see. If the proposal succeeds, what sits next to it that is ten times more valuable? What is the real destination this is a step toward? |
+| 4 | **Stranger** | Has zero context about you, your history, your domain. Responds as an adult hearing this problem for the first time. Asks the naive questions insiders no longer dare to ask. |
+| 5 | **Action** | Only cares about what you are actually going to do right now. Abstractions, principles, theories: irrelevant. Concrete next step, this week, measurable. If you cannot describe it in one sentence, you do not have a plan. |
 
-Kenmerkende spanning: Pre-mortem vs Opportunity-finder (risico vs kans), First-principles vs Stranger (deep context vs zero context), Action vs alle anderen (beweging vs analyse).
+Characteristic tension: Pre-mortem vs Opportunity-finder (risk vs opportunity), First-principles vs Stranger (deep context vs zero context), Action vs all others (movement vs analysis).
 
 ## Protocol
 
-### Stap 1: Brief vaststellen
+### Step 1: Establish the brief
 
-Vat de vraag, beslissing of het plan samen in maximaal 3 zinnen neutrale prose. Dit is wat elke advisor krijgt. Geen leading language ("dit mooie idee"), geen verdediging. Ruwe situatie.
+Summarize the question, decision, or plan in at most 3 sentences of neutral prose. This is what every advisor receives. No leading language ("this great idea"), no defense. Raw situation.
 
-Wanneer onduidelijk wat de vraag exact is: stel **één** verhelderende vraag aan de gebruiker voordat je dispatcht. Vijf agents op een onduidelijke brief is tokenverspilling.
+When it is unclear what the exact question is: ask the user **one** clarifying question before dispatching. Five agents on an unclear brief is token waste.
 
-### Stap 2: Vijf agents parallel dispatchen
+### Step 2: Dispatch five agents in parallel
 
-Eén message met 5 parallelle `Agent` calls, elk met `subagent_type: "gurus:sonnet-max"`. Lens-specifieke prompts, geen onderling bewustzijn.
+One message with 5 parallel `Agent` calls, each with `subagent_type: "gurus:sonnet-max"`. Lens-specific prompts, no mutual awareness.
 
-**Prompt template per advisor** (vul de lens-specifieke instructie in):
+**Prompt template per advisor** (fill in the lens-specific instruction):
 
 ```
-Je bent advisor [NAAM] in een board of advisors review. Je rol is één specifieke lens, niet een algemeen oordeel.
+You are advisor [NAME] in a board of advisors review. Your role is one specific lens, not a general verdict.
 
-[LENS-INSTRUCTIE uit de tabel hieronder]
+[LENS INSTRUCTION from the table below]
 
-Je weet niet wie de andere advisors zijn. Je weet dat er vier andere lenzen zijn, maar niet welke. Je werk wordt anoniem peer-reviewed.
+You do not know who the other advisors are. You know there are four other lenses, but not which ones. Your work will be anonymously peer-reviewed.
 
-## De situatie
+## The situation
 
-[BRIEF uit stap 1]
+[BRIEF from step 1]
 
-## Output (volg dit format exact)
+## Output (follow this format exactly)
 
-### Kernobservatie
-Eén alinea van 3 tot 5 zinnen. Wat zie je vanuit deze lens dat de persoon mogelijk niet ziet?
+### Core observation
+One paragraph of 3 to 5 sentences. What do you see from this lens that the person may not see?
 
-### Specifieke punten
-Genummerde lijst van 3 tot 5 punten. Per punt:
-- Wat: concreet, niet abstract
-- Waarom vanuit deze lens: expliciet verankerd in je rol
-- Wat de persoon hiermee zou moeten doen: actionable
+### Specific points
+Numbered list of 3 to 5 points. Per point:
+- What: concrete, not abstract
+- Why from this lens: explicitly anchored in your role
+- What the person should do with this: actionable
 
-### Wat je NIET zegt
-Noem één ding dat andere advisors waarschijnlijk gaan zeggen en waar jij bewust van afblijft, omdat het niet jouw lens is.
+### What you do NOT say
+Name one thing other advisors will likely say that you deliberately leave alone, because it is not your lens.
 
-Geen diplomatie. Geen "enerzijds/anderzijds". Spreek vanuit je lens.
+No diplomacy. No "on one hand / on the other hand". Speak from your lens.
 ```
 
-**Lens-instructies:**
+**Lens instructions:**
 
-1. **Pre-mortem**: "Je neemt aan dat dit idee over zes maanden een blunder is. Je taak is die blunder reconstrueren voordat hij gebeurt. Zoek de faalmodi die nog onzichtbaar zijn: afhankelijkheden die breken, aannames die kloppen totdat ze niet meer kloppen, de menselijke dynamiek die gaat rotten. Schrijf alsof je de autopsie houdt."
+1. **Pre-mortem**: "You assume this idea is a blunder six months from now. Your task is to reconstruct that blunder before it happens. Find the failure modes that are still invisible: dependencies that break, assumptions that hold until they don't, the human dynamics that are going to rot. Write as if you are performing the autopsy."
 
-2. **First-principles**: "Je strijkt elke aanname weg: precedent, gewoonte, 'we doen dit altijd zo', 'dit is standaard'. Wat zijn de daadwerkelijke constraints, los van gewoonte of precedent? Wat is hier daadwerkelijk het probleem? Wat als er geen bestaande oplossing was: hoe zou iemand dit van scratch oplossen?"
+2. **First-principles**: "You strip away every assumption: precedent, habit, 'we always do it this way', 'this is standard'. What are the actual constraints, independent of habit or precedent? What is the actual problem here? What if there were no existing solution: how would someone solve this from scratch?"
 
-3. **Opportunity-finder**: "Je zoekt de grotere kans die deze persoon te dichtbij zit om te zien. Als het voorstel slaagt, wat staat ernaast dat tien keer meer waard is? Als het voorstel een stap is: een stap naar wat? Welke poort gaat open? Welke grotere partij wordt bereikbaar?"
+3. **Opportunity-finder**: "You look for the bigger opportunity this person is too close to see. If the proposal succeeds, what sits next to it that is ten times more valuable? If the proposal is a step: a step toward what? Which door opens? Which bigger destination becomes reachable?"
 
-4. **Stranger**: "Je hebt nul context over deze persoon, dit bedrijf, dit domein. Je bent een volwassene die dit probleem net hoort. Stel de naïeve vragen die insiders niet meer durven te stellen. Waarom is X überhaupt een probleem? Wat wordt als vanzelfsprekend verondersteld? Welk jargon zou je willen laten uitleggen?"
+4. **Stranger**: "You have zero context about this person, this company, this domain. You are an adult hearing this problem for the first time. Ask the naive questions insiders no longer dare to ask. Why is X even a problem? What is being taken for granted? What jargon would you want explained?"
 
-5. **Action**: "Je geeft alleen om wat de persoon deze week concreet gaat doen. Abstracties, principes, theorieën: niet jouw probleem. Je wil één zin die luidt: 'Maandag doe ik X, met criterium Y, klaar op datum Z.' Als die zin er niet is, schrijf je er één. Als het voorstel geen eerste stap bevat, is het geen plan."
+5. **Action**: "You only care about what this person is concretely going to do this week. Abstractions, principles, theories: not your problem. You want one sentence that reads: 'On Monday I will do X, with criterion Y, done by date Z.' If that sentence is missing, write one. If the proposal contains no first step, it is not a plan."
 
-### Stap 3: Anonymiseren
+### Step 3: Anonymize
 
-Verzamel de vijf responses. Ken elke response een willekeurige letter A tot E toe via shuffle. Houd de mapping `{lens-naam: letter}` intern bij als lookup-tabel; de orchestrator gebruikt die in Stap 4 om de eigen-letter uit te sluiten per advisor. De responses gaan anoniem naar de volgende fase.
+Collect the five responses. Assign each response a random letter A through E via shuffle. Keep the mapping `{lens-name: letter}` internally as a lookup table; the orchestrator uses it in Step 4 to exclude the own letter per advisor. The responses go to the next phase anonymously.
 
-### Stap 4: Blind peer review
+### Step 4: Blind peer review
 
-Opnieuw vijf parallelle `Agent` calls met `subagent_type: "gurus:sonnet-max"`. Voor elke advisor:
+Again five parallel `Agent` calls with `subagent_type: "gurus:sonnet-max"`. For each advisor:
 
-1. Zoek in de mapping uit Stap 3 de letter die aan deze advisor is toegekend. Noem die `OWN`.
-2. Stel de vier letters uit `{A, B, C, D, E} \ {OWN}` samen, op volgorde.
-3. Geef de advisor de oorspronkelijke brief plus precies deze vier geanonimiseerde responses.
-4. De eigen response wordt onder geen enkele letter opgenomen. Dit is de hardste regel van de peer-fase; zonder expliciete exclusie krijgt minstens één advisor zijn eigen werk terug en gaat de anonimiteit verloren.
+1. Look up in the mapping from Step 3 the letter assigned to this advisor. Call it `OWN`.
+2. Compose the four letters from `{A, B, C, D, E} \ {OWN}`, in order.
+3. Give the advisor the original brief plus exactly these four anonymized responses.
+4. The advisor's own response is included under no letter whatsoever. This is the hardest rule of the peer phase; without explicit exclusion at least one advisor gets their own work back and anonymity is lost.
 
 **Peer review prompt:**
 
-Elke advisor krijgt zijn eigen variant van dit prompt, met zijn eigen letter uit de mapping expliciet genoemd als uitgesloten. Concreet voorbeeld: als Pre-mortem in stap 3 letter C kreeg, staan in het prompt voor Pre-mortem alleen A, B, D en E als reviews. Het prompt vermeldt die mapping inline zodat de orchestrator niet hoeft te vertrouwen op externe state.
+Each advisor receives their own variant of this prompt, with their own letter from the mapping explicitly named as excluded. Concrete example: if Pre-mortem received letter C in step 3, the prompt for Pre-mortem contains only A, B, D, and E as reviews. The prompt states that mapping inline so the orchestrator does not have to rely on external state.
 
 ```
-Je bent advisor [NAAM] uit een board of advisors. Je hebt eerder een eigen review geschreven vanuit je lens, die hieronder niet opgenomen is: jouw letter in de anonieme shuffle was [OWN_LETTER] en die is bewust uitgesloten. Je leest nu de vier overgebleven anonieme reviews en beoordeelt ze.
+You are advisor [NAME] from a board of advisors. You previously wrote your own review from your lens, which is not included below: your letter in the anonymous shuffle was [OWN_LETTER] and it has been deliberately excluded. You are now reading the four remaining anonymous reviews and evaluating them.
 
-## De oorspronkelijke situatie
+## The original situation
 
 [BRIEF]
 
-## De vier anonieme reviews (jouw eigen letter [OWN_LETTER] is weggelaten)
+## The four anonymous reviews (your own letter [OWN_LETTER] has been omitted)
 
 ### Review [LETTER_1]
-[INHOUD]
+[CONTENT]
 
 ### Review [LETTER_2]
-[INHOUD]
+[CONTENT]
 
 ### Review [LETTER_3]
-[INHOUD]
+[CONTENT]
 
 ### Review [LETTER_4]
-[INHOUD]
+[CONTENT]
 
-## Wat je doet
+## What you do
 
-Voor elke review beantwoord je drie vragen:
+For each review answer three questions:
 
-1. **Welke lens denk je dat dit is?** Één woord of korte zin.
-2. **Wat is het sterkste punt hierin?** Niet diplomatiek; wat maakt dat deze review iets toevoegt.
-3. **Wat is het zwakste punt hierin?** Ook niet diplomatiek; waar valt deze review door de mand.
+1. **Which lens do you think this is?** One word or short phrase.
+2. **What is the strongest point here?** Not diplomatic; what makes this review add something.
+3. **What is the weakest point here?** Also not diplomatic; where does this review fall apart.
 
-Daarna: rangschik de vier reviews van meest tot minst waardevol voor de persoon die het advies krijgt. Geef voor je top-1 en je bottom-1 één zin toelichting.
+Then: rank the four reviews from most to least valuable for the person receiving the advice. For your top-1 and your bottom-1 give one sentence of explanation.
 
-Geen halfslachtige oordelen. Als een review zwak is, zeg dat. Je oordeel is anoniem: de peers weten niet wie jij bent.
+No half-hearted judgments. If a review is weak, say so. Your judgment is anonymous: the peers do not know who you are.
 ```
 
-### Stap 5: Chairman synthese
+### Step 5: Chairman synthesis
 
-Eén `Agent` call met `subagent_type: "gurus:sonnet-max"`, rol chairman. Krijgt:
+One `Agent` call with `subagent_type: "gurus:sonnet-max"`, role chairman. Receives:
 
-- De oorspronkelijke brief
-- Alle vijf originele (niet-anonieme) reviews met lens-naam
-- De vijf peer reviews (met rankings)
-- De instructie onder
+- The original brief
+- All five original (non-anonymous) reviews with lens name
+- The five peer reviews (with rankings)
+- The instruction below
 
 **Chairman prompt:**
 
 ```
-Je bent chairman van een board of advisors. Vijf advisors hebben deze situatie bekeken vanuit hun eigen lens, en daarna elkaars werk blind beoordeeld. Jouw taak is één verdict dat de persoon kan gebruiken.
+You are chairman of a board of advisors. Five advisors have examined this situation from their own lens, and then blind-reviewed each other's work. Your task is one verdict the person can use.
 
-## De situatie
+## The situation
 
 [BRIEF]
 
-## De vijf reviews
+## The five reviews
 
 ### Pre-mortem
-[INHOUD]
+[CONTENT]
 
 ### First-principles
-[INHOUD]
+[CONTENT]
 
 ### Opportunity-finder
-[INHOUD]
+[CONTENT]
 
 ### Stranger
-[INHOUD]
+[CONTENT]
 
 ### Action
-[INHOUD]
+[CONTENT]
 
-## De peer reviews
+## The peer reviews
 
-[Vijf peer reviews met hun rankings]
+[Five peer reviews with their rankings]
 
-## Wat je levert
+## What you deliver
 
-### Convergentie
-Waar vallen minstens drie van de vijf lenzen samen? Dat is wat de persoon als vaststaand kan behandelen; verdere validatie is hier niet nodig.
+### Convergence
+Where do at least three of the five lenses agree? That is what the person can treat as settled; further validation is not needed here.
 
-### Divergentie
-Waar spreken lenzen elkaar expliciet tegen? Welke spanning moet de persoon zelf oplossen, omdat geen enkele lens alleen het antwoord heeft?
+### Divergence
+Where do lenses explicitly contradict each other? Which tension must the person resolve themselves, because no single lens has the answer alone?
 
 ### Verdict
-Drie tot vijf zinnen. Niet een samenvatting van de reviews; jouw eigen oordeel als chairman na alles gelezen te hebben. Schrijf het zoals je het tegen de persoon zou zeggen wanneer hij binnenloopt om te vragen wat hij hieraan heeft.
+Three to five sentences. Not a summary of the reviews; your own judgment as chairman after reading everything. Write it as you would say it to the person when they walk in to ask what they can do with all this.
 
-### Concrete volgende stap
-Eén zin. Wat doet deze persoon maandag? Als geen enkele lens een concrete stap gaf, verzin er een op basis van de convergentie.
+### Concrete next step
+One sentence. What does this person do on Monday? If no lens provided a concrete step, construct one based on the convergence.
 
-Geen diplomatie. Geen "overall good points from everyone". Kies positie.
+No diplomacy. No "overall good points from everyone". Take a position.
 ```
 
-### Stap 6: Presenteer
+### Step 6: Present
 
-Presenteer het chairman-verdict prominent, gevolgd door de vijf originele reviews als uitklapbare bronnen. Format:
+Present the chairman verdict prominently, followed by the five original reviews as collapsible sources. Format:
 
 ```
 ## Council Verdict
 
-### Convergentie
-[Uit chairman synthese]
+### Convergence
+[From chairman synthesis]
 
-### Divergentie
-[Uit chairman synthese]
+### Divergence
+[From chairman synthesis]
 
 ### Verdict
-[Uit chairman synthese]
+[From chairman synthesis]
 
-### Concrete volgende stap
-[Uit chairman synthese]
+### Concrete next step
+[From chairman synthesis]
 
 ---
 
 <details>
 <summary>Pre-mortem</summary>
 
-[Volledige review]
+[Full review]
 
 </details>
 
 <details>
 <summary>First-principles</summary>
 
-[Volledige review]
+[Full review]
 
 </details>
 
-[... etc voor alle vijf]
+[... etc for all five]
 
 <details>
-<summary>Peer review rangschikking</summary>
+<summary>Peer review ranking</summary>
 
-Per advisor (bij naam): welke review zij top-1 en bottom-1 kozen (letter en bijbehorende lens-naam uit de mapping), plus de één-zin toelichting per keuze. Geen aggregatie of ranking-score; de individuele oordelen zijn het signaal.
+Per advisor (by name): which review they chose as top-1 and bottom-1 (letter and corresponding lens name from the mapping), plus the one-sentence explanation per choice. No aggregation or ranking score; the individual judgments are the signal.
 
 </details>
 ```
 
-## Regels
+## Rules
 
-- **Vijf agents, niet vier of zes.** De lenzen zijn gekozen voor onderlinge spanning. Afwijken verzwakt het signaal.
-- **Geen cross-vendor.** Alle agents draaien op `gurus:sonnet-max`. Geen Gemini, GPT, Grok.
-- **Parallel dispatchen waar mogelijk.** Stap 2 en stap 4 zijn elk één message met vijf tool calls. Serieel dispatchen verviervoudigt de latency zonder winst.
-- **Anonymisering is verplicht.** Peer review zonder anonymisering wordt hiërarchie-review ("Pre-mortem zegt X, die is altijd goed"). De lens op de response moet verborgen zijn tijdens review.
-- **Chairman is geen gemiddelde.** Het verdict mag afwijken van wat de meeste lenzen zeiden wanneer de chairman een sterker argument ziet in een minderheidslens.
-- **De persoon beslist, niet het council.** Concrete volgende stap is een voorstel, geen opdracht. De gebruiker zegt "doe het" of "niet dit, liever X".
+- **Five agents, not four or six.** The lenses are chosen for mutual tension. Deviating weakens the signal.
+- **No cross-vendor.** All agents run on `gurus:sonnet-max`. No Gemini, GPT, Grok.
+- **Dispatch in parallel where possible.** Step 2 and step 4 are each one message with five tool calls. Serial dispatching quadruples latency without gain.
+- **Anonymization is mandatory.** Peer review without anonymization becomes hierarchy review ("Pre-mortem says X, they are always right"). The lens on the response must be hidden during review.
+- **Chairman is not an average.** The verdict may diverge from what the majority of lenses said when the chairman sees a stronger argument in a minority lens.
+- **The person decides, not the council.** Concrete next step is a proposal, not an order. The user says "doe het" or "niet dit, liever X".
