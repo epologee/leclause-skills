@@ -11,80 +11,80 @@ disable-model-invocation: true
 
 # Clipboard
 
-Kopieer de kern van je laatste antwoord naar het macOS clipboard via `clipboard-copy` (de helper die `pbcopy` en `pbcopy-html` onder water aanroept). Geen bevestiging, geen uitleg. Gewoon kopiëren.
+Copy the core content of your last answer to the macOS clipboard via `clipboard-copy` (the helper that invokes `pbcopy` and `pbcopy-html` under the hood). No confirmation, no explanation. Just copy.
 
-## Argumenten
+## Arguments
 
 | Argument | Effect |
 |----------|--------|
-| *(geen)* | Plain text via `clipboard-copy` (wraps `pbcopy`) |
-| `slack` | Rich text (HTML) via `clipboard-copy --html` (wraps `pbcopy-html`). Inline code, bold, en lijsten worden correct gerenderd bij plakken in Slack. Tabellen worden geconverteerd naar ASCII in een `<pre>` blok (Slack ondersteunt geen HTML tables) |
+| *(none)* | Plain text via `clipboard-copy` (wraps `pbcopy`) |
+| `slack` | Rich text (HTML) via `clipboard-copy --html` (wraps `pbcopy-html`). Inline code, bold, and lists render correctly when pasted into Slack. Tables are converted to ASCII in a `<pre>` block (Slack does not support HTML tables) |
 
 ## Workflow
 
-1. **Identificeer de kern** van je laatste inhoudelijke antwoord, de bruikbare content, niet de meta-communicatie eromheen. Als het laatste antwoord zelf een clipboard-actie, login, of andere meta-operatie was, kijk verder terug naar het laatste antwoord met daadwerkelijke content
-2. **Bepaal het content type** (zie tabel)
-3. **Check het argument**: `slack` → genereer HTML en gebruik `clipboard-copy --html` (zie sectie "Slack modus"). Geen argument → plain text via `clipboard-copy`
-4. **Format en kopieer**
-5. **Bevestig kort** wat er gekopieerd is (type + eerste paar woorden)
+1. **Identify the core** of your last substantive answer, the useful content, not the meta-communication around it. If the last answer was itself a clipboard action, login, or other meta-operation, look further back for the last answer with actual content
+2. **Determine the content type** (see table)
+3. **Check the argument**: `slack` → generate HTML and use `clipboard-copy --html` (see section "Slack mode"). No argument → plain text via `clipboard-copy`
+4. **Format and copy**
+5. **Confirm briefly** what was copied (type + first few words)
 
-## Content Type Detectie
+## Content Type Detection
 
-| Type | Herkenning | Formatting |
-|------|-----------|------------|
-| **JSON** | JSON object/array in antwoord | Pretty-printed JSON, intact laten |
-| **Code** | Code block(s) in antwoord | Exacte code zonder markdown fences |
-| **Command** | Shell command(s) | Commando's, één per regel |
-| **Email/brief** | Aanhef, afronding, formele toon | Alinea's gescheiden door dubbele newline |
-| **Slack/chat** | Informele toon, kort bericht | Doorlopende tekst, enkele newlines voor alinea's |
-| **Lijst** | Opsomming, bullet points | Behoud list formatting met `- ` prefix |
-| **Uitleg/proza** | Lopende tekst, uitleg | Doorlopende alinea's, dubbele newline tussen alinea's |
-| **Tabel** | Tabeldata in antwoord | GitHub-flavored markdown tabel met `---|---|---` separator |
+| Type | Recognition | Formatting |
+|------|-------------|------------|
+| **JSON** | JSON object/array in answer | Pretty-printed JSON, leave intact |
+| **Code** | Code block(s) in answer | Exact code without markdown fences |
+| **Command** | Shell command(s) | Commands, one per line |
+| **Email/letter** | Salutation, sign-off, formal tone | Paragraphs separated by double newline |
+| **Slack/chat** | Informal tone, short message | Continuous text, single newlines between paragraphs |
+| **List** | Enumeration, bullet points | Preserve list formatting with `- ` prefix |
+| **Explanation/prose** | Running text, explanation | Continuous paragraphs, double newline between paragraphs |
+| **Table** | Table data in answer | GitHub-flavored markdown table with `---|---|---` separator |
 
-**Gemengde content:** Wanneer een antwoord code blocks bevat mét uitleg eromheen, wint "Code" altijd van "Uitleg/proza". De user wil de code kopiëren, niet de uitleg lezen in een ander venster. Kopieer alleen de code blocks, laat de prose weg.
+**Mixed content:** When an answer contains code blocks with surrounding explanation, "Code" always wins over "Explanation/prose". The user wants to copy the code, not read the explanation in another window. Copy only the code blocks, leave the prose out.
 
-## Formatting Regels
+## Formatting Rules
 
-### Terminal-artefacten opschonen
+### Cleaning up terminal artefacts
 
-Claude Code output bevat vaak:
-- Newlines met leading spaces (terminal wrapping)
+Claude Code output often contains:
+- Newlines with leading spaces (terminal wrapping)
 - Markdown formatting (`**bold**`, `` `code` ``, `### headers`)
-- Bullet points als `- ` of `* `
+- Bullet points as `- ` or `* `
 
-**Altijd verwijderen:**
+**Always remove:**
 - Markdown bold/italic markers (`**`, `*`, `_`)
 - Markdown header markers (`#`, `##`, etc.)
-- Leading/trailing whitespace per regel
+- Leading/trailing whitespace per line
 
-**Behouden:**
-- Inline code backticks (`` `technische termen` `` blijven altijd staan)
-- Structurele newlines (alinea-scheiding, list items)
-- Indentatie die bij het content type hoort (code, JSON)
+**Keep:**
+- Inline code backticks (`` `technical terms` `` always stay)
+- Structural newlines (paragraph breaks, list items)
+- Indentation that belongs to the content type (code, JSON)
 
 ### Per type
 
-**JSON:** Gebruik `jq .` formatting. Geen extra processing.
+**JSON:** Use `jq .` formatting. No extra processing.
 
-**Code:** Exacte code uit het code block. Geen markdown fences. Bij meerdere blocks: scheid met één lege regel.
+**Code:** Exact code from the code block. No markdown fences. With multiple blocks: separate with one blank line.
 
-**Command:** Alleen het commando zelf, geen uitleg. Meerdere commando's op aparte regels.
+**Command:** Only the command itself, no explanation. Multiple commands on separate lines.
 
-**Email/brief:** Platte tekst met alinea's. Geen markdown. Dubbele newline tussen alinea's.
+**Email/letter:** Plain text with paragraphs. No markdown. Double newline between paragraphs.
 
-**Slack/chat:** Doorlopende tekst. Enkele newline alleen bij echte alinea-wissel. Geen onnodige regelafbrekingen.
+**Slack/chat:** Continuous text. Single newline only at a real paragraph break. No unnecessary line breaks.
 
-**Uitleg/proza:** Doorlopende alinea's. Geen bullets tenzij de originele structuur dat vereist. Terminal line-wrapping samenvoegen tot doorlopende zinnen.
+**Explanation/prose:** Continuous paragraphs. No bullets unless the original structure requires it. Merge terminal line-wrapping into continuous sentences.
 
-**Tabel:** GitHub-flavored markdown met pipe-formatting en `---|---|---` separator tussen header en body. Plakbaar in GitHub issues, PR's, Notion, Slack (met GFM support).
+**Table:** GitHub-flavored markdown with pipe-formatting and `---|---|---` separator between header and body. Pasteable in GitHub issues, PRs, Notion, Slack (with GFM support).
 
-## Kopiëren
+## Copying
 
-`clipboard-copy` staat niet op `$PATH`. Elk code-blok resolved eerst het installPath van clipboard via `jq` tegen `installed_plugins.json`, bail-out als dat leeg is met een concrete install-tip, source dan `bin/clipboard-paths.sh`, en roept `resolve_clipboard_copy`. Die functie valideert dat de binary bestaat en meldt anders met een update-tip. Geen bash "No such file or directory" meer, noch bij een niet-geïnstalleerde plugin noch bij een stale cache.
+`clipboard-copy` is not on `$PATH`. Each code block first resolves the installPath of clipboard via `jq` against `installed_plugins.json`, bails out if empty with a concrete install tip, then sources `bin/clipboard-paths.sh`, and calls `resolve_clipboard_copy`. That function validates the binary exists and reports otherwise with an update tip. No more bash "No such file or directory", neither from an uninstalled plugin nor from a stale cache.
 
-### Standaard (plain text)
+### Default (plain text)
 
-Gebruik een heredoc om formatting-problemen te voorkomen:
+Use a heredoc to avoid formatting issues:
 
 ```bash
 IP=$(jq -r '.plugins["clipboard@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
@@ -99,11 +99,11 @@ CLIPBOARD_COPY=$(resolve_clipboard_copy) || exit 1
 CLIPBOARD
 ```
 
-**Let op:** `<<'CLIPBOARD'` (single quotes) is literal; variabelen, command substitution en backticks worden niet ge-expand. Dit is meestal wat je wilt. Gebruik alleen `<<"CLIPBOARD"` (dubbele quotes) wanneer je expliciet `$VAR`, `$(...)` of backticks wilt laten uitvoeren; dan moet content met letterlijke `$`, `` ` `` of `\` geescaped worden. Kies de heredoc-variant die het minste escaping vereist voor de specifieke content.
+**Note:** `<<'CLIPBOARD'` (single quotes) is literal; variables, command substitution, and backticks are not expanded. This is usually what you want. Only use `<<"CLIPBOARD"` (double quotes) when you explicitly want `$VAR`, `$(...)` or backticks to be evaluated; then content with literal `$`, `` ` `` or `\` must be escaped. Choose the heredoc variant that requires the least escaping for the specific content.
 
-### Slack modus
+### Slack mode
 
-Wanneer het argument `slack` is meegegeven, genereer HTML in plaats van plain text en roep `clipboard-copy --html`:
+When the `slack` argument is provided, generate HTML instead of plain text and call `clipboard-copy --html`:
 
 ```bash
 IP=$(jq -r '.plugins["clipboard@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
@@ -118,30 +118,30 @@ CLIPBOARD_COPY=$(resolve_clipboard_copy) || exit 1
 CLIPBOARD
 ```
 
-`clipboard-copy --html` stuurt de HTML door `pbcopy-html.swift`, dat het als rich text op het clipboard zet (via `NSPasteboard`). Slack pikt dit op en rendert formatting correct. Daarnaast wordt een plain text fallback (HTML tags gestript) meegestuurd voor apps die geen rich text ondersteunen.
+`clipboard-copy --html` passes the HTML through `pbcopy-html.swift`, which places it on the clipboard as rich text (via `NSPasteboard`). Slack picks this up and renders formatting correctly. A plain text fallback (HTML tags stripped) is also included for apps that do not support rich text.
 
-#### Markdown -> HTML conversie
+#### Markdown to HTML conversion
 
-Converteer de content naar HTML voordat je het aan `clipboard-copy --html` geeft:
+Convert the content to HTML before passing it to `clipboard-copy --html`:
 
 | Markdown | HTML |
 |----------|------|
 | `` `code` `` | `<code>code</code>` |
 | `**bold**` | `<b>bold</b>` |
 | `- list item` | `<li>list item</li>` (in `<ul>`) |
-| Lege regel | `<br><br>` |
-| Regelafbreking | `<br>` (newlines in HTML source worden genegeerd door rich text paste, gebruik ALTIJD `<br>` voor line breaks) |
-| Speciale tekens | **Escape NOOIT** met HTML entities (`&amp;`, `&gt;`, `&lt;`, `&quot;`). Veel apps (Slack, Notion, Teams) renderen entities letterlijk bij rich text paste: `&gt;` verschijnt als de tekst "&gt;" in plaats van ">". Schrijf `&`, `>`, `<` direct. Alleen escapen wanneer het teken een HTML-tag zou breken (bijv. `<` direct voor een letter). |
+| Empty line | `<br><br>` |
+| Line break | `<br>` (newlines in HTML source are ignored by rich text paste, ALWAYS use `<br>` for line breaks) |
+| Special characters | **NEVER escape** with HTML entities (`&amp;`, `&gt;`, `&lt;`, `&quot;`). Many apps (Slack, Notion, Teams) render entities literally on rich text paste: `&gt;` appears as the text "&gt;" instead of ">". Write `&`, `>`, `<` directly. Only escape when the character would break an HTML tag (e.g. `<` immediately before a letter). |
 
-Wrap de volledige content NIET in `<html>` of `<body>` tags. Rich text paste verwacht HTML-fragmenten, geen volledige documenten.
+Do NOT wrap the full content in `<html>` or `<body>` tags. Rich text paste expects HTML fragments, not complete documents.
 
-#### Tabellen in Slack modus
+#### Tables in Slack mode
 
-Slack ondersteunt GEEN `<table>` HTML elementen. Een `<table>` wordt plat geslagen tot onleesbare tekst zonder structuur.
+Slack does NOT support `<table>` HTML elements. A `<table>` is flattened to unreadable text without structure.
 
-**Gebruik NOOIT `<table>`, `<tr>`, `<th>`, of `<td>` tags in Slack modus.**
+**NEVER use `<table>`, `<tr>`, `<th>`, or `<td>` tags in Slack mode.**
 
-Converteer tabellen naar ASCII format in een `<pre>` blok. Slack rendert `<pre>` als monospace codeblok, waardoor kolommen netjes uitgelijnd blijven.
+Convert tables to ASCII format in a `<pre>` block. Slack renders `<pre>` as a monospace code block, keeping columns neatly aligned.
 
 ```html
 <pre>
@@ -152,20 +152,20 @@ Priority per user profile      | Planner on departure    | Concept does not exis
 </pre>
 ```
 
-Regels voor ASCII tabellen in `<pre>`:
-- Kolommen gescheiden door ` | ` (spatie-pipe-spatie)
-- Header gescheiden van body door `---...|---...` regel
-- Kolombreedte: pad met spaties zodat pipes verticaal uitlijnen
-- Geen HTML tags binnen `<pre>` (geen `<code>`, `<b>`, etc.)
+Rules for ASCII tables in `<pre>`:
+- Columns separated by ` | ` (space-pipe-space)
+- Header separated from body by `---...|---...` line
+- Column width: pad with spaces so pipes align vertically
+- No HTML tags inside `<pre>` (no `<code>`, `<b>`, etc.)
 
-#### Voorbeeld
+#### Example
 
 Markdown content:
 ```
 De job is goed uitgevoerd. Alle platforms uit `PLATFORM_TIMEOUTS` zijn **volledig** backfilled.
 ```
 
-Wordt:
+Becomes:
 ```bash
 IP=$(jq -r '.plugins["clipboard@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
 if [ -z "$IP" ]; then
@@ -179,29 +179,29 @@ De job is goed uitgevoerd. Alle platforms uit <code>PLATFORM_TIMEOUTS</code> zij
 CLIPBOARD
 ```
 
-## Bevestiging
+## Confirmation
 
-Na het kopiëren, bevestig met één regel:
-
-```
-[type] gekopieerd — "[eerste ~30 tekens]..."
-```
-
-Voorbeelden:
-- `JSON gekopieerd — "{"name":"my-project","vers..."`
-- `Code gekopieerd — "def calculate_price(kwh..."`
-- `Slack bericht gekopieerd — "Hey team, de deploy van..."`
-- `Tabel gekopieerd (slack/rich text) — "De job is goed uitgev..."`
-
-## Terugkijken bij meta-antwoorden
-
-Als het directe vorige antwoord geen kopieerbare kern heeft (clipboard bevestiging, login, skill invocatie), kijk verder terug in de conversatie. "Laatste antwoord" betekent het laatste antwoord met inhoudelijke content, niet per se het chronologisch laatste.
-
-## Niet kopiëren
-
-Alleen wanneer er nergens in de recente conversatie kopieerbare content te vinden is (bijv. sessie net gestart, alleen vragen gesteld), meld dit kort:
+After copying, confirm with one line:
 
 ```
-Geen kopieerbare content gevonden in de conversatie.
+[type] copied: "[first ~30 characters]..."
+```
+
+Examples:
+- `JSON copied: "{"name":"my-project","vers..."`
+- `Code copied: "def calculate_price(kwh..."`
+- `Slack message copied: "Hey team, de deploy van..."`
+- `Table copied (slack/rich text): "De job is goed uitgev..."`
+
+## Looking back past meta-answers
+
+If the immediately preceding answer has no copyable core (clipboard confirmation, login, skill invocation), look further back in the conversation. "Last answer" means the last answer with substantive content, not necessarily the chronologically last one.
+
+## Nothing to copy
+
+Only when there is no copyable content anywhere in the recent conversation (e.g. session just started, only questions asked), report briefly:
+
+```
+No copyable content found in the conversation.
 ```
 
