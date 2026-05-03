@@ -413,6 +413,21 @@ validate_body() {
         printf 'missing-visual: n/a rationale must be at least 10 chars (got: "%s")\n' "$rationale" >&2
         return 1
       fi
+      # Reject rationales that defer the screenshot to a future event.
+      # The trailer's purpose is to either capture the screenshot now
+      # (Visual: <path>) or document why no screenshot is meaningful at
+      # all (extract-only refactor, accessibility metadata, debug-only
+      # surface, copy-only). A rationale that promises a screenshot
+      # later silently turns the trailer into a TODO; the discipline
+      # then validates the format of the TODO instead of the evidence.
+      local rationale_lower
+      rationale_lower=$(printf '%s' "$rationale" | tr '[:upper:]' '[:lower:]')
+      local deferral_re='(later|deferred|follow[ -]?up|post[ -]?merge|next iteration|iteration when|to be captured|captured on next|captured later|saved for later|next pass|coming next|will capture|will add|will attach|will supply|will provide|will upload|will take|will make)'
+      if [[ "$rationale_lower" =~ $deferral_re ]]; then
+        local matched="${BASH_REMATCH[1]}"
+        printf 'visual-rationale-defers: Visual: n/a rationale uses deferral language ("%s") that promises a screenshot at a future event. The trailer cannot validate that promise. Either supply Visual: <path> now, or rewrite the rationale to describe why a screenshot has no meaning for this change (extract-only refactor, accessibility metadata, debug-only surface, copy-only).\n' "$matched" >&2
+        return 1
+      fi
       # Autonomous mode forbids n/a on UI-touched commits. A rover that
       # touched a SwiftUI view, .tsx component, or stylesheet can capture
       # a screenshot now; the n/a rationale was structurally a deferral
