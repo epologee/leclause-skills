@@ -15,7 +15,7 @@ Categories:
 Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 
-## [v1.0.72]
+## [v1.0.73]
 
 ### Breaking
 
