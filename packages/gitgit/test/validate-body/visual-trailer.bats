@@ -314,9 +314,12 @@ spec/util_spec.rb"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
   export GITGIT_AUTONOMOUS=1
 
-  use_trailers "$(_trailers_with_visual "n/a (logo refresh, no behaviour change)")"
+  # Autonomous mode also rejects bare "Red-then-green: yes" (red-then-green-autonomous);
+  # this test focuses on the Visual rule, so rewrite RTG to an n/a opt-out.
+  local rtg_na='n/a (no logic change, copy-only refresh)'
+  use_trailers "$(_trailers_with_visual "n/a (logo refresh, no behaviour change)" | sed "s|Red-then-green: yes|Red-then-green: $rtg_na|")"
   local file
-  file=$(write_fixture "vis-na-autonomous.txt" "$(_body_with_visual "n/a (logo refresh, no behaviour change)")")
+  file=$(write_fixture "vis-na-autonomous.txt" "$(_body_with_visual "n/a (logo refresh, no behaviour change)" | sed "s|Red-then-green: yes|Red-then-green: $rtg_na|")")
 
   run invoke_validator "$file"
   [ "$status" -eq 1 ]
@@ -329,10 +332,11 @@ spec/util_spec.rb"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/app_state_spec.rb"
   export GITGIT_AUTONOMOUS=1
 
+  local rtg_na='n/a (no logic change, log line addition only)'
   local body
-  body=$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$(_body_no_visual_backend)")
+  body=$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$(_body_no_visual_backend | sed "s|Red-then-green: yes|Red-then-green: $rtg_na|")")
 
-  use_trailers "$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$_trailers_backend")"
+  use_trailers "$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$(printf '%s' "$_trailers_backend" | sed "s|Red-then-green: yes|Red-then-green: $rtg_na|")")"
   local file
   file=$(write_fixture "no-ui-na-autonomous.txt" "$body")
 
@@ -348,9 +352,10 @@ spec/util_spec.rb"
   local screenshot
   screenshot=$(write_visual_path "screenshots/onboarding-banner.png")
 
-  use_trailers "$(_trailers_with_visual "$screenshot")"
+  local rtg_na='n/a (no logic change, copy-only refresh)'
+  use_trailers "$(_trailers_with_visual "$screenshot" | sed "s|Red-then-green: yes|Red-then-green: $rtg_na|")"
   local file
-  file=$(write_fixture "vis-path-autonomous.txt" "$(_body_with_visual "$screenshot")")
+  file=$(write_fixture "vis-path-autonomous.txt" "$(_body_with_visual "$screenshot" | sed "s|Red-then-green: yes|Red-then-green: $rtg_na|")")
 
   run invoke_validator "$file"
   [ "$status" -eq 0 ]

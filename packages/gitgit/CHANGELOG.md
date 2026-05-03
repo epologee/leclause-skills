@@ -15,6 +15,41 @@ Categories:
 Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 
+## [v1.0.72]
+
+### Breaking
+
+- **`Red-then-green: yes` is rejected under `GITGIT_AUTONOMOUS=1`.**
+  New error code `red-then-green-autonomous`. Bare self-attestation was
+  the easiest hallucination path: an unattended agent had every incentive
+  to type `yes` without ever having seen a red phase. Under autonomous
+  mode the trailer must now anchor the claim: name the spec as
+  `<path>` (must be in the staged diff) or `<path>:<test-name>` (test
+  name must match an `it / describe / context / specify / @test / @Test /
+  Scenario / func / def` declaration in the staged blob), or fall back
+  to `n/a (reason >= 10 chars)`. Outside autonomous mode `yes` still
+  works.
+
+### Added
+
+- **`Red-then-green` accepts spec-path forms.** Three new shapes on top
+  of the legacy `yes` and `n/a (reason)`:
+
+  - `Red-then-green: spec/foo_spec.rb` anchors the claim to a spec file
+    that this commit actually touches. New error code
+    `red-then-green-path-not-in-staged` rejects random spec names.
+  - `Red-then-green: spec/foo_spec.rb:starts on StartTransaction`
+    identifies WHICH test was seen red, by name. New error code
+    `red-then-green-test-not-found` fires when the staged blob has no
+    matching `it / describe / context / specify / @test / @Test /
+    Scenario / func / def` declaration.
+  - `Red-then-green: spec/foo_spec.rb:42` is the line-number form; the
+    staged blob must have at least that many lines.
+
+  The validator cannot prove that the test was actually run red, but it
+  can refuse claims that are not anchored anywhere. See
+  `/gitgit:commit-discipline` for the full table.
+
 ## [v1.0.61]
 
 ### Breaking
