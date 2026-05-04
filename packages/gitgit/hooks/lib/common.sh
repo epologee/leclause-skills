@@ -145,6 +145,43 @@ dd_emit_pre_context() {
     '{hookSpecificOutput: {hookEventName: "PreToolUse", additionalContext: $c}}'
 }
 
+# _dd_run_collect <guard-func> <input-json>
+# Run a guard in a subshell so its exit 2 does not short-circuit the parent,
+# capture stdout and stderr separately, and accumulate deny output into the
+# parent's DD_DENY_MESSAGES array. The caller initialises the array and
+# flushes it after all collected guards have run.
+#
+# Behaviour by exit code:
+#   rc=0  -> forward stdout (additionalContext JSON from dd_emit_pre_context).
+#   rc=2  -> append captured stderr to DD_DENY_MESSAGES; forward stdout too.
+#   other -> guard crashed; print stdout+stderr and exit with that rc so
+#            failures stay visible.
+_dd_run_collect() {
+  local guard_func="$1" input="$2"
+  local tmp_out tmp_err rc out err
+  tmp_out=$(mktemp "/tmp/gitgit-collect-out.XXXXXX") \
+    || { printf 'gitgit dispatch: mktemp failed for stdout buffer\n' >&2; exit 1; }
+  tmp_err=$(mktemp "/tmp/gitgit-collect-err.XXXXXX") \
+    || { rm -f "$tmp_out"; printf 'gitgit dispatch: mktemp failed for stderr buffer\n' >&2; exit 1; }
+  ( "$guard_func" "$input" ) >"$tmp_out" 2>"$tmp_err"
+  rc=$?
+  out=$(cat "$tmp_out")
+  err=$(cat "$tmp_err")
+  rm -f "$tmp_out" "$tmp_err"
+
+  [ -n "$out" ] && printf '%s\n' "$out"
+
+  if [ "$rc" -eq 2 ]; then
+    [ -n "$err" ] && DD_DENY_MESSAGES+=("$err")
+  elif [ "$rc" -ne 0 ]; then
+    [ -n "$err" ] && printf '%s\n' "$err" >&2
+    printf 'gitgit dispatch: %s exited %d (not a deny); aborting.\n' "$guard_func" "$rc" >&2
+    exit "$rc"
+  else
+    [ -n "$err" ] && printf '%s\n' "$err" >&2
+  fi
+}
+
 # dd_extract_commit_message <bash-command>
 # Extract the commit message from a bash command string.
 # Tries heredoc body first (the pattern Claude Code defaults to for multi-line
