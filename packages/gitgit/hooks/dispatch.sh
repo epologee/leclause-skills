@@ -46,9 +46,29 @@ case "$EVENT" in
     source "$DIR/guards/commit-trailers.sh"
     guard_git_dash_c "$INPUT"
     guard_push_wip_gate "$INPUT"
-    guard_commit_format "$INPUT"
-    guard_commit_subject "$INPUT"
-    guard_commit_body "$INPUT"
+
+    # Message-content guards (commit-format, commit-subject, commit-body) are
+    # collected so a deny in one does not short-circuit the others. Each guard
+    # runs in a subshell that captures stdout and stderr separately: stdout
+    # (additionalContext JSON from dd_emit_pre_context) is always forwarded;
+    # stderr from a deny (rc=2) accumulates into DD_DENY_MESSAGES and is joined
+    # into one exit-2 message at the end. Any other non-zero rc is a guard
+    # crash and aborts the dispatcher with that rc so failures stay visible.
+    # git-dash-c, push-wip-gate, and commit-trailers stay fail-fast outside
+    # this collector.
+    DD_DENY_MESSAGES=()
+    _dd_run_collect guard_commit_format "$INPUT"
+    _dd_run_collect guard_commit_subject "$INPUT"
+    _dd_run_collect guard_commit_body "$INPUT"
+
+    if [ "${#DD_DENY_MESSAGES[@]}" -gt 0 ]; then
+      for i in "${!DD_DENY_MESSAGES[@]}"; do
+        [ "$i" -gt 0 ] && printf '\n' >&2
+        printf '%s\n' "${DD_DENY_MESSAGES[$i]}" >&2
+      done
+      exit 2
+    fi
+
     guard_commit_trailers "$INPUT"
     ;;
 esac
