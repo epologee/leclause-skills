@@ -424,6 +424,12 @@ validate_body() {
       if [[ "$rtg_value" =~ $rtg_path_re ]]; then
         local rtg_path="${BASH_REMATCH[1]}"
         local rtg_suffix="${BASH_REMATCH[3]#:}"
+        # Path char class allows internal spaces (paths with spaces exist),
+        # but a trailing space on the path captured before the colon is a
+        # copy-paste hazard: it produces a path-not-in-staged diagnostic
+        # rather than a clearer format error. Strip trailing whitespace so
+        # the staged-diff lookup uses the canonical name.
+        rtg_path=$(printf '%s' "$rtg_path" | sed 's/[[:space:]]*$//')
         local rtg_staged
         rtg_staged=$(git diff --cached --name-only 2>/dev/null || true)
         if ! grep -qF "$rtg_path" <<< "$rtg_staged" 2>/dev/null; then
