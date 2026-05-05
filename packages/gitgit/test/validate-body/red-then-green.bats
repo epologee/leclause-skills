@@ -121,7 +121,40 @@ MSG
 # red, so the claim cannot be hallucinated.
 # ---------------------------------------------------------------------------
 
-@test "Red-then-green: <path>:<rspec-it-name> found in staged blob is accepted" {
+@test "Red-then-green: <path>:<line> # <test-name> combined form is accepted" {
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
+  set_staged_blob "spec/services/session_spec.rb" 'describe "session" do
+  it "starts a session on StartTransaction" do
+    expect(true).to eq(true)
+  end
+end'
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # starts a session on StartTransaction"
+
+  local file
+  file=$(write_fixture "rtg-combined-ok.txt" "$(_body_with_rtg "spec/services/session_spec.rb:2 # starts a session on StartTransaction")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+@test "Red-then-green: combined form rejects bare <path>:<line> (no test-name)" {
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
+  set_staged_blob "spec/services/session_spec.rb" 'line1
+line2
+line3'
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:3"
+
+  local file
+  file=$(write_fixture "rtg-bare-line.txt" "$(_body_with_rtg "spec/services/session_spec.rb:3")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing-red-then-green"* ]]
+}
+
+@test "Red-then-green: combined form rejects bare <path>:<test-name> (no line)" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
   export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
   set_staged_blob "spec/services/session_spec.rb" 'describe "session" do
@@ -132,13 +165,31 @@ end'
   use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:starts a session on StartTransaction"
 
   local file
-  file=$(write_fixture "rtg-it-found.txt" "$(_body_with_rtg "spec/services/session_spec.rb:starts a session on StartTransaction")")
+  file=$(write_fixture "rtg-bare-name.txt" "$(_body_with_rtg "spec/services/session_spec.rb:starts a session on StartTransaction")")
 
   run invoke_validator "$file"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing-red-then-green"* ]]
 }
 
-@test "Red-then-green: <path>:<test-name> NOT in staged blob fails with red-then-green-test-not-found" {
+@test "Red-then-green: combined form line out of range fires red-then-green-line-out-of-range" {
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
+  set_staged_blob "spec/services/session_spec.rb" 'describe "x" do
+  it "name" do
+  end
+end'
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:99 # name"
+
+  local file
+  file=$(write_fixture "rtg-combined-line-oob.txt" "$(_body_with_rtg "spec/services/session_spec.rb:99 # name")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"red-then-green-line-out-of-range"* ]]
+}
+
+@test "Red-then-green: combined form name not in blob fires red-then-green-test-not-found" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
   export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
   set_staged_blob "spec/services/session_spec.rb" 'describe "session" do
@@ -146,17 +197,24 @@ end'
     expect(true).to eq(true)
   end
 end'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:starts a session on StartTransaction"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # starts a session on StartTransaction"
 
   local file
-  file=$(write_fixture "rtg-it-missing.txt" "$(_body_with_rtg "spec/services/session_spec.rb:starts a session on StartTransaction")")
+  file=$(write_fixture "rtg-combined-name-missing.txt" "$(_body_with_rtg "spec/services/session_spec.rb:2 # starts a session on StartTransaction")")
 
   run invoke_validator "$file"
   [ "$status" -eq 1 ]
   [[ "$output" == *"red-then-green-test-not-found"* ]]
 }
 
-@test "Red-then-green: <path>:<xctest-func> matches func test<Name>( in staged blob" {
+# ---------------------------------------------------------------------------
+# Combined-form runner-pattern coverage: the test-name half of the suffix is
+# matched against runner declarations in the staged blob. The xctest and bats
+# variants exercise the func/@test patterns the rspec scenarios above do not
+# cover.
+# ---------------------------------------------------------------------------
+
+@test "Red-then-green: combined form matches XCTest func declaration" {
   export GIT_SHIM_LS_TREE_OUTPUT="Tests/SessionTests.swift"
   export GIT_SHIM_DIFF_CACHED_OUTPUT="Tests/SessionTests.swift"
   set_staged_blob "Tests/SessionTests.swift" 'import XCTest
@@ -165,16 +223,16 @@ final class SessionTests: XCTestCase {
     XCTAssertTrue(true)
   }
 }'
-  use_trailers "Tests: Tests/SessionTests.swift"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: Tests/SessionTests.swift:testStartSessionOnStartTransaction"
+  use_trailers "Tests: Tests/SessionTests.swift"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: Tests/SessionTests.swift:3 # testStartSessionOnStartTransaction"
 
   local file
-  file=$(write_fixture "rtg-xctest.txt" "$(_body_with_rtg "Tests/SessionTests.swift:testStartSessionOnStartTransaction")")
+  file=$(write_fixture "rtg-xctest.txt" "$(_body_with_rtg "Tests/SessionTests.swift:3 # testStartSessionOnStartTransaction")")
 
   run invoke_validator "$file"
   [ "$status" -eq 0 ]
 }
 
-@test "Red-then-green: <path>:<bats-test> matches @test \"name\" in staged blob" {
+@test "Red-then-green: combined form matches BATS @test declaration" {
   export GIT_SHIM_LS_TREE_OUTPUT="test/foo.bats"
   export GIT_SHIM_DIFF_CACHED_OUTPUT="test/foo.bats"
   # Build content with printf so the literal "@test" never appears at the
@@ -185,50 +243,18 @@ final class SessionTests: XCTestCase {
   local bats_content
   bats_content=$(printf '#!/usr/bin/env bats\n%s "starts cleanly with no args" {\n  run echo hi\n}\n' "@test")
   set_staged_blob "test/foo.bats" "$bats_content"
-  use_trailers "Tests: test/foo.bats"$'\n'"Slice: validator + spec"$'\n'"Red-then-green: test/foo.bats:starts cleanly with no args"
+  use_trailers "Tests: test/foo.bats"$'\n'"Slice: validator + spec"$'\n'"Red-then-green: test/foo.bats:2 # starts cleanly with no args"
 
   local file
-  file=$(write_fixture "rtg-bats.txt" "$(_body_with_rtg "test/foo.bats:starts cleanly with no args")")
+  file=$(write_fixture "rtg-bats.txt" "$(_body_with_rtg "test/foo.bats:2 # starts cleanly with no args")")
 
   run invoke_validator "$file"
   [ "$status" -eq 0 ]
-}
-
-@test "Red-then-green: <path>:<line-number> accepted when file has at least that many lines" {
-  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
-  set_staged_blob "spec/services/session_spec.rb" 'line1
-line2
-line3
-line4
-line5'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:3"
-
-  local file
-  file=$(write_fixture "rtg-line-ok.txt" "$(_body_with_rtg "spec/services/session_spec.rb:3")")
-
-  run invoke_validator "$file"
-  [ "$status" -eq 0 ]
-}
-
-@test "Red-then-green: <path>:<line-number> beyond file length fails" {
-  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
-  set_staged_blob "spec/services/session_spec.rb" 'line1
-line2'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:99"
-
-  local file
-  file=$(write_fixture "rtg-line-oob.txt" "$(_body_with_rtg "spec/services/session_spec.rb:99")")
-
-  run invoke_validator "$file"
-  [ "$status" -eq 1 ]
-  [[ "$output" == *"red-then-green-test-not-found"* ]]
 }
 
 # ---------------------------------------------------------------------------
 # Strict mode (insight 3): under GITGIT_AUTONOMOUS=1 the bare "yes" form is
-# rejected. The agent must name a spec path (with optional test-name suffix)
+# rejected. The agent must name a spec path (with optional combined suffix)
 # or supply n/a (reason). Cuts the easiest leakage path: a rover claiming
 # red-then-green without naming any anchor.
 # ---------------------------------------------------------------------------
@@ -246,7 +272,7 @@ line2'
   [[ "$output" == *"red-then-green-autonomous"* ]]
 }
 
-@test "Red-then-green: <path>:<test-name> is accepted under GITGIT_AUTONOMOUS=1" {
+@test "Red-then-green: combined form is accepted under GITGIT_AUTONOMOUS=1" {
   export GITGIT_AUTONOMOUS=1
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
   export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
@@ -255,10 +281,10 @@ line2'
     expect(true).to eq(true)
   end
 end'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:starts on StartTransaction"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # starts on StartTransaction"
 
   local file
-  file=$(write_fixture "rtg-path-autonomous.txt" "$(_body_with_rtg "spec/services/session_spec.rb:starts on StartTransaction")")
+  file=$(write_fixture "rtg-path-autonomous.txt" "$(_body_with_rtg "spec/services/session_spec.rb:2 # starts on StartTransaction")")
 
   run invoke_validator "$file"
   [ "$status" -eq 0 ]

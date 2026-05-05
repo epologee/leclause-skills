@@ -101,7 +101,7 @@ template_block="${template_block}
 
 Tests: <comma-separated spec paths that ran green>
 Slice: ${slice_suggestion}
-Red-then-green: <yes | n/a (rationale >= 10 chars)>${visual_line}
+Red-then-green: <yes | n/a (rationale >= 10 chars) | <path> | <path>:<line> # <test-name>>${visual_line}
 
 # Replace the placeholder values above before committing.
 # Auto-detected from your staged diff:

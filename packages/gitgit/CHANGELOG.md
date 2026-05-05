@@ -15,6 +15,30 @@ Categories:
 Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 
+## [v1.0.76]
+
+### Breaking
+
+- **`Red-then-green` line+name forms are unified.** The bare
+  `<path>:<line>` and bare `<path>:<test-name>` forms are removed.
+  Use the combined form `<path>:<line> # <test-name>` instead, e.g.
+  `Red-then-green: spec/foo_spec.rb:42 # SomeClass#method does the
+  thing`. The `# ` separator is the RSpec / Cucumber wire format and
+  is the only candidate that keeps `path:line` clickable in iTerm2
+  Semantic History, VSCode terminalLinkParsing, and Ghostty (the
+  gcc-style `path:line: <name>` form was rejected because two of
+  those three parsers greedily absorb the trailing non-numeric
+  continuation past the second colon, breaking cmd-click). The
+  file-only `<path>` form, the `yes` self-attestation, and
+  `n/a (reason >= 10 chars)` are unchanged.
+
+  New error code `red-then-green-line-out-of-range` fires when the
+  named line exceeds the staged blob's line count.
+  `red-then-green-test-not-found` continues to fire when the named
+  test does not match any `it / describe / context / specify /
+  @test / @Test / Scenario / func / def` declaration in the staged
+  blob.
+
 ## [v1.0.73]
 
 ### Breaking

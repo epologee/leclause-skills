@@ -398,7 +398,7 @@ validate_body() {
       # which the validator can anchor in the staged diff and the staged
       # blob. n/a (reason) remains a legitimate opt-out.
       if [[ "${GITGIT_AUTONOMOUS:-0}" = "1" ]]; then
-        printf 'red-then-green-autonomous: bare "yes" is not accepted under GITGIT_AUTONOMOUS=1. Name the spec that was seen red as "<path>" or "<path>:<test-name>" (the path must appear in the staged diff and the test name in the staged file). n/a (reason >= 10 chars) remains valid when no red-then-green sequence applies.\n' >&2
+        printf 'red-then-green-autonomous: bare "yes" is not accepted under GITGIT_AUTONOMOUS=1. Name the spec that was seen red as "<path>" or "<path>:<line> # <test-name>" (the path must appear in the staged diff, the line must exist in the staged file, and the test name must match a test declaration). n/a (reason >= 10 chars) remains valid when no red-then-green sequence applies.\n' >&2
         return 1
       fi
     elif [[ "$rtg_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
@@ -426,48 +426,63 @@ validate_body() {
           return 1
         fi
         if [[ -n "$rtg_suffix" ]]; then
+          # Combined form only: <line> # <test-name>. The bare line-only and
+          # bare test-name-only forms were retired: a line number without a
+          # name is fragile (line numbers shift), and a name without a line
+          # number breaks the file:line click-to-open convention shared by
+          # iTerm2 Semantic History, VSCode terminalLinkParsing, and Ghostty.
+          # The "#" separator is the RSpec / Cucumber wire format and is
+          # treated as a hard boundary by all three terminal link parsers.
+          local rtg_combined_re='^([0-9]+)[[:space:]]+#[[:space:]]+(.+)$'
+          if ! [[ "$rtg_suffix" =~ $rtg_combined_re ]]; then
+            printf 'missing-red-then-green: suffix must be "<line> # <test-name>" (RSpec/Cucumber convention, keeps path:line clickable in iTerm2/VSCode/Ghostty). Bare "<line>" or bare "<test-name>" forms are no longer accepted; got: "%s"\n' "$rtg_suffix" >&2
+            return 1
+          fi
+          local rtg_line="${BASH_REMATCH[1]}"
+          local rtg_name="${BASH_REMATCH[2]}"
+
           local rtg_blob
           rtg_blob=$(git show ":$rtg_path" 2>/dev/null || true)
           if [[ -z "$rtg_blob" ]] && [[ -f "$rtg_path" ]]; then
             rtg_blob=$(cat "$rtg_path" 2>/dev/null || true)
           fi
-          local rtg_found=0
-          if [[ "$rtg_suffix" =~ ^[0-9]+$ ]]; then
-            # Line-number form: file must have at least that many lines.
-            local rtg_lines
-            rtg_lines=$(printf '%s\n' "$rtg_blob" | wc -l | tr -d ' ')
-            if [[ "$rtg_lines" -ge "$rtg_suffix" ]]; then
-              rtg_found=1
-            fi
-          else
-            # Test-name form: try each known runner pattern. First hit wins.
-            # Quoted-name patterns (Quick / RSpec / Jest / Mocha / bats /
-            # Swift Testing / Cucumber Scenario): match the literal name
-            # inside the quotes or after the keyword. Function-name patterns
-            # (XCTest, pytest): match the bare identifier.
-            local rtg_esc
-            rtg_esc=$(printf '%s' "$rtg_suffix" | sed 's/[][\.*^$(){}+?|/]/\\&/g')
-            local rtg_patterns=(
-              "(it|describe|context|specify|@test|@Test\\()[[:space:]]*[\"']${rtg_esc}[\"']"
-              "Scenario:[[:space:]]*${rtg_esc}([[:space:]]|$)"
-              "func[[:space:]]+${rtg_esc}[[:space:]]*\\("
-              "def[[:space:]]+${rtg_esc}[[:space:]]*\\("
-            )
-            local pat
-            for pat in "${rtg_patterns[@]}"; do
-              if printf '%s' "$rtg_blob" | grep -Eq "$pat" 2>/dev/null; then
-                rtg_found=1
-                break
-              fi
-            done
+
+          # Line-count check: staged blob must have at least <line> lines.
+          local rtg_lines
+          rtg_lines=$(printf '%s\n' "$rtg_blob" | wc -l | tr -d ' ')
+          if [[ "$rtg_lines" -lt "$rtg_line" ]]; then
+            printf 'red-then-green-line-out-of-range: Red-then-green names line %s in "%s", but the staged file has only %s lines. Name a line that exists in the file as it stands in this commit.\n' "$rtg_line" "$rtg_path" "$rtg_lines" >&2
+            return 1
           fi
+
+          # Test-name check: try each known runner pattern. First hit wins.
+          # Quoted-name patterns (Quick / RSpec / Jest / Mocha / bats /
+          # Swift Testing / Cucumber Scenario): match the literal name
+          # inside the quotes or after the keyword. Function-name patterns
+          # (XCTest, pytest): match the bare identifier.
+          local rtg_esc
+          rtg_esc=$(printf '%s' "$rtg_name" | sed 's/[][\.*^$(){}+?|/]/\\&/g')
+          local rtg_patterns=(
+            "(it|describe|context|specify|@test|@Test\\()[[:space:]]*[\"']${rtg_esc}[\"']"
+            "Scenario:[[:space:]]*${rtg_esc}([[:space:]]|$)"
+            "func[[:space:]]+${rtg_esc}[[:space:]]*\\("
+            "def[[:space:]]+${rtg_esc}[[:space:]]*\\("
+          )
+          local pat
+          local rtg_found=0
+          for pat in "${rtg_patterns[@]}"; do
+            if printf '%s' "$rtg_blob" | grep -Eq "$pat" 2>/dev/null; then
+              rtg_found=1
+              break
+            fi
+          done
           if [[ "$rtg_found" -eq 0 ]]; then
-            printf 'red-then-green-test-not-found: Red-then-green names "%s" in "%s", but no matching test (it/Scenario/@test/@Test/func/def) or line was found in the staged file. Name the test you actually saw red, in the form it appears in the file (the quoted description, the Scenario name, the func/def identifier, or a line number).\n' "$rtg_suffix" "$rtg_path" >&2
+            printf 'red-then-green-test-not-found: Red-then-green names "%s" in "%s", but no matching test (it/Scenario/@test/@Test/func/def) was found in the staged file. Name the test you actually saw red, in the form it appears in the file (the quoted description, the Scenario name, or the func/def identifier).\n' "$rtg_name" "$rtg_path" >&2
             return 1
           fi
         fi
       else
-        printf 'missing-red-then-green: value must be "yes", "n/a (reason)", or a spec path present in the staged diff; got: "%s"\n' "$rtg_value" >&2
+        printf 'missing-red-then-green: value must be "yes", "n/a (reason)", "<path>", or "<path>:<line> # <test-name>"; got: "%s"\n' "$rtg_value" >&2
         return 1
       fi
     fi
