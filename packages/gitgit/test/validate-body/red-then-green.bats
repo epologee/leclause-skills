@@ -187,6 +187,12 @@ end'
   run invoke_validator "$file"
   [ "$status" -eq 1 ]
   [[ "$output" == *"red-then-green-line-out-of-range"* ]]
+  # Range check gates the name check: when the line is out of range,
+  # `red-then-green-test-not-found` must NOT also fire (even though "name"
+  # is present in the blob via `it "name"`). Asserting the negative pins
+  # the check ordering: a future reorder that runs name-check first would
+  # surface both errors and break this assertion.
+  [[ "$output" != *"red-then-green-test-not-found"* ]]
 }
 
 @test "Red-then-green: combined form rejects line zero (1-based numbering)" {
