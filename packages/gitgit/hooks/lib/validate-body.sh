@@ -279,6 +279,11 @@ validate_body() {
 
   local rtg_value
   rtg_value=$(_vb_trailer_value "$trailers" "Red-then-green")
+  # Defensive trailing-whitespace strip: a copy-pasted trailer with a
+  # trailing space would otherwise widen the captured path past its real
+  # name, producing a path-not-in-staged diagnostic that does not name the
+  # actual cause.
+  rtg_value=$(printf '%s' "$rtg_value" | sed 's/[[:space:]]*$//')
 
   # Opt-out enum tokens. spec-only added: commits touching only spec/test
   # files don't need a Tests trailer (the diff is itself the test evidence).
@@ -394,9 +399,9 @@ validate_body() {
       # Self-attestation: "yes" is accepted as-is; no cache evidence required.
       # Under autonomous mode the bare attestation is rejected: an unattended
       # agent has every incentive to type "yes" without ever having seen a
-      # red phase. The strict form is <path>:<test-name> (or <path>:<line>),
-      # which the validator can anchor in the staged diff and the staged
-      # blob. n/a (reason) remains a legitimate opt-out.
+      # red phase. The strict form is <path>:<line> # <test-name>, which
+      # the validator can anchor in the staged diff and the staged blob.
+      # n/a (reason) remains a legitimate opt-out.
       if [[ "${GITGIT_AUTONOMOUS:-0}" = "1" ]]; then
         printf 'red-then-green-autonomous: bare "yes" is not accepted under GITGIT_AUTONOMOUS=1. Name the spec that was seen red as "<path>" or "<path>:<line> # <test-name>" (the path must appear in the staged diff, the line must exist in the staged file, and the test name must match a test declaration). n/a (reason >= 10 chars) remains valid when no red-then-green sequence applies.\n' >&2
         return 1
@@ -411,7 +416,7 @@ validate_body() {
       printf 'missing-red-then-green: bare "n/a" requires a rationale in parens: n/a (reason >= 10 chars)\n' >&2
       return 1
     else
-      # Spec-path form: "<path>" or "<path>:<test-name-or-line>".
+      # Spec-path forms: "<path>" or "<path>:<line> # <test-name>".
       # The path must end in a recognized spec extension and must appear in
       # the staged diff so the rote attestation "yes" cannot be replaced by
       # an equally rote "name some random spec file in the repo".
@@ -433,7 +438,10 @@ validate_body() {
           # iTerm2 Semantic History, VSCode terminalLinkParsing, and Ghostty.
           # The "#" separator is the RSpec / Cucumber wire format and is
           # treated as a hard boundary by all three terminal link parsers.
-          local rtg_combined_re='^([0-9]+)[[:space:]]+#[[:space:]]+(.+)$'
+          # Line number is 1-based: line 0 is rejected up-front so the
+          # range check below does not silently accept it (rtg_lines is
+          # always >= 0 so "0 < 0" never fires).
+          local rtg_combined_re='^([1-9][0-9]*)[[:space:]]+#[[:space:]]+(.+)$'
           if ! [[ "$rtg_suffix" =~ $rtg_combined_re ]]; then
             printf 'missing-red-then-green: suffix must be "<line> # <test-name>" (RSpec/Cucumber convention, keeps path:line clickable in iTerm2/VSCode/Ghostty). Bare "<line>" or bare "<test-name>" forms are no longer accepted; got: "%s"\n' "$rtg_suffix" >&2
             return 1
@@ -448,8 +456,12 @@ validate_body() {
           fi
 
           # Line-count check: staged blob must have at least <line> lines.
+          # awk's NR counts lines including an unterminated final line, and
+          # is correct on empty input (NR=0). wc -l with a printf wrapper
+          # over- or under-counts depending on whether the blob ends with a
+          # newline; awk avoids that.
           local rtg_lines
-          rtg_lines=$(printf '%s\n' "$rtg_blob" | wc -l | tr -d ' ')
+          rtg_lines=$(printf '%s' "$rtg_blob" | awk 'END { print NR }')
           if [[ "$rtg_lines" -lt "$rtg_line" ]]; then
             printf 'red-then-green-line-out-of-range: Red-then-green names line %s in "%s", but the staged file has only %s lines. Name a line that exists in the file as it stands in this commit.\n' "$rtg_line" "$rtg_path" "$rtg_lines" >&2
             return 1

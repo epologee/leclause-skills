@@ -21,23 +21,31 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 
 - **`Red-then-green` line+name forms are unified.** The bare
   `<path>:<line>` and bare `<path>:<test-name>` forms are removed.
-  Use the combined form `<path>:<line> # <test-name>` instead, e.g.
-  `Red-then-green: spec/foo_spec.rb:42 # SomeClass#method does the
-  thing`. The `# ` separator is the RSpec / Cucumber wire format and
-  is the only candidate that keeps `path:line` clickable in iTerm2
-  Semantic History, VSCode terminalLinkParsing, and Ghostty (the
-  gcc-style `path:line: <name>` form was rejected because two of
-  those three parsers greedily absorb the trailing non-numeric
-  continuation past the second colon, breaking cmd-click). The
-  file-only `<path>` form, the `yes` self-attestation, and
-  `n/a (reason >= 10 chars)` are unchanged.
+  Use the combined form `<path>:<line> # <test-name>` instead. A
+  full example trailer:
+
+  ```
+  Red-then-green: spec/foo_spec.rb:42 # SomeClass#method does the thing
+  ```
+
+  The `# ` separator is the RSpec / Cucumber wire format and is the
+  only candidate that keeps `path:line` clickable in iTerm2 Semantic
+  History, VSCode terminalLinkParsing, and Ghostty. The gcc-style
+  `path:line: <name>` form was rejected because two of those three
+  parsers greedily absorb the trailing non-numeric continuation past
+  the second colon, breaking cmd-click; see
+  https://github.com/microsoft/vscode/issues/127762 and
+  https://github.com/ghostty-org/ghostty/discussions/11378 for the
+  upstream confirmations. The file-only `<path>` form, the `yes`
+  self-attestation, and `n/a (reason >= 10 chars)` are unchanged.
 
   New error code `red-then-green-line-out-of-range` fires when the
-  named line exceeds the staged blob's line count.
-  `red-then-green-test-not-found` continues to fire when the named
-  test does not match any `it / describe / context / specify /
-  @test / @Test / Scenario / func / def` declaration in the staged
-  blob.
+  named line exceeds the staged blob's line count or names line 0
+  (the trailer uses 1-based numbering, matching every test runner's
+  output). `red-then-green-test-not-found` continues to fire when
+  the named test does not match any `it / describe / context /
+  specify / @test / @Test / Scenario / func / def` declaration in
+  the staged blob.
 
 ## [v1.0.73]
 

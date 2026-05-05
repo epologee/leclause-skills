@@ -189,6 +189,52 @@ end'
   [[ "$output" == *"red-then-green-line-out-of-range"* ]]
 }
 
+@test "Red-then-green: combined form rejects line zero (1-based numbering)" {
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
+  set_staged_blob "spec/services/session_spec.rb" 'describe "x" do
+  it "name" do
+  end
+end'
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:0 # name"
+
+  local file
+  file=$(write_fixture "rtg-line-zero.txt" "$(_body_with_rtg "spec/services/session_spec.rb:0 # name")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing-red-then-green"* ]]
+}
+
+@test "Red-then-green: combined form accepts test name containing # (RSpec Class#method)" {
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
+  set_staged_blob "spec/services/session_spec.rb" 'describe "session" do
+  it "Session#start_event with bad reading" do
+    expect(true).to eq(true)
+  end
+end'
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # Session#start_event with bad reading"
+
+  local file
+  file=$(write_fixture "rtg-name-with-hash.txt" "$(_body_with_rtg "spec/services/session_spec.rb:2 # Session#start_event with bad reading")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
+@test "Red-then-green: trailing whitespace on the value does not break path parsing" {
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb   "
+
+  local file
+  file=$(write_fixture "rtg-trailing-space.txt" "$(_body_with_rtg "spec/services/session_spec.rb   ")")
+
+  run invoke_validator "$file"
+  [ "$status" -eq 0 ]
+}
+
 @test "Red-then-green: combined form name not in blob fires red-then-green-test-not-found" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
   export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"

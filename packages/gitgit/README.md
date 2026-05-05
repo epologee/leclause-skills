@@ -16,7 +16,12 @@ structured commit body schema across both Claude-driven commits
    (PreToolUse guards plus git-native hooks) that validates a structured
    body schema: subject + WHY paragraph + Slice / Tests / Red-then-green
    trailers parsed via `git interpret-trailers`, with seven opt-out enum
-   tokens. `Red-then-green: yes` is self-attestation; no cache backs it.
+   tokens. `Red-then-green` accepts four forms: `yes` (self-attestation,
+   rejected under `GITGIT_AUTONOMOUS=1`), `n/a (reason >= 10 chars)`,
+   `<path>` (a spec file in the staged diff), or `<path>:<line> # <test-name>`
+   (line is 1-based, name must match a test declaration in the staged
+   blob). The `# ` separator follows the RSpec / Cucumber convention and
+   keeps `path:line` clickable in iTerm2 / VSCode / Ghostty.
 
 Reference for the schema, examples, escape-hatches, and troubleshooting:
 `/gitgit:commit-discipline`.
