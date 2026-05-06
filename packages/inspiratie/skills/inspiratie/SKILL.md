@@ -4,6 +4,26 @@ user-invocable: true
 description: Use when tackling unfamiliar topics, designing something new, evaluating approaches, or when the conversation benefits from external perspectives and research. Triggers on questions like "hoe doen anderen dit", "wat bestaat er al", research requests, and unfamiliar domains.
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the inspiratie plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("inspiratie was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new inspiratie`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 # Inspiratie
 
 Online research that answers: "how do others do this?", "what already exists?", "what can we learn from published experience?" Results flow back into the conversation as internalized knowledge or as a discussion point.

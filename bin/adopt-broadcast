@@ -1,0 +1,129 @@
+#!/usr/bin/env node
+// Operator-only. One-shot adoption of the post-update broadcast pattern
+// for a single plugin: writes a CHANGELOG.md skeleton, installs the
+// canonical bin/check-broadcast (via sync-check-broadcast logic), and
+// prepends a <post-update-broadcast> block to the target SKILL.md.
+//
+// Usage:
+//   bin/adopt-broadcast <plugin> [<entry-skill>]
+//
+// <plugin>      directory under packages/ (e.g. autonomous, bonsai, recap)
+// <entry-skill> the user-invocable skill to host the broadcast block.
+//               Defaults to <plugin> when packages/<plugin>/skills/<plugin>/
+//               SKILL.md exists; otherwise required.
+//
+// Re-running on an already-adopted plugin is safe: the CHANGELOG and the
+// SKILL.md block are skipped if already present, the helper is re-synced
+// from canonical anyway.
+
+import { readFileSync, writeFileSync, existsSync, chmodSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import { dirname, join, resolve, basename } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const canonical = join(repoRoot, 'bin', 'check-broadcast.mjs');
+
+function fail(msg) { console.error(msg); process.exit(2); }
+
+const [, , pluginArg, skillArg] = process.argv;
+if (!pluginArg) fail('Usage: bin/adopt-broadcast <plugin> [<entry-skill>]');
+
+const pluginDir = join(repoRoot, 'packages', pluginArg);
+if (!existsSync(join(pluginDir, '.claude-plugin', 'plugin.json'))) {
+  fail(`Not a plugin: ${pluginDir}`);
+}
+
+const skillName = skillArg || pluginArg;
+const skillFile = join(pluginDir, 'skills', skillName, 'SKILL.md');
+if (!existsSync(skillFile)) {
+  const available = existsSync(join(pluginDir, 'skills'))
+    ? readdirSync(join(pluginDir, 'skills'))
+        .filter((d) => statSync(join(pluginDir, 'skills', d)).isDirectory())
+    : [];
+  fail(`SKILL.md not found at ${skillFile}.\nAvailable skills: ${available.join(', ') || '(none)'}\nPass an explicit entry-skill as second argument.`);
+}
+
+// 1. CHANGELOG.md skeleton.
+const changelogPath = join(pluginDir, 'CHANGELOG.md');
+const changelogTemplate = `# ${pluginArg} changelog
+
+Each entry corresponds to the \`version\` in \`.claude-plugin/plugin.json\`. The
+post-update broadcast (see \`bin/check-broadcast\`) shows the section for the
+currently-installed version exactly once per machine. Use
+\`/leclause:whats-new ${pluginArg}\` to re-read at any time.
+
+Categories:
+
+- **Breaking**: user must adapt
+- **Added**: new commands, new optional behavior
+- **Changed**: non-breaking adjustments worth knowing about
+- **Fixed**: silent unless the bug was user-visible
+
+Patch-level fixes that change nothing the user can observe are intentionally
+omitted; the broadcast budget is for things the user benefits from knowing.
+The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
+without a \`## [vX.Y.Z]\` section stays silent on every update.
+`;
+
+if (!existsSync(changelogPath)) {
+  writeFileSync(changelogPath, changelogTemplate);
+  console.log(`wrote   ${changelogPath}`);
+} else {
+  console.log(`exists  ${changelogPath}`);
+}
+
+// 2. Sync canonical helper into bin/.
+const helperTarget = join(pluginDir, 'bin', 'check-broadcast');
+const canonicalBody = readFileSync(canonical, 'utf8');
+const currentBody = existsSync(helperTarget) ? readFileSync(helperTarget, 'utf8') : null;
+if (currentBody !== canonicalBody) {
+  mkdirSync(dirname(helperTarget), { recursive: true });
+  writeFileSync(helperTarget, canonicalBody);
+  chmodSync(helperTarget, 0o755);
+  console.log(`synced  ${helperTarget}`);
+} else {
+  console.log(`current ${helperTarget}`);
+}
+
+// 3. Prepend <post-update-broadcast> block to the SKILL.md, after the
+// frontmatter (which ends at the second --- line).
+const block = `<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+\`\`\`bash
+node "\${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+\`\`\`
+
+If the command produces output, the ${pluginArg} plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("${pluginArg} was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. \`/leclause:whats-new ${pluginArg}\`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
+`;
+
+const skillBody = readFileSync(skillFile, 'utf8');
+if (skillBody.includes('<post-update-broadcast>')) {
+  console.log(`exists  ${skillFile} (block already present)`);
+} else {
+  // Find end of frontmatter: line after the second --- delimiter.
+  const lines = skillBody.split('\n');
+  let fmEnd = -1;
+  if (lines[0] === '---') {
+    for (let i = 1; i < lines.length; i++) {
+      if (lines[i] === '---') { fmEnd = i; break; }
+    }
+  }
+  if (fmEnd === -1) fail(`No YAML frontmatter at ${skillFile}; cannot anchor the block.`);
+  const before = lines.slice(0, fmEnd + 1).join('\n');
+  const after = lines.slice(fmEnd + 1).join('\n').replace(/^\n+/, '');
+  writeFileSync(skillFile, `${before}\n\n${block}${after}`);
+  console.log(`wrote   ${skillFile} (block prepended)`);
+}

@@ -6,6 +6,26 @@ argument-hint: "standing by for mission parameters..."
 effort: high
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the autonomous plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("autonomous was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new autonomous`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 # Autonomous Rover
 
 Dispatch a rover at a task. You stay back, the rover works in the field. Round-tripping every question takes too long, so it decides locally. The rover cycles through SURVEY, DRIVE, INSPECT, STOW, STANDBY on its own and reports back when the mission is solid.

@@ -4,6 +4,26 @@ user-invocable: true
 description: Use when user gives feedback on Claude behavior, says "remember this", or asks to create/improve skills or CLAUDE.md instructions.
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the self-improvement plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("self-improvement was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new self-improvement`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 # Self-Improvement
 
 Update skills, hook reasons, and CLAUDE.md files based on user feedback. Skills and hook reasons are the default targets when feedback arises in their context; CLAUDE.md is a last resort for skill-independent behavior. Detects duplication, determines optimal location, can extract CLAUDE.md sections to skills, and creates new skills via TDD approach.

@@ -5,6 +5,26 @@ description: Use when the user needs a status overview of the current session. T
 effort: low
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the recap plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("recap was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new recap`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 # Recap
 
 Provide a structured overview of where we currently stand.

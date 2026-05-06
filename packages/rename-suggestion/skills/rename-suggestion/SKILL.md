@@ -9,6 +9,26 @@ allowed-tools:
   - Bash(*clipboard-copy*)
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the rename-suggestion plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("rename-suggestion was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new rename-suggestion`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 # Session Rename Suggestion
 
 Generate a short, descriptive session name based on the conversation context.

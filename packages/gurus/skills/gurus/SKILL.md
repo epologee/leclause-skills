@@ -11,6 +11,26 @@ allowed-tools:
 effort: high
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the gurus plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("gurus was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new gurus`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 > **Preflight.** The sub-skills dispatch via `gurus:sonnet-max`. That agent exists from plugin version 1.0.8 onward. If the dispatch fails with "unknown subagent_type: gurus:sonnet-max", run `claude plugins update gurus@leclause` and try again.
 
 # Gurus Orchestrator

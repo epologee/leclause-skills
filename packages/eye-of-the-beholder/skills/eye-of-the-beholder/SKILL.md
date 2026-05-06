@@ -4,6 +4,26 @@ user-invocable: true
 description: Use when producing or reviewing any visual layout, color system, or animation (screen, print, responsive, transitions). Also use when the user shares a screenshot or screen recording with spacing, contrast, color-token, or timing concerns. Activates DURING and AFTER layout CSS, color token, contrast, or animation work. Catches cramped text, missing margins, disproportionate spacing, broken WCAG contrast, ad-hoc token use, snapping transitions, out-of-sync animations, and content that disappears before its container does.
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the eye-of-the-beholder plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("eye-of-the-beholder was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new eye-of-the-beholder`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 # Eye of the Beholder
 
 ## The real problem

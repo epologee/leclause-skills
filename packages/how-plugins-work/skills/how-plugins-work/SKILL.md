@@ -4,6 +4,26 @@ user-invocable: true
 description: Use when diagnosing "Unknown command", slash-command autocomplete misses, or any confusion about how plugin and skill names resolve in Claude Code. Living document explaining plugin naming, skill resolution, and the plugin:skill invocation pattern, based on empirical testing.
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the how-plugins-work plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("how-plugins-work was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new how-plugins-work`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 # How Plugins Work
 
 A living document on how Claude Code plugin and skill names flow through the system. Based on empirical testing with the leclause marketplace in Claude Code 2.1.92.

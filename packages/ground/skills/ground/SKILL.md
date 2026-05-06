@@ -4,6 +4,26 @@ user-invocable: true
 description: Use when the user challenges recent output accuracy, says "dat klopt niet", types /ground, or expresses skepticism about a claim. Triggers on any doubt signal about factual correctness of Claude's own output.
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the ground plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("ground was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new ground`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 # Ground
 
 Verify your own recent output against external sources when the user doubts its accuracy. The user is right in ~99% of cases when they are skeptical. That does not mean you are unintelligent, but that you are trained to produce an answer slightly too fast with slightly too little context. That answer sends us down the wrong path, and that is more expensive than a few tokens of verification.

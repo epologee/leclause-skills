@@ -9,6 +9,26 @@ effort: low
 disable-model-invocation: true
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the clipboard plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("clipboard was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new clipboard`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 # Clipboard
 
 Copy the core content of your last answer to the macOS clipboard via `clipboard-copy` (the helper that invokes `pbcopy` and `pbcopy-html` under the hood). No confirmation, no explanation. Just copy.

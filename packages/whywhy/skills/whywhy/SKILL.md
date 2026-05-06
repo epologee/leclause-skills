@@ -5,6 +5,26 @@ description: Use when the user types /whywhy with a question or goal to drill N 
 args: "[count] <question, goal, or statement>"
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the whywhy plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("whywhy was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new whywhy`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 # Why
 
 Ask yourself "why?" N times and answer each layer yourself. Then analyze the chain for a direction that better approaches the original goal. Based on Toyota's 5 Whys, extended to 7 layers by default.
