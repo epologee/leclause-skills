@@ -81,6 +81,11 @@ if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--short" ]]; then
   exit 0
 fi
 if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "HEAD" ]]; then
+  if [[ -n "${GIT_SHIM_HEAD_SHA+set}" ]]; then
+    [[ -n "$GIT_SHIM_HEAD_SHA" ]] && printf '%s\n' "$GIT_SHIM_HEAD_SHA"
+    [[ -z "$GIT_SHIM_HEAD_SHA" ]] && exit 1
+    exit 0
+  fi
   printf 'deadbeef00000000\n'
   exit 0
 fi

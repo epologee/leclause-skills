@@ -163,7 +163,15 @@ guard_commit_subject() {
   if [[ -n "$ack_pending_sha" ]]; then
     local current_sha
     current_sha=$(git rev-parse HEAD 2>/dev/null | tr -cd '0-9a-f')
-    if [[ -n "$current_sha" && "$current_sha" != "$ack_pending_sha" ]]; then
+    if [[ -z "$current_sha" ]]; then
+      # Empty repo (no commits yet) or detached state where rev-parse
+      # returned nothing. The pending ack cannot be resolved against a
+      # missing HEAD; clear it without advancing and let the next ack
+      # resolve once the repo has commits. Treating empty as "no
+      # advance" is the safe choice; the alternative would burn the
+      # rotation slot on a state we cannot prove succeeded.
+      :
+    elif [[ "$current_sha" != "$ack_pending_sha" ]]; then
       rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
     fi
     ack_pending_sha=""
@@ -217,6 +225,14 @@ guard_commit_subject() {
   if _dd_ack_matches "$pr" "$ack_idx" "$ack_password" "${DD_RULE_PASSWORD[$pr]}"; then
     local head_sha
     head_sha=$(git rev-parse HEAD 2>/dev/null | tr -cd '0-9a-f')
+    if [[ -z "$head_sha" ]]; then
+      # rev-parse returned nothing: empty repo (no commits) or otherwise
+      # unreadable HEAD. Writing an empty pending sha would cause the
+      # next dispatcher entry to skip the resolution branch entirely
+      # and silently swallow the ack. Refuse explicitly so the operator
+      # sees the precondition rather than losing the rotation slot.
+      dd_emit_deny commit-subject "cannot read HEAD, is this a new repository? Make at least one commit before invoking the rotation."
+    fi
     _dd_write_state "$state_file" -1 -1 "$rp" "$head_sha"
     return 0
   fi
