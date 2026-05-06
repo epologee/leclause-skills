@@ -35,16 +35,16 @@ _dd_read_state_line() {
 }
 
 _dd_write_state() {
-  local file="$1" pv="$2" pr="$3" rp="$4"
+  local file="$1" pv="$2" pr="$3" rp="$4" ack_sha="${5:-}"
   local tmp="${file}.tmp.$$"
-  printf '%d\n%d\n%d\n' "$pv" "$pr" "$rp" > "$tmp"
+  printf '%d\n%d\n%d\n%s\n' "$pv" "$pr" "$rp" "$ack_sha" > "$tmp"
   mv "$tmp" "$file"
 }
 
 _dd_commit_deny() {
-  local rule_idx="$1" msg="$2" pv="$3" pr="$4" rp="$5" state_file="$6"
+  local rule_idx="$1" msg="$2" pv="$3" pr="$4" rp="$5" state_file="$6" ack_sha="${7:-}"
   local num=$((rule_idx + 1))
-  _dd_write_state "$state_file" "$pv" "$pr" "$rp"
+  _dd_write_state "$state_file" "$pv" "$pr" "$rp" "$ack_sha"
   dd_emit_deny commit-subject "Rule ${num}/14: ${msg}"
 }
 
@@ -132,12 +132,13 @@ guard_commit_subject() {
     fi
   fi
 
-  local pv pr rp
+  local pv pr rp ack_pending_sha=""
   pv=-1; pr=-1; rp=0
   if [[ -f "$state_file" ]]; then
     pv=$(_dd_read_state_line "$state_file" 1 -1)
     pr=$(_dd_read_state_line "$state_file" 2 -1)
     rp=$(_dd_read_state_line "$state_file" 3 0)
+    ack_pending_sha=$(sed -n '4p' "$state_file" 2>/dev/null | tr -cd '0-9a-f')
   fi
   # Clamp to valid ranges.
   [[ "$pv" -ne -1 && "$pv" -ne 0 && "$pv" -ne 1 ]] && pv=-1
@@ -149,6 +150,22 @@ guard_commit_subject() {
     [[ "$in_rot" -eq 0 ]] && pr=-1
   fi
   [[ "$rp" -lt 0 || "$rp" -ge "${#_DD_ROTATION_SLOTS[@]}" ]] && rp=0
+
+  # Resolve any pending ack from a previous PreToolUse pass: if HEAD has
+  # advanced since the ack was matched, the commit actually landed and the
+  # rotation slot is consumed. If HEAD is unchanged, the commit failed at
+  # commit-msg, pre-commit, or never ran; the slot stays so the operator
+  # acks the same rule again on the next attempt. Either way, clear the
+  # pending sha so this resolution only runs once per ack.
+  if [[ -n "$ack_pending_sha" ]]; then
+    local current_sha
+    current_sha=$(git rev-parse HEAD 2>/dev/null | tr -cd '0-9a-f')
+    if [[ -n "$current_sha" && "$current_sha" != "$ack_pending_sha" ]]; then
+      rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
+    fi
+    ack_pending_sha=""
+    _dd_write_state "$state_file" "$pv" "$pr" "$rp" ""
+  fi
 
   # Editor-mode commit: no subject parseable, rules 1/2 cannot be checked.
   if [[ -z "$subject" ]]; then
@@ -199,9 +216,14 @@ guard_commit_subject() {
   fi
 
   # Pending rotation: ack must match exactly with the right password.
+  # Rotation only advances on confirmed commit success, not on PreToolUse
+  # pass: record the current HEAD sha so the next dispatcher entry can
+  # detect whether the commit actually landed (HEAD moved) or failed at
+  # commit-msg / pre-commit (HEAD unchanged).
   if _dd_ack_matches "$pr"; then
-    local new_rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
-    _dd_write_state "$state_file" -1 -1 "$new_rp"
+    local head_sha
+    head_sha=$(git rev-parse HEAD 2>/dev/null | tr -cd '0-9a-f')
+    _dd_write_state "$state_file" -1 -1 "$rp" "$head_sha"
     return 0
   fi
   _dd_commit_deny "$pr" \

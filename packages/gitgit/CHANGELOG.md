@@ -15,6 +15,22 @@ Categories:
 Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 
+## [v1.0.85]
+
+### Changed
+
+- **Rotation advances on confirmed commit success, not on PreToolUse
+  ack-match.** Previously the rotation slot moved the moment the ack
+  matched in PreToolUse, which meant a commit that passed PreToolUse
+  but failed at commit-msg (missing `[doublecheck]`, version-bump
+  hook error, etc.) still consumed a rotation slot. The guard now
+  records the HEAD sha at ack-match and advances `rotation_pos` only
+  when the next dispatcher entry sees that HEAD has moved. When the
+  commit fails, the slot stays and the operator acks the same rule
+  again on retry. The state file gains a fourth line
+  (`ack_pending_sha`); older three-line files are read with that
+  field defaulted to empty, so no migration step is required.
+
 ## [v1.0.83]
 
 ### Changed

@@ -236,8 +236,20 @@ Rule 3 (subject length 50/72) is enforced structurally by
 land on you after a real violation in the subject; rules 4-14 rotate in
 slot order, one per commit. State lives in
 `~/.claude/var/gitgit-commit-rule-state` and shifts after every
-successful ack. The canonical mnemonic table that the hook validates
-against is in `packages/gitgit/hooks/lib/rotation-rules.sh`.
+*confirmed* commit success, not on every ack-match: the guard records
+the HEAD sha at the moment the ack matches, and the next dispatcher
+entry advances the rotation slot only when HEAD has actually moved
+(commit landed). When the commit fails at commit-msg, pre-commit, or
+never runs, the slot stays so the operator acks the same rule again
+on the next attempt instead of burning a fresh rotation slot. The
+canonical mnemonic table that the hook validates against is in
+`packages/gitgit/hooks/lib/rotation-rules.sh`.
+
+The state file format is four lines: `pending_violation`,
+`pending_rotation`, `rotation_pos`, and `ack_pending_sha` (the HEAD
+sha at the last ack-match, empty when no resolution is pending).
+Older three-line files are read with `ack_pending_sha` defaulting to
+empty.
 
 ### Why this lives in a hook and rotates one rule at a time
 
