@@ -71,14 +71,18 @@ guard_commit_subject() {
   # Direct pointer to the SKILL.md so Claude can Read the file without
   # grep-fishing through the plugin cache. The lookup itself stays
   # required: this only points at the door, the password still lives
-  # behind it. Falls back to the slash-command form when the absolute
-  # path cannot be resolved (e.g. broken install).
-  local skill_pointer
-  if skill_pointer=$(cd "$_DD_HERE/../../skills/commit-discipline" 2>/dev/null && pwd); then
-    skill_pointer="${skill_pointer}/SKILL.md, section 'Rotation reminders'"
-  else
-    skill_pointer="/gitgit:commit-discipline"
+  # behind it. When the absolute path cannot be resolved (broken
+  # install, layout regression, stale cache), surface the failure
+  # loudly via dd_emit_deny instead of silently degrading to the
+  # slash-command form, which would re-introduce the grep-fishing
+  # this fix exists to prevent.
+  local skill_dir skill_path skill_pointer
+  skill_dir=$(cd "$_DD_HERE/../../skills/commit-discipline" 2>/dev/null && pwd)
+  skill_path="${skill_dir}/SKILL.md"
+  if [[ -z "$skill_dir" || ! -f "$skill_path" ]]; then
+    dd_emit_deny commit-subject "install appears broken: cannot resolve SKILL.md path. Reinstall gitgit@leclause."
   fi
+  skill_pointer="${skill_path}, section 'Rotation reminders'"
 
   # Subject extraction: delegate to dd_extract_commit_message (shared parser),
   # then take the first line as the subject. This deduplicates the heredoc-first

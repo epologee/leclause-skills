@@ -15,6 +15,19 @@ Categories:
 Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 
+## [v1.0.89]
+
+### Changed
+
+- **Broken-install deny replaces the slash-command fallback.** When
+  `commit-subject.sh` cannot resolve the absolute path to its
+  `SKILL.md` (broken install, layout regression, stale cache), the
+  guard now emits a loud `install appears broken: cannot resolve
+  SKILL.md path. Reinstall gitgit@leclause.` deny instead of
+  degrading to the slash-command form `(zie /gitgit:commit-discipline)`,
+  which silently re-introduced the grep-fishing v1.0.83 was meant to
+  fix. Reinstall gitgit@leclause if you see this message.
+
 ## [v1.0.85]
 
 ### Changed
