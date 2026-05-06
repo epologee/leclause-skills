@@ -239,6 +239,34 @@ slot order, one per commit. State lives in
 successful ack. The canonical mnemonic table that the hook validates
 against is in `packages/gitgit/hooks/lib/rotation-rules.sh`.
 
+### Why this lives in a hook and rotates one rule at a time
+
+Two design choices, two reasons. Both are load-bearing; a "streamline"
+that removes either of them defeats the discipline even if the trailer
+schema still passes.
+
+1. **The discipline lives in a hook, not in this skill, because skill
+   content gets ignored at large enough context.** Skills load into
+   the context window once and then have to compete with everything
+   else loaded after them. At enough scale, the model glances past
+   instructions it has already "seen" and reverts to default behaviour.
+   A hook fires at the moment of the action, every time, regardless of
+   how full the context is. Git discipline is important enough that it
+   has to be reactive at action-time, not declarative in a skill.
+2. **One rule per commit, not all rules at once, because a wall of
+   rules triggers reflex-compliance.** When the hook output contains
+   the full list, the model does not actually inspect each rule; it
+   reads "git discipline reminder" and types back "ja ja, akkoord"
+   without verifying that the commit actually complies. Splitting the
+   rules into a rotation forces a single rule into focus, which is
+   small enough to actually be read against the commit at hand. The
+   rotation is anti-reflex, not anti-forgetting.
+
+Read those two lines before proposing any change to the rotation. A
+proposal that moves the reminder out of the hook into a skill briefing
+breaks reason 1. A proposal that bundles the rules together in one
+hook output breaks reason 2.
+
 ## Examples
 
 ### Example 1: feature commit with handler + service + spec + Red-then-green
