@@ -41,6 +41,17 @@ _dd_write_state() {
   mv "$tmp" "$file"
 }
 
+# Returns 0 when the parsed ack matches the expected rule and password.
+# All inputs are explicit so the caller can be reasoned about without
+# tracing into the helper's enclosing scope.
+_dd_ack_matches() {
+  local target_idx="$1" ack_idx="$2" ack_password="$3" expected="$4"
+  [[ "$ack_idx" -ne "$target_idx" ]] && return 1
+  [[ -z "$ack_password" ]] && return 1
+  [[ "$ack_password" != "$expected" ]] && return 1
+  return 0
+}
+
 # Writes the new state and then exits the dispatcher with code 2 via
 # dd_emit_deny. Never returns; any code following a call to this
 # function in the same branch is unreachable.
@@ -175,15 +186,6 @@ guard_commit_subject() {
     dd_emit_deny commit-subject "Editor-mode commit verbergt subject. Pass inline: git commit -m \"...\"."
   fi
 
-  # Helper: does the ack supply the right password for the named rule index?
-  _dd_ack_matches() {
-    local target_idx="$1"
-    [[ "$ack_idx" -ne "$target_idx" ]] && return 1
-    [[ -z "$ack_password" ]] && return 1
-    [[ "$ack_password" != "${DD_RULE_PASSWORD[$target_idx]}" ]] && return 1
-    return 0
-  }
-
   # Fresh violation: always deny with rule 1 or 2.
   if [[ "$violation_idx" -ge 0 ]]; then
     local rn=$((violation_idx + 1))
@@ -201,7 +203,7 @@ guard_commit_subject() {
   # Pending violation from a previous call: subject must be clean AND ack
   # must carry the right password.
   if [[ "$pv" -ge 0 ]]; then
-    if _dd_ack_matches "$pv"; then
+    if _dd_ack_matches "$pv" "$ack_idx" "$ack_password" "${DD_RULE_PASSWORD[$pv]}"; then
       _dd_write_state "$state_file" -1 "$pr" "$rp"
       return 0
     fi
@@ -223,7 +225,7 @@ guard_commit_subject() {
   # pass: record the current HEAD sha so the next dispatcher entry can
   # detect whether the commit actually landed (HEAD moved) or failed at
   # commit-msg / pre-commit (HEAD unchanged).
-  if _dd_ack_matches "$pr"; then
+  if _dd_ack_matches "$pr" "$ack_idx" "$ack_password" "${DD_RULE_PASSWORD[$pr]}"; then
     local head_sha
     head_sha=$(git rev-parse HEAD 2>/dev/null | tr -cd '0-9a-f')
     _dd_write_state "$state_file" -1 -1 "$rp" "$head_sha"
