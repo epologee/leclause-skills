@@ -1,7 +1,7 @@
 ---
 name: council
 user-invocable: true
-description: Vijf advisors vallen een idee, beslissing of plan vanuit vijf hoeken aan. Pre-mortem, first-principles, opportunity-finder, stranger, action. Responses worden geanonimiseerd en blind peer-reviewed; een chairman synthetiseert één verdict. Triggers op /gurus:council, board of advisors, critical review panel, wanneer je twijfelt of Claude alleen maar meegaand is.
+description: Five advisors attack an idea, decision, or plan from five different angles. Pre-mortem, first-principles, opportunity-finder, stranger, action. Responses are anonymised and blind peer-reviewed; a chairman synthesises one verdict. Triggers on /gurus:council, board of advisors, critical review panel, when you suspect Claude is just being agreeable.
 effort: high
 ---
 
