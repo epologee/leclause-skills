@@ -116,4 +116,10 @@ The sentinel lives at `~/.claude/var/leclause/<plugin>-broadcast-seen` and store
 - **Not in a broadcast:** internal refactors, silent bug fixes the user never saw, "various improvements", performance tweaks without observable behavior change, doc-only or test-only commits, language-of-implementation changes, marketing or cross-promotion, donation requests, telemetry-opt-in prompts. Plugins that broadcast these accumulate the same fatigue npm post-install messages caused; treat the broadcast budget like a feature-development budget.
 - **Volgordecriterium:** the user MUST NOT be surprised by breaking changes; non-breaking additions can be a soft nudge; never gate the user's actual work on acknowledgement.
 
+### Length
+
+Each bullet is at most two sentences. The first sentence states the user-visible change; the optional second sentence names the one consequence the user must act on. No back-story about the previous behavior, no explanation of the implementation, no apology for the change. A reader who has never seen the plugin before should be able to skim the entire section in under thirty seconds; if a bullet does not fit that budget, split it into a separate entry or move the rationale into a commit message where it belongs.
+
+A reader who wants the implementation reasoning runs `git log` against the plugin directory; the broadcast is for action-relevant change, not for engineering history.
+
 The single test for inclusion: would the user benefit from knowing this before their next slash invocation. If the answer is no, leave it out; the next entry above it stays the latest section and the broadcast stays silent until something genuinely worth saying lands.

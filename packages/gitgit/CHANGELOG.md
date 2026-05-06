@@ -19,32 +19,13 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 
 ### Changed
 
-- **Rotation advances on confirmed commit success, not on PreToolUse
-  ack-match.** Previously the rotation slot moved the moment the ack
-  matched in PreToolUse, which meant a commit that passed PreToolUse
-  but failed at commit-msg (missing `[doublecheck]`, version-bump
-  hook error, etc.) still consumed a rotation slot. The guard now
-  records the HEAD sha at ack-match and advances `rotation_pos` only
-  when the next dispatcher entry sees that HEAD has moved. When the
-  commit fails, the slot stays and the operator acks the same rule
-  again on retry. The state file gains a fourth line
-  (`ack_pending_sha`); older three-line files are read with that
-  field defaulted to empty, so no migration step is required.
+- **Rotation slot only advances after a commit actually lands.** A commit that passed PreToolUse but failed downstream (missing `[doublecheck]`, version-bump hook error) used to burn a slot anyway; now you ack the same rule again on retry.
 
 ## [v1.0.83]
 
 ### Changed
 
-- **Rotation deny output points at the SKILL.md absolute path.** The
-  rotation reminder used to end with `(zie /gitgit:commit-discipline)`,
-  which sent Claude grep-fishing through the plugin cache to find the
-  password. The deny now ends with `(lookup: <abs-path>, section
-  'Rotation reminders')` so the lookup is a direct Read instead. The
-  password is not pre-revealed; the lookup itself stays required, and
-  the discipline (one rule per commit, hook-delivered, no
-  reflex-compliance from a wall of rules) is unchanged. Tests or
-  tooling that grep for the old `(zie /gitgit:commit-discipline)`
-  string need to update.
+- **Rotation deny names the SKILL.md path.** The reminder ends with `(lookup: <abs-path>, section 'Rotation reminders')` instead of `(zie /gitgit:commit-discipline)`, so the password lookup is a direct Read; tooling that greps for the old phrase needs an update.
 
 ## [v1.0.80]
 
