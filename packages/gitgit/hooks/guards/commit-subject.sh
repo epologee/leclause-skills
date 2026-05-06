@@ -41,7 +41,10 @@ _dd_write_state() {
   mv "$tmp" "$file"
 }
 
-_dd_commit_deny() {
+# Writes the new state and then exits the dispatcher with code 2 via
+# dd_emit_deny. Never returns; any code following a call to this
+# function in the same branch is unreachable.
+_dd_deny_and_exit() {
   local rule_idx="$1" msg="$2" pv="$3" pr="$4" rp="$5" state_file="$6" ack_sha="${7:-}"
   local num=$((rule_idx + 1))
   _dd_write_state "$state_file" "$pv" "$pr" "$rp" "$ack_sha"
@@ -185,11 +188,11 @@ guard_commit_subject() {
   if [[ "$violation_idx" -ge 0 ]]; then
     local rn=$((violation_idx + 1))
     if [[ "$ack_idx" -eq "$violation_idx" ]]; then
-      _dd_commit_deny "$violation_idx" \
+      _dd_deny_and_exit "$violation_idx" \
         "\"${subject}\" overtreedt nog. Rewrite + '# ack-rule${rn}:<wachtwoord>' (lookup: ${skill_pointer})." \
         "$violation_idx" "$pr" "$rp" "$state_file"
     else
-      _dd_commit_deny "$violation_idx" \
+      _dd_deny_and_exit "$violation_idx" \
         "\"${subject}\" overtreedt. Rewrite + '# ack-rule${rn}:<wachtwoord>' (lookup: ${skill_pointer})." \
         "$violation_idx" "$pr" "$rp" "$state_file"
     fi
@@ -202,7 +205,7 @@ guard_commit_subject() {
       _dd_write_state "$state_file" -1 "$pr" "$rp"
       return 0
     fi
-    _dd_commit_deny "$pv" \
+    _dd_deny_and_exit "$pv" \
       "\"${subject}\" wachtwoord onjuist of ontbreekt. Plak '# ack-rule$((pv + 1)):<wachtwoord>' (lookup: ${skill_pointer})." \
       "$pv" "$pr" "$rp" "$state_file"
   fi
@@ -210,7 +213,7 @@ guard_commit_subject() {
   # No pending rotation: serve the next slot as a rotating thematic reminder.
   if [[ "$pr" -lt 0 ]]; then
     local selected="${_DD_ROTATION_SLOTS[$rp]}"
-    _dd_commit_deny "$selected" \
+    _dd_deny_and_exit "$selected" \
       "reminder. Plak '# ack-rule$((selected + 1)):<wachtwoord>' (lookup: ${skill_pointer})." \
       -1 "$selected" "$rp" "$state_file"
   fi
@@ -226,7 +229,7 @@ guard_commit_subject() {
     _dd_write_state "$state_file" -1 -1 "$rp" "$head_sha"
     return 0
   fi
-  _dd_commit_deny "$pr" \
+  _dd_deny_and_exit "$pr" \
     "wachtwoord onjuist of ontbreekt. Plak '# ack-rule$((pr + 1)):<wachtwoord>' (lookup: ${skill_pointer})." \
     -1 "$pr" "$rp" "$state_file"
 }
