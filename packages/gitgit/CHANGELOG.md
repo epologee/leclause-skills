@@ -15,6 +15,21 @@ Categories:
 Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 
+## [v1.0.83]
+
+### Changed
+
+- **Rotation deny output points at the SKILL.md absolute path.** The
+  rotation reminder used to end with `(zie /gitgit:commit-discipline)`,
+  which sent Claude grep-fishing through the plugin cache to find the
+  password. The deny now ends with `(lookup: <abs-path>, section
+  'Rotation reminders')` so the lookup is a direct Read instead. The
+  password is not pre-revealed; the lookup itself stays required, and
+  the discipline (one rule per commit, hook-delivered, no
+  reflex-compliance from a wall of rules) is unchanged. Tests or
+  tooling that grep for the old `(zie /gitgit:commit-discipline)`
+  string need to update.
+
 ## [v1.0.80]
 
 ### Breaking
