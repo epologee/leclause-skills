@@ -112,9 +112,27 @@ SHIM
 
   # Pre-seed commit-subject rotation state so ack-rule4 passes immediately,
   # so that any test using a clean subject does not hit the rotation reminder.
+  # Uses the canonical key=value format the production writer emits.
   local _state_file="$BATS_TEST_TMPDIR/commit-rule-state"
-  printf '%s\n%s\n%s\n' '-1' '3' '0' > "$_state_file"
+  printf 'pv=-1\npr=3\nrp=0\nack_pending_sha=\n' > "$_state_file"
   export GITGIT_COMMIT_RULE_STATE_FILE="$_state_file"
+}
+
+# Helpers shared by the rotation bats specs: read individual fields out
+# of a state file regardless of whether it is in legacy positional or
+# canonical key=value form.
+read_state_field() {
+  local file="$1" field="$2"
+  if grep -qE '^[a-z_]+=' "$file" 2>/dev/null; then
+    grep -E "^${field}=" "$file" | head -1 | cut -d= -f2-
+  else
+    case "$field" in
+      pv)              sed -n '1p' "$file" ;;
+      pr)              sed -n '2p' "$file" ;;
+      rp)              sed -n '3p' "$file" ;;
+      ack_pending_sha) sed -n '4p' "$file" ;;
+    esac
+  fi
 }
 
 teardown() {

@@ -15,6 +15,26 @@ Categories:
 Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 
+## [v1.0.91]
+
+### Changed
+
+- **State file format is now key=value.** The rotation state file at
+  `~/.claude/var/gitgit-commit-rule-state` was a positional flat
+  text file (line 1 = `pending_violation`, line 2 = `pending_rotation`,
+  line 3 = `rotation_pos`, line 4 = `ack_pending_sha`). It is now a
+  key=value file (`pv=-1`, `pr=-1`, `rp=0`, `ack_pending_sha=`),
+  self-describing and tolerant of field reordering or future
+  extension. The reader still accepts both legacy positional formats
+  (three-line and four-line); the next write converges the file to
+  key=value. Existing installations migrate without operator
+  intervention. Tooling that read the file via `sed -n '<N>p'` needs
+  to switch to `grep -E '^<key>='`.
+- **Migration of the legacy `dont-do-that` state file is now atomic.**
+  The one-shot `cp` from the legacy path could be raced by two
+  Claude sessions starting simultaneously; the migration now writes
+  to a per-pid temp file and renames atomically.
+
 ## [v1.0.89]
 
 ### Changed

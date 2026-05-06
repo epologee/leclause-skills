@@ -245,11 +245,11 @@ on the next attempt instead of burning a fresh rotation slot. The
 canonical mnemonic table that the hook validates against is in
 `packages/gitgit/hooks/lib/rotation-rules.sh`.
 
-The state file format is four lines: `pending_violation`,
-`pending_rotation`, `rotation_pos`, and `ack_pending_sha` (the HEAD
-sha at the last ack-match, empty when no resolution is pending).
-Older three-line files are read with `ack_pending_sha` defaulting to
-empty.
+The state file is in key=value format: `pv=`, `pr=`, `rp=`, and
+`ack_pending_sha=` (the HEAD sha at the last ack-match, empty when
+no resolution is pending). The reader also accepts the two legacy
+positional formats (three-line and four-line); the next write
+converges any legacy file to key=value.
 
 ### Why this lives in a hook and rotates one rule at a time
 

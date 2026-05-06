@@ -5,14 +5,14 @@
 
 load helpers
 
-read_rp() { sed -n '3p' "$1"; }
-read_pending_sha() { sed -n '4p' "$1"; }
+read_rp() { read_state_field "$1" rp; }
+read_pending_sha() { read_state_field "$1" ack_pending_sha; }
 
 @test "ack-match in an empty repo refuses with a guidance deny" {
   local state="$BATS_TEST_TMPDIR/commit-rule-state"
   export GITGIT_COMMIT_RULE_STATE_FILE="$state"
   # Pending rotation = rule 11 (idx 10), pending sha empty.
-  printf '%s\n%s\n%s\n%s\n' '-1' '10' '7' '' > "$state"
+  printf 'pv=-1\npr=10\nrp=7\nack_pending_sha=\n' > "$state"
   # Force the shim to mimic an empty repo for this run only.
   export GIT_SHIM_HEAD_SHA=""
 
@@ -30,7 +30,7 @@ read_pending_sha() { sed -n '4p' "$1"; }
   local state="$BATS_TEST_TMPDIR/commit-rule-state"
   export GITGIT_COMMIT_RULE_STATE_FILE="$state"
   # Previous ack stored a pending sha; current shim returns empty for HEAD.
-  printf '%s\n%s\n%s\n%s\n' '-1' '-1' '5' 'feedfacefeedface' > "$state"
+  printf 'pv=-1\npr=-1\nrp=5\nack_pending_sha=feedfacefeedface\n' > "$state"
   export GIT_SHIM_HEAD_SHA=""
 
   run_dispatch "git commit -m 'Drop bad reading on transaction events'"

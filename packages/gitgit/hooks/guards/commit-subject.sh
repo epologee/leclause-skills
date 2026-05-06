@@ -34,10 +34,40 @@ _dd_read_state_line() {
   fi
 }
 
+# Loads state into DD_LOADED_* globals. Reads the canonical key=value
+# format and degrades gracefully to the two legacy positional formats
+# (three-line: pv/pr/rp; four-line: pv/pr/rp/ack_pending_sha). The next
+# write converges any legacy file to the key=value format.
+_dd_load_state() {
+  local file="$1"
+  DD_LOADED_PV=-1
+  DD_LOADED_PR=-1
+  DD_LOADED_RP=0
+  DD_LOADED_ACK_SHA=""
+  [[ -f "$file" ]] || return 0
+  if grep -qE '^[a-z_]+=' "$file" 2>/dev/null; then
+    local key val
+    while IFS='=' read -r key val; do
+      case "$key" in
+        pv) [[ "$val" =~ ^-?[0-9]+$ ]] && DD_LOADED_PV="$val" ;;
+        pr) [[ "$val" =~ ^-?[0-9]+$ ]] && DD_LOADED_PR="$val" ;;
+        rp) [[ "$val" =~ ^-?[0-9]+$ ]] && DD_LOADED_RP="$val" ;;
+        ack_pending_sha) DD_LOADED_ACK_SHA=$(printf '%s' "$val" | tr -cd '0-9a-f') ;;
+      esac
+    done < "$file"
+  else
+    DD_LOADED_PV=$(_dd_read_state_line "$file" 1 -1)
+    DD_LOADED_PR=$(_dd_read_state_line "$file" 2 -1)
+    DD_LOADED_RP=$(_dd_read_state_line "$file" 3 0)
+    DD_LOADED_ACK_SHA=$(sed -n '4p' "$file" 2>/dev/null | tr -cd '0-9a-f')
+  fi
+}
+
 _dd_write_state() {
   local file="$1" pv="$2" pr="$3" rp="$4" ack_sha="${5:-}"
   local tmp="${file}.tmp.$$"
-  printf '%d\n%d\n%d\n%s\n' "$pv" "$pr" "$rp" "$ack_sha" > "$tmp"
+  printf 'pv=%d\npr=%d\nrp=%d\nack_pending_sha=%s\n' \
+    "$pv" "$pr" "$rp" "$ack_sha" > "$tmp"
   mv "$tmp" "$file"
 }
 
@@ -131,18 +161,17 @@ guard_commit_subject() {
   if [[ ! -f "$state_file" ]]; then
     local old_state_file="${CLAUDE_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/commit-rule-state}"
     if [[ -f "$old_state_file" ]]; then
-      cp "$old_state_file" "$state_file"
+      # Atomic migration so two simultaneous Claude sessions cannot
+      # both see the missing destination, both `cp`, and the second
+      # silently overwrite a partial first.
+      local migr_tmp="${state_file}.tmp.$$"
+      cp "$old_state_file" "$migr_tmp" && mv "$migr_tmp" "$state_file"
     fi
   fi
 
-  local pv pr rp ack_pending_sha=""
-  pv=-1; pr=-1; rp=0
-  if [[ -f "$state_file" ]]; then
-    pv=$(_dd_read_state_line "$state_file" 1 -1)
-    pr=$(_dd_read_state_line "$state_file" 2 -1)
-    rp=$(_dd_read_state_line "$state_file" 3 0)
-    ack_pending_sha=$(sed -n '4p' "$state_file" 2>/dev/null | tr -cd '0-9a-f')
-  fi
+  _dd_load_state "$state_file"
+  local pv="$DD_LOADED_PV" pr="$DD_LOADED_PR" rp="$DD_LOADED_RP"
+  local ack_pending_sha="$DD_LOADED_ACK_SHA"
   # Clamp to valid ranges.
   [[ "$pv" -ne -1 && "$pv" -ne 0 && "$pv" -ne 1 ]] && pv=-1
   if [[ "$pr" -ne -1 ]]; then
