@@ -72,6 +72,7 @@ After the operator picks, execute that one action and report the result, exactly
 - **Asking what to do when the previous turn had exactly one proposal.** `/do-that` is the answer; running it is the response.
 - **Offering the recipe again in different words.** That is the exact reflex this skill exists to break. If you find yourself typing "I will run `bin/foo`", stop and run it.
 - **Picking the most likely action from an ambiguous list and running it silently.** When in doubt, ask. The cost of a one-line "Bedoel je A of B?" is far below the cost of running the wrong thing on a system the operator cares about.
+- **Treating "one option is for the operator and the other is mine to run" as already disambiguated.** Different actor does not collapse two options to one. If the previous turn presented A and B, /do-that means ask, even when only B is something I can execute. The operator may have meant "I will do A" and was waiting for input, or may have changed their mind. Always ask.
 - **Padding the disambiguation prompt with explanation.** Two or three options, one line each, no commentary. The operator already saw the previous turn; they do not need it summarised.
 
 ## Edge cases
