@@ -15,6 +15,22 @@ Categories:
 Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 
+## [v1.0.92]
+
+### Changed
+
+- **Rotation state file is now per-repo, not per-user.** The path
+  `~/.claude/var/gitgit-commit-rule-state` was a single global file
+  shared by every repo on the machine; two worktrees of different
+  repos collided on `rotation_pos` and `ack_pending_sha`. The path
+  is now namespaced by an 8-character hash of
+  `git rev-parse --show-toplevel` (e.g.
+  `~/.claude/var/gitgit-commit-rule-state-3f7a2c11`). On first read
+  for a new repo the per-toplevel file does not exist; the legacy
+  global file (if present) migrates atomically into the new
+  location. Worktrees of the same repo share state, which is the
+  natural scope for the discipline.
+
 ## [v1.0.91]
 
 ### Changed

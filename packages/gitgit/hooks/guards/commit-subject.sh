@@ -155,17 +155,44 @@ guard_commit_subject() {
   shopt -u nocasematch
 
   # State file. GITGIT_COMMIT_RULE_STATE_FILE overrides for tests.
-  # One-shot migration from the old dont-do-that location.
-  local state_file="${GITGIT_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/gitgit-commit-rule-state}"
+  # When no override is set, the path is namespaced by the worktree's
+  # toplevel directory so two repos open in different worktrees do not
+  # share rotation state. The hash of the absolute toplevel path
+  # collapses worktrees of the same repo onto the same state, which is
+  # the natural scope for the discipline. Migrations chain: legacy
+  # dont-do-that location → global gitgit path → per-toplevel path.
+  local state_file
+  if [[ -n "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]]; then
+    state_file="$GITGIT_COMMIT_RULE_STATE_FILE"
+  else
+    local toplevel toplevel_hash
+    toplevel=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [[ -n "$toplevel" ]]; then
+      toplevel_hash=$(printf '%s' "$toplevel" | shasum 2>/dev/null | cut -c1-8)
+      [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | cksum | cut -d' ' -f1 | head -c 8)
+      state_file="$HOME/.claude/var/gitgit-commit-rule-state-${toplevel_hash}"
+    else
+      state_file="$HOME/.claude/var/gitgit-commit-rule-state"
+    fi
+  fi
   mkdir -p "$(dirname "$state_file")"
   if [[ ! -f "$state_file" ]]; then
-    local old_state_file="${CLAUDE_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/commit-rule-state}"
-    if [[ -f "$old_state_file" ]]; then
-      # Atomic migration so two simultaneous Claude sessions cannot
-      # both see the missing destination, both `cp`, and the second
-      # silently overwrite a partial first.
+    # Migration chain: prefer the global gitgit file (older repo-shared
+    # state) over the legacy dont-do-that file (oldest). Both copies
+    # are atomic so two simultaneous sessions cannot race a partial
+    # destination.
+    local migration_src=""
+    local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
+    if [[ "$state_file" != "$global_state" && -f "$global_state" ]]; then
+      migration_src="$global_state"
+    fi
+    if [[ -z "$migration_src" ]]; then
+      local old_state_file="${CLAUDE_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/commit-rule-state}"
+      [[ -f "$old_state_file" ]] && migration_src="$old_state_file"
+    fi
+    if [[ -n "$migration_src" ]]; then
       local migr_tmp="${state_file}.tmp.$$"
-      cp "$old_state_file" "$migr_tmp" && mv "$migr_tmp" "$state_file"
+      cp "$migration_src" "$migr_tmp" && mv "$migr_tmp" "$state_file"
     fi
   fi
 

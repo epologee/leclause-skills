@@ -92,9 +92,10 @@ fi
 
 # git rev-parse --show-toplevel
 # Sandboxed to BATS_TEST_TMPDIR so the validator's Visual: path-resolution
-# does not escape the per-test tempdir.
+# does not escape the per-test tempdir. GIT_SHIM_TOPLEVEL overrides for
+# tests that exercise per-toplevel state-file namespacing.
 if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--show-toplevel" ]]; then
-  printf '%s\n' "${BATS_TEST_TMPDIR:-/}"
+  printf '%s\n' "${GIT_SHIM_TOPLEVEL:-${BATS_TEST_TMPDIR:-/}}"
   exit 0
 fi
 
