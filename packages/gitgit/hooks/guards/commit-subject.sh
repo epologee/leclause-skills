@@ -90,28 +90,13 @@ guard_commit_subject() {
     subject=$(printf '%s' "$full_message" | head -1)
   fi
 
-  # Strip HEREDOC body + quoted strings from command for ack-token detection,
-  # so an ack buried in the subject itself does not count as approval.
+  # Strip heredoc body + quoted strings from the command for ack-token
+  # detection, so an ack buried in the message itself does not count as
+  # approval. dd_strip_commit_message lives in common.sh; it shares the
+  # heredoc grammar with dd_extract_commit_message so the two parsers
+  # cannot drift.
   local cmd_clean
-  cmd_clean=$(echo "$command" | awk '
-    BEGIN { in_heredoc=0; marker="" }
-    in_heredoc {
-      trimmed = $0
-      sub(/^[[:space:]]+/, "", trimmed)
-      if (trimmed == marker) { in_heredoc = 0; marker = "" }
-      next
-    }
-    {
-      if (match($0, /<<-?[[:space:]]*['\''"]?[A-Za-z_][A-Za-z0-9_]*['\''"]?/)) {
-        tok = substr($0, RSTART, RLENGTH)
-        sub(/<<-?[[:space:]]*['\''"]?/, "", tok)
-        sub(/['\''"]?$/, "", tok)
-        marker = tok
-        in_heredoc = 1
-      }
-      print
-    }' || true)
-  cmd_clean=$(echo "$cmd_clean" | sed -E $'s/"[^"]*"//g; s/\x27[^\x27]*\x27//g' || true)
+  cmd_clean=$(dd_strip_commit_message "$command")
 
   # Optional :<password> suffix. Bare `# ack-rule<N>` is still recognised as
   # "user tried to ack" (drives the "overtreedt nog" branch when their subject
