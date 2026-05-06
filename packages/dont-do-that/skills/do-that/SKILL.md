@@ -3,6 +3,26 @@ name: do-that
 description: Use ONLY when the operator types `/do-that` (or the fully-qualified `/dont-do-that:do-that`) with no extra arguments. Signals that the assistant just offered a recipe, instruction, or proposed action instead of executing it, and the operator wants the action performed now. Resolves the most recent proposal in the assistant's previous turn and runs it via the available tools (Bash, Edit, Write, browser, etc.). The proposal must be exactly one super-clear non-ambiguous action; if multiple distinct candidates exist in the previous turn, ask the operator to pick (A vs B) before running anything. Never guess.
 ---
 
+<post-update-broadcast>
+BEFORE doing the actual work below, run this one-time check:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
+```
+
+If the command produces output, the dont-do-that plugin was updated since
+the last time you saw the broadcast on this machine. Show the output
+verbatim in a markdown block, prefixed with one short sentence
+("dont-do-that was updated; here is what changed."). Then continue with
+the rest of this skill.
+
+If the command produces no output, say nothing about updates and proceed.
+
+The helper writes the sentinel only when stdout was non-empty, so a silent
+run does not mark the version as seen. `/leclause:whats-new dont-do-that`
+re-shows the section on demand without touching the sentinel.
+</post-update-broadcast>
+
 # do-that
 
 Sister to the `do-that` Stop guard in this plugin. The guard catches the reflex at write-time; this skill is the operator's one-keystroke correction at read-time.
