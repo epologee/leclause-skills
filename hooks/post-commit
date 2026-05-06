@@ -1,0 +1,12 @@
+#!/bin/sh
+# Fires only when a commit actually lands. Nudges the operator to push when
+# the new commit on main touches plugin content. Pre-commit was the wrong
+# place for this nudge: it printed during failed commit-msg cycles too.
+
+current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+[ "$current_branch" = "main" ] || exit 0
+
+if git show --name-only --format= HEAD | grep -qE '^packages/'; then
+  echo "" >&2
+  echo "Push this to main so consumers (every OS) can pick up the update." >&2
+fi

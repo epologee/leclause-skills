@@ -102,13 +102,6 @@ if [ -x "$plugin_versions_script" ]; then
   fi
 fi
 
-# After a commit on main that changed plugin content, nudge the operator to
-# push. Main is the single install target for every OS now that the repo is
-# symlink-free; Windows consumers get the update as soon as main moves.
-current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
-if [ "$current_branch" = "main" ]; then
-  if git diff --cached --name-only --diff-filter=ACMR | grep -qE '^packages/'; then
-    echo "" >&2
-    echo "Push this to main so consumers (every OS) can pick up the update." >&2
-  fi
-fi
+# Operator-push nudge moved to hooks/post-commit so it only fires when the
+# commit actually lands. In pre-commit it fired during failed commit-msg
+# rejections too, adding noise to retry cycles.

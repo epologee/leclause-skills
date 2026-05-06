@@ -54,6 +54,18 @@ guard_commit_subject() {
   command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
   [[ ! "$command" =~ git[[:space:]]+commit ]] && return 0
 
+  # Direct pointer to the SKILL.md so Claude can Read the file without
+  # grep-fishing through the plugin cache. The lookup itself stays
+  # required: this only points at the door, the password still lives
+  # behind it. Falls back to the slash-command form when the absolute
+  # path cannot be resolved (e.g. broken install).
+  local skill_pointer
+  if skill_pointer=$(cd "$_DD_HERE/../../skills/commit-discipline" 2>/dev/null && pwd); then
+    skill_pointer="${skill_pointer}/SKILL.md, section 'Rotation reminders'"
+  else
+    skill_pointer="/gitgit:commit-discipline"
+  fi
+
   # Subject extraction: delegate to dd_extract_commit_message (shared parser),
   # then take the first line as the subject. This deduplicates the heredoc-first
   # / -m-fallback logic that commit-format.sh and commit-body.sh also use.
@@ -157,11 +169,11 @@ guard_commit_subject() {
     local rn=$((violation_idx + 1))
     if [[ "$ack_idx" -eq "$violation_idx" ]]; then
       _dd_commit_deny "$violation_idx" \
-        "\"${subject}\" overtreedt nog. Rewrite + '# ack-rule${rn}:<wachtwoord>' (zie /gitgit:commit-discipline)." \
+        "\"${subject}\" overtreedt nog. Rewrite + '# ack-rule${rn}:<wachtwoord>' (lookup: ${skill_pointer})." \
         "$violation_idx" "$pr" "$rp" "$state_file"
     else
       _dd_commit_deny "$violation_idx" \
-        "\"${subject}\" overtreedt. Rewrite + '# ack-rule${rn}:<wachtwoord>' (zie /gitgit:commit-discipline)." \
+        "\"${subject}\" overtreedt. Rewrite + '# ack-rule${rn}:<wachtwoord>' (lookup: ${skill_pointer})." \
         "$violation_idx" "$pr" "$rp" "$state_file"
     fi
   fi
@@ -174,7 +186,7 @@ guard_commit_subject() {
       return 0
     fi
     _dd_commit_deny "$pv" \
-      "\"${subject}\" wachtwoord onjuist of ontbreekt. Plak '# ack-rule$((pv + 1)):<wachtwoord>' (zie /gitgit:commit-discipline)." \
+      "\"${subject}\" wachtwoord onjuist of ontbreekt. Plak '# ack-rule$((pv + 1)):<wachtwoord>' (lookup: ${skill_pointer})." \
       "$pv" "$pr" "$rp" "$state_file"
   fi
 
@@ -182,7 +194,7 @@ guard_commit_subject() {
   if [[ "$pr" -lt 0 ]]; then
     local selected="${_DD_ROTATION_SLOTS[$rp]}"
     _dd_commit_deny "$selected" \
-      "reminder. Plak '# ack-rule$((selected + 1)):<wachtwoord>' (zoek wachtwoord in /gitgit:commit-discipline)." \
+      "reminder. Plak '# ack-rule$((selected + 1)):<wachtwoord>' (lookup: ${skill_pointer})." \
       -1 "$selected" "$rp" "$state_file"
   fi
 
@@ -193,6 +205,6 @@ guard_commit_subject() {
     return 0
   fi
   _dd_commit_deny "$pr" \
-    "wachtwoord onjuist of ontbreekt. Plak '# ack-rule$((pr + 1)):<wachtwoord>' (zie /gitgit:commit-discipline)." \
+    "wachtwoord onjuist of ontbreekt. Plak '# ack-rule$((pr + 1)):<wachtwoord>' (lookup: ${skill_pointer})." \
     -1 "$pr" "$rp" "$state_file"
 }
