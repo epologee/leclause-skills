@@ -15,6 +15,21 @@ Categories:
 Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 
+## [v1.0.93]
+
+### Changed
+
+- **Deny strings are now English.** The rotation guard's deny output
+  used to mix English and Dutch (`overtreedt`, `wachtwoord onjuist
+  of ontbreekt`, `Plak`, `verbergt subject`, `reminder. Plak`); it
+  is now consistently English (`violates`, `password missing or
+  wrong`, `Paste`, `hides the subject`, `reminder. Paste`). The ack
+  template placeholder is `<password>` instead of `<wachtwoord>`.
+  The Dutch password mnemonics (`gedrag`, `loep`, etc.) stay; they
+  are referential to the rule by design and live in the
+  `commit-discipline` skill table. Tooling that grepped for the old
+  Dutch fragments needs to update.
+
 ## [v1.0.92]
 
 ### Changed
@@ -60,7 +75,7 @@ omitted; the broadcast budget is for things the user benefits from knowing.
   `SKILL.md` (broken install, layout regression, stale cache), the
   guard now emits a loud `install appears broken: cannot resolve
   SKILL.md path. Reinstall gitgit@leclause.` deny instead of
-  degrading to the slash-command form `(zie /gitgit:commit-discipline)`,
+  degrading to a slash-command pointer (`/gitgit:commit-discipline`),
   which silently re-introduced the grep-fishing v1.0.83 was meant to
   fix. Reinstall gitgit@leclause if you see this message.
 
@@ -85,15 +100,15 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 ### Changed
 
 - **Rotation deny output points at the SKILL.md absolute path.** The
-  rotation reminder used to end with `(zie /gitgit:commit-discipline)`,
-  which sent Claude grep-fishing through the plugin cache to find the
-  password. The deny now ends with `(lookup: <abs-path>, section
-  'Rotation reminders')` so the lookup is a direct Read instead. The
-  password is not pre-revealed; the lookup itself stays required, and
-  the discipline (one rule per commit, hook-delivered, no
-  reflex-compliance from a wall of rules) is unchanged. Tests or
-  tooling that grep for the old `(zie /gitgit:commit-discipline)`
-  string need to update.
+  rotation reminder used to end with a slash-command pointer
+  (`/gitgit:commit-discipline`), which sent Claude grep-fishing
+  through the plugin cache to find the password. The deny now ends
+  with `(lookup: <abs-path>, section 'Rotation reminders')` so the
+  lookup is a direct Read instead. The password is not pre-revealed;
+  the lookup itself stays required, and the discipline (one rule per
+  commit, hook-delivered, no reflex-compliance from a wall of rules)
+  is unchanged. Tests or tooling that grep for the old slash-command
+  pointer need to update.
 
 ## [v1.0.80]
 

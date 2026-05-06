@@ -3,8 +3,8 @@
 # PreToolUse:Bash guard. On every git commit, parse the subject from -m /
 # --message / HEREDOC; check rules 1 (activity-word start) and 2 (trigger
 # phrasing); otherwise serve a rotating thematic reminder. Blocks until an
-# appropriate '# ack-rule<N>:<wachtwoord>' token appears, where the
-# wachtwoord must match the mnemonic for that rule. The mnemonics live in
+# appropriate '# ack-rule<N>:<password>' token appears, where the
+# password must match the mnemonic for that rule. The mnemonics live in
 # hooks/lib/rotation-rules.sh and are documented in the
 # /gitgit:commit-discipline skill (section "Rotation reminders").
 #
@@ -133,7 +133,7 @@ guard_commit_subject() {
   cmd_clean=$(dd_strip_commit_message "$command")
 
   # Optional :<password> suffix. Bare `# ack-rule<N>` is still recognised as
-  # "user tried to ack" (drives the "overtreedt nog" branch when their subject
+  # "user tried to ack" (drives the "still violates" branch when their subject
   # is still violating); only the suffixed form actually clears state.
   local ack_idx=-1
   local ack_password=""
@@ -236,7 +236,7 @@ guard_commit_subject() {
 
   # Editor-mode commit: no subject parseable, rules 1/2 cannot be checked.
   if [[ -z "$subject" ]]; then
-    dd_emit_deny commit-subject "Editor-mode commit verbergt subject. Pass inline: git commit -m \"...\"."
+    dd_emit_deny commit-subject "Editor-mode commit hides the subject. Pass inline: git commit -m \"...\"."
   fi
 
   # Fresh violation: always deny with rule 1 or 2.
@@ -244,11 +244,11 @@ guard_commit_subject() {
     local rn=$((violation_idx + 1))
     if [[ "$ack_idx" -eq "$violation_idx" ]]; then
       _dd_deny_and_exit "$violation_idx" \
-        "\"${subject}\" overtreedt nog. Rewrite + '# ack-rule${rn}:<wachtwoord>' (lookup: ${skill_pointer})." \
+        "\"${subject}\" still violates. Rewrite + '# ack-rule${rn}:<password>' (lookup: ${skill_pointer})." \
         "$violation_idx" "$pr" "$rp" "$state_file"
     else
       _dd_deny_and_exit "$violation_idx" \
-        "\"${subject}\" overtreedt. Rewrite + '# ack-rule${rn}:<wachtwoord>' (lookup: ${skill_pointer})." \
+        "\"${subject}\" violates. Rewrite + '# ack-rule${rn}:<password>' (lookup: ${skill_pointer})." \
         "$violation_idx" "$pr" "$rp" "$state_file"
     fi
   fi
@@ -261,7 +261,7 @@ guard_commit_subject() {
       return 0
     fi
     _dd_deny_and_exit "$pv" \
-      "\"${subject}\" wachtwoord onjuist of ontbreekt. Plak '# ack-rule$((pv + 1)):<wachtwoord>' (lookup: ${skill_pointer})." \
+      "\"${subject}\" password missing or wrong. Paste '# ack-rule$((pv + 1)):<password>' (lookup: ${skill_pointer})." \
       "$pv" "$pr" "$rp" "$state_file"
   fi
 
@@ -269,7 +269,7 @@ guard_commit_subject() {
   if [[ "$pr" -lt 0 ]]; then
     local selected="${_DD_ROTATION_SLOTS[$rp]}"
     _dd_deny_and_exit "$selected" \
-      "reminder. Plak '# ack-rule$((selected + 1)):<wachtwoord>' (lookup: ${skill_pointer})." \
+      "reminder. Paste '# ack-rule$((selected + 1)):<password>' (lookup: ${skill_pointer})." \
       -1 "$selected" "$rp" "$state_file"
   fi
 
@@ -293,6 +293,6 @@ guard_commit_subject() {
     return 0
   fi
   _dd_deny_and_exit "$pr" \
-    "wachtwoord onjuist of ontbreekt. Plak '# ack-rule$((pr + 1)):<wachtwoord>' (lookup: ${skill_pointer})." \
+    "password missing or wrong. Paste '# ack-rule$((pr + 1)):<password>' (lookup: ${skill_pointer})." \
     -1 "$pr" "$rp" "$state_file"
 }
