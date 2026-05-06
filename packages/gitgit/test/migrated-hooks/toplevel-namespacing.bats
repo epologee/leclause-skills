@@ -82,9 +82,12 @@ load helpers
   [ -n "$second_file" ]
   local second_rp
   second_rp=$(read_state_field "$second_file" rp)
-  # Second repo did not inherit rp=7; it reads the default 0 (no
-  # migration source).
-  [ "$second_rp" != "7" ]
+  # Second repo did not inherit rp=7; the no-migration path leaves
+  # rp at the loader's default 0 (and the deny that just fired
+  # writes the same rp back). Assert exactly 0 rather than just
+  # `!= 7`, so partial state leakage to other slots also fails the
+  # test.
+  [ "$second_rp" = "0" ]
 
   unset GIT_SHIM_TOPLEVEL
   export HOME="$saved_home"
