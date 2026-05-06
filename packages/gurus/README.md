@@ -1,6 +1,6 @@
 # gurus
 
-Opinionated panels that challenge a decision from multiple perspectives. Two panels live under this plugin: `software` for code review, `council` for critical thinking on an idea or decision. An orchestrator skill routes between them.
+Opinionated panels that challenge a decision from multiple perspectives. Three panels live under this plugin: `software` for code review, `council` for critical thinking on an idea or decision, `writers` for prose review. An orchestrator skill routes between them.
 
 ## Sub-skills
 
@@ -8,13 +8,14 @@ Opinionated panels that challenge a decision from multiple perspectives. Two pan
 |-------|---------|-------|
 | `gurus:software` | Code review | Eight engineering personas (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). Consensus across 6 of 8 yields an action plan. |
 | `gurus:council` | A decision or idea | Five adversarial lenses (pre-mortem, first-principles, opportunity-finder, stranger, action) plus anonymised peer review plus chairman synthesis. |
-| `gurus:gurus` | Orchestrator: you are not sure which panel fits | Reads the context (diff present or abstract question), proposes a default, lets you override, then dispatches. Not itself a review; only a router. |
+| `gurus:writers` | Prose review (essay, script, manuscript, narrative copy) | Six writers (Didion, Saunders, Rovelli, Watts, Gladwell, Urban). Consensus across 4 of 6 yields an action plan of edits, cuts, and rewrites. |
+| `gurus:gurus` | Orchestrator: you are not sure which panel fits | Reads the context (diff present, abstract question, or prose under discussion), proposes a default, lets you override, then dispatches. Not itself a review; only a router. |
 
 ## Commands
 
 ### `/gurus`
 
-Entry orchestrator. Routes to `gurus:software` when a diff or code scope is in context, to `gurus:council` when the question reads like a decision or idea. Propose the default in one line, accept a one-word override (`software` or `council`), then dispatch. Direct invocation of `/gurus:software` or `/gurus:council` skips the routing step.
+Entry orchestrator. Routes to `gurus:software` when a diff or code scope is in context, to `gurus:writers` when prose files (`.md`, `.txt`, body-prose `.html`) or a pasted paragraph are under discussion, to `gurus:council` when the question reads like a decision or idea. Propose the default in one line, accept a one-word override (`software`, `council`, or `writers`), then dispatch. Direct invocation of `/gurus:software`, `/gurus:council`, or `/gurus:writers` skips the routing step.
 
 ### `/gurus:software`
 
@@ -26,12 +27,18 @@ Runs five advisors against a brief. Every advisor writes a lens-specific review 
 
 One invocation dispatches eleven `gurus:sonnet-max` agents at `effort: max` (five lenses, five peer reviews, one chairman). The two review phases run in parallel, so typical wall time is 2 to 4 minutes; token cost is substantial. See `skills/council/SKILL.md` for the full panel, lens briefings, and prompt templates. See `skills/software/SKILL.md` for the eight-guru software panel.
 
+### `/gurus:writers`
+
+Runs the writers panel against a piece of prose: a markdown draft, a script, a manuscript chapter, narrative HTML editorial, voiceover copy. Each writer reads the entire piece and returns a short critique grounded in their own craft, and consensus across 4 of 6 produces an action plan of edits, cuts, and rewrites. Writers quote the prose they are reacting to so the action plan is editable rather than abstract. The value sits in the tension between crafts: a sentence that survives Didion's restraint, Saunders's warmth, Rovelli's precision, Gladwell's hook instinct, Urban's accessibility, and Watts's depth has earned its place. See `skills/writers/SKILL.md` for the full panel.
+
 ## When to use which
 
 - **Before merging a non-trivial PR**: `gurus:software`.
 - **When refactoring touches conceptual boundaries**: `gurus:software`.
 - **When "moet ik X of Y?" is the actual question**: `gurus:council`.
 - **When Claude's previous answer felt sycophantic**: `gurus:council`.
+- **Before publishing an essay, script, or manuscript chapter**: `gurus:writers`.
+- **When voice, pacing, or opening feels off in a piece of prose**: `gurus:writers`.
 - **When you are not sure**: `/gurus` and let the orchestrator decide.
 
 ## Subagents
