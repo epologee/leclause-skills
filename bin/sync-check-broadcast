@@ -1,0 +1,74 @@
+#!/usr/bin/env node
+// Operator-only maintenance script. Single source of truth lives at
+// bin/check-broadcast.mjs. Every plugin that has a CHANGELOG.md gets its
+// bin/check-broadcast file synced from the canonical, byte-for-byte.
+//
+// Why per-plugin copies: ${CLAUDE_PLUGIN_ROOT} only resolves to the calling
+// plugin, so the helper must live inside each plugin's install. The DRY
+// part is that there is exactly one hand-edited source; the rest are
+// mechanical reflections.
+//
+// Usage:
+//   bin/sync-check-broadcast              # report drift
+//   bin/sync-check-broadcast --write      # apply (copy canonical to all)
+//
+// Exit:
+//   0 = in sync (or written), 1 = drift detected (report mode)
+
+import { readFileSync, writeFileSync, mkdirSync, existsSync, chmodSync, readdirSync, statSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const canonical = join(repoRoot, 'bin', 'check-broadcast.mjs');
+const packagesDir = join(repoRoot, 'packages');
+
+if (!existsSync(canonical)) {
+  console.error(`Canonical source missing: ${canonical}`);
+  process.exit(2);
+}
+
+const canonicalBody = readFileSync(canonical, 'utf8');
+
+function eligiblePlugins() {
+  const out = [];
+  for (const entry of readdirSync(packagesDir)) {
+    const pluginDir = join(packagesDir, entry);
+    if (!statSync(pluginDir).isDirectory()) continue;
+    if (!existsSync(join(pluginDir, 'CHANGELOG.md'))) continue;
+    out.push({ name: entry, dir: pluginDir });
+  }
+  return out;
+}
+
+const write = process.argv.includes('--write');
+const drift = [];
+
+for (const { name, dir } of eligiblePlugins()) {
+  const target = join(dir, 'bin', 'check-broadcast');
+  const current = existsSync(target) ? readFileSync(target, 'utf8') : null;
+  if (current === canonicalBody) continue;
+  drift.push({ name, target });
+  if (write) {
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, canonicalBody);
+    chmodSync(target, 0o755);
+  }
+}
+
+if (drift.length === 0) {
+  console.log('All plugin check-broadcast files match canonical.');
+  process.exit(0);
+}
+
+if (write) {
+  console.log(`Synced canonical to ${drift.length} plugin(s):`);
+  for (const d of drift) console.log(`  - ${d.name}`);
+  process.exit(0);
+}
+
+console.error(`check-broadcast drift in ${drift.length} plugin(s):`);
+for (const d of drift) console.error(`  - ${d.target}`);
+console.error('');
+console.error('Run: bin/sync-check-broadcast --write');
+process.exit(1);

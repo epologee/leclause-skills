@@ -92,6 +92,18 @@ for staged_file in $staged_files; do
 done
 IFS=$old_ifs
 
+# Verify every plugin's bin/check-broadcast is in sync with the canonical
+# at bin/check-broadcast.mjs. Without this guard, a fix to the canonical
+# silently fails to propagate to plugins on the next commit.
+sync_script="bin/sync-check-broadcast"
+if [ -x "$sync_script" ]; then
+  if ! "$sync_script" >/dev/null 2>&1; then
+    echo "ERROR: bin/check-broadcast drift detected." >&2
+    "$sync_script" >&2
+    exit 1
+  fi
+fi
+
 plugin_versions_script="bin/plugin-versions"
 if [ -x "$plugin_versions_script" ]; then
   PLUGIN_VERSIONS_GIT_CMD=$(ps -o args= -p $PPID 2>/dev/null || echo "git commit")
