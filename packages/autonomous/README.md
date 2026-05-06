@@ -2,7 +2,9 @@
 
 Dispatch a rover at a task. You stay back, the rover works in the field. The distance means it has to decide locally, so the plugin ships a decide framework, a contrarian pride check, and an evidence-discipline verify pass. The rover only reports done when the mission is solid.
 
-No hard dependencies on personal or team skills. Optional integrations (notifier, reviewbot, commit-splitter) are user-named at invocation and only used when installed.
+One hard dependency: `gurus@leclause` (same marketplace). The rover invokes `gurus:gurus` once per mission at INSPECT for opinionated panel review; the orchestrator routes to `gurus:software`, `gurus:council`, or any future panel. Install both plugins together: `claude plugins install autonomous@leclause gurus@leclause`.
+
+No other hard dependencies on personal or team skills. Optional integrations (notifier, reviewbot, commit-splitter) are user-named at invocation and only used when installed.
 
 ## User-invocable skills
 
