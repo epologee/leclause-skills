@@ -244,3 +244,38 @@ dd_extract_commit_message() {
 
   printf '%s' "$message"
 }
+
+# dd_strip_commit_message <bash-command>
+# Returns the bash command with heredoc bodies and quoted-string contents
+# removed, so callers searching the command for shell-level tokens (such
+# as the ack-rule comment behind a `git commit`) do not get fooled by a
+# token buried inside the message itself. The heredoc walk uses the same
+# grammar as dd_extract_commit_message; together the two functions form
+# inverses over the heredoc body. Used by commit-subject.sh to detect
+# ack tokens outside the message.
+dd_strip_commit_message() {
+  local command="$1"
+  local stripped
+  stripped=$(printf '%s' "$command" | awk '
+    BEGIN { in_hd = 0; marker = "" }
+    in_hd {
+      trimmed = $0
+      sub(/^[[:space:]]+/, "", trimmed)
+      if (trimmed == marker) { in_hd = 0; marker = "" }
+      next
+    }
+    {
+      if (match($0, /<<-?[[:space:]]*['"'"'"]?[A-Za-z_][A-Za-z0-9_]*['"'"'"]?/)) {
+        tok = substr($0, RSTART, RLENGTH)
+        sub(/<<-?[[:space:]]*['"'"'"]?/, "", tok)
+        sub(/['"'"'"]?$/, "", tok)
+        marker = tok
+        in_hd = 1
+      }
+      print
+    }
+  ' || true)
+  # Drop quoted-string contents so a token inside a quoted argument
+  # does not count as a shell-level token either.
+  printf '%s' "$stripped" | sed -E $'s/"[^"]*"//g; s/\x27[^\x27]*\x27//g' || true
+}

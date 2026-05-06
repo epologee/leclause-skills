@@ -81,15 +81,21 @@ if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--short" ]]; then
   exit 0
 fi
 if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "HEAD" ]]; then
+  if [[ -n "${GIT_SHIM_HEAD_SHA+set}" ]]; then
+    [[ -n "$GIT_SHIM_HEAD_SHA" ]] && printf '%s\n' "$GIT_SHIM_HEAD_SHA"
+    [[ -z "$GIT_SHIM_HEAD_SHA" ]] && exit 1
+    exit 0
+  fi
   printf 'deadbeef00000000\n'
   exit 0
 fi
 
 # git rev-parse --show-toplevel
 # Sandboxed to BATS_TEST_TMPDIR so the validator's Visual: path-resolution
-# does not escape the per-test tempdir.
+# does not escape the per-test tempdir. GIT_SHIM_TOPLEVEL overrides for
+# tests that exercise per-toplevel state-file namespacing.
 if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--show-toplevel" ]]; then
-  printf '%s\n' "${BATS_TEST_TMPDIR:-/}"
+  printf '%s\n' "${GIT_SHIM_TOPLEVEL:-${BATS_TEST_TMPDIR:-/}}"
   exit 0
 fi
 
@@ -107,9 +113,27 @@ SHIM
 
   # Pre-seed commit-subject rotation state so ack-rule4 passes immediately,
   # so that any test using a clean subject does not hit the rotation reminder.
+  # Uses the canonical key=value format the production writer emits.
   local _state_file="$BATS_TEST_TMPDIR/commit-rule-state"
-  printf '%s\n%s\n%s\n' '-1' '3' '0' > "$_state_file"
+  printf 'pv=-1\npr=3\nrp=0\nack_pending_sha=\n' > "$_state_file"
   export GITGIT_COMMIT_RULE_STATE_FILE="$_state_file"
+}
+
+# Helpers shared by the rotation bats specs: read individual fields out
+# of a state file regardless of whether it is in legacy positional or
+# canonical key=value form.
+read_state_field() {
+  local file="$1" field="$2"
+  if grep -qE '^[a-z_]+=' "$file" 2>/dev/null; then
+    grep -E "^${field}=" "$file" | head -1 | cut -d= -f2-
+  else
+    case "$field" in
+      pv)              sed -n '1p' "$file" ;;
+      pr)              sed -n '2p' "$file" ;;
+      rp)              sed -n '3p' "$file" ;;
+      ack_pending_sha) sed -n '4p' "$file" ;;
+    esac
+  fi
 }
 
 teardown() {

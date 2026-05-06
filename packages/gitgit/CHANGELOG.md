@@ -14,6 +14,102 @@ Categories:
 
 Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
+Version numbers may therefore be non-contiguous (an internal refactor bumps
+the version without producing an entry here).
+
+## [v1.0.94]
+
+### Fixed
+
+- **Migration of the legacy global state file no longer poisons new
+  repos.** The first repo opened after the v1.0.92 namespacing change
+  copies the global state file into its per-toplevel path; the
+  global file used to remain in place and silently re-migrate into
+  every subsequent new repo, propagating stale rotation_pos. The
+  source is now renamed to `*.migrated` after a successful copy, so
+  the second and later new repos start fresh.
+- **Toplevel-hash portability on systems without `shasum`.** The
+  fallback chain previously degraded to `cksum`, which produces a
+  decimal CRC; the per-toplevel state-file paths drifted into a
+  different alphabet and collided in unexpected ways. The fallback
+  now tries `md5sum` and `md5 -q` (both yield hex), with a
+  documented final degradation to the global path when no hex
+  hasher is available at all.
+
+### Changed
+
+- **Empty `git rev-parse HEAD` is denied with guidance.** When a
+  `git commit` runs in a brand-new repo with zero commits, the
+  rotation guard previously wrote an empty `ack_pending_sha` and
+  silently lost the ack. The deny is now explicit: "cannot read
+  HEAD, is this a new repository? Make at least one commit before
+  invoking the rotation." (The change landed as v1.0.90; this entry
+  covers it retroactively.)
+
+## [v1.0.93]
+
+### Changed
+
+- **Deny strings are now English.** The rotation guard's deny output
+  used to mix English and Dutch (`overtreedt`, `wachtwoord onjuist
+  of ontbreekt`, `Plak`, `verbergt subject`, `reminder. Plak`); it
+  is now consistently English (`violates`, `password missing or
+  wrong`, `Paste`, `hides the subject`, `reminder. Paste`). The ack
+  template placeholder is `<password>` instead of `<wachtwoord>`.
+  The rotation passwords themselves (`gedrag`, `loep`, `essentie`,
+  etc., listed in the rotation table) stay Dutch by design; they
+  are referential to each rule's principle and form the per-cycle
+  exposure mechanism. Tooling that grepped for the old
+  Dutch fragments needs to update.
+
+## [v1.0.92]
+
+### Changed
+
+- **Rotation state file is now per-repo, not per-user.** The path
+  `~/.claude/var/gitgit-commit-rule-state` was a single global file
+  shared by every repo on the machine; two worktrees of different
+  repos collided on `rotation_pos` and `ack_pending_sha`. The path
+  is now namespaced by an 8-character hash of
+  `git rev-parse --show-toplevel` (e.g.
+  `~/.claude/var/gitgit-commit-rule-state-3f7a2c11`). On first read
+  for a new repo the per-toplevel file does not exist; the legacy
+  global file (if present) migrates atomically into the new
+  location. Worktrees of the same repo share state, which is the
+  natural scope for the discipline.
+
+## [v1.0.91]
+
+### Changed
+
+- **State file format is now key=value.** The rotation state file at
+  `~/.claude/var/gitgit-commit-rule-state` was a positional flat
+  text file (line 1 = `pending_violation`, line 2 = `pending_rotation`,
+  line 3 = `rotation_pos`, line 4 = `ack_pending_sha`). It is now a
+  key=value file (`pv=-1`, `pr=-1`, `rp=0`, `ack_pending_sha=`),
+  self-describing and tolerant of field reordering or future
+  extension. The reader still accepts both legacy positional formats
+  (three-line and four-line); the next write converges the file to
+  key=value. Existing installations migrate without operator
+  intervention. Tooling that read the file via `sed -n '<N>p'` needs
+  to switch to `grep -E '^<key>='`.
+- **Migration of the legacy `dont-do-that` state file is now atomic.**
+  The one-shot `cp` from the legacy path could be raced by two
+  Claude sessions starting simultaneously; the migration now writes
+  to a per-pid temp file and renames atomically.
+
+## [v1.0.89]
+
+### Changed
+
+- **Broken-install deny replaces the slash-command fallback.** When
+  `commit-subject.sh` cannot resolve the absolute path to its
+  `SKILL.md` (broken install, layout regression, stale cache), the
+  guard now emits a loud `install appears broken: cannot resolve
+  SKILL.md path. Reinstall gitgit@leclause.` deny instead of
+  degrading to a slash-command pointer (`/gitgit:commit-discipline`),
+  which silently re-introduced the grep-fishing v1.0.83 was meant to
+  fix. Reinstall gitgit@leclause if you see this message.
 
 ## [v1.0.85]
 

@@ -198,9 +198,9 @@ expect_allow "subject: ack-rule2 on clean rewrite clears trigger violation" \
   "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule2:effect')"
 
 reset_state
-expect_deny "subject: ack-rule on still-violating subject denies with overtreedt nog" \
+expect_deny "subject: ack-rule on still-violating subject denies with still violates" \
   "$(pretool_bash 'git commit -m "Fix typo" # ack-rule1:gedrag')" \
-  "overtreedt nog"
+  "still violates"
 
 # --- commit-subject: rotation reminder ---
 

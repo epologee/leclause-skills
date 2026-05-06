@@ -245,11 +245,11 @@ on the next attempt instead of burning a fresh rotation slot. The
 canonical mnemonic table that the hook validates against is in
 `packages/gitgit/hooks/lib/rotation-rules.sh`.
 
-The state file format is four lines: `pending_violation`,
-`pending_rotation`, `rotation_pos`, and `ack_pending_sha` (the HEAD
-sha at the last ack-match, empty when no resolution is pending).
-Older three-line files are read with `ack_pending_sha` defaulting to
-empty.
+The state file is in key=value format: `pv=`, `pr=`, `rp=`, and
+`ack_pending_sha=` (the HEAD sha at the last ack-match, empty when
+no resolution is pending). The reader also accepts the two legacy
+positional formats (three-line and four-line); the next write
+converges any legacy file to key=value.
 
 ### Why this lives in a hook and rotates one rule at a time
 
@@ -528,6 +528,38 @@ The SHA1 of your WHY text (after whitespace normalization) matches exactly
 that of one of the five most recent commits on the current branch. This
 points to copy-paste from an earlier commit message. Rewrite the WHY for
 this specific commit; even small textual deviations are enough.
+
+**"What is the rotation ack format and where do I paste it?"**
+
+Each commit fires one rotation reminder. The deny output names the
+rule number and the path to the SKILL.md table; look up the
+mnemonic password for that rule there, then append it as a trailing
+shell comment on the `git commit` command:
+
+```
+git commit -m "Subject" -m "Body" # ack-rule11:loep
+```
+
+Bare `# ack-rule<N>` without the password is recognised as "user
+tried to ack" but does not clear the rotation; the suffixed form
+does. The password is intentionally referential: looking it up is
+the per-cycle exposure to the rule's principle.
+
+**"install appears broken: cannot resolve SKILL.md path"**
+
+The guard could not locate its own SKILL.md alongside the hooks
+directory. The plugin install is incomplete or the cache version
+got out of sync with the marketplace. Run
+`claude plugins update gitgit@leclause` to refresh.
+
+**"cannot read HEAD, is this a new repository?"**
+
+The repository has zero commits yet. The rotation guard records
+HEAD at ack-match so the next dispatcher entry can confirm the
+commit landed; an empty HEAD breaks that signal. Make at least one
+commit (any subject is fine) before invoking the rotation, or
+disable the discipline for that initial commit via
+`/gitgit:disable-discipline`.
 
 **"push blocked by wip-gate but the wip commit was already amended"**
 

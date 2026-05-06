@@ -9,15 +9,15 @@ load helpers
 
 setup_pending_ack_state() {
   local state_file="$1" pending_sha="$2"
-  printf '%s\n%s\n%s\n%s\n' '-1' '-1' '5' "$pending_sha" > "$state_file"
+  printf 'pv=-1\npr=-1\nrp=5\nack_pending_sha=%s\n' "$pending_sha" > "$state_file"
 }
 
 read_rp() {
-  sed -n '3p' "$1"
+  read_state_field "$1" rp
 }
 
 read_pending_sha() {
-  sed -n '4p' "$1"
+  read_state_field "$1" ack_pending_sha
 }
 
 @test "HEAD advanced since ack: rp advances and pending sha clears" {
@@ -59,7 +59,7 @@ read_pending_sha() {
   local state="$BATS_TEST_TMPDIR/commit-rule-state"
   export GITGIT_COMMIT_RULE_STATE_FILE="$state"
   # Pre-set pending rotation = rule 11 (idx 10), rp arbitrary.
-  printf '%s\n%s\n%s\n%s\n' '-1' '10' '7' '' > "$state"
+  printf 'pv=-1\npr=10\nrp=7\nack_pending_sha=\n' > "$state"
 
   run_dispatch "git commit -m 'Capture HEAD sha when ack matches' # ack-rule11:loep"
   [ "$status" -eq 0 ] || {
