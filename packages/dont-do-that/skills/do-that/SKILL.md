@@ -1,6 +1,6 @@
 ---
 name: do-that
-description: Use ONLY when the operator types `/do-that` (or the fully-qualified `/dont-do-that:do-that`) with no extra arguments. Signals that the assistant just offered a recipe, instruction, or proposed action instead of executing it, and the operator wants the action performed now. Resolves the most recent proposal in the assistant's previous turn and runs it via the available tools (Bash, Edit, Write, browser, etc.). The proposal must be exactly one super-clear non-ambiguous action; if multiple distinct candidates exist in the previous turn, ask the operator to pick (A vs B) before running anything. Never guess.
+description: Use ONLY when the operator types `/do-that` (or the fully-qualified `/dont-do-that:do-that`) with no extra arguments. Signals that the assistant just offered a recipe, instruction, or proposed action instead of executing it, and the operator wants the action performed now. Resolves the most recent proposal in the assistant's previous turn and runs it via the available tools (Bash, Edit, Write, browser, etc.). The proposal must be exactly one super-clear non-ambiguous action; if multiple distinct candidates exist in the previous turn, list ALL of them as a numbered menu and ask the operator to pick before running anything. There is no upper bound on the menu length; surface every option, even ten. Never guess and never truncate.
 ---
 
 <post-update-broadcast>
@@ -60,10 +60,10 @@ The clarification template is short and specific. Always use the literal forms t
 > Did you mean (A) running the migration on staging, or (B) the local rspec sweep?
 
 Rules for the menu:
-- **Two or three options max.** If you proposed more than three things, that is a sign the previous turn was a brainstorm, not a proposal; do nothing and ask the operator what they meant.
+- **List every distinct option from the previous turn.** Even ten. There is no upper bound. Truncating the list to "the two or three that matter" is picking under another name. The operator chose to type `/do-that` against a turn that contained N proposals; surface all N and let them pick.
 - **Each option is one line, with the concrete command or edit.** No explanation, no rationale, no "I'd recommend A". The operator picks; you do not advise.
-- **Number or letter the options.** So the operator can reply "A" or "1" without retyping the command.
-- **No fourth option labelled "iets anders".** If they wanted something else, they would not have typed `/do-that`. If they reply with something else, take that as the action and run it.
+- **Number or letter the options.** So the operator can reply "A" or "1" without retyping the command. With ten options, use 1-10; the format scales.
+- **No catch-all option labelled "iets anders".** If they wanted something else, they would not have typed `/do-that`. If they reply with something else, take that as the action and run it.
 
 After the operator picks, execute that one action and report the result, exactly as in step 2-5 of "What to do".
 
@@ -73,7 +73,8 @@ After the operator picks, execute that one action and report the result, exactly
 - **Offering the recipe again in different words.** That is the exact reflex this skill exists to break. If you find yourself typing "I will run `bin/foo`", stop and run it.
 - **Picking the most likely action from an ambiguous list and running it silently.** When in doubt, ask. The cost of a one-line "Bedoel je A of B?" is far below the cost of running the wrong thing on a system the operator cares about.
 - **Treating "one option is for the operator and the other is mine to run" as already disambiguated.** Different actor does not collapse two options to one. If the previous turn presented A and B, /do-that means ask, even when only B is something I can execute. The operator may have meant "I will do A" and was waiting for input, or may have changed their mind. Always ask.
-- **Padding the disambiguation prompt with explanation.** Two or three options, one line each, no commentary. The operator already saw the previous turn; they do not need it summarised.
+- **Padding the disambiguation prompt with explanation.** All N options, one line each, no commentary. The operator already saw the previous turn; they do not need it summarised.
+- **Truncating the menu to "the two or three that matter".** That is picking. List every distinct option, however many.
 
 ## Edge cases
 
