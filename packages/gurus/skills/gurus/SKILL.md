@@ -68,6 +68,22 @@ When context is empty or both panels are equally plausible, ask one short questi
 
 Ask this question **once**. The user's answer is binding; do not confirm again.
 
+### Skill-invoked (autonomous callers)
+
+When this orchestrator is invoked by another skill rather than typed by the operator (the rover at INSPECT, or any future caller that passes mission context through `args`), the operator is not in the loop and cannot answer a routing question. Routing must complete from `args` alone.
+
+Detection: `args` carries explicit mission context (a Dispatch block, a branch name, a diff summary, a stated decision, a research brief). Treat any non-empty caller-supplied context as the autonomous path.
+
+Rules in this mode:
+
+- **Never ask the user.** The "ask once" fallback in the No-signal section does not apply. If the implicit signals are weak, pick a default and dispatch.
+- **Default when both panels fit:** `software` if `args` contains code, a diff, file paths, or a branch name; `council` if `args` is purely about a decision, plan, or strategy without code attached.
+- **Caller-named panel wins.** If `args` contains the literal token `panel: software` or `panel: council`, dispatch that panel without further routing logic.
+- **No proposal line, no override prompt.** The caller is autonomous; produce the review directly.
+- **Multi-axis dispatch is allowed.** When `args` describes a mission that mixes a code deliverable and a strategic call, dispatch both panels in sequence (software first, then council). Combine the verdicts in the return value.
+
+The contract: a skill-invoked call always produces a verdict and never bounces back a question.
+
 ## Dispatch
 
 After routing: invoke the chosen panel via the Skill tool. For software use `skill="gurus:software"`; for council use `skill="gurus:council"`. The `args` contain the concrete question or scope the user provides.
