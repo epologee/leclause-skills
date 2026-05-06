@@ -243,6 +243,32 @@ expect_pass "verification: WIP hatch" \
 expect_pass "verification: mutex skips" \
   "$(stop_payload "Zou moeten werken. 🏁" true)"
 
+# --- do-that (instruction-instead-of-execution) ---
+
+expect_block "do-that: NL offer with command" \
+  "$(stop_payload "Je kunt dit checken door \`bin/foo\` te draaien. 🏁")"
+
+expect_block "do-that: EN offer with command" \
+  "$(stop_payload "You can verify this by running \`npm test\`. 🏁")"
+
+expect_block "do-that: imperative Run cmd" \
+  "$(stop_payload "Klaar. Run \`bin/migrate\` to apply. 🏁")"
+
+expect_block "do-that: imperative Voer uit" \
+  "$(stop_payload "Voer \`bundle exec rspec\` uit om te checken. 🏁")"
+
+expect_block "do-that: open in browser" \
+  "$(stop_payload "Open http://localhost:3000 in je browser. 🏁")"
+
+expect_pass "do-that: Instructie escape" \
+  "$(stop_payload "Instructie: voer \`bin/foo\` handmatig uit op de prod-host. 🏁")"
+
+expect_pass "do-that: WIP hatch" \
+  "$(stop_payload "Je kunt dit checken door \`bin/foo\` te draaien. 🚧")"
+
+expect_pass "do-that: clean text" \
+  "$(stop_payload "Geverifieerd: alle tests groen, geen verdere actie nodig. 🏁")"
+
 # --- block-followup-without-issue ---
 
 expect_deny "followup: follow-up taal in gh api body" \

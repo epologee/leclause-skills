@@ -1,6 +1,6 @@
 # dont-do-that
 
-Ten guardrail hooks that push back on common AI reflexes. Each hook either blocks a tool call, blocks the Stop event, or surfaces additional context at the moment a mistake is likely, forcing Claude to course-correct instead of barreling past the issue.
+Eleven guardrail hooks that push back on common AI reflexes. Each hook either blocks a tool call, blocks the Stop event, or surfaces additional context at the moment a mistake is likely, forcing Claude to course-correct instead of barreling past the issue.
 
 ## Architecture
 
@@ -44,6 +44,9 @@ Blocks Stop when the last assistant message does not end with a question AND doe
 
 **`verify`** (verification-delegation) in `hooks/guards/verify.sh`
 Blocks Stop when the assistant delegates verification to the user ("zou moeten werken", "check of het werkt", "refresh de pagina") instead of verifying itself. Meta-references (backticks, quoted strings, table cells) are stripped before matching. Pass condition: prefix the conclusion with `Geverifieerd:` after actually running verification (screenshot, curl, test, grep).
+
+**`do-that`** in `hooks/guards/do-that.sh`
+Sister to `verify`. Blocks Stop when the assistant offers a recipe ("je kunt dit doen door `cmd` te draaien", "you can verify this by running `cmd`", "Run `cmd` to see the result", "open the URL in your browser") for an action it could have executed itself via Bash, Edit, or browser tools. Fenced code blocks are stripped first so documentation examples do not trigger. Pass condition: actually run the action and report the result, or prefix the line with `Instructie:` when the operator explicitly asked for a manual recipe.
 
 **`tool-error`** (nudge-after-tool-error) in `hooks/guards/tool-error.sh`
 Blocks Stop when the last significant event in the transcript was a failed tool call. Also runs when `stop_hook_active` is true. Maximum two nudges per session (hard cap), with LINE_FILE tracking so we only fire on new errors. Pass condition: analyse the error and retry instead of giving up.
