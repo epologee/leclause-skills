@@ -1,7 +1,7 @@
 ---
 name: whats-new
 user-invocable: true
-description: Use ONLY when the operator types `/leclause:whats-new`. Reprints the CHANGELOG section for any installed leclause plugin without touching its broadcast sentinel. Argument is the plugin name (e.g. `gitgit`); without argument, lists every leclause plugin that ships a CHANGELOG.
+description: Use ONLY when the operator types `/leclause:whats-new`. With a plugin-name argument (e.g. `gitgit`), reprints the latest CHANGELOG section for that installed leclause plugin without touching its broadcast sentinel. Without argument, prints the latest section of the marketplace-wide MARKETPLACE-CHANGELOG (ecosystem news: adopters, conventions, shared infrastructure) and lists which plugins have a per-plugin CHANGELOG.
 argument-hint: "[plugin-name]"
 ---
 
@@ -55,9 +55,27 @@ node "$INSTALL/bin/check-broadcast" --force
 Place the output verbatim in a markdown block in your response. No
 summary, no interpretation; the CHANGELOG is canonical.
 
-When there is NO argument, produce a list:
+When there is NO argument, the operator wants the marketplace-wide
+news, not the per-plugin list. Print the latest section of the
+marketplace CHANGELOG, then a one-line index of the plugins that
+ship their own per-plugin CHANGELOG so the operator can drill in.
 
 ```bash
+LECLAUSE=$(jq -r '.plugins["leclause@leclause"][0].installPath // empty' \
+  ~/.claude/plugins/installed_plugins.json)
+if [ -z "$LECLAUSE" ] || [ ! -f "$LECLAUSE/MARKETPLACE-CHANGELOG.md" ]; then
+  echo "leclause@leclause is not installed or missing MARKETPLACE-CHANGELOG.md."
+  exit 0
+fi
+
+awk '
+  /^## \[/ { count++; if (count == 2) exit }
+  count == 1 { print }
+' "$LECLAUSE/MARKETPLACE-CHANGELOG.md"
+
+echo
+echo "---"
+echo "Per-plugin CHANGELOGs available for:"
 jq -r '.plugins | to_entries[] | select(.key | endswith("@leclause")) | .key' \
   ~/.claude/plugins/installed_plugins.json | while read -r entry; do
   plugin="${entry%@leclause}"
@@ -67,10 +85,12 @@ jq -r '.plugins | to_entries[] | select(.key | endswith("@leclause")) | .key' \
     echo "- $plugin"
   fi
 done
+echo
+echo "Pass a plugin name to drill in: /leclause:whats-new <plugin>"
 ```
 
-Show the list and the invocation form: "Run `/leclause:whats-new <plugin>`
-for the CHANGELOG of a specific plugin."
+Place the awk output verbatim in a markdown block. Then the index
+list. No interpretation; the marketplace CHANGELOG is canonical.
 
 ## What NOT to do
 
