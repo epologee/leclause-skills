@@ -43,22 +43,21 @@ load helpers
 }
 
 @test "broken install surfaces a loud deny instead of silently degrading" {
-  # Force the skill-path resolution to fail by pointing _DD_HERE at a
-  # nonexistent location for this dispatch run. With no slash-command
-  # fallback any more, the hook must emit the install-broken deny.
+  # Force the skill-path resolution to fail by relocating commit-subject.sh
+  # into a fake install root that lacks the skills/commit-discipline subtree
+  # alongside it. The guard sets `_DD_HERE` at source time from
+  # `$BASH_SOURCE[0]`, which resolves to the relocated copy here, so the
+  # `cd "$_DD_HERE/../../skills/commit-discipline"` path is missing and the
+  # install-broken deny fires. With no slash-command fallback any more, the
+  # hook must emit that deny rather than silently degrading.
   local broken_root="$BATS_TEST_TMPDIR/no-such-install"
   mkdir -p "$broken_root/hooks/guards"
   cp packages/gitgit/hooks/guards/commit-subject.sh "$broken_root/hooks/guards/"
   cp packages/gitgit/hooks/lib/rotation-rules.sh "$broken_root/hooks/guards/"
-  # Run the guard in isolation: source common.sh from the real install
-  # (so dd_extract_commit_message and dd_emit_deny exist), then source
-  # the relocated commit-subject.sh which sets _DD_HERE to the broken
-  # path.
   run bash -c "
     source packages/gitgit/hooks/lib/common.sh
     DD_RULE_PASSWORD=()
     source packages/gitgit/hooks/lib/rotation-rules.sh
-    _DD_HERE='$broken_root/hooks/guards'
     source '$broken_root/hooks/guards/commit-subject.sh'
     json='{\"tool_input\":{\"command\":\"git commit -m \\\"Some subject\\\"\"}}'
     guard_commit_subject \"\$json\"

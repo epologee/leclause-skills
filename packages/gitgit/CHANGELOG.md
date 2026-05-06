@@ -14,6 +14,37 @@ Categories:
 
 Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
+Version numbers may therefore be non-contiguous (an internal refactor bumps
+the version without producing an entry here).
+
+## [v1.0.94]
+
+### Fixed
+
+- **Migration of the legacy global state file no longer poisons new
+  repos.** The first repo opened after the v1.0.92 namespacing change
+  copies the global state file into its per-toplevel path; the
+  global file used to remain in place and silently re-migrate into
+  every subsequent new repo, propagating stale rotation_pos. The
+  source is now renamed to `*.migrated` after a successful copy, so
+  the second and later new repos start fresh.
+- **Toplevel-hash portability on systems without `shasum`.** The
+  fallback chain previously degraded to `cksum`, which produces a
+  decimal CRC; the per-toplevel state-file paths drifted into a
+  different alphabet and collided in unexpected ways. The fallback
+  now tries `md5sum` and `md5 -q` (both yield hex), with a
+  documented final degradation to the global path when no hex
+  hasher is available at all.
+
+### Changed
+
+- **Empty `git rev-parse HEAD` is denied with guidance.** When a
+  `git commit` runs in a brand-new repo with zero commits, the
+  rotation guard previously wrote an empty `ack_pending_sha` and
+  silently lost the ack. The deny is now explicit: "cannot read
+  HEAD, is this a new repository? Make at least one commit before
+  invoking the rotation." (The change landed as v1.0.90; this entry
+  covers it retroactively.)
 
 ## [v1.0.93]
 
@@ -25,9 +56,10 @@ omitted; the broadcast budget is for things the user benefits from knowing.
   is now consistently English (`violates`, `password missing or
   wrong`, `Paste`, `hides the subject`, `reminder. Paste`). The ack
   template placeholder is `<password>` instead of `<wachtwoord>`.
-  The Dutch password mnemonics (`gedrag`, `loep`, etc.) stay; they
-  are referential to the rule by design and live in the
-  `commit-discipline` skill table. Tooling that grepped for the old
+  The rotation passwords themselves (`gedrag`, `loep`, `essentie`,
+  etc., listed in the rotation table) stay Dutch by design; they
+  are referential to each rule's principle and form the per-cycle
+  exposure mechanism. Tooling that grepped for the old
   Dutch fragments needs to update.
 
 ## [v1.0.92]

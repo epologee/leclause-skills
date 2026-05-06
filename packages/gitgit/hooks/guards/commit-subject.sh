@@ -8,12 +8,18 @@
 # hooks/lib/rotation-rules.sh and are documented in the
 # /gitgit:commit-discipline skill (section "Rotation reminders").
 #
-# State: three lines at $GITGIT_COMMIT_RULE_STATE_FILE (fallback
-# $HOME/.claude/var/gitgit-commit-rule-state): pending_violation,
-# pending_rotation, rotation_pos. Written atomically via temp-file rename.
+# State file: key=value text (pv, pr, rp, ack_pending_sha) at
+# $GITGIT_COMMIT_RULE_STATE_FILE, falling back to
+# $HOME/.claude/var/gitgit-commit-rule-state-<8char-hex-of-toplevel>.
+# Written atomically via temp-file rename. The reader also accepts the
+# two legacy positional formats (three-line and four-line) so existing
+# installations migrate seamlessly on first read.
 #
-# One-shot migration: if the old dont-do-that state file exists and the new
-# one does not, the old file is copied to the new path on first run.
+# Migration chain: when the per-toplevel file does not exist, copy from
+# the global gitgit file ($HOME/.claude/var/gitgit-commit-rule-state)
+# if present, otherwise from the dont-do-that legacy file. The global
+# source is renamed to *.migrated after the first successful copy so
+# subsequent new repos start fresh instead of inheriting stale state.
 
 # Source the password mnemonics; provides DD_RULE_PASSWORD[].
 _DD_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -48,11 +54,13 @@ _dd_load_state() {
   if grep -qE '^[a-z_]+=' "$file" 2>/dev/null; then
     local key val
     while IFS='=' read -r key val; do
+      [[ -z "$key" ]] && continue
       case "$key" in
         pv) [[ "$val" =~ ^-?[0-9]+$ ]] && DD_LOADED_PV="$val" ;;
         pr) [[ "$val" =~ ^-?[0-9]+$ ]] && DD_LOADED_PR="$val" ;;
         rp) [[ "$val" =~ ^-?[0-9]+$ ]] && DD_LOADED_RP="$val" ;;
         ack_pending_sha) DD_LOADED_ACK_SHA=$(printf '%s' "$val" | tr -cd '0-9a-f') ;;
+        *) : ;; # forward-compat: unknown keys are ignored
       esac
     done < "$file"
   else
@@ -168,9 +176,21 @@ guard_commit_subject() {
     local toplevel toplevel_hash
     toplevel=$(git rev-parse --show-toplevel 2>/dev/null)
     if [[ -n "$toplevel" ]]; then
+      # Prefer shasum (present on macOS and most Linux); md5sum on
+      # Linux-minimal images, md5 -q on BSD/macOS without shasum. Each
+      # branch yields a hex string so the namespaced path stays in the
+      # same alphabet regardless of which tool produced it.
       toplevel_hash=$(printf '%s' "$toplevel" | shasum 2>/dev/null | cut -c1-8)
-      [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | cksum | cut -d' ' -f1 | head -c 8)
-      state_file="$HOME/.claude/var/gitgit-commit-rule-state-${toplevel_hash}"
+      [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | md5sum 2>/dev/null | cut -c1-8)
+      [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | md5 -q 2>/dev/null | cut -c1-8)
+      if [[ -n "$toplevel_hash" ]]; then
+        state_file="$HOME/.claude/var/gitgit-commit-rule-state-${toplevel_hash}"
+      else
+        # No hex hasher available; fall back to the global file rather
+        # than fabricating a hash. Worktrees of different repos will
+        # share state on this host, which is the prior behaviour.
+        state_file="$HOME/.claude/var/gitgit-commit-rule-state"
+      fi
     else
       state_file="$HOME/.claude/var/gitgit-commit-rule-state"
     fi
@@ -192,7 +212,13 @@ guard_commit_subject() {
     fi
     if [[ -n "$migration_src" ]]; then
       local migr_tmp="${state_file}.tmp.$$"
-      cp "$migration_src" "$migr_tmp" && mv "$migr_tmp" "$state_file"
+      if cp "$migration_src" "$migr_tmp" && mv "$migr_tmp" "$state_file"; then
+        # Archive the source so subsequent new repos do not all migrate
+        # from the same global file and inherit a stale rotation_pos.
+        # The first new repo gets the operator's last state; later new
+        # repos start fresh.
+        mv "$migration_src" "${migration_src}.migrated" 2>/dev/null || true
+      fi
     fi
   fi
 
