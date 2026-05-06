@@ -1,7 +1,7 @@
 ---
 name: gurus
 user-invocable: true
-description: Orchestrator die tussen de guru-panels kiest. `gurus:software` voor code review door acht engineering-personas. `gurus:council` voor abstracte beslissingen door vijf adversariële lenzen plus chairman-synthese. Gebruik deze skill wanneer je /gurus hebt getypt zonder suffix en nog niet weet welk panel bij de vraag past.
+description: Orchestrator that routes between the guru panels. `gurus:software` for code review by eight engineering personas. `gurus:council` for abstract decisions by five adversarial lenses plus chairman synthesis. `gurus:writers` for prose review by six writers (essays, scripts, manuscripts, narrative copy). Use this skill when /gurus was typed without a suffix and the right panel is not yet known.
 allowed-tools:
   - Skill
   - Bash(git diff *)
@@ -15,10 +15,11 @@ effort: high
 
 # Gurus Orchestrator
 
-Two panels live under this plugin:
+Three panels live under this plugin:
 
 - **`gurus:software`** does opinionated code review with eight engineering personas (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). Consensus across 6+/8 yields an action plan.
 - **`gurus:council`** critiques a decision or idea with five adversarial lenses (pre-mortem, first-principles, opportunity-finder, stranger, action), anonymous peer review, and chairman synthesis.
+- **`gurus:writers`** reviews a piece of prose with six writers (Didion, Saunders, Rovelli, Watts, Gladwell, Urban). Consensus across 4+/6 yields an action plan of edits, cuts, and rewrites.
 
 This orchestrator decides which panel fits the question.
 
@@ -42,7 +43,13 @@ Read the context before asking the user anything. Beyond the conversation you ma
   - The user wonders whether Claude was just being agreeable ("was ik te hard voor je?" is a signal)
   - The question contains no concrete technical correctness question
 
-**Tiebreaker when both signals fire.** A "should I use a service object here?" mixes a decision form ("should I") with code context. In that case: default to **software**, because the code is the ground truth; mention in the proposal line that council also fits and offer the override explicitly.
+- **Writers** is the right panel when:
+  - The artefact under review is prose, not code: an essay, a script, a manuscript chapter, narrative HTML editorial, voiceover, long-form copy
+  - The user names a `.md`, `.txt`, or HTML file with body prose, or pastes a paragraph for review
+  - The user uses words like "voice", "tone", "narrative", "pacing", "opening", "ending", "cadence", "schrijfstuk", "manuscript", "essay", "copy"
+  - Recent commits or `git diff` show changes in markdown or prose blocks rather than source code
+
+**Tiebreaker when both signals fire.** A "should I use a service object here?" mixes a decision form ("should I") with code context. In that case: default to **software**, because the code is the ground truth; mention in the proposal line that council also fits and offer the override explicitly. When code and prose are both in scope (a feature with both implementation and changelog/docs), default to the artefact under direct discussion: the file the user named, the paragraph they pasted, or the kind of file dominating the recent diff.
 
 Example tiebreaker proposal:
 
@@ -58,13 +65,13 @@ Or:
 
 > Your question reads as a strategic choice without code context. Routing to **`gurus:council`**. Type `software` to get a code review.
 
-When there is direct explicit intent (the user said "council" or "software" in their message) skip this check and dispatch immediately.
+When there is direct explicit intent (the user said "council", "software", or "writers" in their message) skip this check and dispatch immediately.
 
 ### No signal
 
-When context is empty or both panels are equally plausible, ask one short question:
+When context is empty or multiple panels are equally plausible, ask one short question:
 
-> Two panels available: `software` for code review, `council` for a decision or idea. Which fits?
+> Three panels available: `software` for code review, `council` for a decision or idea, `writers` for a piece of prose. Which fits?
 
 Ask this question **once**. The user's answer is binding; do not confirm again.
 
@@ -77,8 +84,8 @@ Detection: `args` carries explicit mission context (a Dispatch block, a branch n
 Rules in this mode:
 
 - **Never ask the user.** The "ask once" fallback in the No-signal section does not apply. If the implicit signals are weak, pick a default and dispatch.
-- **Default when both panels fit:** `software` if `args` contains code, a diff, file paths, or a branch name; `council` if `args` is purely about a decision, plan, or strategy without code attached.
-- **Caller-named panel wins.** If `args` contains the literal token `panel: software` or `panel: council`, dispatch that panel without further routing logic.
+- **Default when multiple panels fit:** `software` if `args` contains code, a diff, file paths to source files, or a branch name; `writers` if `args` references prose files (`.md`, `.txt`, body-prose `.html`) or pastes a paragraph for review; `council` if `args` is purely about a decision, plan, or strategy without code or prose attached.
+- **Caller-named panel wins.** If `args` contains the literal token `panel: software`, `panel: council`, or `panel: writers`, dispatch that panel without further routing logic.
 - **No proposal line, no override prompt.** The caller is autonomous; produce the review directly.
 - **Multi-axis dispatch is allowed.** When `args` describes a mission that mixes a code deliverable and a strategic call, dispatch both panels in sequence (software first, then council). Combine the verdicts in the return value.
 
@@ -86,17 +93,19 @@ The contract: a skill-invoked call always produces a verdict and never bounces b
 
 ## Dispatch
 
-After routing: invoke the chosen panel via the Skill tool. For software use `skill="gurus:software"`; for council use `skill="gurus:council"`. The `args` contain the concrete question or scope the user provides.
+After routing: invoke the chosen panel via the Skill tool. For software use `skill="gurus:software"`; for council use `skill="gurus:council"`; for writers use `skill="gurus:writers"`. The `args` contain the concrete question, scope, or piece of prose the user provides.
 
 **When the user typed `/gurus:gurus` without accompanying text**, there is no literal question to pass on. Synthesize a one-sentence summary of the current topic from the conversation (optionally enriched with the output of `git status` or `git log -1`) and pass that as `args`. Keep the summary neutral; no framing that steers the panel toward a particular verdict.
 
 **When the user pasted a code snippet**, pass that snippet as explicit scope in `args` so `gurus:software` does not scan the full codebase but only the snippet (and optionally the surrounding file the user mentioned).
+
+**When the user pasted a paragraph or short excerpt of prose**, pass it as explicit scope in `args` so `gurus:writers` reviews the excerpt (and the surrounding file when named) rather than asking for a file path.
 
 The sub-skills take over. This orchestrator does not do any review itself.
 
 ## Rules
 
 - **Routing is fast.** At most one question to the user before dispatching. Every second question is a failure mode.
-- **Explicit intent wins.** When the user already named `software` or `council` in the invocation, skip the routing step and dispatch directly.
+- **Explicit intent wins.** When the user already named `software`, `council`, or `writers` in the invocation, skip the routing step and dispatch directly.
 - **Do not review yourself.** This skill only presents the choice and delegates. Substantive review happens in the sub-skill.
 - **Stay neutral between panels.** Present both as legitimate; the context determines which fits, not which panel is "better".
