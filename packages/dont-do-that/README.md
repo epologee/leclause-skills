@@ -51,6 +51,11 @@ Sister to `verify`. Blocks Stop when the assistant offers a recipe ("je kunt dit
 **`tool-error`** (nudge-after-tool-error) in `hooks/guards/tool-error.sh`
 Blocks Stop when the last significant event in the transcript was a failed tool call. Also runs when `stop_hook_active` is true. Maximum two nudges per session (hard cap), with LINE_FILE tracking so we only fire on new errors. Pass condition: analyse the error and retry instead of giving up.
 
+## Skill
+
+**`/do-that`** in `skills/do-that/SKILL.md`
+User-invocable correction skill, the read-time counterpart to the `do-that` guard. The operator types `/do-that` (no arguments) when the previous assistant turn offered a recipe, instruction, browser action, or confirmation question instead of executing the proposal. The skill resolves the proposal from that previous turn and runs it via the available tools. The proposal must be exactly one super-clear non-ambiguous action; if multiple distinct candidates exist in the previous turn, the skill mandates a short "A or B?" disambiguation prompt (two or three numbered options, one line each, no advice) before any execution. Inviolable gates (push, merge to default, deploy, destructive git, external irreversible ops) are not lifted by `/do-that`; they still require an explicit operator go.
+
 ## Installation
 
 ```bash
