@@ -31,11 +31,14 @@ guard_do_that() {
 
   local offer imperative openit
   # "je kunt / je kan / you can ... door|met|by ... `cmd`"
-  offer=$(grep -ciE "(je (kunt|kan)|u kunt|you can) [^.\n]{0,150}(door|met|by) [^.\n]{0,150}\`[^\`]+\`" <<< "$filtered")
+  # Note: [^.] is enough; grep regex `.` already excludes newline, and `\n`
+  # inside a character class is read as the literal letters `\` and `n`,
+  # which would silently exclude every word containing `n`.
+  offer=$(grep -ciE "(je (kunt|kan)|u kunt|you can) [^.]{0,150}(door|met|by) [^.]{0,150}\`[^\`]+\`" <<< "$filtered")
   # Imperative line: "Run `cmd`" / "Draai `cmd`" / "Voer `cmd` uit" / "Execute `cmd`"
-  imperative=$(grep -ciE "(^|\n)[[:space:]]*(Run|Draai|Voer|Execute|Probeer|Try)[[:space:]][^.\n]{0,80}\`[^\`]+\`" <<< "$filtered")
+  imperative=$(grep -ciE "(^|\n[[:space:]]*|[.!?][[:space:]]+)(Run|Draai|Voer|Execute|Probeer|Try)[[:space:]][^.!?\n]{0,120}\`[^\`]+\`" <<< "$filtered")
   # Open URL / browser / terminal as a directive
-  openit=$(grep -ciE "(open|navigeer|navigate|ga) [^.\n]{0,80}(in (je|de|your|the) (browser|terminal)|naar (http|localhost)|to (http|localhost))" <<< "$filtered")
+  openit=$(grep -ciE "(open|navigeer|navigate|ga) [^.]{0,80}(in (je|de|your|the) (browser|terminal)|naar (http|localhost)|to (http|localhost))" <<< "$filtered")
 
   if [ "$offer" -gt 0 ] 2>/dev/null; then
     dd_emit_block do-that "Instruction offered instead of executed. Run it yourself or prefix with 'Instructie:'."
