@@ -27,13 +27,13 @@ Version numbers may therefore be non-contiguous.
 
 ### Changed
 
-- **`/do-that` now covers declarations of inability.** When the previous turn said "I can't see this" or "I don't have access", `/do-that` is the signal to find a path: a different tool, a wider scope, or `/inspire:inspire` for unfamiliar stacks. After success the skill names the workflow lesson ("Learned: to verify X here, `Y` works") so it persists. Slash-command references switch from `inspiratie` to `inspire`.
+- **`/do-that` now covers declarations of inability.** After "I can't see this" or "I don't have access", `/do-that` signals: find a path via a different tool, wider scope, or `/inspire:inspire`. The skill names the lesson so it persists.
 
 ## [v1.0.45]
 
 ### Added
 
-- **New `/just-a-question` skill.** Marks a message as a question for information, not a request for change. Claude answers with read-only tools only (`Read`, `Glob`, `Grep`, read-only `Bash`); `Edit`, `Write`, `NotebookEdit`, and mutating Bash are off the table for the turn. Imperatives like "fix X" get named, not applied. `/do-that` is the natural exit.
+- **New `/just-a-question` skill.** Marks a message as a question, not a request for change. Claude answers with read-only tools only; `Edit`, `Write`, and mutating Bash are off the table for the turn. Imperatives get named, not applied. `/do-that` is the exit.
 
 ### Changed
 
@@ -44,27 +44,18 @@ Version numbers may therefore be non-contiguous.
 
 ### Added
 
-- **New Stop guard `do-that`.** Sister to `verify`. Blocks Stop when the
-  assistant offers a recipe (`je kunt dit doen door \`cmd\` te draaien`,
-  `Run \`cmd\` to see the result`, `open the URL in your browser`) for an
-  action it could have run itself via Bash, Edit, or browser tools. Fenced
-  code blocks are stripped first. Pass condition: run the action and
-  report, or prefix the line with `Instructie:` when the operator asked
-  for a manual recipe. The WIP escape hatch 🚧 also skips this guard.
-- **New user-invocable skill `/do-that`.** Read-time counterpart to the
-  guard. Type `/do-that` when the previous turn offered a recipe,
-  instruction, browser action, or confirmation question instead of
-  executing. The skill resolves the proposal and runs it. Multiple
-  candidates trigger a short "A or B?" disambiguation prompt (numbered
-  options, one line each, no advice). Inviolable gates (push, merge to
-  default, deploy, destructive git, external irreversible ops) are not
-  lifted.
+- **New Stop guard `do-that`.** Blocks Stop when the assistant offers a
+  recipe (`Run \`cmd\``, `open the URL`) for an action it could have run
+  itself. Pass: run it, or prefix with `Instructie:` for an explicit
+  manual recipe. 🚧 skips this guard.
+- **New user-invocable skill `/do-that`.** Type `/do-that` when the
+  previous turn offered a recipe instead of executing; the skill resolves
+  the proposal and runs it. Multiple candidates trigger a numbered "A or
+  B?" prompt. Inviolable gates are not lifted.
 
 ### Fixed
 
 - **`do-that` guard now matches real Dutch prose.** Pattern A's `[^.\n]`
-  in grep ERE means "not period, not backslash, not letter n", so the gap
-  between `je kunt` and `door` hit `n` and never reached the keyword.
-  Replaced with `[^.]`. The imperative pattern, anchored on `(^|\n)`,
-  missed `Run cmd` after a sentence on the same line; relaxed to also
-  match after sentence terminators.
+  hit the letter `n` between `je kunt` and `door` and never reached the
+  keyword; replaced with `[^.]`. The imperative pattern also now matches
+  after sentence terminators, not only after newlines.
