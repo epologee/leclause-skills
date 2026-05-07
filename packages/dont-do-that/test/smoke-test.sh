@@ -256,33 +256,33 @@ expect_pass "verification: WIP hatch" \
 expect_pass "verification: mutex skips" \
   "$(stop_payload "Zou moeten werken. 🏁" true)"
 
-# --- do-that (instruction-instead-of-execution) ---
+# --- duh (instruction-instead-of-execution) ---
 # Each text is long enough to bypass the premature guard (>=40 non-emoji
-# chars + sentence terminator + 🏁), so the block we observe is do-that
+# chars + sentence terminator + 🏁), so the block we observe is duh
 # itself, not premature catching short text.
 
-expect_block_mnemonic "do-that: NL offer with command" "do-that" \
+expect_block_mnemonic "duh: NL offer with command" "duh" \
   "$(stop_payload "De wijzigingen staan klaar in het bestand. Je kunt dit checken door \`bin/foo\` te draaien op je machine. 🏁")"
 
-expect_block_mnemonic "do-that: EN offer with command" "do-that" \
+expect_block_mnemonic "duh: EN offer with command" "duh" \
   "$(stop_payload "The change is staged in the right module. You can verify this by running \`npm test\` against the suite. 🏁")"
 
-expect_block_mnemonic "do-that: imperative Run cmd" "do-that" \
+expect_block_mnemonic "duh: imperative Run cmd" "duh" \
   "$(stop_payload "De migratie is voorbereid en klaar voor uitvoering. Run \`bin/migrate\` to apply the changes now. 🏁")"
 
-expect_block_mnemonic "do-that: imperative Voer uit" "do-that" \
+expect_block_mnemonic "duh: imperative Voer uit" "duh" \
   "$(stop_payload "De spec is bijgewerkt en klaar voor groen. Voer \`bundle exec rspec spec/foo_spec.rb\` uit om te checken. 🏁")"
 
-expect_block_mnemonic "do-that: open in browser" "do-that" \
+expect_block_mnemonic "duh: open in browser" "duh" \
   "$(stop_payload "De pagina draait op de dev-server en is bereikbaar. Open http://localhost:3000 in je browser om te kijken. 🏁")"
 
-expect_pass "do-that: Instructie escape" \
+expect_pass "duh: Instructie escape" \
   "$(stop_payload "De stap is gedocumenteerd voor handmatige uitvoering. Instructie: voer \`bin/foo\` handmatig uit op de prod-host. 🏁")"
 
-expect_pass "do-that: WIP hatch" \
+expect_pass "duh: WIP hatch" \
   "$(stop_payload "Je kunt dit checken door \`bin/foo\` te draaien op je machine. 🚧")"
 
-expect_pass "do-that: clean text" \
+expect_pass "duh: clean text" \
   "$(stop_payload "Geverifieerd: alle tests groen na de wijziging, geen verdere actie nodig op deze branch. 🏁")"
 
 # --- block-followup-without-issue ---

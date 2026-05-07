@@ -17,6 +17,12 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous.
 
+## [v1.0.48]
+
+### Breaking
+
+- **`/do-that` is renamed to `/duh`.** The slash command, the SKILL directory, and the sister Stop guard with its `[dont-do-that/duh]` error code all flip together. Operators muscle-memoried on `/do-that` should retrain to `/duh`; nothing in the dispatch logic changed beyond the name. The skill description was also slimmed in the same release: the "Use ONLY when the operator types..." prose was redundant with `disable-model-invocation: true` and is gone.
+
 ## [v1.0.46]
 
 ### Changed

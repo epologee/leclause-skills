@@ -57,12 +57,12 @@ case "$EVENT" in
       source "$DIR/guards/cache.sh"
       source "$DIR/guards/premature.sh"
       source "$DIR/guards/verify.sh"
-      source "$DIR/guards/do-that.sh"
+      source "$DIR/guards/duh.sh"
       source "$DIR/guards/compliance.sh"
       guard_cache "$INPUT"
       guard_premature "$INPUT"
       guard_verify "$INPUT"
-      guard_do_that "$INPUT"
+      guard_duh "$INPUT"
       guard_compliance "$INPUT"
     fi
     ;;

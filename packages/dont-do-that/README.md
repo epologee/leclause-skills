@@ -45,7 +45,7 @@ Blocks Stop when the last assistant message does not end with a question AND doe
 **`verify`** (verification-delegation) in `hooks/guards/verify.sh`
 Blocks Stop when the assistant delegates verification to the user ("zou moeten werken", "check of het werkt", "refresh de pagina") instead of verifying itself. Meta-references (backticks, quoted strings, table cells) are stripped before matching. Pass condition: prefix the conclusion with `Geverifieerd:` after actually running verification (screenshot, curl, test, grep).
 
-**`do-that`** in `hooks/guards/do-that.sh`
+**`duh`** in `hooks/guards/duh.sh`
 Sister to `verify`. Blocks Stop when the assistant offers a recipe ("je kunt dit doen door `cmd` te draaien", "you can verify this by running `cmd`", "Run `cmd` to see the result", "open the URL in your browser") for an action it could have executed itself via Bash, Edit, or browser tools. Fenced code blocks are stripped first so documentation examples do not trigger. Pass condition: actually run the action and report the result, or prefix the line with `Instructie:` when the operator explicitly asked for a manual recipe.
 
 **`tool-error`** (nudge-after-tool-error) in `hooks/guards/tool-error.sh`
@@ -53,11 +53,11 @@ Blocks Stop when the last significant event in the transcript was a failed tool 
 
 ## Skills
 
-**`/do-that`** in `skills/do-that/SKILL.md`
-User-invocable correction skill, the read-time counterpart to the `do-that` guard. The operator types `/do-that` (no arguments) when the previous assistant turn offered a recipe, instruction, browser action, or confirmation question instead of executing the proposal. The skill resolves the proposal from that previous turn and runs it via the available tools. The proposal must be exactly one super-clear non-ambiguous action; if multiple distinct candidates exist in the previous turn, the skill mandates a numbered menu of every option (no upper bound; even ten) and asks the operator to pick before any execution. Different actor (one option operator-side, one assistant-side) does not collapse two options to one. Inviolable gates (push, merge to default, deploy, destructive git, external irreversible ops) are not lifted by `/do-that`; they still require an explicit operator go.
+**`/duh`** in `skills/duh/SKILL.md`
+User-invocable correction skill, the read-time counterpart to the `duh` guard. The operator types `/duh` (no arguments) when the previous assistant turn offered a recipe, instruction, browser action, or confirmation question instead of executing the proposal. The skill resolves the proposal from that previous turn and runs it via the available tools. The proposal must be exactly one super-clear non-ambiguous action; if multiple distinct candidates exist in the previous turn, the skill mandates a numbered menu of every option (no upper bound; even ten) and asks the operator to pick before any execution. Different actor (one option operator-side, one assistant-side) does not collapse two options to one. Inviolable gates (push, merge to default, deploy, destructive git, external irreversible ops) are not lifted by `/duh`; they still require an explicit operator go.
 
 **`/just-a-question`** in `skills/just-a-question/SKILL.md`
-Sister to `/do-that`. The operator types `/just-a-question` to mark the message as the first half of "this is a question for information, not a request for change". For the rest of that turn, all mutation tools are forbidden (`Edit`, `Write`, `NotebookEdit`, mutating Bash like `git commit`/`push`/`rm`/`mv`/`launchctl`, etc.). Read-only tools stay available (`Read`, `Glob`, `Grep`, read-only Bash, the `Explore` agent). When the answer reveals an obvious fix, the skill names it but does not apply it. The operator can request the change in a separate turn without the `/just-a-question` prefix.
+Sister to `/duh`. The operator types `/just-a-question` to mark the message as the first half of "this is a question for information, not a request for change". For the rest of that turn, all mutation tools are forbidden (`Edit`, `Write`, `NotebookEdit`, mutating Bash like `git commit`/`push`/`rm`/`mv`/`launchctl`, etc.). Read-only tools stay available (`Read`, `Glob`, `Grep`, read-only Bash, the `Explore` agent). When the answer reveals an obvious fix, the skill names it but does not apply it. The operator can request the change in a separate turn without the `/just-a-question` prefix.
 
 ## Installation
 

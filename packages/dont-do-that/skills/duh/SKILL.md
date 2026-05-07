@@ -1,5 +1,5 @@
 ---
-name: do-that
+name: duh
 description: Execute the proposal from the assistant's previous turn instead of explaining it. If that turn contained multiple distinct proposals, list every option as a numbered menu and ask which one before running.
 disable-model-invocation: true
 ---
@@ -24,13 +24,13 @@ run does not mark the version as seen. `/leclause:whats-new dont-do-that`
 re-shows the section on demand without touching the sentinel.
 </post-update-broadcast>
 
-# do-that
+# duh
 
-Sister to the `do-that` Stop guard in this plugin. The guard catches the reflex at write-time; this skill is the operator's one-keystroke correction at read-time.
+Sister to the `duh` Stop guard in this plugin. The guard catches the reflex at write-time; this skill is the operator's one-keystroke correction at read-time.
 
 ## When this fires
 
-The operator types `/do-that` (or `/dont-do-that:do-that`) with no further words after it. The trigger is the slash command itself; do not wait for additional context.
+The operator types `/duh` (or `/dont-do-that:duh`) with no further words after it. The trigger is the slash command itself; do not wait for additional context.
 
 The operator is pointing at the **immediately preceding assistant turn**. In that turn you offered one of:
 
@@ -39,9 +39,9 @@ The operator is pointing at the **immediately preceding assistant turn**. In tha
 - a browser/terminal action ("open `http://localhost:3000` in je browser", "navigate to the dashboard"),
 - a confirmation question that proposed a reversible action ("Wil je dat ik X doe?", "Zal ik Y opzetten?"),
 - a multi-step plan presented as instructions for the operator to follow,
-- a declaration of inability ("I can't see this", "I can't verify this", "I don't have access to that", "ik kan dit niet bevestigen"). `/do-that` overrides the "can't": there is almost always a path you have not tried yet.
+- a declaration of inability ("I can't see this", "I can't verify this", "I don't have access to that", "ik kan dit niet bevestigen"). `/duh` overrides the "can't": there is almost always a path you have not tried yet.
 
-In every case the operator's `/do-that` means: stop offering, start executing.
+In every case the operator's `/duh` means: stop offering, start executing.
 
 ## What to do
 
@@ -53,7 +53,7 @@ In every case the operator's `/do-that` means: stop offering, start executing.
 
 ## Disambiguate first
 
-`/do-that` is shorthand for a specific thing. If the previous turn contained more than one candidate action and they are not obviously the same coherent procedure, ask the operator which one before running anything. The operator chose to type two short words instead of naming the action; that is convenience, not blanket delegation. Asking once is cheap; running the wrong thing can cost the rest of the session.
+`/duh` is shorthand for a specific thing. If the previous turn contained more than one candidate action and they are not obviously the same coherent procedure, ask the operator which one before running anything. The operator chose to type two short words instead of naming the action; that is convenience, not blanket delegation. Asking once is cheap; running the wrong thing can cost the rest of the session.
 
 The clarification template is short and specific. Always use the literal forms the operator can echo back:
 
@@ -62,19 +62,19 @@ The clarification template is short and specific. Always use the literal forms t
 > Did you mean (A) running the migration on staging, or (B) the local rspec sweep?
 
 Rules for the menu:
-- **List every distinct option from the previous turn.** Even ten. There is no upper bound. Truncating the list to "the two or three that matter" is picking under another name. The operator chose to type `/do-that` against a turn that contained N proposals; surface all N and let them pick.
+- **List every distinct option from the previous turn.** Even ten. There is no upper bound. Truncating the list to "the two or three that matter" is picking under another name. The operator chose to type `/duh` against a turn that contained N proposals; surface all N and let them pick.
 - **Each option is one line, with the concrete command or edit.** No explanation, no rationale, no "I'd recommend A". The operator picks; you do not advise.
 - **Number or letter the options.** So the operator can reply "A" or "1" without retyping the command. With ten options, use 1-10; the format scales.
-- **No catch-all option labelled "iets anders".** If they wanted something else, they would not have typed `/do-that`. If they reply with something else, take that as the action and run it.
+- **No catch-all option labelled "iets anders".** If they wanted something else, they would not have typed `/duh`. If they reply with something else, take that as the action and run it.
 
 After the operator picks, execute that one action and report the result, exactly as in step 2-5 of "What to do".
 
 ## Anti-patterns
 
-- **Asking what to do when the previous turn had exactly one proposal.** `/do-that` is the answer; running it is the response.
+- **Asking what to do when the previous turn had exactly one proposal.** `/duh` is the answer; running it is the response.
 - **Offering the recipe again in different words.** That is the exact reflex this skill exists to break. If you find yourself typing "I will run `bin/foo`", stop and run it.
 - **Picking the most likely action from an ambiguous list and running it silently.** When in doubt, ask. The cost of a one-line "Bedoel je A of B?" is far below the cost of running the wrong thing on a system the operator cares about.
-- **Treating "one option is for the operator and the other is mine to run" as already disambiguated.** Different actor does not collapse two options to one. If the previous turn presented A and B, /do-that means ask, even when only B is something I can execute. The operator may have meant "I will do A" and was waiting for input, or may have changed their mind. Always ask.
+- **Treating "one option is for the operator and the other is mine to run" as already disambiguated.** Different actor does not collapse two options to one. If the previous turn presented A and B, /duh means ask, even when only B is something I can execute. The operator may have meant "I will do A" and was waiting for input, or may have changed their mind. Always ask.
 - **Padding the disambiguation prompt with explanation.** All N options, one line each, no commentary. The operator already saw the previous turn; they do not need it summarised.
 - **Truncating the menu to "the two or three that matter".** That is picking. List every distinct option, however many.
 
@@ -82,6 +82,6 @@ After the operator picks, execute that one action and report the result, exactly
 
 - **No clear proposal in the previous turn.** Rare but possible (the operator misfired the command, or the proposal was buried in a tool result rather than an assistant message). Say so in one line and ask what they meant. Do not invent an action.
 - **Multiple unrelated proposals in the previous turn.** Disambiguate per the section above. Do not run them all and do not pick.
-- **The previous turn proposed something genuinely irreversible** (push, deploy, force-push, merge to default). `/do-that` does not lift those gates; they live above this skill. Surface the gate, ask for the explicit go.
-- **The previous proposal was a teaching answer the operator asked for** (they typed "how do I X manually?", you wrote a recipe with `Instructie:` per the do-that guard). `/do-that` overrides that framing: the operator now wants execution, not teaching, on whichever single recipe was proposed. If the teaching answer offered multiple recipes for different scenarios, disambiguate first.
-- **The previous turn declared inability** ("I can't see this", "I can't verify that", "I don't have access", "I don't know how to do this here"). `/do-that` is the operator's signal to **just go find the path**, with no discretion about whether to try. The full toolbox is on the table: a different local tool (Read on the right file, a diagnostic command, a screenshot, a DB query, an MCP, the Explore agent), a different scope, a different angle, and explicitly the **internet** via `/inspire:inspire` when the gap is "I have never done this on this stack/library/API before". An unfamiliar repo, a new library, an unfamiliar config format, a missing CLI flag: these are research prompts, not stop signs. Spend the tokens. After the action succeeds, add one short line naming the workflow lesson ("Learned: to verify X here, `Y` works") so the path persists and future-Claude does not re-declare the same inability.
+- **The previous turn proposed something genuinely irreversible** (push, deploy, force-push, merge to default). `/duh` does not lift those gates; they live above this skill. Surface the gate, ask for the explicit go.
+- **The previous proposal was a teaching answer the operator asked for** (they typed "how do I X manually?", you wrote a recipe with `Instructie:` per the duh guard). `/duh` overrides that framing: the operator now wants execution, not teaching, on whichever single recipe was proposed. If the teaching answer offered multiple recipes for different scenarios, disambiguate first.
+- **The previous turn declared inability** ("I can't see this", "I can't verify that", "I don't have access", "I don't know how to do this here"). `/duh` is the operator's signal to **just go find the path**, with no discretion about whether to try. The full toolbox is on the table: a different local tool (Read on the right file, a diagnostic command, a screenshot, a DB query, an MCP, the Explore agent), a different scope, a different angle, and explicitly the **internet** via `/inspire:inspire` when the gap is "I have never done this on this stack/library/API before". An unfamiliar repo, a new library, an unfamiliar config format, a missing CLI flag: these are research prompts, not stop signs. Spend the tokens. After the action succeeds, add one short line naming the workflow lesson ("Learned: to verify X here, `Y` works") so the path persists and future-Claude does not re-declare the same inability.
