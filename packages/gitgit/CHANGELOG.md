@@ -21,95 +21,66 @@ the version without producing an entry here).
 
 ### Fixed
 
-- **Migration of the legacy global state file no longer poisons new
-  repos.** The first repo opened after the v1.0.92 namespacing change
-  copies the global state file into its per-toplevel path; the
-  global file used to remain in place and silently re-migrate into
-  every subsequent new repo, propagating stale rotation_pos. The
-  source is now renamed to `*.migrated` after a successful copy, so
-  the second and later new repos start fresh.
+- **Migration of the legacy global state file no longer poisons
+  new repos.** The first repo after v1.0.92 used to leave the
+  global file in place, re-migrating stale rotation state into
+  every later new repo. The source is now renamed to `*.migrated`
+  after a successful copy.
 - **Toplevel-hash portability on systems without `shasum`.** The
-  fallback chain previously degraded to `cksum`, which produces a
-  decimal CRC; the per-toplevel state-file paths drifted into a
-  different alphabet and collided in unexpected ways. The fallback
-  now tries `md5sum` and `md5 -q` (both yield hex), with a
-  documented final degradation to the global path when no hex
-  hasher is available at all.
+  fallback chain dropped to `cksum` (decimal CRC), drifting per-
+  toplevel paths into a different alphabet. It now tries `md5sum`
+  and `md5 -q` first, with a final degradation to the global path
+  when no hex hasher exists.
 
 ### Changed
 
-- **Empty `git rev-parse HEAD` is denied with guidance.** When a
-  `git commit` runs in a brand-new repo with zero commits, the
-  rotation guard previously wrote an empty `ack_pending_sha` and
-  silently lost the ack. The deny is now explicit: "cannot read
-  HEAD, is this a new repository? Make at least one commit before
-  invoking the rotation." (The change landed as v1.0.90; this entry
-  covers it retroactively.)
+- **Empty `git rev-parse HEAD` is denied with guidance.** A
+  `git commit` in a zero-commit repo used to silently lose the
+  ack; the deny is now explicit: "cannot read HEAD, is this a new
+  repository?" (Landed as v1.0.90; documented retroactively.)
 
 ## [v1.0.93]
 
 ### Changed
 
-- **Deny strings are now English.** The rotation guard's deny output
-  used to mix English and Dutch (`overtreedt`, `wachtwoord onjuist
-  of ontbreekt`, `Plak`, `verbergt subject`, `reminder. Plak`); it
-  is now consistently English (`violates`, `password missing or
-  wrong`, `Paste`, `hides the subject`, `reminder. Paste`). The ack
-  template placeholder is `<password>` instead of `<wachtwoord>`.
-  The rotation passwords themselves (`gedrag`, `loep`, `essentie`,
-  etc., listed in the rotation table) stay Dutch by design; they
-  are referential to each rule's principle and form the per-cycle
-  exposure mechanism. Tooling that grepped for the old
-  Dutch fragments needs to update.
+- **Deny strings are now English.** The rotation guard mixed
+  Dutch and English; it is now uniformly English (`violates`,
+  `password missing or wrong`, `Paste`). The ack placeholder is
+  `<password>`. Tooling that grepped old fragments needs to update.
 
 ## [v1.0.92]
 
 ### Changed
 
-- **Rotation state file is now per-repo, not per-user.** The path
-  `~/.claude/var/gitgit-commit-rule-state` was a single global file
-  shared by every repo on the machine; two worktrees of different
-  repos collided on `rotation_pos` and `ack_pending_sha`. The path
-  is now namespaced by an 8-character hash of
-  `git rev-parse --show-toplevel` (e.g.
-  `~/.claude/var/gitgit-commit-rule-state-3f7a2c11`). On first read
-  for a new repo the per-toplevel file does not exist; the legacy
-  global file (if present) migrates atomically into the new
-  location. Worktrees of the same repo share state, which is the
-  natural scope for the discipline.
+- **Rotation state file is now per-repo, not per-user.** The
+  global path collided across unrelated repos. It is now
+  namespaced by an 8-char hash of `git rev-parse --show-toplevel`.
+  The legacy file migrates atomically on first read; worktrees of
+  the same repo share state.
 
 ## [v1.0.91]
 
 ### Changed
 
-- **State file format is now key=value.** The rotation state file at
-  `~/.claude/var/gitgit-commit-rule-state` was a positional flat
-  text file (line 1 = `pending_violation`, line 2 = `pending_rotation`,
-  line 3 = `rotation_pos`, line 4 = `ack_pending_sha`). It is now a
-  key=value file (`pv=-1`, `pr=-1`, `rp=0`, `ack_pending_sha=`),
-  self-describing and tolerant of field reordering or future
-  extension. The reader still accepts both legacy positional formats
-  (three-line and four-line); the next write converges the file to
-  key=value. Existing installations migrate without operator
-  intervention. Tooling that read the file via `sed -n '<N>p'` needs
-  to switch to `grep -E '^<key>='`.
-- **Migration of the legacy `dont-do-that` state file is now atomic.**
-  The one-shot `cp` from the legacy path could be raced by two
-  Claude sessions starting simultaneously; the migration now writes
-  to a per-pid temp file and renames atomically.
+- **State file format is now key=value.** Was positional
+  (line 1 = pv, ...); now `pv=-1`, `pr=-1`, `rp=0`,
+  `ack_pending_sha=`. The reader still accepts legacy 3- and
+  4-line forms. Tooling using `sed -n '<N>p'` should switch to
+  `grep -E '^<key>='`.
+- **Migration of the legacy `dont-do-that` state file is now
+  atomic.** The one-shot `cp` could be raced by two Claude sessions
+  starting at once; the migration now writes to a per-pid temp file
+  and renames atomically.
 
 ## [v1.0.89]
 
 ### Changed
 
 - **Broken-install deny replaces the slash-command fallback.** When
-  `commit-subject.sh` cannot resolve the absolute path to its
-  `SKILL.md` (broken install, layout regression, stale cache), the
-  guard now emits a loud `install appears broken: cannot resolve
-  SKILL.md path. Reinstall gitgit@leclause.` deny instead of
-  degrading to a slash-command pointer (`/gitgit:commit-discipline`),
-  which silently re-introduced the grep-fishing v1.0.83 was meant to
-  fix. Reinstall gitgit@leclause if you see this message.
+  `commit-subject.sh` cannot resolve `SKILL.md`, it now emits a loud
+  `install appears broken: ... Reinstall gitgit@leclause.` deny
+  instead of degrading to `/gitgit:commit-discipline`. Reinstall if
+  you see this.
 
 ## [v1.0.85]
 
@@ -160,15 +131,9 @@ the version without producing an entry here).
 ### Breaking
 
 - **`Red-then-green: yes` is rejected under `GITGIT_AUTONOMOUS=1`.**
-  New error code `red-then-green-autonomous`. Bare self-attestation was
-  the easiest hallucination path: an unattended agent had every incentive
-  to type `yes` without ever having seen a red phase. Under autonomous
-  mode the trailer must now anchor the claim: name the spec as
-  `<path>` (must be in the staged diff) or `<path>:<test-name>` (test
-  name must match an `it / describe / context / specify / @test / @Test /
-  Scenario / func / def` declaration in the staged blob), or fall back
-  to `n/a (reason >= 10 chars)`. Outside autonomous mode `yes` still
-  works.
+  New code `red-then-green-autonomous`. The trailer must anchor the
+  claim with `<path>` (staged), `<path>:<test-name>`, or `n/a
+  (reason >= 10 chars)`. Outside autonomous mode `yes` still works.
 
 ### Added
 
@@ -194,37 +159,26 @@ the version without producing an entry here).
 
 ### Breaking
 
-- **`# vsd-skip` no longer bypasses UI-touched commits.** Previously the
-  magic-comment opt-out worked on any commit. It now refuses commits where
-  the UI-touch heuristic fires (SwiftUI / UIKit / AppKit `.swift`,
-  `.tsx` / `.jsx` / `.vue` / `.svelte` / `.html` / `.css` / `.scss`,
-  `.erb` / `.haml` / `.slim`, `.storyboard` / `.xib`, `.xcassets/`),
-  with new error code `vsd-skip-ui-touch`. UI commits must use
-  `Visual: <path>` (screenshot in the repo) or `Visual: n/a (rationale)`
-  instead. Backend / spec / migration commits are unaffected. Rationale:
-  `vsd-skip` was structurally being used to defer screenshots to "a later
-  phase" that rarely materialised, defeating the Visual gate on the
-  commits that needed it most.
+- **`# vsd-skip` no longer bypasses UI-touched commits.** New code
+  `vsd-skip-ui-touch`. UI commits must use `Visual: <path>` or
+  `Visual: n/a (rationale)`. Backend / spec / migration commits are
+  unaffected.
 
 ### Added
 
-- **`GITGIT_AUTONOMOUS=1` strict mode for unattended commits.** When the
-  env var is set (intended for rover / autonomous-loop scenarios), two
-  extra rules apply: `# vsd-skip` is rejected outright with code
-  `vsd-skip-autonomous`, and `Visual: n/a (rationale)` is rejected on
-  UI-touched commits with code `visual-na-autonomous` (only
-  `Visual: <path>` accepted, file-must-exist still enforced). Ship the
-  env var from your rover skill before invoking `git commit` to enforce
-  the stricter policy without affecting interactive sessions.
+- **`GITGIT_AUTONOMOUS=1` strict mode for unattended commits.**
+  When set, `# vsd-skip` is rejected outright
+  (`vsd-skip-autonomous`) and `Visual: n/a` is rejected on UI-
+  touched commits (`visual-na-autonomous`; only `Visual: <path>`).
+  Ship from rover skills to tighten policy.
 
 ## [v1.0.57]
 
 ### Added
 
-- **Post-update broadcasts.** After a plugin update, the next time you run
-  `/gitgit:commit-all-the-things` (or any other gitgit slash command in this
-  pattern), gitgit shows a one-line summary of what changed in the new
-  version. Runs once per machine per version; the sentinel lives at
+- **Post-update broadcasts.** After an update, the next gitgit slash
+  command shows a one-line summary of what changed. Runs once per
+  machine per version; sentinel at
   `~/.claude/var/leclause/gitgit-broadcast-seen`.
 - **Shared `/leclause:whats-new gitgit` reader.** Re-prints this file's
   section for the current version on demand, regardless of whether the
