@@ -2,9 +2,9 @@
 name: discipline-status
 user-invocable: true
 description: >
-  Use ONLY when the operator types `/gitgit:discipline-status`. Do not auto-invoke.
-  Reports the current enable/disable state of the gitgit guards for this
+  Report the current enable/disable state of the gitgit guards for this
   session, the sentinel paths, and the active plugin version.
+disable-model-invocation: true
 argument-hint: ""
 effort: low
 ---

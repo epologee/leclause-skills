@@ -1,6 +1,7 @@
 ---
 name: do-that
-description: Use ONLY when the operator types `/do-that` (or the fully-qualified `/dont-do-that:do-that`) with no extra arguments. Signals that the assistant just offered a recipe, instruction, or proposed action instead of executing it, and the operator wants the action performed now. Resolves the most recent proposal in the assistant's previous turn and runs it via the available tools (Bash, Edit, Write, browser, etc.). The proposal must be exactly one super-clear non-ambiguous action; if multiple distinct candidates exist in the previous turn, list ALL of them as a numbered menu and ask the operator to pick before running anything. There is no upper bound on the menu length; surface every option, even ten. Never guess and never truncate.
+description: Execute the proposal from the assistant's previous turn instead of explaining it. If that turn contained multiple distinct proposals, list every option as a numbered menu and ask which one before running.
+disable-model-invocation: true
 ---
 
 <post-update-broadcast>

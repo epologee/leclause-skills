@@ -2,10 +2,9 @@
 name: disable-discipline
 user-invocable: true
 description: >
-  Use ONLY when the operator types `/gitgit:disable-discipline`. Do not auto-invoke
-  even when commits are blocked by gitgit guards. Disables the gitgit
-  PreToolUse:Bash guards for the current Claude session by writing a
-  sentinel file to ~/.claude/var/. Other sessions are not affected.
+  Disable the gitgit PreToolUse:Bash guards for the current Claude session by
+  writing a sentinel file to ~/.claude/var/. Other sessions are not affected.
+disable-model-invocation: true
 argument-hint: ""
 ---
 

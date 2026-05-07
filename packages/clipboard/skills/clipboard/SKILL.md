@@ -1,7 +1,7 @@
 ---
 name: clipboard
 user-invocable: true
-description: Use when the user types /clipboard to copy the core content of the last answer to the macOS clipboard via the clipboard-copy helper. Formats output based on content type. Supports /clipboard slack for rich text.
+description: Copy the core content of the last answer to the macOS clipboard via the clipboard-copy helper. Formats output based on content type. /clipboard slack for rich text.
 allowed-tools:
   - Bash(jq *)
   - Bash(*clipboard-copy*)

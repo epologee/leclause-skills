@@ -2,9 +2,9 @@
 name: enable-discipline
 user-invocable: true
 description: >
-  Use ONLY when the operator types `/gitgit:enable-discipline`. Do not auto-invoke.
-  Re-enables the gitgit PreToolUse:Bash guards for the current Claude session
+  Re-enable the gitgit PreToolUse:Bash guards for the current Claude session
   by removing the sentinel file written by /gitgit:disable-discipline.
+disable-model-invocation: true
 argument-hint: ""
 ---
 

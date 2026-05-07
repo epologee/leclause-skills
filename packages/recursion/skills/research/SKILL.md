@@ -2,14 +2,12 @@
 name: research
 user-invocable: false
 description: >
-  Internal sub-skill of the recursion plugin. Not user-invocable:
-  dispatched only by the recursion orchestrator (via Skill tool) or by
-  a scheduled trigger that calls this skill by name. Runs the deep
-  research workflow that produces atomic improvement plans: spawns
-  parallel Opus agents for friction analysis and external discovery,
-  synthesizes findings across three rounds, and writes self-contained
-  plan files in ~/.claude/recursion/plans/. Research machine only,
-  never executes the plans it produces.
+  Internal sub-skill of the recursion plugin, dispatched by the recursion
+  orchestrator or a scheduled trigger. Runs the deep research workflow that
+  produces atomic improvement plans: spawns parallel Opus agents for friction
+  analysis and external discovery, synthesizes findings across three rounds,
+  and writes self-contained plan files in ~/.claude/recursion/plans/.
+  Research machine only, never executes the plans it produces.
 allowed-tools:
   - Bash(date *)
   - Bash(stat *)

@@ -1,7 +1,8 @@
 ---
 name: whats-new
 user-invocable: true
-description: Use ONLY when the operator types `/leclause:whats-new`. With a plugin-name argument (e.g. `gitgit`), reprints the latest CHANGELOG section for that installed leclause plugin without touching its broadcast sentinel. Without argument, prints the latest section of the marketplace-wide MARKETPLACE-CHANGELOG (ecosystem news: adopters, conventions, shared infrastructure) and lists which plugins have a per-plugin CHANGELOG.
+description: With a plugin-name argument (e.g. `gitgit`), reprints the latest CHANGELOG section for that installed leclause plugin without touching its broadcast sentinel. Without argument, prints the latest section of the marketplace-wide MARKETPLACE-CHANGELOG and lists which plugins have a per-plugin CHANGELOG.
+disable-model-invocation: true
 argument-hint: "[plugin-name]"
 ---
 

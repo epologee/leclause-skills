@@ -1,7 +1,8 @@
 ---
 name: whywhy
 user-invocable: true
-description: Use when the user types /whywhy with a question or goal to drill N layers deep autonomously (default 7). Claude asks and answers "why?" itself, then analyzes the chain for a better direction toward the goal.
+description: Drill N layers deep into a question or goal (default 7). Claude asks and answers "why?" itself, then analyses the chain for a better direction.
+disable-model-invocation: true
 args: "[count] <question, goal, or statement>"
 ---
 
