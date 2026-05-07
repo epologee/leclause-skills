@@ -98,6 +98,17 @@ T = H["user-invocable"] === void 0 ? !0 : G0H(H["user-invocable"])
 
 When `true`: the model cannot auto-activate the skill based on context. The skill is then only reachable via explicit slash command. Useful for skills that should never be auto-triggered (e.g. `/clipboard`, `/saysay`). Reduces the active context budget in `skill-budget`.
 
+**The flag replaces "Use ONLY when..." prose in the description.** A description like `Use ONLY when the operator types /foo. Do not auto-invoke. <what it does>` is two layers of the same intent: the prose tries to talk Claude out of auto-triggering, while the harness already enforces it via `disable-model-invocation: true`. Pick the flag, drop the prose, and let the description describe what the skill does. Every "Use ONLY when..." token costs every session that loads the skill list, forever; the flag costs nothing.
+
+### description
+
+What the model sees in the skill list and uses to decide auto-invocation. Two anti-patterns to avoid:
+
+- **"Use when the user types /X to ..." prefix.** When the skill has `disable-model-invocation: true`, the slash command is the only way in, so the prefix is redundant. When the skill is model-triggerable, the trigger lives in the auto-invocation criteria the rest of the description describes; restating the slash form is noise.
+- **Embedding the skill body in the description.** Disambiguation rules, edge cases, and step-by-step procedures belong in the body, not the description. The description is read on every turn the skill list is loaded; the body is read only when the skill is invoked.
+
+Lean reference: `dont-do-that:just-a-question` describes what the skill enforces in two short sentences and parks the rest in the body.
+
 ## Model selection
 
 A skill **cannot** change the session model. The model the user chose at session start (or via `/model`) runs through all turns, including turns fired by cron. A skill that outputs `/model haiku` as text behaves like a fake user input, is unreliable, and persists after the skill run, corrupting the user session.
