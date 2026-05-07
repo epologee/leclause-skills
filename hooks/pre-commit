@@ -104,6 +104,13 @@ if [ -x "$sync_script" ]; then
   fi
 fi
 
+changelog_script="bin/check-changelog-bullets.mjs"
+if [ -x "$changelog_script" ]; then
+  if ! "$changelog_script" --staged; then
+    exit 1
+  fi
+fi
+
 plugin_versions_script="bin/plugin-versions"
 if [ -x "$plugin_versions_script" ]; then
   PLUGIN_VERSIONS_GIT_CMD=$(ps -o args= -p $PPID 2>/dev/null || echo "git commit")
