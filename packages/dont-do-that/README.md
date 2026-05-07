@@ -51,10 +51,13 @@ Sister to `verify`. Blocks Stop when the assistant offers a recipe ("je kunt dit
 **`tool-error`** (nudge-after-tool-error) in `hooks/guards/tool-error.sh`
 Blocks Stop when the last significant event in the transcript was a failed tool call. Also runs when `stop_hook_active` is true. Maximum two nudges per session (hard cap), with LINE_FILE tracking so we only fire on new errors. Pass condition: analyse the error and retry instead of giving up.
 
-## Skill
+## Skills
 
 **`/do-that`** in `skills/do-that/SKILL.md`
-User-invocable correction skill, the read-time counterpart to the `do-that` guard. The operator types `/do-that` (no arguments) when the previous assistant turn offered a recipe, instruction, browser action, or confirmation question instead of executing the proposal. The skill resolves the proposal from that previous turn and runs it via the available tools. The proposal must be exactly one super-clear non-ambiguous action; if multiple distinct candidates exist in the previous turn, the skill mandates a short "A or B?" disambiguation prompt (two or three numbered options, one line each, no advice) before any execution. Inviolable gates (push, merge to default, deploy, destructive git, external irreversible ops) are not lifted by `/do-that`; they still require an explicit operator go.
+User-invocable correction skill, the read-time counterpart to the `do-that` guard. The operator types `/do-that` (no arguments) when the previous assistant turn offered a recipe, instruction, browser action, or confirmation question instead of executing the proposal. The skill resolves the proposal from that previous turn and runs it via the available tools. The proposal must be exactly one super-clear non-ambiguous action; if multiple distinct candidates exist in the previous turn, the skill mandates a numbered menu of every option (no upper bound; even ten) and asks the operator to pick before any execution. Different actor (one option operator-side, one assistant-side) does not collapse two options to one. Inviolable gates (push, merge to default, deploy, destructive git, external irreversible ops) are not lifted by `/do-that`; they still require an explicit operator go.
+
+**`/just-a-question`** in `skills/just-a-question/SKILL.md`
+Sister to `/do-that`. The operator types `/just-a-question` to mark the message as the first half of "this is a question for information, not a request for change". For the rest of that turn, all mutation tools are forbidden (`Edit`, `Write`, `NotebookEdit`, mutating Bash like `git commit`/`push`/`rm`/`mv`/`launchctl`, etc.). Read-only tools stay available (`Read`, `Glob`, `Grep`, read-only Bash, the `Explore` agent). When the answer reveals an obvious fix, the skill names it but does not apply it. The operator can request the change in a separate turn without the `/just-a-question` prefix.
 
 ## Installation
 

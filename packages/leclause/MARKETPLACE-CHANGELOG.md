@@ -12,6 +12,12 @@ the top. `/leclause:whats-new` (no argument) prints the most
 recent section. Patch-level marketplace tweaks that change
 nothing observable are intentionally silent.
 
+## [2026-05-07]
+
+### Added
+
+- **`dont-do-that` gains the `/just-a-question` skill.** Sister to `/do-that` and inverse in shape: `/do-that` resolves ambiguity into action, `/just-a-question` locks action down. The operator types `/just-a-question` to mark a message as a question for information, not a request for change, so a clarifying conversation cannot silently tip into mid-question code edits. Read-only tools only; obvious fixes get named, not applied.
+
 ## [2026-05-06]
 
 ### Added

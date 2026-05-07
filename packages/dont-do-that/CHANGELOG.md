@@ -17,6 +17,17 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous.
 
+## [v1.0.45]
+
+### Added
+
+- **New `/just-a-question` skill.** The operator types `/just-a-question` to mark a message as a question for information, not a request for change. Claude answers using read-only tools only (`Read`, `Glob`, `Grep`, read-only `Bash`); `Edit`, `Write`, `NotebookEdit`, and mutating Bash are off the table for the rest of the turn. Even when the message reads as an imperative ("fix X"), the prefix overrides: obvious fixes get named, not applied. `/do-that` remains the natural exit.
+
+### Changed
+
+- **`/do-that` menu has no upper bound.** The earlier disambiguation rule capped the menu at "two or three options"; when the previous turn presented more candidates the rule said "do nothing and ask what they meant" rather than listing them. The cap is gone: the operator now sees every distinct option from the previous turn (even ten) and picks. Truncation is flagged as picking in disguise.
+- **`/do-that` no longer collapses options across actors.** When the previous turn presented two candidates with different actors (one operator-side, one assistant-side), the actor-split used to rationalize as "already disambiguated, run mine." The skill now lists both regardless of actor and asks. Different actor does not collapse two options to one.
+
 ## [v1.0.41]
 
 ### Added
