@@ -21,4 +21,4 @@ without a `## [vX.Y.Z]` section stays silent on every update.
 
 ### Breaking
 
-- **Plugin renamed from `inspiratie` to `inspire`.** The slash command is now `/inspire` (instead of `/inspiratie`). The marketplace install line becomes `claude plugins install inspire@leclause`. Existing installs of `inspiratie@leclause` will no longer receive updates; uninstall the old name and install the new one. All cross-references in sister plugins (`autonomous`, `gurus`, `dont-do-that`, `self-improvement`) have been updated in this same release.
+- **Plugin renamed from `inspiratie` to `inspire`.** The slash command is now `/inspire`; install via `claude plugins install inspire@leclause`. The old name no longer updates: uninstall `inspiratie@leclause` and install the new one. Sister plugins follow in the same release.
