@@ -71,7 +71,7 @@ Use when you catch yourself about to ask "should I do A or B?" Pre-check: is the
 **`/ground`** (for factual claims).
 Use before committing to a factual statement about tools, APIs, or system internals. If you are about to write code based on "this flag does X" or "this library behaves like Y," verify. Cheap, required for anything verifiable.
 
-**`/inspiratie`** (for unfamiliar terrain).
+**`/inspire`** (for unfamiliar terrain).
 Use when you hit a technical threshold you cannot cross from training alone. Library you do not know, pattern you have not seen, protocol you are guessing at. Medium cost, saves backtracks.
 
 **`/gurus`** (spare, for architecture forks).
@@ -128,7 +128,7 @@ The trail lives on disk, not in conversation context. Future iterations can read
 
 Inside a rover mission there is no channel back to the operator. The rover does not escalate. Not for User Challenges, not for failed-convergence decisions, not for scope discoveries. If the decision is hard, the rover applies the principles and picks; if three attempts have not converged, the rover picks the path that most faithfully respects the Dispatch's original verbs and drives; if the scope turns out to be wrong, the rover logs the discovery, adjusts the Plan, and keeps driving toward the best realisation of the Dispatch it can produce.
 
-A poorly-informed choice is worse than a well-researched one, so `decide` invests in research (`/whywhy`, `/ground`, `/inspiratie`, `/gurus`) before picking. But a well-researched choice is always better than a pause: the tooling (branches, CI, linting, pride, verify, the PR review that follows the mission) catches bad calls, and the operator reads the Decision Audit Trail at the end.
+A poorly-informed choice is worse than a well-researched one, so `decide` invests in research (`/whywhy`, `/ground`, `/inspire`, `/gurus`) before picking. But a well-researched choice is always better than a pause: the tooling (branches, CI, linting, pride, verify, the PR review that follows the mission) catches bad calls, and the operator reads the Decision Audit Trail at the end.
 
 Outside a rover mission, when `/autonomous:decide` is invoked directly, the user is present and can respond to questions in real time. Even then, prefer a reasoned call: they invoked this skill because they wanted one.
 

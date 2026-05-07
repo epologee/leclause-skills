@@ -14,6 +14,10 @@ nothing observable are intentionally silent.
 
 ## [2026-05-07]
 
+### Breaking
+
+- **`inspiratie` plugin renamed to `inspire`.** The slash command is now `/inspire` and the install line becomes `claude plugins install inspire@leclause`. Existing installs of `inspiratie@leclause` no longer receive updates; uninstall the old name and install the new one. Sister plugins (`autonomous`, `gurus`, `dont-do-that`, `self-improvement`) updated their cross-references in the same release.
+
 ### Added
 
 - **`dont-do-that` gains the `/just-a-question` skill.** Sister to `/do-that` and inverse in shape: `/do-that` resolves ambiguity into action, `/just-a-question` locks action down. The operator types `/just-a-question` to mark a message as a question for information, not a request for change, so a clarifying conversation cannot silently tip into mid-question code edits. Read-only tools only; obvious fixes get named, not applied.

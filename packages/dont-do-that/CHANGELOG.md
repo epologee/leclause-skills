@@ -17,6 +17,12 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous.
 
+## [v1.0.46]
+
+### Changed
+
+- **`/do-that` now covers declarations of inability.** When the previous turn said "I can't see this", "I can't verify that", or "I don't have access", `/do-that` is the operator's signal to spend tokens finding the path: a different local tool, a different scope, or the internet via `/inspire:inspire` for unfamiliar stacks/libraries/APIs. After the action succeeds, the skill names the workflow lesson ("Learned: to verify X here, `Y` works") so the path persists for next time. Slash-command references to the renamed `inspire` plugin replace the old `inspiratie` form.
+
 ## [v1.0.45]
 
 ### Added

@@ -1,4 +1,4 @@
-# inspiratie
+# inspire
 
 Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. Forces external perspectives before committing to one path.
 
@@ -6,7 +6,7 @@ Dutch-language skill, but works against any topic.
 
 ## Commands
 
-### `/inspiratie`
+### `/inspire`
 
 Searches online for how others solve the current problem, summarizes the patterns found, and contrasts them with the approach under consideration. Returns concrete pointers (libraries, articles, repositories) rather than generic advice.
 
@@ -22,10 +22,10 @@ Activates on questions like:
 
 ## Why
 
-The reflex to bolt together a bespoke solution is strong. `/inspiratie` interrupts that by insisting on a quick external survey first. Often the right answer is a well-tested library, not 50 lines of custom code.
+The reflex to bolt together a bespoke solution is strong. `/inspire` interrupts that by insisting on a quick external survey first. Often the right answer is a well-tested library, not 50 lines of custom code.
 
 ## Installation
 
 ```bash
-/plugin install inspiratie@leclause
+/plugin install inspire@leclause
 ```

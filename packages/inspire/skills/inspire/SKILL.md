@@ -1,5 +1,5 @@
 ---
-name: inspiratie
+name: inspire
 user-invocable: true
 description: Use when tackling unfamiliar topics, designing something new, evaluating approaches, or when the conversation benefits from external perspectives and research. Triggers on questions like "hoe doen anderen dit", "wat bestaat er al", research requests, and unfamiliar domains.
 ---
@@ -11,16 +11,16 @@ BEFORE doing the actual work below, run this one-time check:
 node "${CLAUDE_PLUGIN_ROOT}/bin/check-broadcast"
 ```
 
-If the command produces output, the inspiratie plugin was updated since
+If the command produces output, the inspire plugin was updated since
 the last time you saw the broadcast on this machine. Show the output
 verbatim in a markdown block, prefixed with one short sentence
-("inspiratie was updated; here is what changed."). Then continue with
+("inspire was updated; here is what changed."). Then continue with
 the rest of this skill.
 
 If the command produces no output, say nothing about updates and proceed.
 
 The helper writes the sentinel only when stdout was non-empty, so a silent
-run does not mark the version as seen. `/leclause:whats-new inspiratie`
+run does not mark the version as seen. `/leclause:whats-new inspire`
 re-shows the section on demand without touching the sentinel.
 </post-update-broadcast>
 
@@ -32,7 +32,7 @@ Online research that answers: "how do others do this?", "what already exists?", 
 
 ### Triggers
 
-1. **Explicit**: `/inspiratie` or `/inspiratie [topic]`
+1. **Explicit**: `/inspire` or `/inspire [topic]`
 2. **Proactive**: Claude detects moments where external research adds value
 3. **Implicit**: user says something like "hoe doen anderen dit?", "kijk even wat er bestaat", "wat is de standaard aanpak?"
 

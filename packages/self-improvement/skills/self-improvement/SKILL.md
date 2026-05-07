@@ -98,7 +98,7 @@ When feedback concerns Claude's behavior around a hook (misuse of escape hatches
 When feedback arises during (or about) a specific skill invocation, the **skill content** is the right place to improve, NOT CLAUDE.md. The skill contains the instructions the user wants to sharpen; those instructions only land in Claude's context when the skill runs. Firing a CLAUDE.md rule at a skill problem misses the target: the skill wins in its own context.
 
 Signals that feedback is skill-level:
-- The user names the skill ("/eye-of-the-beholder vangt X niet", "waarom doet /inspiratie Y niet").
+- The user names the skill ("/eye-of-the-beholder vangt X niet", "waarom doet /inspire Y niet").
 - The observation describes a gap in what a skill should catch, not a pattern in Claude's default behavior.
 - The feedback quotes skill language verbatim.
 

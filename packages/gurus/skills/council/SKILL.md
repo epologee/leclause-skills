@@ -20,7 +20,7 @@ Pattern based on Ole Lehmann's "board of advisors" skill, itself inspired by par
 - An idea has not yet been tested against someone who does not live inside your head
 - Claude's previous answer felt sycophantic
 
-Not for code review; use `/gurus:software` for that. Not for purely factual questions; use `/ground` or `/inspiratie` for those.
+Not for code review; use `/gurus:software` for that. Not for purely factual questions; use `/ground` or `/inspire` for those.
 
 **Cost and latency.** One council invocation dispatches eleven `gurus:sonnet-max` agents at `effort: max` (five lenses, five peer reviews, one chairman). The two review phases run in parallel, so typical wall time is 2 to 4 minutes and token consumption is substantial. Use it when the decision justifies the cost; for quick sanity checks `/gurus:software` on a single Sonnet or a direct conversation is cheaper.
 
