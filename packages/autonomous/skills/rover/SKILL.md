@@ -1,6 +1,6 @@
 ---
 name: rover
-description: Dispatch a rover at a task. You stay back, the rover works in the field. The distance means it decides autonomously: `decide` picks the path, `verify` writes the Done criteria and proves each one with evidence, `pride` catches what the user would hate, `gurus:gurus` brings opinionated panel review, and the rover cycles SURVEY → DRIVE → INSPECT → STOW → STANDBY until the mission is solid. Hastens slowly; haste skips understanding. Accepts a loop file path to wake, or free-form text (a GitHub URL, a description, anything) describing the mission.
+description: Dispatch a rover at a task. You stay back, the rover works in the field and decides autonomously. Accepts a loop file path to wake, or free-form text (a GitHub URL, a description, anything) describing the mission.
 user-invocable: true
 argument-hint: "standing by for mission parameters..."
 effort: high

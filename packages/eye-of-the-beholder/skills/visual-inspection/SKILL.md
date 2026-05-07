@@ -1,7 +1,7 @@
 ---
 name: visual-inspection
 user-invocable: true
-description: Use when the user names a specific existing element as a reference ("zoals de favicon", "zoals deze button", a screenshot, a Figma frame) AND either (a) states a match-intent like "exact hetzelfde", "zelfde uiterlijk als", "precies zo", "identiek aan", "dezelfde look als", "match X", "look like Y", or (b) names at least one visual property as the success criterion alongside that reference: padding, margin, space, ruimte, gap, align, alignment, grootte, size, pixels, corner radius, border radius, font, color, kleur. Both conditions must be present; routine styling work without a reference element does not trigger this skill. Forces a reference-screenshot + result-screenshot comparison loop on each named axis until visual match is reached. Stops Claude from declaring "match" based on CSS-reading instead of visual evidence.
+description: Use when the user names an existing element as a reference (favicon, a button, a screenshot, a Figma frame) AND wants the new element to match it on a named visual axis (padding, margin, gap, alignment, size, corner radius, font, colour). Forces a reference-screenshot + result-screenshot comparison loop on each axis until visual match is reached. Stops Claude from declaring match based on CSS-reading instead of visual evidence.
 ---
 
 # Visual inspection

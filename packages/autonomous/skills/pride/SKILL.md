@@ -1,6 +1,6 @@
 ---
 name: pride
-description: Pride check. Spawns a contrarian agent that reviews a rover artefact with a skeptical eye and surfaces what the operator would hate but the rover missed. Hard gate, runs on every artefact the rover produces (code, docs, prose, research briefs, media, communiqués), not just pushes. Also invocable directly as /autonomous:pride against the current branch diff.
+description: Pride check. Spawns a contrarian agent that reviews an artefact with a skeptical eye and surfaces what the operator would hate but the rover missed. Hard gate on every artefact the rover produces, not just pushes.
 user-invocable: true
 argument-hint: "[git-range | uncommitted]"
 effort: max
