@@ -4,11 +4,9 @@
 # email in commit messages, unless explicitly opted in via env var. Absorbed
 # from ~/.claude/hooks/block-coauthored-trailer.sh.
 #
-# Behaviour mirrors the original block-coauthored-trailer.sh: only anthropic.com
-# trailers are blocked; human Co-Authored-By trailers (real teammates) pass.
-# Widen the scope later if the operator asks. The user-level CLAUDE.md text
-# rule "no Co-Authored-By: trailer" is broader than this hook; the hook
-# implements the historically-enforced subset.
+# Only anthropic.com trailers are blocked; human Co-Authored-By trailers
+# (real teammates) pass. The user-level CLAUDE.md rule has the same scope:
+# AI attribution out, human co-authors fine.
 #
 # Bypass: set GITGIT_ALLOW_AI_COAUTHOR=1 in the environment for one bash call
 # when an anthropic.com co-author trailer is genuinely desired.
