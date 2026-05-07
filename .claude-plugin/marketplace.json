@@ -43,9 +43,9 @@
       "source": "./packages/gurus"
     },
     {
-      "name": "inspiratie",
+      "name": "inspire",
       "description": "Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. Forces external perspectives before committing to one path.",
-      "source": "./packages/inspiratie"
+      "source": "./packages/inspire"
     },
     {
       "name": "recap",
