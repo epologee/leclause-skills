@@ -27,7 +27,7 @@ guard_duh() {
     !in_fence
   ')
   # Drop our own meta-references so docs about the guard do not self-trigger.
-  filtered=$(echo "$filtered" | sed -E 's/duh//gi')
+  filtered=$(echo "$filtered" | sed -E 's/\[dont-do-that\/duh\]//g; s/\b(duh|do-that)\b//gi')
 
   local offer imperative openit
   # "je kunt / je kan / you can ... door|met|by ... `cmd`"

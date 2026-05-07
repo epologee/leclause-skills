@@ -17,10 +17,11 @@ nothing observable are intentionally silent.
 ### Breaking
 
 - **`inspiratie` plugin renamed to `inspire`.** The slash command is now `/inspire` and the install line becomes `claude plugins install inspire@leclause`. Existing installs of `inspiratie@leclause` no longer receive updates; uninstall the old name and install the new one. Sister plugins (`autonomous`, `gurus`, `dont-do-that`, `self-improvement`) updated their cross-references in the same release.
+- **`/do-that` renamed to `/duh` inside `dont-do-that`.** The user-invocable slash command and its sister Stop guard with the `[dont-do-that/duh]` error code flip together. Retrain muscle memory.
 
 ### Added
 
-- **`dont-do-that` gains the `/just-a-question` skill.** Sister to `/do-that` and inverse in shape: `/do-that` resolves ambiguity into action, `/just-a-question` locks action down. The operator types `/just-a-question` to mark a message as a question for information, not a request for change, so a clarifying conversation cannot silently tip into mid-question code edits. Read-only tools only; obvious fixes get named, not applied.
+- **`dont-do-that` gains the `/just-a-question` skill.** Sister to `/duh` and inverse in shape: `/duh` resolves ambiguity into action, `/just-a-question` locks action down. The operator types `/just-a-question` to mark a message as a question for information, not a request for change, so a clarifying conversation cannot silently tip into mid-question code edits. Read-only tools only; obvious fixes get named, not applied.
 
 ## [2026-05-06]
 

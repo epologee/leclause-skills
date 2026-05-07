@@ -21,7 +21,7 @@ Version numbers may therefore be non-contiguous.
 
 ### Breaking
 
-- **`/do-that` is renamed to `/duh`.** The slash command, the SKILL directory, and the sister Stop guard with its `[dont-do-that/duh]` error code all flip together. Operators muscle-memoried on `/do-that` should retrain to `/duh`; nothing in the dispatch logic changed beyond the name. The skill description was also slimmed in the same release: the "Use ONLY when the operator types..." prose was redundant with `disable-model-invocation: true` and is gone.
+- **`/do-that` is renamed to `/duh`.** The slash command, the SKILL directory, and the sister Stop guard with its `[dont-do-that/duh]` error code all flip together. Retrain muscle memory; nothing else changed.
 
 ## [v1.0.46]
 
