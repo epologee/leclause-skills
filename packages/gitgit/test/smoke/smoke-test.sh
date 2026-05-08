@@ -221,9 +221,12 @@ expect_deny "subject: wrong ack number still denies pending rule 4" \
   "Rule 4/14"
 
 reset_state
-run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
-run "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule4:essentie')" 0
-expect_deny "subject: rotation advances after pass to rule 5" \
+# Rotation advances on confirmed commit success (HEAD changes), which the
+# smoke harness cannot simulate via PreToolUse alone. Pre-seed the state
+# at slot rp=1 to assert that the rotation slot pointer drives which rule
+# fires next.
+printf 'pv=-1\npr=-1\nrp=1\nack_pending_sha=\n' > "$TMP_STATE"
+expect_deny "subject: rotation slot rp=1 surfaces Rule 5" \
   "$(pretool_bash 'git commit -m "Require session context on create"')" \
   "Rule 5/14"
 
