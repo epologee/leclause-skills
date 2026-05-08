@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.102]
+
+### Added
+
+- **`/gitgit:disable-git` and `/gitgit:enable-git` lock the repo for Claude.** Sets `.git/gitgit-deny`; while present, every git mutation (commit, checkout, reset, merge, rebase, push, ...) is blocked. Read-only inspection (status, log, diff, show, rev-parse, blame) keeps working. With `/gitgit:install-hooks` active, the same sentinel also blocks shell `git commit` and `git push`. Re-run `/gitgit:install-hooks --force` after this update to refresh existing hook installs with the deny prelude.
+
 ## [v1.0.94]
 
 ### Fixed

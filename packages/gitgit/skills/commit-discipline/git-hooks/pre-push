@@ -25,6 +25,15 @@ set -uo pipefail
 
 PLUGIN_PATH="__PLUGIN_INSTALL_PATH__"
 LIB="$PLUGIN_PATH/hooks/lib/wip-gate.sh"
+DENY_LIB="$PLUGIN_PATH/hooks/lib/deny-check.sh"
+
+# /gitgit:disable-git lock check. Runs before the wip-gate so a locked repo
+# cannot push at all. Soft-fails (no-op) when the helper is missing.
+if [[ -f "$DENY_LIB" ]]; then
+  # shellcheck disable=SC1090
+  . "$DENY_LIB"
+  deny_check "push"
+fi
 
 if [[ ! -f "$LIB" ]]; then
   printf 'gitgit/pre-push: wip-gate lib not found at %s\n' "$LIB" >&2

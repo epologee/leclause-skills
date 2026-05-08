@@ -21,6 +21,17 @@ set -uo pipefail
 PLUGIN_PATH="__PLUGIN_INSTALL_PATH__"
 VALIDATOR="$PLUGIN_PATH/hooks/lib/validate-body.sh"
 SYNTH="$PLUGIN_PATH/hooks/lib/example-synth.sh"
+DENY_LIB="$PLUGIN_PATH/hooks/lib/deny-check.sh"
+
+# /gitgit:disable-git lock check. Runs before the validator so a locked repo
+# cannot commit at all, regardless of message body. Soft-fails (no-op) if
+# the helper is missing so an outdated install does not silently break the
+# commit path.
+if [[ -f "$DENY_LIB" ]]; then
+  # shellcheck disable=SC1090
+  . "$DENY_LIB"
+  deny_check "commit"
+fi
 
 msg_file="${1:-}"
 

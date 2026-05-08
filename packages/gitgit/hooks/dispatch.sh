@@ -9,31 +9,37 @@ source "$DIR/lib/common.sh"
 INPUT=$(cat)
 EVENT=$(dd_event "$INPUT")
 
-# Session-level kill-switch: when the operator has run /gitgit:disable-discipline, a
-# sentinel file at ~/.claude/var/gitgit-disabled-<session_id> tells the
-# dispatcher to exit 0 silently without invoking any guard. This lets the
-# operator work past a noisy guard for the rest of the session without
-# touching the global plugin config or disabling hooks for other sessions.
-# /gitgit:enable-discipline removes the sentinel; /gitgit:discipline-status reports the current state.
-SESSION_ID=$(dd_session_id "$INPUT")
-if [[ -n "$SESSION_ID" ]] && [[ -f "$HOME/.claude/var/gitgit-disabled-$SESSION_ID" ]]; then
-  exit 0
-fi
-# Global fallback: if session_id was not available when /gitgit:disable-discipline ran,
-# the skill falls back to a session-agnostic sentinel.
-if [[ -f "$HOME/.claude/var/gitgit-disabled-global" ]]; then
-  exit 0
-fi
-
 case "$EVENT" in
   PreToolUse)
     TOOL=$(dd_tool_name "$INPUT")
     [ "$TOOL" = "Bash" ] || exit 0
+
+    # The /gitgit:disable-git per-repo lock runs BEFORE the discipline-disable
+    # session sentinel. The two answer different questions: disable-git is a
+    # safety lock the operator set on this repo, while disable-discipline
+    # is a session-wide kill-switch on the commit-discipline guards.
+    # Conflating them in a single bypass would silently lift the lock when
+    # the operator only wanted to quiet commit-msg validation.
+    source "$DIR/guards/git-dash-c.sh"
+    source "$DIR/guards/repo-deny.sh"
+    guard_git_dash_c "$INPUT"
+    guard_repo_deny "$INPUT"
+
+    # Session-level kill-switch: when the operator has run
+    # /gitgit:disable-discipline, a sentinel file at
+    # ~/.claude/var/gitgit-disabled-<session_id> tells the dispatcher to
+    # exit 0 for the discipline guards. The disable-git lock above is
+    # intentionally evaluated first.
+    SESSION_ID=$(dd_session_id "$INPUT")
+    if [[ -n "$SESSION_ID" ]] && [[ -f "$HOME/.claude/var/gitgit-disabled-$SESSION_ID" ]]; then
+      exit 0
+    fi
+    if [[ -f "$HOME/.claude/var/gitgit-disabled-global" ]]; then
+      exit 0
+    fi
+
     source "$DIR/lib/validate-body.sh"
     source "$DIR/lib/example-synth.sh"
-    # Slice 5: git-dash-c.sh runs first. It is a hard block on `git -C ...`
-    # and there is no point in parsing the command further once that fires.
-    source "$DIR/guards/git-dash-c.sh"
     # Slice 7: push-wip-gate fires on `git push`, alongside git-dash-c. Both
     # are git-command-specific guards that gate the call before any commit-
     # message logic runs.
@@ -44,7 +50,6 @@ case "$EVENT" in
     source "$DIR/guards/commit-body.sh"
     # Slice 5 adds commit-trailers.sh (anthropic Co-Authored-By gate)
     source "$DIR/guards/commit-trailers.sh"
-    guard_git_dash_c "$INPUT"
     guard_push_wip_gate "$INPUT"
 
     # Message-content guards (commit-format, commit-subject, commit-body) are

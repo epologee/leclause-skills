@@ -40,6 +40,8 @@ Reference for the schema, examples, escape-hatches, and troubleshooting:
 | disable-session | `/gitgit:disable-discipline` | |
 | enable-session | `/gitgit:enable-discipline` | |
 | session-status | `/gitgit:discipline-status` | |
+| disable-git | `/gitgit:disable-git [reason]` | |
+| enable-git | `/gitgit:enable-git` | |
 
 - **commit-all-the-things** inspects `git status` plus `git diff`, groups
   changes by intent (feature, fix, refactor, docs, config), and creates
@@ -73,6 +75,21 @@ Reference for the schema, examples, escape-hatches, and troubleshooting:
 - **session-status** reports the current session_id, which sentinels exist,
   whether guards are active or disabled, the active plugin version, and the
   list of guard scripts in the install.
+- **disable-git** writes `.git/gitgit-deny` (per-repo, never committed) and
+  locks git for Claude. While the sentinel exists, only read-only inspection
+  is allowed (status, log, diff, show, blame, rev-parse, branch / tag in
+  list form, remote -v, config --get, `bisect view`, `worktree list`,
+  `submodule status`, `stash list/show`, `notes list/show`); every mutation
+  (commit, checkout, switch, restore, reset, merge, rebase, cherry-pick,
+  revert, push, pull, fetch, add, rm, mv, stash, clean, branch -d, tag
+  v0.1, ...) is denied. Optional argument becomes the reason printed in the
+  deny message. With `/gitgit:install-hooks` active, the `commit-msg` and
+  `pre-push` git-native hooks honour the same sentinel, so direct shell
+  `git commit` and `git push` are also blocked. Other shell mutations
+  (`git reset`, `git checkout`, ...) are not covered CLI-time because
+  gitgit installs no hooks for them; Claude is fully locked at PreToolUse
+  time regardless.
+- **enable-git** removes `.git/gitgit-deny`, lifting the lock.
 
 ## Hooks
 
@@ -81,6 +98,7 @@ PreToolUse:Bash dispatcher chain (`hooks/dispatch.sh`):
 | Guard | Triggers on | Blocks |
 |-------|-------------|--------|
 | `git-dash-c.sh` | any `git -C <dir>` command | `git -C` (keeps Claude Code's prefix-based permissions clean) |
+| `repo-deny.sh` | any `git <mutation>` while `.git/gitgit-deny` exists | every git command outside the read-only allow-list |
 | `commit-format.sh` | `git commit` | editor-mode commits without `-m` |
 | `commit-subject.sh` | `git commit -m` | subjects past 50/72, lowercase first, trailing period |
 | `commit-body.sh` | `git commit -m` | bodies that fail `validate-body.sh` |
