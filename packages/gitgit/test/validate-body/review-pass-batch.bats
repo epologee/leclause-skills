@@ -16,8 +16,8 @@ The pride contrarian pass surfaced three findings:
 
 Tests: spec/services/foo_spec.rb
 Slice: handler + view
-Red-then-green: yes
-Verified: red-then-green
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
 MSG
 }
 
@@ -32,8 +32,8 @@ to the view via a typed PurchaseFailureReason enum.
 
 Tests: spec/services/foo_spec.rb
 Slice: handler + view
-Red-then-green: yes
-Verified: red-then-green
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
 MSG
 }
 
@@ -57,7 +57,7 @@ MSG
 
   local trailers='Tests: spec/services/foo_spec.rb
 Slice: handler + view
-Red-then-green: yes'
+Red-then-green: n/a (test fixture, no spec applies)'
   use_trailers "$trailers"
 
   local file
@@ -74,8 +74,8 @@ Red-then-green: yes'
 
   local trailers='Tests: spec/services/foo_spec.rb
 Slice: handler + view
-Red-then-green: yes
-Verified: red-then-green'
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed'
   use_trailers "$trailers"
 
   local file

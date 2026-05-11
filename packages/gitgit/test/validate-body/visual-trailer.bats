@@ -23,8 +23,8 @@ and now hosts the IAP teaser for unconfigured users.
 
 Tests: spec/views/onboarding_view_spec.rb
 Slice: frontend layer
-Red-then-green: yes
-Verified: red-then-green
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
 MSG
 }
 
@@ -38,8 +38,8 @@ and now hosts the IAP teaser for unconfigured users.
 
 Tests: spec/views/onboarding_view_spec.rb
 Slice: frontend layer
-Red-then-green: yes
-Verified: red-then-green
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
 Visual: ${visual_value}
 MSG
 }
@@ -54,16 +54,16 @@ assumption.
 
 Tests: spec/services/app_state_spec.rb
 Slice: backend layer
-Red-then-green: yes
-Verified: red-then-green
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
 MSG
 }
 
 # Standard trailers strings that the shim returns for each fixture variant.
 _trailers_no_visual='Tests: spec/views/onboarding_view_spec.rb
 Slice: frontend layer
-Red-then-green: yes
-Verified: red-then-green'
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed'
 
 _trailers_with_visual() {
   local visual_value="$1"
@@ -72,8 +72,8 @@ _trailers_with_visual() {
 
 _trailers_backend='Tests: spec/services/app_state_spec.rb
 Slice: backend layer
-Red-then-green: yes
-Verified: red-then-green'
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed'
 
 # ---------------------------------------------------------------------------
 # UI-touch heuristic returns 0 / 1 for representative file types
@@ -218,7 +218,7 @@ spec/util_spec.rb"
   [ "$status" -eq 0 ]
 }
 
-@test "UI-touch + Visual: n/a with rationale passes" {
+@test "UI-touch + Visual: n/a fails with visual-na-on-ui-touch (no escape on UI commits)" {
   export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
 
@@ -227,7 +227,8 @@ spec/util_spec.rb"
   file=$(write_fixture "vis-na.txt" "$(_body_with_visual "n/a (logo refresh, no behaviour change)")")
 
   run invoke_validator "$file"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"visual-na-on-ui-touch"* ]]
 }
 
 @test "UI-touch + missing Visual fails with missing-visual and names the touched files" {
@@ -314,60 +315,18 @@ spec/util_spec.rb"
   [ "$status" -eq 0 ]
 }
 
-@test "UI-touch + Visual: n/a fails under GITGIT_AUTONOMOUS=1" {
+@test "UI-touch + Visual: n/a fails with visual-na-on-ui-touch" {
   export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
-  export GITGIT_AUTONOMOUS=1
 
-  # Autonomous mode also rejects bare "Red-then-green: yes" (red-then-green-autonomous);
-  # this test focuses on the Visual rule, so rewrite RTG to an n/a opt-out.
-  local rtg_na='n/a (no logic change, copy-only refresh)'
-  use_trailers "$(_trailers_with_visual "n/a (logo refresh, no behaviour change)" | sed "s|Red-then-green: yes|Red-then-green: $rtg_na|")"
+  use_trailers "$(_trailers_with_visual "n/a (logo refresh, no behaviour change)")"
   local file
-  file=$(write_fixture "vis-na-autonomous.txt" "$(_body_with_visual "n/a (logo refresh, no behaviour change)" | sed "s|Red-then-green: yes|Red-then-green: $rtg_na|")")
+  file=$(write_fixture "vis-na-on-ui-touch.txt" "$(_body_with_visual "n/a (logo refresh, no behaviour change)")")
 
   run invoke_validator "$file"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"visual-na-autonomous"* ]]
+  [[ "$output" == *"visual-na-on-ui-touch"* ]]
   [[ "$output" == *"src/App.tsx"* ]]
-}
-
-@test "non-UI commit + Visual: n/a still passes under GITGIT_AUTONOMOUS=1" {
-  export GIT_SHIM_DIFF_CACHED_OUTPUT="lib/app_state.rb"
-  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/app_state_spec.rb"
-  export GITGIT_AUTONOMOUS=1
-
-  local rtg_na='n/a (no logic change, log line addition only)'
-  # Swap RTG to n/a; the body template defaults to Verified: red-then-green,
-  # which would mismatch the n/a RTG, so swap Verified to operator-confirmed.
-  local rewrite="s|Red-then-green: yes|Red-then-green: $rtg_na|;s|Verified: red-then-green|Verified: operator-confirmed|"
-  local body
-  body=$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$(_body_no_visual_backend | sed "$rewrite")")
-
-  use_trailers "$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$(printf '%s' "$_trailers_backend" | sed "$rewrite")")"
-  local file
-  file=$(write_fixture "no-ui-na-autonomous.txt" "$body")
-
-  run invoke_validator "$file"
-  [ "$status" -eq 0 ]
-}
-
-@test "UI-touch + Visual: <existing path> still passes under GITGIT_AUTONOMOUS=1" {
-  export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
-  export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
-  export GITGIT_AUTONOMOUS=1
-
-  local screenshot
-  screenshot=$(write_visual_path "screenshots/onboarding-banner.png")
-
-  local rtg_na='n/a (no logic change, copy-only refresh)'
-  local rewrite="s|Red-then-green: yes|Red-then-green: $rtg_na|;s|Verified: red-then-green|Verified: operator-confirmed|"
-  use_trailers "$(_trailers_with_visual "$screenshot" | sed "$rewrite")"
-  local file
-  file=$(write_fixture "vis-path-autonomous.txt" "$(_body_with_visual "$screenshot" | sed "$rewrite")")
-
-  run invoke_validator "$file"
-  [ "$status" -eq 0 ]
 }
 
 @test "no UI-touch + malformed bare n/a Visual fails (format checked when present)" {
@@ -418,7 +377,7 @@ spec/util_spec.rb"
   [[ "$output" == *"visual-rationale-defers"* ]]
 }
 
-@test "UI-touch + Visual: n/a rationale that describes the change passes" {
+@test "UI-touch + Visual: n/a with recognized category still fails (UI commits cannot opt out)" {
   export GIT_SHIM_DIFF_CACHED_OUTPUT="app/components/widget.tsx"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/views/onboarding_view_spec.rb"
 
@@ -428,7 +387,8 @@ spec/util_spec.rb"
   file=$(write_fixture "vis-extract.txt" "$(_body_with_visual "n/a ($rationale)")")
 
   run invoke_validator "$file"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"visual-na-on-ui-touch"* ]]
 }
 
 @test "UI-touch + Visual: n/a vague rationale without recognized category fails" {

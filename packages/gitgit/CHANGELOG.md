@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.107]
+
+### Breaking
+
+- **Strict commit-discipline is the default.** `GITGIT_AUTONOMOUS=1` is gone (rules apply universally); bare `Red-then-green: yes`, `Visual: n/a` on UI-touch, `Verified: build-only`, and `# vsd-skip` are always rejected. `--no-verify` is the only audit-logged noodknop.
+
 ## [v1.0.106]
 
 ### Breaking

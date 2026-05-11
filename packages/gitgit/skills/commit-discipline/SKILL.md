@@ -72,7 +72,7 @@ so the two-layer architecture is final, not provisional.
 | `Tests` | comma-separated list of spec paths | when `Slice` is not an opt-out token |
 | `Red-then-green` | `yes` or `n/a (reason >= 10 chars)` | when `Slice` is not `docs-only`, `config-only`, `migration-only`, `spec-only`, or `chore-deps` |
 | `Visual` | file path or `n/a (reason >= 10 chars)` | when the staged diff touches UI files (see heuristic below) |
-| `Verified` | `operator-confirmed`, `<path>`, `red-then-green`, `build-only`, or `n/a (reason)` | when `Slice` is not an opt-out token |
+| `Verified` | `operator-confirmed`, `<path>`, `red-then-green`, or `n/a (reason)` | when `Slice` is not an opt-out token |
 
 **`Slice` rules:** the value is either one of the eight opt-out tokens (see
 the next section), or free-form text describing which layers the commit
@@ -84,12 +84,13 @@ touches (e.g. `handler + service + spec`, `frontend + backend + migration`).
 `.rb`, `.py`, `.js`, `.ts`, `.go`, `.sh`, `.bash`, `.feature`, `.tsx`, `.jsx`.
 Anchor suffixes (`#method_name`) are stripped for the file existence check.
 
-**`Red-then-green` rules:** the trailer accepts four forms.
+**`Red-then-green` rules:** the trailer accepts three forms; bare `yes`
+is no longer accepted because self-attestation without an anchor cannot
+be checked and was the primary leakage path.
 
 | Form | Meaning | When |
 |------|---------|------|
-| `yes` | Self-attestation; not anchored to anything. | Always accepted outside `GITGIT_AUTONOMOUS=1`; rejected under autonomous mode (`red-then-green-autonomous`) because an unattended agent has every incentive to type `yes` without ever having seen a red phase. |
-| `<path>` | Names the spec file that was seen red. The path must end in a recognized spec extension (`.rb`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.go`, `.sh`, `.bash`, `.bats`, `.feature`, `.swift`) and must appear in `git diff --cached --name-only` so the claim is anchored to the change under review. | Stronger than `yes`: the file is at least named. |
+| `<path>` | Names the spec file that was seen red. The path must end in a recognized spec extension (`.rb`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.go`, `.sh`, `.bash`, `.bats`, `.feature`, `.swift`) and must appear in `git diff --cached --name-only` so the claim is anchored to the change under review. | The file is at least named. |
 | `<path>:<line> # <test-name>` | Identifies WHICH test was seen red, by line and by name. The validator checks that the staged blob has at least `<line>` lines, and matches `<test-name>` against runner-specific patterns: `it "name"`, `describe "name"`, `context "name"`, `specify "name"`, `@test "name"`, `@Test("name")`, `Scenario: name`, `func name(`, `def name(`. First hit wins. The `# ` separator is the RSpec / Cucumber wire format and keeps `path:line` clickable in iTerm2 / VSCode / Ghostty terminal link parsers (the gcc-style `path:line: <name>` form was rejected because two of those three parsers absorb the trailing non-numeric continuation past the second colon, breaking cmd-click). | Strongest form: the commit says exactly which test, on which line, went RED then GREEN. |
 | `n/a (reason)` | Opt-out with a rationale of at least 10 characters. Bare `n/a` without rationale is rejected. | When no red-then-green sequence applies (e.g. log-line addition, copy change). |
 
@@ -100,9 +101,9 @@ diff and the staged file but cannot prove that the test was actually
 run red. That is a deliberate choice:
 a cache that automatically tracks evidence adds more complexity than
 it is worth. Attestation responsibility lies with the author; the validator
-closes the easiest leakage paths (`yes` without anchor under autonomous,
-random spec path not in this commit, hallucinated test name not in the
-staged file).
+closes the easiest leakage paths (bare `yes` self-attestation, random
+spec path not in this commit, hallucinated test name not in the staged
+file).
 
 **`Visual` rules:** a path value points to a screenshot or
 recording file that must exist in the worktree (`[[ -f "$path" ]]`). The
@@ -119,12 +120,11 @@ include `Visual`.
 | `operator-confirmed` | The operator confirmed the change works in this session (saw the UI flow run, ran the Siri Shortcut, hit the endpoint, etc.). The validator cannot anchor this claim, but the trailer makes it explicit so a later `git log` reader sees what backed the commit. |
 | `<path>` | A screenshot, recording, log dump, or curl-output stored in the repo. Resolved against repo root; the file must exist. Recognised extensions: `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.heic`, `.svg`, `.tiff`, `.bmp`, `.mov`, `.mp4`, `.webm`, `.pdf`, `.txt`, `.log`, `.md`, `.json`, `.html`. Any value containing `/` is also treated as a path. |
 | `red-then-green` | The verification anchor is the `Red-then-green` trailer. Rejected when `Red-then-green` is itself `n/a (...)` (the chain is broken: tests cannot be both the verification and the not-applicable). |
-| `build-only` | Compiles but was not exercised. Acceptable when the operator is present (the operator is the implicit next-step verifier). Rejected under `GITGIT_AUTONOMOUS=1`. |
 | `n/a (reason)` | Closed-enum rationale, same set as `Visual: n/a` (see `visual-rationale-vague` below). Bare `n/a` without rationale is rejected. |
 
 The trailer drops when `Slice` is one of the eight opt-out tokens (same exemption as `Tests`). It does **not** consult the UI-touch heuristic; it is required on every behaviour-bearing commit, not just UI commits, because the question "was this verified" applies to backend logic, intents, queues, and migrations alike.
 
-Why this trailer exists alongside `Tests`, `Red-then-green`, and `Visual`: the existing three trailers anchor specific anchors but never force a top-level answer to "is the behaviour itself verified". A `Red-then-green: yes` outside autonomous mode is bare self-attestation; a backend behaviour change can pass the schema with no anchor at all when the UI-touch heuristic does not fire (e.g. `.swift` AppIntents that only `import AppIntents`). The `Verified` trailer closes that gap by asking the question directly: did the operator see this work, is there an artefact, was it covered by Red-then-green, was it only built, or is there genuinely no behaviour to verify.
+Why this trailer exists alongside `Tests`, `Red-then-green`, and `Visual`: the existing three trailers anchor specific anchors but never force a top-level answer to "is the behaviour itself verified". A backend behaviour change can pass the schema with no anchor when the UI-touch heuristic does not fire (e.g. `.swift` AppIntents that only `import AppIntents`). The `Verified` trailer closes that gap by asking the question directly: did the operator see this work, is there an artefact, was it covered by Red-then-green, or is there genuinely no behaviour to verify.
 
 Error codes:
 
@@ -133,7 +133,7 @@ Error codes:
 | `missing-verified` | Trailer is absent on a non-opt-out commit, or the value is bare `n/a` without rationale, or the value is none of the recognised forms (e.g. `Verified: probably`). |
 | `verified-path-not-found` | Path-form value points at a file that does not exist relative to repo root. |
 | `verified-red-then-green-mismatch` | `Verified: red-then-green` while `Red-then-green` is `n/a (...)`; pick a different Verified form. |
-| `verified-build-only-autonomous` | `Verified: build-only` under `GITGIT_AUTONOMOUS=1`; the autonomous escape is closed because there is no operator to be the implicit next-step verifier. |
+| `verified-build-only-removed` | `Verified: build-only` is no longer accepted; supply a concrete anchor (`operator-confirmed`, `<path>`, `red-then-green`) or `n/a (reason)`. |
 | `verified-rationale-vague` | `n/a (reason)` rationale does not name a recognised category from the closed enum (same set as `Visual: n/a`). |
 
 **UI-touch heuristic:** the validator scans `git diff --cached --name-only`
@@ -182,7 +182,8 @@ Error codes:
 | `red-then-green-path-not-in-staged` | Trailer names a spec path that is not in `git diff --cached --name-only`. Either name a spec file this commit actually touches, or fall back to `n/a (reason)`. |
 | `red-then-green-test-not-found` | Trailer is `<path>:<line> # <test-name>` but the staged blob has no matching `it`, `describe`, `context`, `specify`, `@test`, `@Test`, `Scenario:`, `func name(`, or `def name(` declaration. Name the test as it appears in the file. |
 | `red-then-green-line-out-of-range` | Trailer is `<path>:<line> # <test-name>` but the staged file has fewer lines than `<line>`. Name a line that exists in the file as it stands in this commit. |
-| `red-then-green-autonomous` | Bare `Red-then-green: yes` under `GITGIT_AUTONOMOUS=1`. Use `<path>` or `<path>:<line> # <test-name>`, or `n/a (reason)`. |
+| `red-then-green-bare-yes` | `Red-then-green: yes` is no longer accepted. Use `<path>` or `<path>:<line> # <test-name>`, or `n/a (reason)`. |
+| `visual-na-on-ui-touch` | `Visual: n/a (reason)` on UI-touched commits is rejected; capture a screenshot and supply `Visual: <path>`. |
 | `review-pass-batch` | The WHY block names a review pass (`pride pass`, `end-user pass`, `technical pass`, `review pass`, `review findings`, `pride contrarian`, `review contrarian`) and lists two or more findings as bullets. Review-pass commits should land one finding per commit so each fate (fix, reject-with-evidence) is its own reviewable unit; rewrite the WHY in prose for one finding and split the others into separate commits, or remove the review-pass keyword if this is not a review-pass commit. |
 
 ### Optional trailers
@@ -320,7 +321,7 @@ reading, restoring the visibility we lost.
 Tests: spec/services/session_spec.rb#start_event_with_bad_reading,
        spec/services/session_spec.rb#stop_event_with_bad_reading
 Slice: handler + service + spec
-Red-then-green: yes
+Red-then-green: spec/services/session_spec.rb:42 # start_event drops invalid meter reading
 Verified: red-then-green
 Resolves: https://example.org/backlog/issues/1234
 ```
@@ -387,7 +388,7 @@ and now hosts the IAP teaser for unconfigured users.
 
 Tests: spec/views/onboarding_view_spec.rb
 Slice: frontend layer
-Red-then-green: yes
+Red-then-green: spec/views/onboarding_view_spec.rb:18 # renders the banner above the tab strip
 Verified: doc/screenshots/onboarding-banner.png
 Visual: doc/screenshots/onboarding-banner.png
 ```
@@ -405,9 +406,9 @@ previous version. No screenshot needed.
 
 Tests: spec/views/onboarding_view_spec.rb
 Slice: frontend layer
-Red-then-green: yes
+Red-then-green: n/a (extract-only refactor, no logic change)
 Verified: n/a (extract-only refactor, no behaviour change)
-Visual: n/a (extract only, render output unchanged)
+Visual: n/a (extract-only refactor, render output unchanged)
 ```
 
 ### Example 7: wip commit (and the pre-push gate that holds it back)
@@ -431,55 +432,10 @@ Set GITGIT_ALLOW_WIP_PUSH=1 or add '# allow-wip-push' to bypass.
 
 ## Escape hatches
 
-### `# vsd-skip: <reason>` in the commit body
-
-Add a comment line to the body (starts with `#`):
-
-```
-Fix typo in error message
-
-# vsd-skip: trivial one-char fix, full schema not warranted
-```
-
-The validator reads the comment lines (before stripping) and
-logs the reason to `~/.claude/var/gitgit-skips.log`. The commit
-goes through. The reason may not be empty.
-
-**`vsd-skip` does not work on UI-touched commits.** When the UI-touch
-heuristic fires (SwiftUI/UIKit/AppKit, `.tsx`/`.jsx`/`.vue`/`.svelte`,
-`.html`/`.css`/`.scss`, `.erb`/`.haml`/`.slim`, `.storyboard`/`.xib`,
-`.xcassets/`), the magic comment is rejected with
-`vsd-skip-ui-touch`. Use `Visual: <path>` (screenshot in the repo)
-or `Visual: n/a (rationale)` instead. The opt-out remains available for
-backend, spec, and migration commits.
-
-### `GITGIT_AUTONOMOUS=1`
-
-Stricter variant for unattended commits (rover, autonomous-loop). Set
-the env var before `git commit` runs. Two extra rules:
-
-1. `# vsd-skip` is rejected unconditionally with
-   `vsd-skip-autonomous`.
-2. `Visual: n/a (rationale)` is rejected on UI-touched commits with
-   `visual-na-autonomous`. Only `Visual: <path>` remains allowed; the
-   path must also exist (existing `visual-path-not-found` rule).
-3. `Red-then-green: yes` is rejected with `red-then-green-autonomous`.
-   The agent must name the spec it saw red as `<path>` or
-   `<path>:<test-name>` (path in staged diff, test name in staged blob),
-   or fall back to `n/a (reason >= 10 chars)`.
-
-Backend-only commits are not affected; `Visual: n/a (rationale)` remains
-valid there.
-
-**Recommended default for AI-driven sessions.** Treat agent-authored
-sessions (Claude Code, Cursor, Aider, codex-rs, OpenCode) as autonomous
-by default and export `GITGIT_AUTONOMOUS=1` in the shell-init so every
-commit the agent makes runs under the stricter ruleset. The agent
-otherwise has every incentive to take the n/a-with-rationale escape on
-UI-touched commits ("evidence lands later") and the rationales pass
-the format check while never resolving into actual screenshots. The
-operator can still authorise an interactive opt-out for a specific
-commit via `unset GITGIT_AUTONOMOUS` in that single shell.
+The discipline is strict by default for every commit. There is no
+magic-comment opt-out (`# vsd-skip` is rejected) and no env-var ramp
+(the former `GITGIT_AUTONOMOUS=1` is gone; its strict rules apply to
+every commit). The only audit-logged noodknop is `git commit --no-verify`.
 
 ### `--no-verify`
 
@@ -523,9 +479,9 @@ Not persistent; applies only to the next commit.
 **Limitation:** manual export of `GITGIT_TRIVIAL_OK=1` only applies to the
 PreToolUse:Bash layer. The git-native commit-msg hook re-derives the
 trivial flag from the staged diff on every run; an externally exported
-value does not bypass that hook. For trivial-but-larger commits at
-the git-native layer, use the `# vsd-skip: <reason>` magic comment instead of the
-environment variable.
+value does not bypass that hook. For trivial-but-larger commits at the
+git-native layer there is no shortcut: write the schema body or use
+`git commit --no-verify` (logged as noodknop).
 
 ## Troubleshooting
 

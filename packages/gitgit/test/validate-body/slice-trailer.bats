@@ -8,7 +8,7 @@ load helpers
 # ---------------------------------------------------------------------------
 
 @test "commit without Slice trailer fails with missing-slice" {
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Red-then-green: yes"$'\n'"Verified: red-then-green"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Red-then-green: n/a (test fixture, no spec applies)"$'\n'"Verified: operator-confirmed"
   local body
   body="$(cat <<'MSG'
 Expose session boundary on transaction events
@@ -18,8 +18,8 @@ meter reading that fails domain validation, we previously rejected
 the entire event.
 
 Tests: spec/services/session_spec.rb
-Red-then-green: yes
-Verified: red-then-green
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
 MSG
 )"
   local file
@@ -32,7 +32,7 @@ MSG
 
 @test "commit with empty Slice value fails with missing-slice" {
   # Shim returns Slice: with empty value (trailing space stripped by grep).
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Red-then-green: yes"$'\n'"Verified: red-then-green"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Red-then-green: n/a (test fixture, no spec applies)"$'\n'"Verified: operator-confirmed"
   local body
   body="$(cat <<'MSG'
 Expose session boundary on transaction events
@@ -41,8 +41,8 @@ When StartTransaction or StopTransaction messages arrive with a
 meter reading that fails domain validation.
 
 Tests: spec/services/session_spec.rb
-Red-then-green: yes
-Verified: red-then-green
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
 MSG
 )"
   local file
@@ -190,7 +190,7 @@ MSG
 
 @test "free-text Slice shorter than 10 chars fails with slice-too-short" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: api"$'\n'"Red-then-green: yes"$'\n'"Verified: red-then-green"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: api"$'\n'"Red-then-green: n/a (test fixture, no spec applies)"$'\n'"Verified: operator-confirmed"
   local body
   body="$(cat <<'MSG'
 Expose session boundary on transaction events
@@ -201,8 +201,8 @@ the entire event.
 
 Tests: spec/services/session_spec.rb
 Slice: api
-Red-then-green: yes
-Verified: red-then-green
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
 MSG
 )"
   local file
@@ -215,7 +215,7 @@ MSG
 
 @test "free-text Slice exactly 10 chars passes" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: api + spec"$'\n'"Red-then-green: yes"$'\n'"Verified: red-then-green"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: api + spec"$'\n'"Red-then-green: n/a (test fixture, no spec applies)"$'\n'"Verified: operator-confirmed"
   local body
   body="$(cat <<'MSG'
 Expose session boundary on transaction events
@@ -226,8 +226,8 @@ the entire event.
 
 Tests: spec/services/session_spec.rb
 Slice: api + spec
-Red-then-green: yes
-Verified: red-then-green
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
 MSG
 )"
   local file

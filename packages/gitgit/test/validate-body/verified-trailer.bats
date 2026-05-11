@@ -1,19 +1,19 @@
 #!/usr/bin/env bats
 # Verified trailer: self-assessment of how the behaviour change was verified.
 # Closed set of forms: operator-confirmed, <artefact path>, red-then-green,
-# build-only, n/a (reason). Forces an explicit answer to "did the operator
-# see this work, is there a screenshot, or was there a red-then-green test"
-# so a commit cannot slip through on bare attestation.
+# n/a (reason). Forces an explicit answer to "did the operator see this
+# work, is there a screenshot, or was there a red-then-green test" so a
+# commit cannot slip through on bare attestation. build-only was removed.
 
 load helpers
 
 # ---------------------------------------------------------------------------
-# Helper: body with given Verified value (plus Red-then-green: yes by default)
+# Helper: body with given Verified value (RTG defaults to an anchored form)
 # ---------------------------------------------------------------------------
 
 _body_with_verified() {
   local verified_value="$1"
-  local rtg_value="${2:-yes}"
+  local rtg_value="${2:-n/a (test fixture, no spec applies)}"
   cat <<MSG
 Expose session boundary on transaction events
 
@@ -30,7 +30,7 @@ MSG
 
 _trailers_with_verified() {
   local verified_value="$1"
-  local rtg_value="${2:-yes}"
+  local rtg_value="${2:-n/a (test fixture, no spec applies)}"
   printf 'Tests: spec/services/session_spec.rb\nSlice: handler + service + spec\nRed-then-green: %s\nVerified: %s' "$rtg_value" "$verified_value"
 }
 
@@ -77,12 +77,14 @@ _trailers_with_verified() {
   [[ "$output" == *"verified-path-not-found"* ]]
 }
 
-@test "Verified: red-then-green is accepted when Red-then-green is yes" {
+@test "Verified: red-then-green is accepted when Red-then-green names a staged spec" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "$(_trailers_with_verified "red-then-green" "yes")"
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
+  local rtg="spec/services/session_spec.rb"
+  use_trailers "$(_trailers_with_verified "red-then-green" "$rtg")"
 
   local file
-  file=$(write_fixture "verified-rtg-yes.txt" "$(_body_with_verified "red-then-green" "yes")")
+  file=$(write_fixture "verified-rtg-path.txt" "$(_body_with_verified "red-then-green" "$rtg")")
 
   run invoke_validator "$file"
   [ "$status" -eq 0 ]
@@ -100,7 +102,7 @@ _trailers_with_verified() {
   [[ "$output" == *"verified-red-then-green-mismatch"* ]]
 }
 
-@test "Verified: build-only is accepted outside autonomous mode" {
+@test "Verified: build-only is rejected with verified-build-only-removed" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
   use_trailers "$(_trailers_with_verified "build-only")"
 
@@ -108,23 +110,8 @@ _trailers_with_verified() {
   file=$(write_fixture "verified-build-only.txt" "$(_body_with_verified "build-only")")
 
   run invoke_validator "$file"
-  [ "$status" -eq 0 ]
-}
-
-@test "Verified: build-only is rejected under GITGIT_AUTONOMOUS=1" {
-  export GITGIT_AUTONOMOUS=1
-  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  # Use Red-then-green: n/a (reason) so the autonomous-mode RTG check does
-  # not fire before the Verified check runs.
-  local rtg="n/a (no test applies for this autonomous build-only example)"
-  use_trailers "$(_trailers_with_verified "build-only" "$rtg")"
-
-  local file
-  file=$(write_fixture "verified-build-only-autonomous.txt" "$(_body_with_verified "build-only" "$rtg")")
-
-  run invoke_validator "$file"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"verified-build-only-autonomous"* ]]
+  [[ "$output" == *"verified-build-only-removed"* ]]
 }
 
 @test "Verified: n/a with recognised category is accepted" {
@@ -168,7 +155,7 @@ _trailers_with_verified() {
 
 @test "Missing Verified trailer fails missing-verified for free-text Slice" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: n/a (test fixture, no spec applies)"
 
   local body
   body="$(cat <<'MSG'
@@ -180,7 +167,7 @@ the entire event, which masked session starts and stops.
 
 Tests: spec/services/session_spec.rb
 Slice: handler + service + spec
-Red-then-green: yes
+Red-then-green: n/a (test fixture, no spec applies)
 MSG
 )"
   local file

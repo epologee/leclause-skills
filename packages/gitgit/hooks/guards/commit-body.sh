@@ -13,8 +13,9 @@
 # sets GITGIT_TRIVIAL_OK=1 before calling validate_body so the validator skips
 # the body requirement. This threshold is unchanged from slice 3.
 #
-# Magic-comment opt-out: "# vsd-skip: <reason>" in the commit message body is
-# honoured by validate_body.sh which logs to gitgit-skips.log.
+# There is no magic-comment opt-out. The legacy `# vsd-skip` comment is
+# rejected by validate_body.sh; the only audit-logged noodknop is
+# `git commit --no-verify`, captured by the post-commit shadow log.
 
 guard_commit_body() {
   local input="$1"
@@ -103,7 +104,7 @@ guard_commit_body() {
 
   # Build the deny message.
   local deny_msg
-  deny_msg=$(printf '%s\n\nExpected body format:\n\n%s\n\nOpt-out tokens for Slice: %s\n\nAdd "# vsd-skip: <reason>" to the commit body to bypass validation.' \
+  deny_msg=$(printf '%s\n\nExpected body format:\n\n%s\n\nOpt-out tokens for Slice: %s' \
     "$violation_line" \
     "$example" \
     "$opt_out_list")

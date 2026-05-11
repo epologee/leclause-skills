@@ -80,12 +80,9 @@ needs no further arguments.
 - Existing hook with different content without `--force`: skill prints a
   unified diff (`diff -u`), refuses to overwrite, and exits 1.
 - Existing hook with identical content: silent no-op (idempotent).
-- `--no-verify` on `git commit` remains a valid escape for the author;
-  the installed `post-commit` logs that usage to
-  `~/.claude/var/gitgit-no-verify.log` so it is auditable after the fact.
-- The magic comment `# vsd-skip: <reason>` in the body skips validation
-  and logs to `~/.claude/var/gitgit-skips.log` (handled by
-  `validate-body.sh`).
+- `--no-verify` on `git commit` is the only audit-logged noodknop; the
+  installed `post-commit` logs that usage to
+  `~/.claude/var/gitgit-no-verify.log` so it is reviewable after the fact.
 
 ## Example output
 

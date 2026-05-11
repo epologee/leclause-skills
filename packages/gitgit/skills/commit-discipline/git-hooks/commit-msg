@@ -113,7 +113,7 @@ if [[ "$exit_code" -eq 0 ]]; then
 fi
 
 if [[ "$exit_code" -eq 2 ]]; then
-  # Skip silently (file unreadable / template-only / vsd-skip handled inside).
+  # Skip silently (file unreadable / template-only).
   exit 0
 fi
 
@@ -141,8 +141,8 @@ opt_out_list="docs-only, config-only, migration-only, spec-only, chore-deps, rev
   printf '\n'
   printf 'Expected body format:\n\n%s\n\n' "$example"
   printf 'Opt-out tokens for Slice: %s\n\n' "$opt_out_list"
-  printf 'Add "# vsd-skip: <reason>" to the commit body to bypass validation,\n'
-  printf 'or use git commit --no-verify (logged to ~/.claude/var/gitgit-no-verify.log).\n'
+  printf 'No magic-comment bypass exists. Use git commit --no-verify\n'
+  printf '(logged to ~/.claude/var/gitgit-no-verify.log) as a noodknop.\n'
 } >&2
 
 exit 1

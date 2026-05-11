@@ -26,8 +26,8 @@ load helpers
   local cmd
   cmd=$(commit_cmd_heredoc \
     "Controller boundary for incoming session events" \
-    "$(printf 'When StartTransaction messages arrive with an invalid meter reading,\nthe previous implementation rejected the entire event and masked\nsession starts in the analytics pipeline.\n\nTests: spec/controllers/foo_spec.rb\nSlice: handler + spec\nRed-then-green: yes
-Verified: red-then-green')")
+    "$(printf 'When StartTransaction messages arrive with an invalid meter reading,\nthe previous implementation rejected the entire event and masked\nsession starts in the analytics pipeline.\n\nTests: spec/controllers/foo_spec.rb\nSlice: handler + spec\nRed-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed')")
   cmd="$cmd # ack-rule4:essentie"
 
   run_dispatch "$cmd"

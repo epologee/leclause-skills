@@ -180,8 +180,8 @@ the entire event, which masked session starts and stops in analytics.
 
 Tests: spec/services/session_spec.rb
 Slice: handler + service + spec
-Red-then-green: yes
-Verified: red-then-green
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
 TEMPLATE
 )"
 
@@ -189,8 +189,8 @@ TEMPLATE
 VALID_TRAILERS="$(cat <<'TR'
 Tests: spec/services/session_spec.rb
 Slice: handler + service + spec
-Red-then-green: yes
-Verified: red-then-green
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
 TR
 )"
 

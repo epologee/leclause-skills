@@ -161,44 +161,13 @@ validate_body() {
     return 2
   fi
 
-  # Rule: magic-comment opt-out via "# vsd-skip: <reason>".
-  # (Must check the raw file including comment lines for this one.)
-  local raw_content
-  raw_content=$(cat "$msg_file")
-  # Portable POSIX grep (no -P): extract reason after "# vsd-skip:".
-  local skip_line
-  skip_line=$(printf '%s' "$raw_content" | grep -E '^#[[:space:]]*vsd-skip:' | head -1 || true)
-  if [[ -n "$skip_line" ]]; then
-    local skip_reason
-    skip_reason=$(printf '%s' "$skip_line" | sed -E 's/^#[[:space:]]*vsd-skip:[[:space:]]*//')
-    if [[ -z "$skip_reason" ]]; then
-      printf 'invalid-skip: vsd-skip requires a non-empty reason\n' >&2
-      return 1
-    fi
-    # Autonomous mode forbids vsd-skip entirely. Rovers commit unattended
-    # and the magic comment was the structural escape used to defer visual
-    # evidence to a later phase that rarely materialised; closing it forces
-    # the rover to either capture the screenshot now or articulate a real
-    # Visual: n/a rationale that is not a deferral.
-    if [[ "${GITGIT_AUTONOMOUS:-0}" = "1" ]]; then
-      printf 'vsd-skip-autonomous: vsd-skip is disabled under GITGIT_AUTONOMOUS=1. Supply Visual: <path> with the screenshot, or Visual: n/a (rationale) if no UI was touched.\n' >&2
-      return 1
-    fi
-    # vsd-skip cannot bypass commits that touch UI files. The opt-out was
-    # designed for backend/spec/migration commits where the UI-touch
-    # heuristic does not fire; using it on a UI commit defeats the entire
-    # Visual gate. Operators must use Visual: <path> or Visual: n/a
-    # (rationale) instead.
-    if _vb_is_ui_touch; then
-      local ui_files
-      ui_files=$(_vb_ui_touched_files | tr '\n' ',' | sed 's/,$//;s/,/, /g')
-      printf 'vsd-skip-ui-touch: vsd-skip cannot bypass commits that touch UI files: %s. Use Visual: <path> or Visual: n/a (rationale).\n' "$ui_files" >&2
-      return 1
-    fi
-    local sha_label
-    sha_label=$(git rev-parse --short HEAD 2>/dev/null || printf 'staging')
-    _vb_log_skip "$sha_label" "$skip_reason"
-    return 0
+  # Rule: the legacy `# vsd-skip: <reason>` magic comment is no longer an
+  # escape. The strict commit-discipline rules apply to every commit; reject
+  # the comment so commits that relied on it surface clearly instead of
+  # silently passing under the old lenient mode.
+  if printf '%s' "$(cat "$msg_file")" | grep -qE '^#[[:space:]]*vsd-skip:'; then
+    printf 'vsd-skip-removed: the "# vsd-skip" magic comment is no longer accepted. Fill in the schema trailers (Tests / Slice / Red-then-green / Verified, and Visual when UI files are touched) or use `git commit --no-verify` as the audit-logged noodknop.\n' >&2
+    return 1
   fi
 
   # Parse subject (first non-empty line).
@@ -394,18 +363,13 @@ validate_body() {
       return 1
     fi
 
-    # Value must be "yes", "n/a", or "n/a (...)" with >=10 chars rationale.
+    # Value must anchor the claim: <path>, <path>:<line> # <test-name>, or
+    # n/a (reason). Bare "yes" is no longer accepted; self-attestation
+    # without an anchor cannot be checked and was the primary leakage path
+    # for commits that claimed Red-then-green but never saw a red phase.
     if [[ "$rtg_value" = "yes" ]]; then
-      # Self-attestation: "yes" is accepted as-is; no cache evidence required.
-      # Under autonomous mode the bare attestation is rejected: an unattended
-      # agent has every incentive to type "yes" without ever having seen a
-      # red phase. The strict form is <path>:<line> # <test-name>, which
-      # the validator can anchor in the staged diff and the staged blob.
-      # n/a (reason) remains a legitimate opt-out.
-      if [[ "${GITGIT_AUTONOMOUS:-0}" = "1" ]]; then
-        printf 'red-then-green-autonomous: bare "yes" is not accepted under GITGIT_AUTONOMOUS=1. Name the spec that was seen red as "<path>" or "<path>:<line> # <test-name>" (the path must appear in the staged diff, the line must exist in the staged file, and the test name must match a test declaration). n/a (reason >= 10 chars) remains valid when no red-then-green sequence applies.\n' >&2
-        return 1
-      fi
+      printf 'red-then-green-bare-yes: bare "yes" is no longer accepted. Name the spec that was seen red as "<path>" or "<path>:<line> # <test-name>" (the path must appear in the staged diff, the line must exist in the staged file, and the test name must match a test declaration). n/a (reason >= 10 chars) remains valid when no red-then-green sequence applies.\n' >&2
+      return 1
     elif [[ "$rtg_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
       local rationale="${BASH_REMATCH[1]}"
       if [[ ${#rationale} -lt 10 ]]; then
@@ -561,14 +525,13 @@ validate_body() {
         printf 'visual-rationale-vague: Visual: n/a rationale must name a recognized category that explains why a screenshot has no meaning for this change. Recognized tokens (case-insensitive): extract-only, accessibility-only, accessibility metadata, debug-only, spec-only, test-only, copy-only, copy change, metadata-only, no behaviour change, no visual change, no ui change, byte-identical, render unchanged, pixel-identical, backend rewrite, backend only, no ui touched, sound-only, audio-only, log-only, telemetry-only. The rationale (got: "%s") matched none of those.\n' "$rationale" >&2
         return 1
       fi
-      # Autonomous mode forbids n/a on UI-touched commits. A rover that
-      # touched a SwiftUI view, .tsx component, or stylesheet can capture
-      # a screenshot now; the n/a rationale was structurally a deferral
-      # ("evidence lands in INSPECT") and that promise rarely paid off.
-      if [[ "${GITGIT_AUTONOMOUS:-0}" = "1" ]] && [[ -n "$visual_ui_touched" ]]; then
-        local autonomous_files
-        autonomous_files=$(printf '%s' "$visual_ui_touched" | tr '\n' ',' | sed 's/,$//;s/,/, /g')
-        printf 'visual-na-autonomous: Visual: n/a is not accepted under GITGIT_AUTONOMOUS=1 when UI files are touched (%s). Capture a screenshot and supply Visual: <path>.\n' "$autonomous_files" >&2
+      # Visual: n/a is never accepted on UI-touched commits: the rationale
+      # was structurally a deferral ("evidence lands later") that rarely
+      # paid off. Capture a screenshot or recording and supply Visual: <path>.
+      if [[ -n "$visual_ui_touched" ]]; then
+        local na_ui_files
+        na_ui_files=$(printf '%s' "$visual_ui_touched" | tr '\n' ',' | sed 's/,$//;s/,/, /g')
+        printf 'visual-na-on-ui-touch: Visual: n/a is not accepted when UI files are touched (%s). Capture a screenshot and supply Visual: <path>.\n' "$na_ui_files" >&2
         return 1
       fi
     elif [[ "$visual_value" = "n/a" ]]; then
@@ -611,7 +574,7 @@ validate_body() {
     verified_value=$(printf '%s' "$verified_value" | sed 's/[[:space:]]*$//')
 
     if [[ -z "$verified_value" ]]; then
-      printf 'missing-verified: Verified trailer is absent. Self-assessment required: how was the new behaviour verified? Use one of: "operator-confirmed" (operator saw it work this session), "<path>" (screenshot/recording/log artefact in repo), "red-then-green" (covered by Red-then-green trailer), "build-only" (compiles but not exercised; rejected under GITGIT_AUTONOMOUS=1), or "n/a (reason)" with a recognised category token (extract-only, no behaviour change, copy-only, ...).\n' >&2
+      printf 'missing-verified: Verified trailer is absent. Self-assessment required: how was the new behaviour verified? Use one of: "operator-confirmed" (operator saw it work this session), "<path>" (screenshot/recording/log artefact in repo), "red-then-green" (covered by Red-then-green trailer), or "n/a (reason)" with a recognised category token (extract-only, no behaviour change, copy-only, ...).\n' >&2
       return 1
     fi
 
@@ -620,23 +583,21 @@ validate_body() {
     elif [[ "$verified_value" = "red-then-green" ]]; then
       # The Verified trailer points at the Red-then-green trailer as the
       # verification anchor. That only makes sense when Red-then-green is
-      # itself a positive attestation (yes / spec-path / spec-path:<line>
-      # # <name>). If Red-then-green is n/a (...), the chain breaks: the
-      # author claims tests were the verification while simultaneously
-      # claiming no tests apply.
+      # itself a positive attestation (<path> / <path>:<line> # <name>).
+      # If Red-then-green is n/a (...), the chain breaks: the author claims
+      # tests were the verification while simultaneously claiming no tests
+      # apply.
       if [[ "$rtg_value" =~ ^n/a ]]; then
-        printf 'verified-red-then-green-mismatch: Verified: red-then-green requires the Red-then-green trailer to be a positive attestation (yes / <path> / <path>:<line> # <test-name>), but Red-then-green is "n/a". Pick a different Verified form (operator-confirmed, <path>, build-only, or n/a (reason)).\n' >&2
+        printf 'verified-red-then-green-mismatch: Verified: red-then-green requires the Red-then-green trailer to be a positive attestation (<path> / <path>:<line> # <test-name>), but Red-then-green is "n/a". Pick a different Verified form (operator-confirmed, <path>, or n/a (reason)).\n' >&2
         return 1
       fi
     elif [[ "$verified_value" = "build-only" ]]; then
-      # Compiles but was not exercised. Acceptable when the operator is
-      # present and is the implicit verifier of the next step; under
-      # autonomous mode there is no operator, and "build-only" becomes a
-      # structural deferral.
-      if [[ "${GITGIT_AUTONOMOUS:-0}" = "1" ]]; then
-        printf 'verified-build-only-autonomous: Verified: build-only is not accepted under GITGIT_AUTONOMOUS=1. Either exercise the change and supply Verified: <path> (screenshot / log / recording) or Verified: red-then-green (with a real Red-then-green anchor), or fall back to Verified: n/a (reason).\n' >&2
-        return 1
-      fi
+      # build-only was a deferral mechanism that rarely materialised into
+      # actual verification. The trailer no longer accepts it; supply a
+      # concrete anchor (operator-confirmed, <path>, red-then-green) or
+      # n/a (reason) when no behaviour applies.
+      printf 'verified-build-only-removed: Verified: build-only is no longer accepted. Either exercise the change and supply Verified: <path> (screenshot / log / recording), Verified: operator-confirmed, or Verified: red-then-green (with a real Red-then-green anchor), or fall back to Verified: n/a (reason).\n' >&2
+      return 1
     elif [[ "$verified_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
       local v_rationale="${BASH_REMATCH[1]}"
       if [[ ${#v_rationale} -lt 10 ]]; then

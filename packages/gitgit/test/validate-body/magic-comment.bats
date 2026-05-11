@@ -1,14 +1,12 @@
 #!/usr/bin/env bats
-# Magic-comment opt-out: "# vsd-skip: <reason>" in the commit message.
+# The legacy `# vsd-skip: <reason>` magic comment is no longer an escape.
+# The strict commit-discipline rules apply to every commit; the magic
+# comment is always rejected with vsd-skip-removed so commits that relied
+# on it surface clearly instead of silently passing.
 
 load helpers
 
-# ---------------------------------------------------------------------------
-# Magic-comment cases (2 cases)
-# ---------------------------------------------------------------------------
-
-@test "vsd-skip with a reason opts out and returns exit 0" {
-  # A commit that would otherwise fail (no body) is allowed via vsd-skip.
+@test "vsd-skip with a reason is rejected with vsd-skip-removed" {
   local body
   body="$(cat <<'MSG'
 Expose session endpoint
@@ -17,15 +15,14 @@ Expose session endpoint
 MSG
 )"
   local file
-  file=$(write_fixture "vsd-skip-ok.txt" "$body")
+  file=$(write_fixture "vsd-skip-with-reason.txt" "$body")
 
-  # Redirect HOME so the skip log goes to the temp dir.
-  export HOME="$TMPDIR_TEST"
   run invoke_validator "$file"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"vsd-skip-removed"* ]]
 }
 
-@test "bare vsd-skip without reason fails with invalid-skip" {
+@test "bare vsd-skip without reason is rejected with vsd-skip-removed" {
   local body
   body="$(cat <<'MSG'
 Expose session endpoint
@@ -34,25 +31,20 @@ Expose session endpoint
 MSG
 )"
   local file
-  file=$(write_fixture "vsd-skip-no-reason.txt" "$body")
+  file=$(write_fixture "vsd-skip-bare.txt" "$body")
 
   run invoke_validator "$file"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"invalid-skip"* ]]
+  [[ "$output" == *"vsd-skip-removed"* ]]
 }
 
-@test "vsd-skip on a UI-touched commit fails with vsd-skip-ui-touch" {
-  # Stage a SwiftUI file so the UI-touch heuristic fires.
-  set_staged_blob "Sources/Card.swift" "import SwiftUI
-
-struct Card: View { var body: some View { Text(\"hi\") } }"
-  export GIT_SHIM_DIFF_CACHED_OUTPUT="Sources/Card.swift"
-
+@test "vsd-skip on a UI-touched commit is rejected with vsd-skip-removed" {
+  export GIT_SHIM_DIFF_CACHED_OUTPUT="src/App.tsx"
   local body
   body="$(cat <<'MSG'
-Tighten resident card layout
+Render onboarding banner above tab strip
 
-# vsd-skip: visual evidence lands in INSPECT
+# vsd-skip: visual evidence lands later
 MSG
 )"
   local file
@@ -60,43 +52,5 @@ MSG
 
   run invoke_validator "$file"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"vsd-skip-ui-touch"* ]]
-  [[ "$output" == *"Sources/Card.swift"* ]]
-}
-
-@test "vsd-skip on a backend-only commit still passes (heuristic does not fire)" {
-  export GIT_SHIM_DIFF_CACHED_OUTPUT="lib/app_state.rb"
-
-  local body
-  body="$(cat <<'MSG'
-Expose session endpoint
-
-# vsd-skip: one-line hotfix pushed under time pressure
-MSG
-)"
-  local file
-  file=$(write_fixture "vsd-skip-backend.txt" "$body")
-
-  export HOME="$TMPDIR_TEST"
-  run invoke_validator "$file"
-  [ "$status" -eq 0 ]
-}
-
-@test "vsd-skip is rejected outright under GITGIT_AUTONOMOUS=1" {
-  export GIT_SHIM_DIFF_CACHED_OUTPUT="lib/app_state.rb"
-  export GITGIT_AUTONOMOUS=1
-
-  local body
-  body="$(cat <<'MSG'
-Expose session endpoint
-
-# vsd-skip: one-line hotfix pushed under time pressure
-MSG
-)"
-  local file
-  file=$(write_fixture "vsd-skip-autonomous.txt" "$body")
-
-  run invoke_validator "$file"
-  [ "$status" -eq 1 ]
-  [[ "$output" == *"vsd-skip-autonomous"* ]]
+  [[ "$output" == *"vsd-skip-removed"* ]]
 }

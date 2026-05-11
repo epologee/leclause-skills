@@ -27,7 +27,7 @@ MSG
 # Red-then-green cases (3 cases)
 # ---------------------------------------------------------------------------
 
-@test "Red-then-green: yes is accepted" {
+@test "Red-then-green: bare yes is rejected with red-then-green-bare-yes" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
   use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"$'\n'"Verified: operator-confirmed"
 
@@ -35,7 +35,8 @@ MSG
   file=$(write_fixture "rtg-yes.txt" "$(_body_with_rtg "yes")")
 
   run invoke_validator "$file"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"red-then-green-bare-yes"* ]]
 }
 
 @test "Red-then-green: n/a with long rationale is accepted" {
@@ -300,56 +301,6 @@ final class SessionTests: XCTestCase {
 
   local file
   file=$(write_fixture "rtg-bats.txt" "$(_body_with_rtg "test/foo.bats:2 # starts cleanly with no args")")
-
-  run invoke_validator "$file"
-  [ "$status" -eq 0 ]
-}
-
-# ---------------------------------------------------------------------------
-# Strict mode (insight 3): under GITGIT_AUTONOMOUS=1 the bare "yes" form is
-# rejected. The agent must name a spec path (with optional combined suffix)
-# or supply n/a (reason). Cuts the easiest leakage path: a rover claiming
-# red-then-green without naming any anchor.
-# ---------------------------------------------------------------------------
-
-@test "Red-then-green: yes is rejected under GITGIT_AUTONOMOUS=1" {
-  export GITGIT_AUTONOMOUS=1
-  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"$'\n'"Verified: operator-confirmed"
-
-  local file
-  file=$(write_fixture "rtg-yes-autonomous.txt" "$(_body_with_rtg "yes")")
-
-  run invoke_validator "$file"
-  [ "$status" -eq 1 ]
-  [[ "$output" == *"red-then-green-autonomous"* ]]
-}
-
-@test "Red-then-green: combined form is accepted under GITGIT_AUTONOMOUS=1" {
-  export GITGIT_AUTONOMOUS=1
-  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
-  set_staged_blob "spec/services/session_spec.rb" 'describe "session" do
-  it "starts on StartTransaction" do
-    expect(true).to eq(true)
-  end
-end'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # starts on StartTransaction"$'\n'"Verified: operator-confirmed"
-
-  local file
-  file=$(write_fixture "rtg-path-autonomous.txt" "$(_body_with_rtg "spec/services/session_spec.rb:2 # starts on StartTransaction")")
-
-  run invoke_validator "$file"
-  [ "$status" -eq 0 ]
-}
-
-@test "Red-then-green: n/a (reason) is still accepted under GITGIT_AUTONOMOUS=1" {
-  export GITGIT_AUTONOMOUS=1
-  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: n/a (adding log line only, no logic change)"$'\n'"Verified: operator-confirmed"
-
-  local file
-  file=$(write_fixture "rtg-na-autonomous.txt" "$(_body_with_rtg "n/a (adding log line only, no logic change)")")
 
   run invoke_validator "$file"
   [ "$status" -eq 0 ]

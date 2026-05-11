@@ -64,7 +64,7 @@ gitgit_synthesize_example() {
       rtg_value="n/a (schema change, no spec required)"
       ;;
     *)
-      rtg_value="yes"
+      rtg_value='<spec-path> | <spec-path>:<line> # <test-name>'
       ;;
   esac
 
@@ -94,9 +94,9 @@ gitgit_synthesize_example() {
       ;;
     *)
       if [[ "$rtg_value" =~ ^n/a ]]; then
-        printf 'Verified: <operator-confirmed | <path> | build-only | n/a (reason)>\n'
+        printf 'Verified: <operator-confirmed | <path> | n/a (reason)>\n'
       else
-        printf 'Verified: <operator-confirmed | <path> | red-then-green | build-only | n/a (reason)>\n'
+        printf 'Verified: <operator-confirmed | <path> | red-then-green | n/a (reason)>\n'
       fi
       ;;
   esac

@@ -70,8 +70,8 @@ session starts in the analytics pipeline.
 
 Tests: spec/foo_spec.rb
 Slice: handler + spec
-Red-then-green: yes
-Verified: red-then-green
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
 BODY
 )
 
