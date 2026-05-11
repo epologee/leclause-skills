@@ -4,7 +4,7 @@
 load helpers
 
 # Standard trailers that the shim will return for why-block tests.
-WHY_TRAILERS="Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"
+WHY_TRAILERS="Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"$'\n'"Verified: red-then-green"
 
 # ---------------------------------------------------------------------------
 # WHY block length (3 cases)
@@ -23,6 +23,7 @@ Short why.
 Tests: spec/services/session_spec.rb
 Slice: handler + service + spec
 Red-then-green: yes
+Verified: red-then-green
 MSG
 )"
   local file
@@ -47,6 +48,7 @@ was previously rejected, which masked session starts in analytics.
 Tests: spec/services/session_spec.rb
 Slice: handler + service + spec
 Red-then-green: yes
+Verified: red-then-green
 MSG
 )"
   local file
@@ -72,6 +74,7 @@ ${long_why}
 Tests: spec/services/session_spec.rb
 Slice: handler + service + spec
 Red-then-green: yes
+Verified: red-then-green
 MSG
 )"
   local file
@@ -102,6 +105,7 @@ ${why_text}
 Tests: spec/services/session_spec.rb
 Slice: handler + service + spec
 Red-then-green: yes
+Verified: red-then-green
 MSG
 )"
 
@@ -114,6 +118,7 @@ ${why_text}
 Tests: spec/services/session_spec.rb
 Slice: handler + service + spec
 Red-then-green: yes
+Verified: red-then-green
 MSG
 )"
   local file
@@ -138,6 +143,7 @@ to anything in the current commit being validated here at all.
 Tests: spec/services/session_spec.rb
 Slice: handler + service + spec
 Red-then-green: yes
+Verified: red-then-green
 MSG
 )"
 

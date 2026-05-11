@@ -176,7 +176,8 @@ shadow_log_line_count() {
 # Standard valid-body trailer set (shimmed via GIT_SHIM_INTERPRET_TRAILERS_OUTPUT)
 # ---------------------------------------------------------------------------
 
-VALID_TRAILERS="$(printf 'Tests: spec/controllers/foo_spec.rb\nSlice: handler + spec\nRed-then-green: yes')"
+VALID_TRAILERS="$(printf 'Tests: spec/controllers/foo_spec.rb\nSlice: handler + spec\nRed-then-green: yes
+Verified: red-then-green')"
 
 VALID_BODY="$(cat <<'BODY'
 Add controller boundary for incoming session events
@@ -188,5 +189,6 @@ session starts in the analytics pipeline.
 Tests: spec/controllers/foo_spec.rb
 Slice: handler + spec
 Red-then-green: yes
+Verified: red-then-green
 BODY
 )"

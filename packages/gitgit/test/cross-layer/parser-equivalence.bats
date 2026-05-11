@@ -22,11 +22,13 @@ load helpers
 
 _VALID_SUBJECT="Expose session boundary on transaction events"
 _VALID_WHY="$(printf 'When StartTransaction messages arrive with an invalid meter\nreading we previously rejected the entire event.')"
-_VALID_TRAILERS="$(printf 'Tests: spec/services/session_spec.rb\nSlice: handler + service + spec\nRed-then-green: yes')"
+_VALID_TRAILERS="$(printf 'Tests: spec/services/session_spec.rb\nSlice: handler + service + spec\nRed-then-green: yes
+Verified: red-then-green')"
 
 _setup_valid_shim() {
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf \
-    'Tests: spec/services/session_spec.rb\nSlice: handler + service + spec\nRed-then-green: yes')"
+    'Tests: spec/services/session_spec.rb\nSlice: handler + service + spec\nRed-then-green: yes
+Verified: red-then-green')"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
 }
 
@@ -203,7 +205,8 @@ GITEOF
 @test "equivalence: missing-slice verdict matches between paths (exit code + violation code)" {
   # Shim returns no Slice trailer.
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf \
-    'Tests: spec/services/session_spec.rb\nRed-then-green: yes')"
+    'Tests: spec/services/session_spec.rb\nRed-then-green: yes
+Verified: red-then-green')"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
   unset GITGIT_TRIVIAL_OK
 
@@ -212,7 +215,8 @@ GITEOF
     "Expose session boundary on transaction events" \
     "When StartTransaction messages arrive with an invalid meter
 reading we previously rejected the entire event." \
-    "$(printf 'Tests: spec/services/session_spec.rb\nRed-then-green: yes')")"
+    "$(printf 'Tests: spec/services/session_spec.rb\nRed-then-green: yes
+Verified: red-then-green')")"
 
   # File-input path.
   local file

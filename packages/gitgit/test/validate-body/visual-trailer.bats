@@ -24,6 +24,7 @@ and now hosts the IAP teaser for unconfigured users.
 Tests: spec/views/onboarding_view_spec.rb
 Slice: frontend layer
 Red-then-green: yes
+Verified: red-then-green
 MSG
 }
 
@@ -38,6 +39,7 @@ and now hosts the IAP teaser for unconfigured users.
 Tests: spec/views/onboarding_view_spec.rb
 Slice: frontend layer
 Red-then-green: yes
+Verified: red-then-green
 Visual: ${visual_value}
 MSG
 }
@@ -53,13 +55,15 @@ assumption.
 Tests: spec/services/app_state_spec.rb
 Slice: backend layer
 Red-then-green: yes
+Verified: red-then-green
 MSG
 }
 
 # Standard trailers strings that the shim returns for each fixture variant.
 _trailers_no_visual='Tests: spec/views/onboarding_view_spec.rb
 Slice: frontend layer
-Red-then-green: yes'
+Red-then-green: yes
+Verified: red-then-green'
 
 _trailers_with_visual() {
   local visual_value="$1"
@@ -68,7 +72,8 @@ _trailers_with_visual() {
 
 _trailers_backend='Tests: spec/services/app_state_spec.rb
 Slice: backend layer
-Red-then-green: yes'
+Red-then-green: yes
+Verified: red-then-green'
 
 # ---------------------------------------------------------------------------
 # UI-touch heuristic returns 0 / 1 for representative file types
@@ -333,10 +338,13 @@ spec/util_spec.rb"
   export GITGIT_AUTONOMOUS=1
 
   local rtg_na='n/a (no logic change, log line addition only)'
+  # Swap RTG to n/a; the body template defaults to Verified: red-then-green,
+  # which would mismatch the n/a RTG, so swap Verified to operator-confirmed.
+  local rewrite="s|Red-then-green: yes|Red-then-green: $rtg_na|;s|Verified: red-then-green|Verified: operator-confirmed|"
   local body
-  body=$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$(_body_no_visual_backend | sed "s|Red-then-green: yes|Red-then-green: $rtg_na|")")
+  body=$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$(_body_no_visual_backend | sed "$rewrite")")
 
-  use_trailers "$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$(printf '%s' "$_trailers_backend" | sed "s|Red-then-green: yes|Red-then-green: $rtg_na|")")"
+  use_trailers "$(printf '%s\nVisual: n/a (backend rewrite, no UI touched)' "$(printf '%s' "$_trailers_backend" | sed "$rewrite")")"
   local file
   file=$(write_fixture "no-ui-na-autonomous.txt" "$body")
 
@@ -353,9 +361,10 @@ spec/util_spec.rb"
   screenshot=$(write_visual_path "screenshots/onboarding-banner.png")
 
   local rtg_na='n/a (no logic change, copy-only refresh)'
-  use_trailers "$(_trailers_with_visual "$screenshot" | sed "s|Red-then-green: yes|Red-then-green: $rtg_na|")"
+  local rewrite="s|Red-then-green: yes|Red-then-green: $rtg_na|;s|Verified: red-then-green|Verified: operator-confirmed|"
+  use_trailers "$(_trailers_with_visual "$screenshot" | sed "$rewrite")"
   local file
-  file=$(write_fixture "vis-path-autonomous.txt" "$(_body_with_visual "$screenshot" | sed "s|Red-then-green: yes|Red-then-green: $rtg_na|")")
+  file=$(write_fixture "vis-path-autonomous.txt" "$(_body_with_visual "$screenshot" | sed "$rewrite")")
 
   run invoke_validator "$file"
   [ "$status" -eq 0 ]

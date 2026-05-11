@@ -17,6 +17,7 @@ The pride contrarian pass surfaced three findings:
 Tests: spec/services/foo_spec.rb
 Slice: handler + view
 Red-then-green: yes
+Verified: red-then-green
 MSG
 }
 
@@ -32,6 +33,7 @@ to the view via a typed PurchaseFailureReason enum.
 Tests: spec/services/foo_spec.rb
 Slice: handler + view
 Red-then-green: yes
+Verified: red-then-green
 MSG
 }
 
@@ -72,7 +74,8 @@ Red-then-green: yes'
 
   local trailers='Tests: spec/services/foo_spec.rb
 Slice: handler + view
-Red-then-green: yes'
+Red-then-green: yes
+Verified: red-then-green'
   use_trailers "$trailers"
 
   local file

@@ -78,7 +78,8 @@ load helpers
   local cmd
   cmd=$(commit_cmd_heredoc \
     "Expose session boundary on transaction events" \
-    "$(printf 'When StartTransaction or StopTransaction messages arrive with a\nmeter reading that fails domain validation, we previously rejected\nthe entire event, which masked session starts and stops in analytics.\n\nTests: spec/services/session_spec.rb\nSlice: handler + service + spec\nRed-then-green: yes')")
+    "$(printf 'When StartTransaction or StopTransaction messages arrive with a\nmeter reading that fails domain validation, we previously rejected\nthe entire event, which masked session starts and stops in analytics.\n\nTests: spec/services/session_spec.rb\nSlice: handler + service + spec\nRed-then-green: yes
+Verified: red-then-green')")
   cmd="$cmd # ack-rule4:essentie"
 
   run_dispatch "$cmd"

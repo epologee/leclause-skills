@@ -187,7 +187,8 @@ shadow_log_line_count() {
 # Standard valid-body trailer set (shimmed via GIT_SHIM_INTERPRET_TRAILERS_OUTPUT)
 # ---------------------------------------------------------------------------
 
-VALID_TRAILERS="$(printf 'Tests: spec/services/session_spec.rb\nSlice: handler + service + spec\nRed-then-green: yes')"
+VALID_TRAILERS="$(printf 'Tests: spec/services/session_spec.rb\nSlice: handler + service + spec\nRed-then-green: yes
+Verified: red-then-green')"
 
 VALID_BODY="$(cat <<'BODY'
 Expose session boundary on transaction events
@@ -199,5 +200,6 @@ the entire event, which masked session starts and stops in analytics.
 Tests: spec/services/session_spec.rb
 Slice: handler + service + spec
 Red-then-green: yes
+Verified: red-then-green
 BODY
 )"

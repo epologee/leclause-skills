@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.106]
+
+### Breaking
+
+- **New required `Verified:` trailer.** Anchors how the change was verified: `operator-confirmed`, `<artefact path>`, `red-then-green`, `build-only`, or `n/a (reason)`. Drops on Slice opt-outs; `build-only` is rejected under `GITGIT_AUTONOMOUS=1`. See `/gitgit:commit-discipline`.
+
 ## [v1.0.102]
 
 ### Added

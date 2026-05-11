@@ -598,6 +598,83 @@ validate_body() {
     return 1
   fi
 
+  # Rule: Verified trailer (self-assessment of how the behaviour change was
+  # verified). Required for every non-opt-out commit. Forces an explicit
+  # answer to "did the operator see this work, is there an artefact in the
+  # repo, or was there a red-then-green test", so a commit cannot slip
+  # through on bare attestation (the Tests / Red-then-green trailers do not
+  # ask this question directly: a `Red-then-green: yes` is self-attested and
+  # under non-autonomous mode is never anchored to anything).
+  if [[ "$slice_is_optout" -eq 0 ]]; then
+    local verified_value
+    verified_value=$(_vb_trailer_value "$trailers" "Verified")
+    verified_value=$(printf '%s' "$verified_value" | sed 's/[[:space:]]*$//')
+
+    if [[ -z "$verified_value" ]]; then
+      printf 'missing-verified: Verified trailer is absent. Self-assessment required: how was the new behaviour verified? Use one of: "operator-confirmed" (operator saw it work this session), "<path>" (screenshot/recording/log artefact in repo), "red-then-green" (covered by Red-then-green trailer), "build-only" (compiles but not exercised; rejected under GITGIT_AUTONOMOUS=1), or "n/a (reason)" with a recognised category token (extract-only, no behaviour change, copy-only, ...).\n' >&2
+      return 1
+    fi
+
+    if [[ "$verified_value" = "operator-confirmed" ]]; then
+      : # OK: operator attested in conversation; nothing else to anchor.
+    elif [[ "$verified_value" = "red-then-green" ]]; then
+      # The Verified trailer points at the Red-then-green trailer as the
+      # verification anchor. That only makes sense when Red-then-green is
+      # itself a positive attestation (yes / spec-path / spec-path:<line>
+      # # <name>). If Red-then-green is n/a (...), the chain breaks: the
+      # author claims tests were the verification while simultaneously
+      # claiming no tests apply.
+      if [[ "$rtg_value" =~ ^n/a ]]; then
+        printf 'verified-red-then-green-mismatch: Verified: red-then-green requires the Red-then-green trailer to be a positive attestation (yes / <path> / <path>:<line> # <test-name>), but Red-then-green is "n/a". Pick a different Verified form (operator-confirmed, <path>, build-only, or n/a (reason)).\n' >&2
+        return 1
+      fi
+    elif [[ "$verified_value" = "build-only" ]]; then
+      # Compiles but was not exercised. Acceptable when the operator is
+      # present and is the implicit verifier of the next step; under
+      # autonomous mode there is no operator, and "build-only" becomes a
+      # structural deferral.
+      if [[ "${GITGIT_AUTONOMOUS:-0}" = "1" ]]; then
+        printf 'verified-build-only-autonomous: Verified: build-only is not accepted under GITGIT_AUTONOMOUS=1. Either exercise the change and supply Verified: <path> (screenshot / log / recording) or Verified: red-then-green (with a real Red-then-green anchor), or fall back to Verified: n/a (reason).\n' >&2
+        return 1
+      fi
+    elif [[ "$verified_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
+      local v_rationale="${BASH_REMATCH[1]}"
+      if [[ ${#v_rationale} -lt 10 ]]; then
+        printf 'missing-verified: n/a rationale must be at least 10 chars (got: "%s")\n' "$v_rationale" >&2
+        return 1
+      fi
+      # Reuse the closed Visual: n/a category set: the question "why is no
+      # screenshot meaningful" and "why is no verification meaningful" have
+      # the same answer space (extract-only refactor, copy change, byte-
+      # identical render, backend-only, no behaviour change, ...).
+      local v_rationale_lower
+      v_rationale_lower=$(printf '%s' "$v_rationale" | tr '[:upper:]' '[:lower:]')
+      local v_positive_re='(extract[ -]?only|accessibility[ -]?only|accessibility metadata|debug[ -]?only|spec[ -]?only|test[ -]?only|copy[ -]?only|copy change|metadata[ -]?only|no behaviour change|no behavior change|no visual change|no ui change|no visual impact|no ui impact|byte[ -]?identical|render unchanged|pixel[ -]?identical|backend (rewrite|only)|no ui touched|sound[ -]?only|audio[ -]?only|log[ -]?only|telemetry[ -]?only)'
+      if ! [[ "$v_rationale_lower" =~ $v_positive_re ]]; then
+        printf 'verified-rationale-vague: Verified: n/a rationale must name a recognised category that explains why no verification is meaningful for this change. Recognised tokens (case-insensitive): extract-only, accessibility-only, accessibility metadata, debug-only, spec-only, test-only, copy-only, copy change, metadata-only, no behaviour change, no visual change, no ui change, byte-identical, render unchanged, pixel-identical, backend rewrite, backend only, no ui touched, sound-only, audio-only, log-only, telemetry-only. The rationale (got: "%s") matched none of those.\n' "$v_rationale" >&2
+        return 1
+      fi
+    elif [[ "$verified_value" = "n/a" ]]; then
+      printf 'missing-verified: bare "n/a" requires a rationale in parens: n/a (reason >= 10 chars)\n' >&2
+      return 1
+    elif [[ "$verified_value" == */* ]] || [[ "$verified_value" =~ \.(png|jpg|jpeg|gif|webp|heic|mov|mp4|webm|pdf|txt|log|md|json|html|svg|tiff|bmp)$ ]]; then
+      # Path form: artefact in repo. Resolve relative to repo root.
+      local v_repo_root
+      v_repo_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+      local v_resolved="$verified_value"
+      if [[ -n "$v_repo_root" && "$v_resolved" != /* ]]; then
+        v_resolved="$v_repo_root/$v_resolved"
+      fi
+      if [[ ! -f "$v_resolved" ]]; then
+        printf 'verified-path-not-found: Verified path "%s" was not found on disk (relative to repo root). Add the artefact or use a different Verified form.\n' "$verified_value" >&2
+        return 1
+      fi
+    else
+      printf 'missing-verified: value must be "operator-confirmed", "red-then-green", "build-only", "<path>", or "n/a (reason)"; got: "%s"\n' "$verified_value" >&2
+      return 1
+    fi
+  fi
+
   # Rule: WHY block length.
   # Require >= 2 non-empty lines OR (>= 60 chars AND ends with . ! or ?).
   if [[ -n "$why_block" ]]; then

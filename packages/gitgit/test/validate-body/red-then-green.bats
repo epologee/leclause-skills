@@ -19,6 +19,7 @@ the entire event, which masked session starts and stops.
 Tests: spec/services/session_spec.rb
 Slice: handler + service + spec
 Red-then-green: ${rtg_value}
+Verified: operator-confirmed
 MSG
 }
 
@@ -28,7 +29,7 @@ MSG
 
 @test "Red-then-green: yes is accepted" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-yes.txt" "$(_body_with_rtg "yes")")
@@ -39,7 +40,7 @@ MSG
 
 @test "Red-then-green: n/a with long rationale is accepted" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: n/a (adding log line only, no logic change)"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: n/a (adding log line only, no logic change)"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-na-rationale.txt" "$(_body_with_rtg "n/a (adding log line only, no logic change)")")
@@ -50,7 +51,7 @@ MSG
 
 @test "Red-then-green: bare n/a without rationale fails" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: n/a"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: n/a"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-bare-na.txt" "$(_body_with_rtg "n/a")")
@@ -92,7 +93,7 @@ MSG
 @test "Red-then-green: spec-path present in staged diff is accepted" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
   export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"$'\n'"app/services/session.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-path-staged.txt" "$(_body_with_rtg "spec/services/session_spec.rb")")
@@ -104,7 +105,7 @@ MSG
 @test "Red-then-green: spec-path NOT in staged diff fails with red-then-green-path-not-in-staged" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
   export GIT_SHIM_DIFF_CACHED_OUTPUT="app/services/session.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-path-not-staged.txt" "$(_body_with_rtg "spec/services/session_spec.rb")")
@@ -129,7 +130,7 @@ MSG
     expect(true).to eq(true)
   end
 end'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # starts a session on StartTransaction"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # starts a session on StartTransaction"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-combined-ok.txt" "$(_body_with_rtg "spec/services/session_spec.rb:2 # starts a session on StartTransaction")")
@@ -144,7 +145,7 @@ end'
   set_staged_blob "spec/services/session_spec.rb" 'line1
 line2
 line3'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:3"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:3"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-bare-line.txt" "$(_body_with_rtg "spec/services/session_spec.rb:3")")
@@ -162,7 +163,7 @@ line3'
     expect(true).to eq(true)
   end
 end'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:starts a session on StartTransaction"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:starts a session on StartTransaction"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-bare-name.txt" "$(_body_with_rtg "spec/services/session_spec.rb:starts a session on StartTransaction")")
@@ -179,7 +180,7 @@ end'
   it "name" do
   end
 end'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:99 # name"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:99 # name"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-combined-line-oob.txt" "$(_body_with_rtg "spec/services/session_spec.rb:99 # name")")
@@ -202,7 +203,7 @@ end'
   it "name" do
   end
 end'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:0 # name"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:0 # name"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-line-zero.txt" "$(_body_with_rtg "spec/services/session_spec.rb:0 # name")")
@@ -220,7 +221,7 @@ end'
     expect(true).to eq(true)
   end
 end'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # Session#start_event with bad reading"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # Session#start_event with bad reading"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-name-with-hash.txt" "$(_body_with_rtg "spec/services/session_spec.rb:2 # Session#start_event with bad reading")")
@@ -232,7 +233,7 @@ end'
 @test "Red-then-green: trailing whitespace on the value does not break path parsing" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
   export GIT_SHIM_DIFF_CACHED_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb   "
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb   "$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-trailing-space.txt" "$(_body_with_rtg "spec/services/session_spec.rb   ")")
@@ -249,7 +250,7 @@ end'
     expect(true).to eq(true)
   end
 end'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # starts a session on StartTransaction"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # starts a session on StartTransaction"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-combined-name-missing.txt" "$(_body_with_rtg "spec/services/session_spec.rb:2 # starts a session on StartTransaction")")
@@ -275,7 +276,7 @@ final class SessionTests: XCTestCase {
     XCTAssertTrue(true)
   }
 }'
-  use_trailers "Tests: Tests/SessionTests.swift"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: Tests/SessionTests.swift:3 # testStartSessionOnStartTransaction"
+  use_trailers "Tests: Tests/SessionTests.swift"$'\n'"Slice: handler + spec"$'\n'"Red-then-green: Tests/SessionTests.swift:3 # testStartSessionOnStartTransaction"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-xctest.txt" "$(_body_with_rtg "Tests/SessionTests.swift:3 # testStartSessionOnStartTransaction")")
@@ -295,7 +296,7 @@ final class SessionTests: XCTestCase {
   local bats_content
   bats_content=$(printf '#!/usr/bin/env bats\n%s "starts cleanly with no args" {\n  run echo hi\n}\n' "@test")
   set_staged_blob "test/foo.bats" "$bats_content"
-  use_trailers "Tests: test/foo.bats"$'\n'"Slice: validator + spec"$'\n'"Red-then-green: test/foo.bats:2 # starts cleanly with no args"
+  use_trailers "Tests: test/foo.bats"$'\n'"Slice: validator + spec"$'\n'"Red-then-green: test/foo.bats:2 # starts cleanly with no args"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-bats.txt" "$(_body_with_rtg "test/foo.bats:2 # starts cleanly with no args")")
@@ -314,7 +315,7 @@ final class SessionTests: XCTestCase {
 @test "Red-then-green: yes is rejected under GITGIT_AUTONOMOUS=1" {
   export GITGIT_AUTONOMOUS=1
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-yes-autonomous.txt" "$(_body_with_rtg "yes")")
@@ -333,7 +334,7 @@ final class SessionTests: XCTestCase {
     expect(true).to eq(true)
   end
 end'
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # starts on StartTransaction"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: spec/services/session_spec.rb:2 # starts on StartTransaction"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-path-autonomous.txt" "$(_body_with_rtg "spec/services/session_spec.rb:2 # starts on StartTransaction")")
@@ -345,7 +346,7 @@ end'
 @test "Red-then-green: n/a (reason) is still accepted under GITGIT_AUTONOMOUS=1" {
   export GITGIT_AUTONOMOUS=1
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: n/a (adding log line only, no logic change)"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: n/a (adding log line only, no logic change)"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-na-autonomous.txt" "$(_body_with_rtg "n/a (adding log line only, no logic change)")")
@@ -356,7 +357,7 @@ end'
 
 @test "Red-then-green: garbage value (no extension, not yes/n/a) is rejected" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: probably"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: probably"$'\n'"Verified: operator-confirmed"
 
   local file
   file=$(write_fixture "rtg-garbage.txt" "$(_body_with_rtg "probably")")

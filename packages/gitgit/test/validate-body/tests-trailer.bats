@@ -30,7 +30,7 @@ MSG
 
 @test "valid Tests path present in HEAD tree passes" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"$'\n'"Verified: red-then-green"
 
   local file
   file=$(write_fixture "tests-found.txt" "$(_body_with_trailers "Tests: spec/services/session_spec.rb")")
@@ -40,7 +40,7 @@ MSG
 }
 
 @test "absent Tests trailer when Slice is not opt-out fails with missing-tests" {
-  use_trailers "Slice: handler + service + spec"$'\n'"Red-then-green: yes"
+  use_trailers "Slice: handler + service + spec"$'\n'"Red-then-green: yes"$'\n'"Verified: red-then-green"
 
   local body
   body="$(cat <<'MSG'
@@ -51,6 +51,7 @@ meter reading that fails domain validation.
 
 Slice: handler + service + spec
 Red-then-green: yes
+Verified: red-then-green
 MSG
 )"
   local file
@@ -64,7 +65,7 @@ MSG
 @test "Tests path not in HEAD tree or staged diff fails with tests-path-not-found" {
   export GIT_SHIM_LS_TREE_OUTPUT=""
   export GIT_SHIM_DIFF_CACHED_OUTPUT=""
-  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"
+  use_trailers "Tests: spec/services/session_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"$'\n'"Verified: red-then-green"
 
   local file
   file=$(write_fixture "tests-missing.txt" "$(_body_with_trailers "Tests: spec/services/session_spec.rb")")
@@ -76,7 +77,7 @@ MSG
 
 @test "multiple Tests paths pass when at least one exists in HEAD tree" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"$'\n'"spec/models/user_spec.rb"
-  use_trailers "Tests: spec/services/session_spec.rb, spec/models/user_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"
+  use_trailers "Tests: spec/services/session_spec.rb, spec/models/user_spec.rb"$'\n'"Slice: handler + service + spec"$'\n'"Red-then-green: yes"$'\n'"Verified: red-then-green"
 
   local file
   file=$(write_fixture "multi-tests.txt" "$(_body_with_trailers "Tests: spec/services/session_spec.rb, spec/models/user_spec.rb")")

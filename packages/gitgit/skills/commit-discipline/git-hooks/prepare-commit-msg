@@ -103,6 +103,7 @@ $(cat <<EOF
 Tests: <comma-separated spec paths that ran green>
 Slice: ${slice_suggestion}
 Red-then-green: <yes | n/a (reason) | <path> | <path>:<line> # <test-name>>${visual_line}
+Verified: <operator-confirmed | <path> | red-then-green | build-only | n/a (reason)>
 
 # Replace the placeholder values above before committing.
 # Red-then-green forms: "yes" (self-attestation, rejected under
@@ -110,6 +111,12 @@ Red-then-green: <yes | n/a (reason) | <path> | <path>:<line> # <test-name>>${vis
 #   spec must be in the staged diff), or "<path>:<line> # <test-name>"
 #   (line is 1-based; test name must match a test declaration in the
 #   staged blob). See /gitgit:commit-discipline.
+# Verified forms: "operator-confirmed" (operator saw the change work this
+#   session), "<path>" (artefact in repo: screenshot/recording/log),
+#   "red-then-green" (covered by the Red-then-green trailer; not allowed
+#   when Red-then-green is n/a), "build-only" (compiles but not exercised;
+#   rejected under GITGIT_AUTONOMOUS=1), or "n/a (rationale)" with a
+#   recognised category token (see /gitgit:commit-discipline).
 # Auto-detected from your staged diff:
 #   Layers: ${layer_summary}
 #   Suggested Slice: ${slice_suggestion}

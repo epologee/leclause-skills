@@ -88,4 +88,16 @@ gitgit_synthesize_example() {
   if [[ -n "$visual_value" ]]; then
     printf 'Visual: %s\n' "$visual_value"
   fi
+  # Verified line: drops on opt-out tokens, mirrors RTG for non-opt-outs.
+  case "$slice_token" in
+    docs-only|config-only|migration-only|spec-only|chore-deps|revert|merge|wip)
+      ;;
+    *)
+      if [[ "$rtg_value" =~ ^n/a ]]; then
+        printf 'Verified: <operator-confirmed | <path> | build-only | n/a (reason)>\n'
+      else
+        printf 'Verified: <operator-confirmed | <path> | red-then-green | build-only | n/a (reason)>\n'
+      fi
+      ;;
+  esac
 }

@@ -40,12 +40,14 @@ commit_with_trailers_cmd() {
   export GIT_SHIM_SHORTSTAT=" 3 files changed, 25 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/session.rb\napp/services/session_service.rb\nspec/models/session_spec.rb')"
   # Trailers have Slice and Red-then-green but no Tests.
-  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Slice: handler + spec\nRed-then-green: yes')"
+  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Slice: handler + spec\nRed-then-green: yes
+Verified: red-then-green')"
 
   local cmd
   cmd=$(commit_with_trailers_cmd \
     "Session boundary model for meter events" \
-    "$(printf 'Slice: handler + spec\nRed-then-green: yes')")
+    "$(printf 'Slice: handler + spec\nRed-then-green: yes
+Verified: red-then-green')")
 
   run_dispatch "$cmd"
 
@@ -56,12 +58,14 @@ commit_with_trailers_cmd() {
 @test "missing-tests violation: error includes synthesized spec-path in example" {
   export GIT_SHIM_SHORTSTAT=" 3 files changed, 25 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/session.rb\napp/services/session_service.rb\nspec/models/session_spec.rb')"
-  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Slice: handler + spec\nRed-then-green: yes')"
+  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Slice: handler + spec\nRed-then-green: yes
+Verified: red-then-green')"
 
   local cmd
   cmd=$(commit_with_trailers_cmd \
     "Session boundary model for meter events" \
-    "$(printf 'Slice: handler + spec\nRed-then-green: yes')")
+    "$(printf 'Slice: handler + spec\nRed-then-green: yes
+Verified: red-then-green')")
 
   run_dispatch "$cmd"
 
@@ -73,12 +77,14 @@ commit_with_trailers_cmd() {
 @test "missing-tests violation: error includes opt-out enum" {
   export GIT_SHIM_SHORTSTAT=" 3 files changed, 25 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/session.rb\napp/services/session_service.rb\nspec/models/session_spec.rb')"
-  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Slice: handler + spec\nRed-then-green: yes')"
+  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Slice: handler + spec\nRed-then-green: yes
+Verified: red-then-green')"
 
   local cmd
   cmd=$(commit_with_trailers_cmd \
     "Session boundary model for meter events" \
-    "$(printf 'Slice: handler + spec\nRed-then-green: yes')")
+    "$(printf 'Slice: handler + spec\nRed-then-green: yes
+Verified: red-then-green')")
 
   run_dispatch "$cmd"
 
@@ -95,13 +101,15 @@ commit_with_trailers_cmd() {
   export GIT_SHIM_SHORTSTAT=" 2 files changed, 20 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/user.rb\nspec/models/user_spec.rb')"
   # Trailers present but no Slice.
-  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Tests: spec/models/user_spec.rb\nRed-then-green: yes')"
+  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Tests: spec/models/user_spec.rb\nRed-then-green: yes
+Verified: red-then-green')"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/models/user_spec.rb"
 
   local cmd
   cmd=$(commit_with_trailers_cmd \
     "User validation rule for enrollment" \
-    "$(printf 'Tests: spec/models/user_spec.rb\nRed-then-green: yes')")
+    "$(printf 'Tests: spec/models/user_spec.rb\nRed-then-green: yes
+Verified: red-then-green')")
 
   run_dispatch "$cmd"
 
@@ -112,13 +120,15 @@ commit_with_trailers_cmd() {
 @test "missing-slice violation: error includes opt-out enum" {
   export GIT_SHIM_SHORTSTAT=" 2 files changed, 20 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/user.rb\nspec/models/user_spec.rb')"
-  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Tests: spec/models/user_spec.rb\nRed-then-green: yes')"
+  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Tests: spec/models/user_spec.rb\nRed-then-green: yes
+Verified: red-then-green')"
   export GIT_SHIM_LS_TREE_OUTPUT="spec/models/user_spec.rb"
 
   local cmd
   cmd=$(commit_with_trailers_cmd \
     "User validation rule for enrollment" \
-    "$(printf 'Tests: spec/models/user_spec.rb\nRed-then-green: yes')")
+    "$(printf 'Tests: spec/models/user_spec.rb\nRed-then-green: yes
+Verified: red-then-green')")
 
   run_dispatch "$cmd"
 
@@ -176,12 +186,14 @@ commit_with_trailers_cmd() {
   # merges it into stdout so the denial message carries the violation code.
   export GIT_SHIM_SHORTSTAT=" 3 files changed, 25 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/session.rb\napp/services/session_service.rb\nspec/models/session_spec.rb')"
-  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Slice: handler + spec\nRed-then-green: yes')"
+  export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT="$(printf 'Slice: handler + spec\nRed-then-green: yes
+Verified: red-then-green')"
 
   local cmd
   cmd=$(commit_with_trailers_cmd \
     "Session boundary model for meter events" \
-    "$(printf 'Slice: handler + spec\nRed-then-green: yes')")
+    "$(printf 'Slice: handler + spec\nRed-then-green: yes
+Verified: red-then-green')")
 
   run_dispatch "$cmd"
 

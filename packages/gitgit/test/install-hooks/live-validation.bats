@@ -71,6 +71,7 @@ session starts in the analytics pipeline.
 Tests: spec/foo_spec.rb
 Slice: handler + spec
 Red-then-green: yes
+Verified: red-then-green
 BODY
 )
 
