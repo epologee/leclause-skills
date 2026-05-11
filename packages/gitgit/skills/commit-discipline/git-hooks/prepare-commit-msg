@@ -96,6 +96,7 @@ if declare -F _vb_is_ui_touch >/dev/null 2>&1; then
 fi
 
 template_block="${template_block}
+$(cat <<EOF
 
 <WHY: replace this with two sentences explaining why this change is needed>
 
@@ -111,7 +112,9 @@ Red-then-green: <yes | n/a (reason) | <path> | <path>:<line> # <test-name>>${vis
 #   staged blob). See /gitgit:commit-discipline.
 # Auto-detected from your staged diff:
 #   Layers: ${layer_summary}
-#   Suggested Slice: ${slice_suggestion}"
+#   Suggested Slice: ${slice_suggestion}
+EOF
+)"
 
 if [[ -n "$tests_suggestion" ]]; then
   template_block="${template_block}
