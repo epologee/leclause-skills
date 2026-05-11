@@ -96,6 +96,24 @@ Examples:
 
 Without `--context`, saysay falls back to git remote + branch (max 2 words). With `--no-context` the prefix is omitted entirely.
 
+## Language of the spoken text
+
+The spoken text is ALWAYS in **the language of the system default voice** on the user's machine, regardless of the language of the work being produced. The `say` command pipes through a single voice (the one the user has configured in System Settings); piping any other language through that voice produces unintelligible speech.
+
+Detect the system voice language once at activation:
+
+```bash
+defaults read -g AppleLanguages 2>/dev/null | head -1
+# or, for the active say voice:
+say -v '?' | head -1
+```
+
+Use the result as the speech language for the entire session. If detection fails, fall back to the language the user is talking to you in.
+
+Speech is for the user, not for the work product. If you are writing an English Slack message, an English commit message, an English PR title, an English email to a customer, and the system voice is Dutch, the **speech still goes in Dutch**. Describe the work product, do not read it. "Slack-bericht klaar, drie alinea's, sluit af met operationele check" is right when the system voice is Dutch, even when the Slack text itself is in English. The opposite holds when the system voice is English and you are working on Dutch content: describe in English, do not pipe Dutch sentences into an English voice.
+
+Red flag: if the text you are about to pipe into `saysay` quotes the work product directly in a different language than the system voice, stop. Rewrite the saysay input in the system voice's language, describing the work product instead of reproducing it.
+
 ## Translating to speech
 
 Speech replaces the screen. That means: do not read out what is there, but convey what the user needs to know. This is the core of the skill.
