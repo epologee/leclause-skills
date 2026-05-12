@@ -14,10 +14,57 @@ claude plugins install drydry@leclause
 
 One user-invocable surface: `/drydry:drydry`. The orchestrator routes between two modes:
 
-- **Quick mode**: ad-hoc "is this duplicate?" check mid-session. Inline answer with a runnable verifier-grep. No artefact. Trigger with `quick` in the prompt or by naming a small scope (two snippets, a transcript reference).
-- **Audit mode** (default for non-trivial scope): full sweep producing a `<name>-drydry-findings.md` artefact with `## Detection method chosen` and `## Findings` sections, plus a `## Side quests` section when out-of-scope work surfaces.
+- **Quick mode**: ad-hoc "is this duplicate?" check mid-session. Inline answer with a runnable verifier-grep. No artefact. Trigger with `quick` in the prompt or by pasting two snippets, naming two files, or pointing at a recent transcript excerpt. Scope is whatever the operator explicitly hands over: pasted code, named files, or a one-line description of the suspected partner. The orchestrator does not search project history or memory; it inspects only what the prompt names.
+- **Audit mode** (default for non-trivial scope): full sweep producing a `<scope>-drydry-findings-<timestamp>.md` artefact. `<scope>` is a slug of the directory or package the audit covered (for example `app-models-drydry-findings-2026-05-12T14-23.md`); the timestamp is the checklist version so two same-session audits do not silently overwrite each other.
 
-Six agent-only sub-skills handle the substance. Three of them implement the eight-chapter framework directly: `sweep` (Chapter 2 verifier-burden detection), `checklist` (Chapter 3 allow-list bootstrap), `triage` (Chapter 5 three-bucket convergence). The other three are extensions outside the eight chapters that the operator can dispatch when the duplication question crosses an axis the core pipeline does not cover: `learn` (online research enriching the pattern vocabulary), `upstream` (operator code versus framework offerings), `instructions` (CLAUDE.md as a duplication-cause). The operator does not invoke any sub-skill directly; the orchestrator routes. The operator can hint a sub-skill by name in the prompt and the orchestrator will dispatch.
+### Worked example: full audit invocation
+
+Operator types:
+
+```
+/drydry:drydry audit app/services/ for duplicated service-object responsibilities
+```
+
+The orchestrator picks audit mode (rule 5 of the Routing table). It bootstraps the Rails seed checklist (because `app/services/` plus a Gemfile in the project root resolves the domain hint), dispatches `drydry:sweep` over the scope, runs `drydry:triage` on the findings, applies the Chapter 7 contrarian gate to any `needs-design` verdicts, and writes `app-services-drydry-findings-2026-05-12T14-23.md` in the project root.
+
+The artefact has the shape:
+
+```markdown
+## Detection method chosen
+
+Scope: `app/services/` (excludes `app/services/legacy/`)
+Checklist: rails v2026-05-12T14-23 (seven baked patterns plus two
+operator-named seeds, plus `devise-helpers` extension from Gemfile)
+Subagent: drydry:sweep (Sonnet Explore agent), verifier-burden enforced
+locally (every finding's verifier_command was re-run by drydry:sweep
+before this artefact landed)
+
+## Findings
+
+### Pattern: service-objects -- overlapping responsibilities
+
+- Finding 1
+  - file_a: `app/services/user_creator.rb:8`
+  - file_b: `app/services/user_onboarder.rb:14`
+  - drift_hypothesis: both write to `users.signed_up_at`; the rename
+    to `users.activated_at` planned for next quarter will land on
+    only one path, silently misreporting signup activation
+  - verifier_command: `rg -n 'signed_up_at' app/services/`
+  - triage: cheap-and-safe
+  - cost: 3 files, 0 public symbols, mechanical (rename + share)
+
+## Side quests
+
+The audit surfaced an out-of-scope follow-up: the `UserSession` model
+has its own activation logic in `app/models/user_session.rb:22` that
+matches the same pattern but lives outside `app/services/`. Recommend
+extending the next sweep to `app/models/`.
+```
+
+`## Side quests` is the channel for out-of-scope follow-ups the audit surfaced without addressing. They are findings the operator should fold into the next sweep, a separate mission, or simply file for awareness; the audit does not address them.
+
+Six agent-only sub-skills handle the substance. Three of them implement the eight-chapter framework directly: `sweep` (Chapter 2 verifier-burden detection), `checklist` (Chapter 3 allow-list bootstrap), `triage` (Chapter 5 three-bucket convergence). The other three are extensions outside the eight chapters that the operator can dispatch when the duplication question crosses an axis the core pipeline does not cover: `learn` (online research enriching the pattern vocabulary), `upstream` (operator code versus framework offerings; particularly valuable for native-platform code where the standard library or framework often offers the helper the operator just hand-rolled), `instructions` (CLAUDE.md as a duplication-cause). The operator does not invoke any sub-skill directly; the orchestrator routes. The operator can hint a sub-skill by name in the prompt and the orchestrator will dispatch (`/drydry:drydry upstream` audits only against frameworks; `/drydry:drydry instructions` audits only the CLAUDE.md layer).
+
 
 ## The eight chapters
 
@@ -181,7 +228,48 @@ Signatures to look for:
 - `\b(tenant|customer|account|workspace)\b` with co-occurrence analysis
 ```
 
-The third example domain (design systems) appears in full in `packages/drydry/skills/checklist/SKILL.md`. The two examples above are enough to show a new operator how to extend the plugin for a domain the seed templates do not yet cover: write a checklist with the same shape, hand it to `drydry:sweep` via the orchestrator's `audit` mode.
+### Example C: iOS/SwiftUI
+
+```markdown
+## Checklist: ios-swiftui v2026-05-12T14-00
+
+### fixture-factories: drifting defaults across previews and tests
+
+Preview-helper or test-helper factories for the same domain type that
+diverge on defaults (timezone, derived fields, optional-vs-required).
+Drift manifests when a derived field gets added to one factory and
+not the other, so a preview shows correct data while a unit test
+silently misses the derivation.
+
+Signatures to look for:
+- `static func fixture\(`
+- `static let preview = `
+- `extension .*: Equatable.*\nstatic let sample`
+
+### app-intents: parallel perform-body boilerplate
+
+AppIntent `perform()` bodies copy-pasted across intents with the same
+context-resolution, error-mapping, and result-shaping logic. Drift
+manifests when one intent learns a new context guard the others do
+not, and an OS-shortcut workflow chains them inconsistently.
+
+Signatures to look for:
+- `func perform\(\) async throws -> some IntentResult`
+- repeated `IntentParameter` declarations across files
+
+### presentation-modifier-stacks: long chains across views
+
+Repeated `.sheet().alert().confirmationDialog()` chains across views
+with minor differences in title or destructive flag. Drift manifests
+when accessibility copy is updated on one stack and the others stay
+stale.
+
+Signatures to look for:
+- `\.sheet\(isPresented:.*\n.*\.alert\(`
+- `\.confirmationDialog\(`
+```
+
+The full set of seed templates (including the design-system and React/TypeScript domains) lives in `packages/drydry/skills/checklist/SKILL.md`. The three examples here are enough to show a new operator how to extend the plugin for a domain the seed templates do not yet cover: write a checklist with the same shape, hand it to `drydry:sweep` via the orchestrator's `audit` mode.
 
 ## Skills in this plugin
 
