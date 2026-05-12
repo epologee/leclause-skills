@@ -17,7 +17,7 @@ One user-invocable surface: `/drydry:drydry`. The orchestrator routes between tw
 - **Quick mode**: ad-hoc "is this duplicate?" check mid-session. Inline answer with a runnable verifier-grep. No artefact. Trigger with `quick` in the prompt or by naming a small scope (two snippets, a transcript reference).
 - **Audit mode** (default for non-trivial scope): full sweep producing a `<name>-drydry-findings.md` artefact with `## Detection method chosen` and `## Findings` sections, plus a `## Side quests` section when out-of-scope work surfaces.
 
-Six agent-only sub-skills handle the substance: `sweep`, `checklist`, `triage`, `learn`, `upstream`, `instructions`. The operator does not invoke them directly; the orchestrator routes. The operator can hint a sub-skill by name in the prompt and the orchestrator will dispatch.
+Six agent-only sub-skills handle the substance. Three of them implement the eight-chapter framework directly: `sweep` (Chapter 2 verifier-burden detection), `checklist` (Chapter 3 allow-list bootstrap), `triage` (Chapter 5 three-bucket convergence). The other three are extensions outside the eight chapters that the operator can dispatch when the duplication question crosses an axis the core pipeline does not cover: `learn` (online research enriching the pattern vocabulary), `upstream` (operator code versus framework offerings), `instructions` (CLAUDE.md as a duplication-cause). The operator does not invoke any sub-skill directly; the orchestrator routes. The operator can hint a sub-skill by name in the prompt and the orchestrator will dispatch.
 
 ## The eight chapters
 
@@ -32,27 +32,31 @@ The drydry framework rests on eight concepts. Three are established literature, 
 - **Type-3**: structurally similar with added or removed or modified statements.
 - **Type-4**: same behaviour, different structure.
 
-Token-based detectors (jscpd, PMD CPD, SwiftLint custom rules, Simian) are reliable for Type-1 through Type-3 because tokens carry the signal. They miss Type-4 by design, because semantic equivalence does not show up in the token stream. The drift that hurts a codebase over months is almost always Type-4: two stop-confirmation surfaces, two snapshot factories, two error-handling middlewares, two onboarding banners that drift apart copy-by-copy.
+Token-based detectors (jscpd, PMD CPD, SwiftLint custom rules, Simian) are reliable for Type-1 through Type-3 because tokens carry the signal. They miss Type-4 by design, because semantic equivalence does not show up in the token stream. The Type-4 case is what hurts most over months in actively maintained codebases: token detectors miss it, so it accumulates invisibly, while Type-1 through Type-3 stay visible to existing tooling. Two stop-confirmation surfaces, two snapshot factories, two error-handling middlewares, two onboarding banners that drift apart copy-by-copy are typical shapes.
 
 **Medium translation.** In prose: two paragraphs that say the same thing in different words across a chapter or a doc set. Token-detectors miss this because the wording is fresh; semantic-detectors find it. In design: two components that solve the same UX need (a confirm-action popover and a confirm-action sheet) with different visual languages. Visual diff tools see them as different; the user feels the inconsistency.
 
-Sources: Roy and Cordy 2007 ("A Survey on Software Clone Detection Research"), SCDetector at ASE 2020, and a continuing line of embedding-based Type-4 detection work through 2024.
+Sources: Roy and Cordy 2007 ("A Survey on Software Clone Detection Research", Queen's School of Computing TR 2007-541), plus a continuing line of embedding-based Type-4 detection work in the years since. See `drydry:learn` for a current literature sweep when a specific paper is needed.
 
 ### Chapter 2: LLM pass with verifier-burden discipline
 
 **Improvisation, verified in practice.** Every LLM-generated finding arrives bundled with a runnable command that re-verifies the finding without the LLM in the loop. In code, that is a `grep`, `rg`, `ast-grep` query, or a `find ... -exec` pair pointing at the divergent files. In prose, it is a regex matching the duplicated semantic pattern across the markdown corpus. In design, it is the two component paths or the two Figma node IDs.
 
-The discipline closes the most common LLM-output failure mode: hallucinated-confidence findings that look plausible but reference files, lines, or features that do not exist. Without the verifier command, the rapport is the LLM's word against the operator's grep; with it, the rapport contains its own counter-test. Hits without a runnable verifier are dropped (enforced in `drydry:sweep`).
+The discipline closes one common LLM-output failure mode: hallucinated-confidence findings that look plausible but reference files, lines, or features that do not exist. Without the verifier command, the rapport is the LLM's word against the operator's grep; with it, the rapport contains its own counter-test. Hits without a runnable verifier are dropped (enforced in `drydry:sweep`).
+
+The verifier proves existence, not semantic equivalence. A `grep` that re-finds both locations confirms the files and lines exist; it does not confirm the drift hypothesis is real or that the two paths share a behaviour contract. Every finding is a candidate until a human reads both paths; false positives are most common in the Type-4 case where the LLM claimed semantic equivalence between structurally different code.
 
 **Medium translation.** Code findings carry tuples `(pattern_id, file_a:line_a, file_b:line_b, drift_hypothesis, verifier_command)`. Prose findings carry `(pattern_id, doc_a:section_a, doc_b:section_b, drift_hypothesis, regex_or_search_query)`. Design findings carry `(pattern_id, component_a, component_b, drift_hypothesis, design-system query)`.
 
-Family in literature: adjacent to "tool-grounded generation", "retrieval-augmented verification", and "self-consistency with provenance". No canonical name, but well-trodden ground in 2024-2025 LLM-evaluation work.
+Family in literature: adjacent to "tool-grounded generation", "retrieval-augmented verification", and "self-consistency with provenance". Improvisation, not yet named in the literature.
 
 ### Chapter 3: Allow-list scoping (checklist over open search)
 
 **Established as a discipline.** Atul Gawande's *The Checklist Manifesto* (2009) is the canonical reference; the lineage runs back through aviation pre-flight, surgical safety checklists (WHO 2008), SOC2 audit programs, NIST control frameworks. The principle: when the question is "find X in this haystack", the search space is too large for open-ended exploration. The operator commits to a short, named list of patterns up front; the audit succeeds or fails against that list, not against an unbounded sense of "did we catch everything".
 
 In drydry: every audit run starts with a checklist of six to ten patterns (bootstrapped by `drydry:checklist`). The Sonnet pass is allowed to find anything from that list. It is *not* allowed to invent new categories on the fly; "interesting but off-list" findings go to a `## Checklist gaps` section in the rapport for the operator to fold into the next sweep, not into this one. The separation prevents subagent scope-drift and keeps the rapport deterministic.
+
+A clean report is scoped to the checklist, not to the codebase. Zero findings on a sharp checklist proves the listed patterns are absent; it does not prove the codebase has no duplication. The `## Checklist gaps` section is the signal that the checklist needs extending in a follow-up sweep.
 
 **Medium translation.** The seed templates in `drydry:checklist` cover iOS/SwiftUI, Rails, React/TypeScript, Markdown prose, and design tokens. A generic fallback exists for projects that do not match any baked-in seed.
 
@@ -72,7 +76,7 @@ In drydry: every audit run starts with a checklist of six to ten patterns (boots
 - **partial overlap**: convergence requires design judgement (which side wins, what to name the unified abstraction, how callers migrate). Surface the design question in the artefact under `design_question:`; promote to cheap-and-safe when the operator answers.
 - **needs-design / by-design**: looks like drift but is actually constrained by a framework, an external API shape, or a genuine domain difference. Document why it is *not* drift so future audits do not re-flag it.
 
-The framing rhymes with ICE (Impact/Confidence/Ease), RICE, and defect-triage matrices from QA literature; the three-bucket form is the minimum that does the job. The bucket is the verdict; the cost is the evidence for the verdict.
+The framing rhymes with ICE (Impact/Confidence/Ease), RICE, and defect-triage matrices from QA literature. Three buckets is the plugin's chosen minimum: fewer buckets lose the design-judgement case, more buckets dilute decisions. The bucket is the verdict; the cost is the evidence for the verdict.
 
 ### Chapter 6: Two-fates discipline (fix or reject-with-evidence)
 
@@ -95,7 +99,7 @@ External relatives: red-team review, devil's advocate (canonised by Aquinas, the
 
 **Established.** Reproducibility hygiene. The rapport contains not just the findings but the method that produced them: scope (which directories, which exclusions), checklist (which patterns, which version), tool (which subagent prompt, which verifier conventions). Operators rerunning the audit a quarter later reproduce the run without re-deriving the method from a Slack thread.
 
-References: the "methods section" convention in academic papers (since the seventeenth century); SRE runbooks; compliance audit trails (SOC2, ISO 27001); reproducible-research conventions in scientific computing.
+References: the "methods section" convention in academic papers; SRE runbooks; compliance audit trails (SOC2, ISO 27001); reproducible-research conventions in scientific computing.
 
 In drydry: every audit run produces a `<scope>-drydry-findings.md` artefact in two halves, `## Detection method chosen` at the top, `## Findings` below. The method paragraph cites the checklist version, names the subagent, lists the verifier conventions. If the rapport later turns out to be wrong, the method paragraph is what the operator inspects to understand *why* the method missed it, so the next sweep can be sharper.
 
@@ -106,7 +110,7 @@ Two of the three example domains from the framework's original write-up appear b
 ### Example A: code (Rails)
 
 ```markdown
-## Checklist: rails v2026-05-12-1
+## Checklist: rails v2026-05-12T14-00
 
 ### service-objects: overlapping responsibilities
 
@@ -144,7 +148,7 @@ Signatures to look for:
 ### Example B: prose
 
 ```markdown
-## Checklist: markdown-prose v2026-05-12-1
+## Checklist: markdown-prose v2026-05-12T14-00
 
 ### duplicate-definitions: a term defined twice
 

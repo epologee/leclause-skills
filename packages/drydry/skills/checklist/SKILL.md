@@ -50,7 +50,7 @@ Signatures to look for:
 ### <pattern_id_2>: ...
 ```
 
-Version the checklist with a date stamp (`v2026-05-12-1`) so the audit artefact's `## Detection method chosen` paragraph can cite it (Chapter 8).
+Version the checklist with a full date-time stamp (`v2026-05-12T14-23`, derived from `date +%Y-%m-%dT%H-%M`) so the audit artefact's `## Detection method chosen` paragraph can cite it (Chapter 8). The timestamp form is preferred over a same-day counter because there is no persistent state holding "today's counter"; two audits an hour apart produce two distinct labels without any bookkeeping.
 
 ## Seed templates (built-in)
 
@@ -119,7 +119,7 @@ A fallback for projects that do not match any of the above. The seed has three p
 3. **Inspect the scope (if provided).** Run `ls` on the scope, sniff a manifest (`Package.swift`, `Gemfile`, `package.json`), and add domain-specific extensions to the seed (for example: if `Gemfile` contains `devise`, add a `devise-helpers` pattern).
 4. **Add operator seed patterns.** Append each item from `seed_patterns` as a new pattern entry. The seed-pattern title becomes the `pattern_id`; the description is left as a one-line stub for the operator to flesh out next time.
 5. **Cap at ten.** When the combined list exceeds ten, keep the seed-template items and the operator-named items; drop the optional manifest-inferred extensions first.
-6. **Stamp the version.** Format: `v<YYYY-MM-DD>-<n>` where `<n>` increments per checklist generated on the same day. Date from `date +%Y-%m-%d`.
+6. **Stamp the version.** Format: `v<YYYY-MM-DD>T<HH>-<MM>` from `date +%Y-%m-%dT%H-%M`. The timestamp is the only label needed; no persistent counter is consulted.
 7. **Return.** Hand back the markdown checklist to the caller.
 
 ## Rules

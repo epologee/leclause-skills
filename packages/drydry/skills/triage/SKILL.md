@@ -42,7 +42,7 @@ Return the findings list, with one `triage:` and one `cost:` line added per find
   - drift_hypothesis: <as-is from sweep>
   - verifier_command: <as-is from sweep>
   - verifier_expected: <as-is from sweep>
-  - triage: cheap-and-safe | partial | needs-design
+  - triage: cheap-and-safe | partial | needs-design   (the by-design case is a sub-class of needs-design; the bucket label stays needs-design)
   - cost: <one-line convergence cost: file count touched, public-API surface affected, migration complexity>
 ```
 
@@ -76,9 +76,9 @@ Signals:
 
 Convergence path: surface the design question in the findings artefact under `design_question:`. When the operator answers, the finding promotes to cheap-and-safe.
 
-### needs-design / by-design
+### needs-design
 
-The finding looks like a duplicate from outside, but a real constraint or genuine domain difference makes convergence either non-trivial or wrong. Document why so future audits do not re-flag it (Chapter 7's contrarian second-pass gates this verdict).
+The finding looks like a duplicate from outside, but a real constraint or genuine domain difference makes convergence either non-trivial or wrong. Document why so future audits do not re-flag it (Chapter 7's contrarian second-pass gates this verdict). When the blocking constraint is a framework or external API ("by-design" in informal speech), the verdict and the artefact entry are still `needs-design`; the constraint becomes the body of the `design_question:` line.
 
 Signals:
 
