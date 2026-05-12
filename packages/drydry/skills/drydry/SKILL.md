@@ -50,31 +50,25 @@ The framework rests on eight concepts (see `README.md` for the full text): Type-
 
 ## Routing
 
-Two modes. The orchestrator picks one before doing any work.
+Two modes. The orchestrator picks one before doing any work. The decision rules are the table below; the rationale and edge-case prose follow as commentary.
 
-### Explicit keyword wins
+| # | Signal (from args or context) | Route to |
+|---|-------------------------------|----------|
+| 1 | `args` contains `quick` or `mode: quick` | quick mode |
+| 2 | `args` contains `audit` or `mode: audit` | audit mode |
+| 3 | `args` contains `sweep` / `checklist` / `triage` / `learn` / `upstream` / `instructions`, or `skill: <name>` | dispatch that sub-skill directly with the remaining args as its input |
+| 4 | `args` or context paste names two snippets, one file, or a transcript excerpt | quick mode |
+| 5 | `args` or context names a directory, package, or project root | audit mode |
+| 6 | Operator phrasing is ad-hoc ("is dit dubbel?", "did I just write this?", "are these the same?") | quick mode |
+| 7 | Operator phrasing suggests breadth ("walk the project", "find parallel paths", "full sweep") | audit mode |
+| 8 | Operator names a domain hint (Swift, Rails, prose, design-tokens) | audit mode |
+| 9 | None of the above | ask once (see "No signal" below) |
 
-When `args` contains explicit routing keywords, route accordingly without further inspection. Two equivalent forms are accepted (the bare form is what an operator types after `/drydry:drydry`; the keyed form is what an autonomous caller passes through `args`):
+Rules 1-3 are checked first and short-circuit; rules 4-8 are inspected in order and the first match wins; rule 9 is the fallback. The autonomous-caller path overrides rule 9 (see "Skill-invoked" section).
 
-- `quick` or `mode: quick` -> quick mode
-- `audit` or `mode: audit` -> audit mode
-- `sweep` / `checklist` / `triage` / `learn` / `upstream` / `instructions`, or `skill: <name>` -> dispatch that sub-skill directly with the remaining args as its input
+### Rationale and edge cases
 
-### Implicit signal from context
-
-Read what the operator pasted, what is in the recent transcript, and what `git status` shows. Beyond `args` the frontmatter allows `git status`, `git log`, `git diff` to gauge recent activity.
-
-- **Quick mode** is the right fit when:
-  - The operator pasted two snippets, two file references, or a transcript excerpt
-  - The scope is a single file or a pair of files
-  - The phrasing is ad-hoc ("wacht eens, is dit dubbel?", "did I just write this?", "are these the same?")
-  - The expected output is an inline yes/no plus a runnable verifier, not a full report
-
-- **Audit mode** is the right fit when:
-  - The operator names a directory, package, or project root
-  - The scope is "audit our codebase for duplication"
-  - The phrasing suggests breadth ("walk the project", "find the parallel paths", "do a full sweep")
-  - The operator mentions a domain hint (Swift, Rails, prose, design-tokens) that maps to a checklist
+Beyond `args` the frontmatter allows `git status`, `git log`, `git diff` to gauge recent activity, which feeds rules 4-8.
 
 ### Default and override
 

@@ -91,9 +91,11 @@ For each framework selected, identify the operator's helper-shaped code: standal
 
 Each candidate becomes a tuple `(helper_path:line, symbol_name, surface)` for the duplication subagent.
 
-### 3. SPAWN duplication subagent per framework
+### 3. SPAWN duplication subagent per framework (with version-keyed cache gate)
 
-For each framework, spawn one Sonnet Agent with this brief (inspire-style for the discovery, ground-style for the verification):
+For each framework, decide first whether a live WebSearch pass is necessary. The discipline is "verify against the pinned framework version", not "fetch documentation every time". When the project's lock file (`Gemfile.lock`, `Package.resolved`, `package-lock.json`, `pyproject.lock`) hash for this framework matches the hash recorded in the cache file `<project_root>/.drydry/upstream-cache/<framework>-<pinned-version>.md`, reuse the cached findings and skip the live search. Invalidate and re-run the live search when (a) no cache exists for this framework or version, (b) the lock-file hash differs, or (c) the pinned version is newer than the subagent's training cutoff (in which case the cache cannot be trusted and the search is needed for ground truth).
+
+When a live search is needed, spawn one Sonnet Agent with this brief (inspire-style for the discovery, ground-style for the verification):
 
 ```
 You audit a project for duplication of <framework> functionality.
@@ -122,9 +124,9 @@ operator's helper adds value the upstream does not provide; explain
 in one sentence).
 ```
 
-### 4. CAP and RETURN
+### 4. CAP, CACHE, RETURN
 
-Apply `max_helpers_per_framework` per framework. Return the assembled markdown to the caller.
+Apply `max_helpers_per_framework` per framework. Write the per-framework findings to `<project_root>/.drydry/upstream-cache/<framework>-<pinned-version>.md` with a header line that records the lock-file hash; this is what step 3's cache gate will read on the next run. Return the assembled markdown to the caller.
 
 ## Common upstream-duplication patterns to watch for
 

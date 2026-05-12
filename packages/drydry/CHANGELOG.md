@@ -17,9 +17,9 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
 
-## [v1.0.7]
+## [v1.0.8]
 
 ### Added
 
-- `/drydry:drydry`: one user-invocable command that routes between two modes. Quick mode answers "is this duplicate?" inline with a runnable verifier-grep and no artefact. Audit mode produces a `<scope>-drydry-findings-<timestamp>.md` artefact with a detection-method paragraph and a triaged findings list.
-- `/drydry:drydry learn <topic>`: explicit one-off enrichment that researches de-duplication patterns from external sources and writes proposals to `<project_root>/.drydry/learnings/`. The next audit reads `robust`-confidence proposals automatically; `probable` and `fragile` proposals stay write-only until the operator promotes them.
+- `/drydry:drydry`: one user-invocable command, two modes. Quick mode answers "is this duplicate?" inline with a verifier-grep. Audit mode produces a `<scope>-drydry-findings-<timestamp>.md` artefact.
+- `/drydry:drydry learn <topic>`: writes research proposals to `<project_root>/.drydry/learnings/`. The next audit folds in `robust`-confidence proposals automatically.
