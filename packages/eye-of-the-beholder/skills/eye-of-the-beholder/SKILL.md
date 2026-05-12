@@ -114,6 +114,58 @@ Express problems as ratios, not pixels:
 - "This is a printed A4 sheet. Tschichold's ratio 1:1:2:3 at a 1.5cm base gives: top 1.5cm, inner 1.5cm, outer 3cm, bottom 4.5cm."
 - "Email-body card has 20/24px padding on 14px body-font = 1.4x/1.7x. Below the 2.5x threshold, and far below Tschichold for document canvas. Cramped."
 
+## Z-stacking: the same discipline, depth as the axis
+
+Space (x/y) is one axis. Color is another. Depth (z) is a third. Before color and time, Z is the most commonly mis-diagnosed axis: when the user reports that an element "sits below" / "is partially missing" / "leeft onderop", the reflex is to bump offset or padding. That is the wrong diagnosis 90% of the time. The element is in the right position; it is being **occluded** by a sibling or a parent material that renders above it in the rendering tree.
+
+### Language signals to read as Z, not x/y
+
+Treat these as Z-axis terms by default, not screen-position terms:
+
+| User says | Means |
+|-----------|-------|
+| "leeft onderop, moet bovenop" / "sits below, should sit on top" | Occluded; bring forward in Z. |
+| "wordt verstopt door X" / "is hidden behind X" | X has a higher Z than the receiver. |
+| "wordt afgesneden" / "is cut off" / "partially missing" | Either clipped by an ancestor frame OR occluded by a sibling. Distinguish before fixing. |
+| "het hoort over de pill heen" / "should sit on top of the pill" | The element must render in a Z-layer above the receiver. |
+
+Only switch to a positioning interpretation when the visual evidence rules out occlusion (the obscured region does NOT match the bounds of any rendered material/sibling above).
+
+### Visual Z observation
+
+20. **Is anything partially clipped or missing?** A badge whose lower half is gone is usually not positioned wrong; it is drawn behind a sibling or a material that happens to render on top. The MISSING region matches the bounds of the occluder almost perfectly. Trace the boundary of the gap; if it coincides with a sibling's edge, that sibling is the culprit.
+
+21. **Is the receiver wrapped in a material that re-orders Z?** Apple's Liquid Glass (`glassEffect`, `GlassEffectContainer`), CSS `backdrop-filter`, custom `CALayer` materials, and similar composited surfaces can render the material plane ON TOP of overlays attached to the same view. The same is true for canvas elements, WebGL surfaces, and `<dialog>` top-layer in HTML. Materials promote themselves; siblings get demoted.
+
+22. **Did you move it instead of un-occluding it?** If your first fix to an "onderop" report was to bump x/y or padding, you misdiagnosed. Revert the offset; find the Z-cause first; then re-apply offset only if needed.
+
+### Looking beneath the screenshot: the rendering tree
+
+Code-level audits when occlusion is suspected:
+
+- **Source order in a stack container** (SwiftUI `ZStack`, custom `Layout`, HTML positioned siblings, CSS `z-index` stacking context): later siblings render on top.
+- **Modifier chain order** (SwiftUI `.overlay()` / `.background()` chained off a view): the overlay closest to the bottom of the chain is on top, except when a material modifier in between promotes its plane.
+- **Compositing escape hatches:** SwiftUI `.compositingGroup()` / `.drawingGroup()` on the occluded view promote it to its own layer that survives parent material flattening. CSS `isolation: isolate` / `transform: translateZ(0)` does the analogous thing for stacking-context boundaries.
+- **`zIndex` works only between true stack siblings**, not across overlay/material chains. Reach for it only after you have a ZStack/positioned context to apply it in.
+- **Custom layouts and renderers:** subview Z-order follows the @ViewBuilder return order in SwiftUI Layout (not `.place(...)` call order). In Canvas/WebGL the draw order is the call order. In CSS, document order plus stacking context (positioned + z-index, opacity < 1, transform, filter, isolation).
+
+### Fix order
+
+1. **Confirm the cause is occlusion, not position.** Visual check: does the missing region match the bounds of a material/sibling above? If yes → Z. If no → consider clipping by ancestor frame (CSS `overflow: hidden`, SwiftUI `.clipped()`, SVG `viewBox`). Only after both are ruled out, consider positioning.
+2. **Find the smallest scope that escapes the occluder.** Order of escalation: (a) reorder siblings in the existing stack; (b) extract the obscured element into a sibling outside the material's compositing scope; (c) add a compositing-group / isolation boundary; (d) move it higher in the hierarchy.
+3. **Verify with a screenshot before declaring victory.** If the gap shape persists, you have not addressed the actual occluder.
+4. **Only adjust offset/padding AFTER occlusion is fixed.** The aesthetic placement question is downstream of the Z-correctness question.
+
+### Common Z-axis blind spots
+
+| What goes wrong | Reality |
+|-----------------|---------|
+| User says "onderop / under / hidden", first fix is offset/padding | Wrong diagnosis. The visual evidence is occlusion, not mis-position. Revert and look at Z. |
+| Adding `.zIndex(N)` to an overlay chain | `zIndex` only works between siblings in a ZStack/stacking-context. Across overlay chains it does nothing. |
+| Increasing offset to "push the badge fully outside" until it stops being obscured | Symptom-bandage. The element was always positioned correctly; the Z-fix preserves the design, the offset hack distorts it. |
+| Trusting that "overlay is always on top of receiver" | Holds in plain SwiftUI, breaks when a material modifier (glassEffect, backdrop-filter) sits in the chain between them. |
+| Custom Layout subviews appear in wrong Z | Z follows @ViewBuilder return order, not `.place(...)` call order. Re-order the builder, not the placement calls. |
+
 ## Color: the same discipline, a different axis
 
 Space is one axis on which you look observationally. Color is a second. The same attitude works: not "these two cells both have a border so they are separated" but "do I see the difference?" Not "it says `text-muted` so the text is readable" but "can I comfortably read this without squinting?"
