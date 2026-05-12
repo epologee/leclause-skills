@@ -11,7 +11,7 @@ description: >
   write-ups, framework-specific deduplication patterns, design-system
   convergence techniques, and prose-deduplication tactics. Synthesises
   findings into checklist enrichment proposals and writes them to
-  ~/.claude/drydry/learnings/<date>-<topic>.md. One-shot, not scheduled.
+  <project_root>/.drydry/learnings/<date>-<topic>.md. One-shot, not scheduled.
 allowed-tools:
   - Agent
   - WebSearch
@@ -26,7 +26,7 @@ effort: high
 
 # Learn
 
-The online research pass behind the drydry plugin. Enriches the checklist vocabulary by reading what the broader community has written about parallel-paths detection in the last year, then writes checklist-enrichment proposals into `~/.claude/drydry/learnings/`. Not user-invocable; the operator types `/drydry:drydry learn <topic>` and the orchestrator routes here.
+The online research pass behind the drydry plugin. Enriches the checklist vocabulary by reading what the broader community has written about parallel-paths detection in the last year, then writes checklist-enrichment proposals into the project's `.drydry/learnings/` directory (the path is the caller's choice; defaults are described below). Not user-invocable; the operator types `/drydry:drydry learn <topic>` and the orchestrator routes here.
 
 The premise: the whole Claude-coding world is running into the same kind of duplication, because agents systematically generate fresh code over reusing existing code. Standing still means falling behind. A periodic `learn` pass keeps the checklist seeds and the verifier conventions current.
 
@@ -36,11 +36,12 @@ Caller supplies through `args`:
 
 - **`topic`**: optional topic narrowing (e.g., "swift-app-intents", "rails-service-objects", "react-form-state", "design-token-drift"). When absent, `learn` runs a broad sweep across all five tracks.
 - **`depth`**: optional `quick` / `normal` / `deep`. Default `normal`. Quick is one round per track; deep is two rounds plus a contrarian pass (mirrors the `recursion:research` schema).
-- **`since`**: optional date stamp (`2025-01-01`). Filters search queries to the named window. Default is the date of the most recent file in `~/.claude/drydry/learnings/`, or "last 12 months" when the folder is empty.
+- **`since`**: optional date stamp (`2025-01-01`). Filters search queries to the named window. Default is the date of the most recent file in the learnings directory, or "last 12 months" when the folder is empty.
+- **`learnings_dir`**: optional path override for the output directory. Default is `<project_root>/.drydry/learnings/`. The caller passes this when the project is not the right scope (for example, a one-off cross-project research pass).
 
 ## Output contract
 
-A markdown file at `~/.claude/drydry/learnings/<YYYY-MM-DD>-<topic-or-broad>.md` with three sections:
+A markdown file at `<project_root>/.drydry/learnings/<YYYY-MM-DD>-<topic-or-broad>.md` with three sections:
 
 ```markdown
 ## Detection method chosen
@@ -81,7 +82,7 @@ Mirror the `recursion:research` schema, narrowed to the drydry domain.
 
 1. Date: `date +%Y-%m-%d`.
 2. `mkdir -p ~/.claude/drydry/learnings`.
-3. Read the most recent file in `~/.claude/drydry/learnings/` to set the default `since` window.
+3. Read the most recent file in `<project_root>/.drydry/learnings/` to set the default `since` window.
 4. Read `packages/drydry/skills/checklist/SKILL.md` for the current seed templates (so the research does not re-propose existing patterns).
 5. Read the current `args.topic` and decide which of the five tracks are in scope.
 
@@ -144,7 +145,7 @@ For the patterns surviving round 2, spawn one Opus agent with a contrarian brief
 
 ### 3. WRITE
 
-Synthesise the surviving candidates into the output file at `~/.claude/drydry/learnings/<date>-<topic>.md`. Group by proposed seed domain. Include the Detection method paragraph (Chapter 8) so the operator can reproduce the research.
+Synthesise the surviving candidates into the output file at `<project_root>/.drydry/learnings/<date>-<topic>.md`. Group by proposed seed domain. Include the Detection method paragraph (Chapter 8) so the operator can reproduce the research.
 
 ### 4. NOTIFY
 
@@ -152,7 +153,7 @@ Return to the caller: count of new pattern proposals, by-domain breakdown, path 
 
 ## Rules
 
-- **No auto-merge.** This skill writes proposals, never edits the seed templates in `drydry:checklist`. The operator decides.
+- **No auto-merge of seed templates.** This skill writes proposals to disk; the seed templates in `drydry:checklist` are never mutated by `learn`. The reader on the next audit run is `drydry:checklist` itself: it globs the learnings directory and appends `robust`-confidence patterns to the seed it generates (see that skill's workflow step 2.5). `probable` and `fragile` proposals stay write-only until the operator promotes them.
 - **Citation hygiene.** Every pattern carries at least two sources with one-line takeaways. A pattern with one weak source goes into the `## Parking lot` section, not into `## New patterns`.
 - **Signature-first.** A candidate without a grep-friendly signature is dropped. Drydry's downstream `sweep` needs the signature; an unproveable pattern is decoration.
 - **Token budget.** Quick depth is one round per track (5 agents); normal is round 1 + round 2 (~10 agents); deep is rounds 1+2+3 (~14 agents including one Opus). The skill logs the budget choice in `## Detection method chosen` so the operator can reproduce.

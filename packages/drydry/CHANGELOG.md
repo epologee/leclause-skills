@@ -17,14 +17,9 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
 
-## [v1.0.6]
+## [v1.0.7]
 
 ### Added
 
-- `drydry:drydry` orchestrator with two explicit modes: quick (ad-hoc "is this duplicate?" check, inline answer with verifier-grep) and audit (full sweep producing a `<name>-drydry-findings.md` artefact). User-invocable entry point.
-- `drydry:sweep` (agent-only): runs a Sonnet subagent with verifier-burden discipline; hits without a runnable verifier are dropped.
-- `drydry:checklist` (agent-only): bootstraps a six-to-ten item checklist for a named domain (iOS/SwiftUI, Rails, React/TypeScript, Markdown prose, design tokens).
-- `drydry:triage` (agent-only): three-bucket triage (cheap-and-safe, partial, needs-design) with convergence cost per item.
-- `drydry:learn` (agent-only): online research on de-duplication state-of-the-art via parallel WebSearch and WebFetch subagents.
-- `drydry:upstream` (agent-only): cross-toolbox audit against framework offerings (Rails/Devise, SwiftUI/Foundation, React conventions).
-- `drydry:instructions` (agent-only): CLAUDE.md audit for instructions that themselves cause DRY violations.
+- `/drydry:drydry`: one user-invocable command that routes between two modes. Quick mode answers "is this duplicate?" inline with a runnable verifier-grep and no artefact. Audit mode produces a `<scope>-drydry-findings-<timestamp>.md` artefact with a detection-method paragraph and a triaged findings list.
+- `/drydry:drydry learn <topic>`: explicit one-off enrichment that researches de-duplication patterns from external sources and writes proposals to `<project_root>/.drydry/learnings/`. The next audit reads `robust`-confidence proposals automatically; `probable` and `fragile` proposals stay write-only until the operator promotes them.

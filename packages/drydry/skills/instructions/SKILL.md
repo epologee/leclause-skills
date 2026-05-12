@@ -43,12 +43,12 @@ Caller supplies through `args`:
 
 ## Output contract
 
-Return a markdown section the orchestrator folds into the audit artefact:
+Return a markdown section the orchestrator folds into the audit artefact. The schema mirrors the rest of the audit pipeline (`pattern_id`-keyed findings) so the orchestrator's fold-in step does not special-case this skill:
 
 ```markdown
 ## CLAUDE.md duplication
 
-### Failure mode: two paths prescribed
+### Pattern: two-prescribed-paths
 
 - Finding 1
   - claude_md: `<path>:<line>-<line>`
@@ -57,7 +57,7 @@ Return a markdown section the orchestrator folds into the audit artefact:
   - convergence_proposal: <one sentence: name one as primary, mark the other as legacy or remove>
   - verifier_command: <runnable grep for both paths in the codebase>
 
-### Failure mode: silent on existing helper
+### Pattern: silent-helper
 
 - Finding 2
   - helper_path: `<path>:<line>` `<symbol_name>`
@@ -76,7 +76,11 @@ Findings without a verifier_command are dropped.
 
 Read each path in `claude_md_paths`. Build an in-memory index of what the file prescribes: behavioral rules, workflow patterns, named tools, named scripts, named helpers.
 
-### 2. AUDIT failure mode A (two paths prescribed)
+### 2 and 3. AUDIT both patterns in parallel
+
+The two failure modes are orthogonal: pattern `two-prescribed-paths` reads only the instruction files, pattern `silent-helper` reads the helper directories. Spawn both Sonnet agents in parallel via the Agent tool (one message, two Agent tool calls), since neither depends on the other's output.
+
+#### 2a. Pattern `two-prescribed-paths`
 
 Spawn one Sonnet Agent with this brief:
 
@@ -104,7 +108,7 @@ other as a legacy fallback. Drop duplications where the two paths
 serve genuinely different domains. Be specific.
 ```
 
-### 3. AUDIT failure mode B (silent on helper)
+#### 2b. Pattern `silent-helper`
 
 Identify project helpers:
 
@@ -143,7 +147,7 @@ internal/ paths). Drop helpers whose purpose is too narrow to matter
 
 ### 4. SYNTHESISE
 
-Combine the two sub-agent reports into the output markdown. Apply caps if either failure mode produced more than 10 findings; keep the highest-impact (broadest call-site count for B, broadest behavioural surface for A).
+Combine the two sub-agent reports into the output markdown under `## Pattern: two-prescribed-paths` and `## Pattern: silent-helper`. Apply caps if either pattern produced more than 10 findings; keep the highest-impact (broadest call-site count for `silent-helper`, broadest behavioural surface for `two-prescribed-paths`).
 
 ### 5. RETURN
 
@@ -154,5 +158,5 @@ Hand back the assembled markdown to the caller. Do not write to disk; the orches
 - **Verifier-burden is mandatory** here too. A finding without a runnable grep is dropped; the operator must be able to re-confirm the duplication or the silence.
 - **Drift hypothesis is mandatory.** A finding without a Chapter 4 sentence is dropped. "CLAUDE.md is incomplete" is not a drift hypothesis; "agents in fresh sessions will reinvent the `with_tenant` wrapper because nothing in CLAUDE.md points at it" is.
 - **No auto-fix.** This skill returns findings; it does not edit CLAUDE.md. The operator decides whether to converge prescriptions or add pointers.
-- **Both failure modes are real and orthogonal.** A CLAUDE.md can fail mode A and not mode B, or vice versa, or both. Always run both audits when this skill is dispatched in audit mode.
+- **Both patterns are real and orthogonal.** A CLAUDE.md can hit `two-prescribed-paths` without `silent-helper`, or vice versa, or both. Always run both audits when this skill is dispatched in audit mode.
 - **User-level CLAUDE.md is read but never proposed for edit.** The skill audits `~/.claude/CLAUDE.md` if it appears in `claude_md_paths`, but its convergence proposals for that file are listed as "operator considers" rather than "edit here". User-level config is operator-personal; the audit informs, it does not prescribe.

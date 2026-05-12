@@ -102,5 +102,4 @@ Convergence path: document the verdict and the constraint in the findings artefa
 
 - **The bucket is the verdict; the cost is the evidence for the verdict.** A `cheap-and-safe` classification with a cost of "30 files touched, interface migration" is contradictory; promote it to `partial` or `needs-design`.
 - **No fourth bucket.** Chapter 5 is explicit: three buckets, no `later`, no `backlog`, no `polish next sprint`. Either land it (cheap-and-safe), park the design question (partial), or document the by-design constraint (needs-design).
-- **Triage is not approval.** This skill does not decide whether the operator will fix the finding; it decides how much room the convergence needs. The operator (or the rover) acts on the triage.
-- **Contrarian gate on `needs-design`.** When the caller is `drydry:drydry` audit mode, the orchestrator's step 5 will spawn a contrarian subagent on every `needs-design` verdict. This skill's job is to produce the candidate verdict; the gate is upstream's responsibility.
+- **Triage is not approval.** This skill does not decide whether the operator will fix the finding; it decides how much room the convergence needs. The caller acts on the triage.

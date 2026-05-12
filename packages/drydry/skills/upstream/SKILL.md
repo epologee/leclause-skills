@@ -22,7 +22,6 @@ allowed-tools:
   - Bash(rg *)
   - Bash(grep *)
   - Bash(find *)
-  - Bash(cat *)
   - Bash(ls *)
 effort: high
 ---
@@ -59,7 +58,15 @@ Return a markdown section the orchestrator folds into the audit artefact:
   - verifier_command: <runnable command to re-find both sites>
 ```
 
-Findings without a verified upstream offering (the `ground`-style check failed) are dropped.
+Findings without a verified upstream offering (the verification check failed) are dropped.
+
+When a framework is detected but no findings survive verification, emit the header alone with an explicit empty marker so the orchestrator's fold-in step does not silently omit the framework:
+
+```markdown
+### Framework: <framework_name> <version_if_known>
+
+_no upstream duplications found; the verification pass dropped every candidate. See "## Detection method chosen" for which candidates were inspected._
+```
 
 ## Workflow
 

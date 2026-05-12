@@ -35,6 +35,7 @@ Caller supplies through `args`:
 - **`checklist`**: either an inline markdown blob (the six-to-ten patterns), or a path to a markdown file containing one. Mandatory. Use `drydry:checklist` upstream when the caller does not already have one.
 - **`exclude`**: optional comma-separated list of paths to exclude (vendor, generated, `.bundle/`, `node_modules/`, build outputs). Default excludes are inferred from `.gitignore` plus a built-in list.
 - **`max_findings_per_pattern`**: optional cap, default 5. Prevents one rampant pattern from drowning out the rest.
+- **`max_files`**: optional cap on the file count walked before the skill downsamples by language. Default 2000.
 
 ## Output contract
 
@@ -61,7 +62,7 @@ Patterns with zero findings appear as `_no findings under this pattern_`. Patter
 
 1. **Read the inputs.** Parse `scope`, load `checklist`. Compute default excludes from `.gitignore` plus the built-in list (`.git/`, `node_modules/`, `vendor/`, `.bundle/`, `build/`, `dist/`, `target/`, `.next/`, `coverage/`, `tmp/`).
 
-2. **Size the scope.** Run `find <scope> -type f | wc -l` to gauge file count after excludes. If the count exceeds 2000, downsample by language: keep all the language's primary source files, drop tests and fixtures unless the checklist explicitly names them. Log the downsample decision so the caller can override.
+2. **Size the scope.** Run `find <scope> -type f | wc -l` to gauge file count after excludes. When the count exceeds the caller's `max_files` (default 2000; the caller passes a different value when their project warrants it), downsample by language: keep all the language's primary source files, drop tests and fixtures unless the checklist explicitly names them. Log the downsample decision so the caller can verify.
 
 3. **Build the subagent prompt.** Use the template in this skill's body (see "Subagent prompt template" below). Pass:
    - The checklist verbatim.
@@ -78,6 +79,8 @@ Patterns with zero findings appear as `_no findings under this pattern_`. Patter
    - Drop any finding whose drift_hypothesis matches the Chapter 4 anti-patterns ("a bit messy", "would be cleaner to share", "feels redundant" without a concrete bad-thing-if-drifts).
    - Cap each pattern at `max_findings_per_pattern`.
    - Keep `## Checklist gaps` separately.
+
+5b. **Run each verifier in this skill's own context.** For every finding that survived step 5, execute its `verifier_command` via the `Bash(rg *)` or `Bash(grep *)` tool here in sweep, not relying on the subagent's claim that it ran. Drop the finding if the command exits non-zero, produces no matching output, or returns lines that do not contain both `file_a` and `file_b`. This is the only check with teeth; the subagent's self-report is faith.
 
 6. **Return.** Hand back the filtered markdown structure to the caller. Do not write to disk; the caller owns the artefact.
 

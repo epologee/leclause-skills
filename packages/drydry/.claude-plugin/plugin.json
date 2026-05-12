@@ -1,5 +1,5 @@
 {
   "name": "drydry",
   "description": "Find and converge parallel paths in any artefact: code, prose, design systems. Operationalises an eight-concept framework (Type-4 clone framing, verifier-burden LLM pass, allow-list checklist, drift hypothesis, three-bucket triage, two-fates discipline, contrarian second-pass, method-as-artefact) into one user-invocable orchestrator (drydry:drydry) with quick and audit modes, backed by six agent-only sub-skills (sweep, checklist, triage, learn, upstream, instructions).",
-  "version": "1.0.6"
+  "version": "1.0.7"
 }

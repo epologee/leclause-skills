@@ -16,6 +16,7 @@ allowed-tools:
   - Bash(ls *)
   - Bash(find *)
   - Bash(rg *)
+  - Bash(date *)
 effort: medium
 ---
 
@@ -27,7 +28,7 @@ The checklist bootstrapper behind the drydry audit pipeline. Builds a six-to-ten
 
 Caller supplies through `args`:
 
-- **`domain`**: one of `ios-swiftui`, `rails`, `react-typescript`, `markdown-prose`, `design-tokens`, or `generic`. Maps to a baked-in seed template. Mandatory.
+- **`domain`**: one of `ios-swiftui`, `rails`, `react-typescript`, `markdown-prose`, `design-tokens`, or `generic`. Maps to a baked-in seed template. Optional; when absent or unknown, the skill falls back to `generic` and emits a one-line note in the returned markdown so the caller can surface the fallback to the operator.
 - **`seed_patterns`**: optional comma-separated list of additional pattern names the operator wants in the checklist (extends the seed template).
 - **`scope`**: optional path; when provided, the skill briefly inspects the scope (file extensions, framework manifest, presence of typical config files) and may extend the checklist with patterns relevant to what it finds.
 
@@ -106,16 +107,20 @@ Version the checklist with a full date-time stamp (`v2026-05-12T14-23`, derived 
 
 ### `generic`
 
-A fallback for projects that do not match any of the above. The seed has three placeholder patterns plus a strong nudge to the operator to extend with their own:
+A fallback for projects that do not match any of the above. The seed has six baked patterns; the operator extends with seed_patterns when the project's idiom is specific enough to warrant it:
 
 1. `parallel-helpers`: two helpers solving the same problem with different signatures.
-2. `repeated-blocks`: structurally similar blocks across files (the Type-1 to Type-3 axis).
-3. `behavioural-clones`: same-behaviour-different-structure code (Type-4, the wedge drydry lives in).
+2. `repeated-error-handlers`: try/except / try-catch / rescue blocks copy-pasted across files with the same handler body.
+3. `repeated-config-blocks`: the same configuration block (timeouts, retries, headers, options struct) appearing across multiple call-sites instead of a shared constant.
+4. `parallel-validation-paths`: input validation logic for the same shape duplicated across entry points (handlers, jobs, CLI commands) instead of a shared validator.
+5. `parallel-logging-formats`: log lines emitted with the same domain event but different formatting or fields across the codebase, undermining grep-based observability.
+6. `behavioural-clones`: same-behaviour-different-structure code (Type-4, the wedge drydry lives in).
 
 ## Workflow
 
 1. **Read `args`.** Parse `domain`, `seed_patterns`, optional `scope`.
-2. **Load the seed template.** Pick the template for the domain. If `domain` is unknown, fall back to `generic` and log the unknown domain so the operator can add a seed in a follow-up.
+2. **Load the seed template.** Pick the template for the domain. If `domain` is unknown, fall back to `generic` and emit a one-line note in the returned markdown so the operator can add a seed in a follow-up.
+2.5. **Read learnings from `drydry:learn`.** Glob `<project_root>/.drydry/learnings/*.md` (or the caller's `learnings_dir` override). For each learnings file whose proposed seed domain matches the current domain, parse the patterns rated `Confidence: robust` and append them as bonus seed items. `probable` and `fragile` proposals are skipped (the operator promotes them by editing the learnings file's confidence tag, not by re-running checklist). When the learnings directory is empty or absent, skip this step silently.
 3. **Inspect the scope (if provided).** Run `ls` on the scope, sniff a manifest (`Package.swift`, `Gemfile`, `package.json`), and add domain-specific extensions to the seed (for example: if `Gemfile` contains `devise`, add a `devise-helpers` pattern).
 4. **Add operator seed patterns.** Append each item from `seed_patterns` as a new pattern entry. The seed-pattern title becomes the `pattern_id`; the description is left as a one-line stub for the operator to flesh out next time.
 5. **Cap at ten.** When the combined list exceeds ten, keep the seed-template items and the operator-named items; drop the optional manifest-inferred extensions first.

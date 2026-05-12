@@ -103,7 +103,7 @@ Cheap, scoped, no artefact. The goal is to answer "are these two paths a duplica
 Steps:
 
 1. **Identify the two (or more) candidates.** Read them: the paste, the named files, the transcript excerpt. If the operator named only one item, ask the operator to point at the suspected duplicate. (Do not invent the comparison target.)
-2. **Apply the drift-hypothesis test (Chapter 4).** Write one sentence: "what bad thing happens if these two paths keep drifting?" If the sentence is "the code is a bit messy" or "it would be cleaner to share", the finding is not yet sharp enough. Push back: "I do not see a drift hypothesis here. Sharpen the question or accept that this is style overlap, not a duplicate."
+2. **Apply the drift-hypothesis test (Chapter 4).** Write one sentence: "what bad thing happens if these two paths keep drifting?" If the sentence is "the code is a bit messy" or "it would be cleaner to share", the finding is not yet sharp enough. For a human caller, push back: "I do not see a drift hypothesis here. Sharpen the question or accept that this is style overlap, not a duplicate." For an autonomous caller (skill-invoked path), do not push back; record the weak-hypothesis state in the returned markdown under a `weak_drift_hypothesis: <reason>` line and continue. Autonomous callers do not have a channel to answer push-back.
 3. **Apply the verifier-burden discipline (Chapter 2).** Produce one runnable command (a `grep`, `rg`, `ast-grep` query, or a `find ... -exec` pair) that re-verifies the duplication without the LLM in the loop. Show the command and its expected output.
 4. **Verdict.** One paragraph. Three possible verdicts:
    - **Duplicate, cheap-and-safe to converge.** Name the convergence direction in one sentence and the cost.
@@ -115,7 +115,9 @@ Output is inline conversational, no markdown file. Pride and gurus gates do not 
 
 ## Audit mode
 
-Full eight-chapter discipline. Produces a `<scope>-drydry-findings.md` artefact in the current working directory. Pride second-pass on rejects (Chapter 7). Gurus pass is **deferred to a follow-up decision** (see Side quests).
+Full eight-chapter discipline. Produces a `<scope>-drydry-findings-<checklist-version>.md` artefact in the current working directory. Pride second-pass on rejects (Chapter 7). Gurus pass is **deferred to a follow-up decision** (see Side quests).
+
+**`drydry:learn` is not part of the audit pipeline.** It is a one-off enrichment that updates the checklist vocabulary from external sources and is invoked explicitly via `/drydry:drydry learn <topic>`. Audit mode reuses whatever proposals the most recent `learn` runs wrote into the project's learnings directory: `drydry:checklist`'s workflow step 2.5 reads those files and folds in `robust`-confidence patterns automatically. Audit mode does not trigger a fresh `learn` itself.
 
 Steps:
 
@@ -126,9 +128,7 @@ Steps:
 5. **Apply Chapter 7 (contrarian second-pass on rejects).** For every finding the sub-skill classified as `needs-design` (which includes the `by-design` sub-case where convergence is blocked by a framework or external API), spawn a second Sonnet subagent via the Agent tool with a contrarian brief ("is this rejection hollow?"). A reject is final only if the contrarian independently confirms it as hollow.
 6. **(Optional) Dispatch `drydry:upstream`.** When the operator named a framework (Rails, Devise, SwiftUI, React) or when the project has a recognisable manifest (Gemfile, Package.swift, package.json), include a cross-toolbox section: does the operator have helpers that duplicate framework functionality?
 7. **(Optional) Dispatch `drydry:instructions`.** When the project has CLAUDE.md files (project-level or referenced from user-level), include a CLAUDE.md audit section: do the instructions themselves cause DRY violations?
-8. **Write the artefact.** Two-section markdown file: `## Detection method chosen` (the checklist version, the sub-skills invoked, the verifier conventions; Chapter 8) and `## Findings` (one subsection per checklist item with the verified hits, drift hypotheses, triage, and contrarian verdict if applicable). Add `## Checklist gaps` when the sweep surfaced "interesting but off-list" hits (Chapter 3 keeps them out of the findings proper). Add `## Side quests` when out-of-scope follow-ups surfaced.
-
-Note on `drydry:learn`. The audit pipeline above does NOT dispatch `learn` as part of a normal run; `learn` is a one-off enrichment that updates the checklist vocabulary from external sources and is invoked explicitly via `/drydry:drydry learn <topic>`. Audit mode reuses whatever checklist the most recent `learn` run produced (via `drydry:checklist`'s seed templates), but does not trigger a fresh `learn` itself. See the Sub-skills table below for the full when-to-dispatch matrix.
+8. **Write the artefact.** Two-section markdown file at `<scope>-drydry-findings-<checklist-version>.md` (the checklist version timestamp from step 2 is appended so two audits against the same scope in the same session do not silently overwrite). Sections: `## Detection method chosen` (the checklist version, the sub-skills invoked, the verifier conventions; Chapter 8) and `## Findings` (one subsection per checklist item with the verified hits, drift hypotheses, triage, and contrarian verdict if applicable). Add `## Checklist gaps` when the sweep surfaced "interesting but off-list" hits (Chapter 3 keeps them out of the findings proper). Add `## Side quests` when out-of-scope follow-ups surfaced.
 9. **Report.** One short summary to the operator: scope, number of findings, triage breakdown, path to the artefact.
 
 The artefact is written to the project root by default, named `<scope>-drydry-findings.md` where `<scope>` is a slug of the directory or package the audit covered. The operator decides whether to convert findings into commits, or to address them out-of-process; that decision is not the orchestrator's.
