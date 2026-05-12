@@ -1,0 +1,158 @@
+---
+name: instructions
+user-invocable: false
+description: >
+  Internal sub-skill of the drydry plugin. Dispatched by the drydry:drydry
+  orchestrator in audit mode when CLAUDE.md files (project-level or
+  user-level) are within scope, or directly when the operator wants
+  only a CLAUDE.md audit. Audits instruction files for two failure
+  modes: (a) instructions prescribe two paths for the same job
+  (a duplication that pushes agents to pick one of two diverging
+  approaches), and (b) instructions are silent on existing project
+  helpers so agents generate new parallel code instead of reusing
+  them. Returns findings the orchestrator folds into the audit artefact
+  under "## CLAUDE.md duplication".
+allowed-tools:
+  - Agent
+  - Read
+  - Grep
+  - Glob
+  - Bash(rg *)
+  - Bash(grep *)
+  - Bash(find *)
+  - Bash(ls *)
+effort: high
+---
+
+# Instructions
+
+The CLAUDE.md audit pass behind the drydry pipeline. The premise: instruction files sit a layer above the code; they can themselves cause DRY violations downstream. Two failure modes:
+
+1. **Two paths prescribed for the same job.** CLAUDE.md says both "use the Pundit policy" and "add a `before_action :authorize!`" without naming one as primary. Agents pick one or the other, projects accumulate both, and the code drifts. The instructions ARE the source of the duplication.
+2. **Silence on existing helpers.** A project ships a `current_workspace` helper, a `notify_owner` helper, a `with_tenant` wrapper. CLAUDE.md never names them. Agents in fresh sessions do not know they exist; they generate new code that solves the same problem with different shape. The silence is the duplication-enabler.
+
+Not user-invocable.
+
+## Input contract
+
+Caller supplies through `args`:
+
+- **`claude_md_paths`**: comma-separated list of CLAUDE.md paths to audit. Mandatory. Typically `CLAUDE.md`, `~/.claude/CLAUDE.md`, plus any sub-directory CLAUDE.md the project ships.
+- **`project_root`**: the project root, used to grep for helper symbols the instructions might be ignoring.
+- **`helper_directories`**: optional hint at where the project's helpers live (`lib/`, `app/helpers/`, `app/services/`, `src/utils/`, `Sources/Helpers/`). When absent, the skill infers common locations.
+
+## Output contract
+
+Return a markdown section the orchestrator folds into the audit artefact:
+
+```markdown
+## CLAUDE.md duplication
+
+### Failure mode: two paths prescribed
+
+- Finding 1
+  - claude_md: `<path>:<line>-<line>`
+  - paths_prescribed: ["<path A description>", "<path B description>"]
+  - drift_hypothesis: <one sentence: what bad thing happens when half the codebase uses A and half uses B>
+  - convergence_proposal: <one sentence: name one as primary, mark the other as legacy or remove>
+  - verifier_command: <runnable grep for both paths in the codebase>
+
+### Failure mode: silent on existing helper
+
+- Finding 2
+  - helper_path: `<path>:<line>` `<symbol_name>`
+  - helper_purpose: <one sentence>
+  - claude_md_silence: <list of CLAUDE.md sections where this helper should have been named, with line numbers>
+  - drift_hypothesis: <one sentence: agents in fresh sessions will reinvent this helper because nothing points them to it>
+  - convergence_proposal: <one sentence: where in CLAUDE.md to add the pointer>
+  - verifier_command: <runnable grep for the helper symbol's call-sites>
+```
+
+Findings without a verifier_command are dropped.
+
+## Workflow
+
+### 1. READ the instruction files
+
+Read each path in `claude_md_paths`. Build an in-memory index of what the file prescribes: behavioral rules, workflow patterns, named tools, named scripts, named helpers.
+
+### 2. AUDIT failure mode A (two paths prescribed)
+
+Spawn one Sonnet Agent with this brief:
+
+```
+You audit a CLAUDE.md file for duplicated prescriptions.
+
+File: <path>
+Content: <full file content>
+
+Tasks:
+1. Walk the file section by section. For each behavioral rule, ask:
+   does another rule somewhere in this file (or in a different
+   CLAUDE.md in scope) prescribe a different path for the same job?
+2. "Same job" examples: two ways to authorise, two ways to commit,
+   two ways to run tests, two ways to format dates, two ways to log
+   errors, two ways to authenticate.
+3. For each duplication, name both paths, write a drift hypothesis
+   (what bad thing happens when the codebase splits between A and B),
+   propose a convergence direction (which path wins).
+4. Provide a verifier_command: a grep over the codebase that shows
+   both paths in use.
+
+Drop duplications where one is explicitly named as primary and the
+other as a legacy fallback. Drop duplications where the two paths
+serve genuinely different domains. Be specific.
+```
+
+### 3. AUDIT failure mode B (silent on helper)
+
+Identify project helpers:
+
+- Glob `helper_directories` (or default locations) for files containing public functions, modules, or symbols
+- Read each helper's docstring or top-of-file comment to infer purpose
+- Build a list `(helper_path:line, symbol_name, purpose)`
+
+Spawn one Sonnet Agent with this brief:
+
+```
+You audit a CLAUDE.md file for missing pointers to existing helpers.
+
+CLAUDE.md content: <full content>
+Project helpers: <list of tuples>
+
+Tasks:
+1. For each project helper, ask: does CLAUDE.md anywhere mention it,
+   point at it, or describe the convention that would lead an agent
+   to discover it?
+2. When CLAUDE.md is silent on a helper that an agent would plausibly
+   re-implement, flag it. "Plausibly re-implement" means: the helper
+   covers a common cross-cutting concern (auth, tenancy, formatting,
+   notification, logging, query-shaping).
+3. For each silent helper, write a drift hypothesis (agents will
+   reinvent this in fresh sessions, producing parallel implementations
+   that drift on edge cases) and a convergence_proposal (which
+   CLAUDE.md section should mention it).
+4. Provide a verifier_command: a grep over the codebase showing the
+   helper's call-sites (high call-site count means high re-invention
+   risk).
+
+Drop helpers that are clearly private (underscore-prefixed, in
+internal/ paths). Drop helpers whose purpose is too narrow to matter
+(single-use formatters, one-off migration scripts).
+```
+
+### 4. SYNTHESISE
+
+Combine the two sub-agent reports into the output markdown. Apply caps if either failure mode produced more than 10 findings; keep the highest-impact (broadest call-site count for B, broadest behavioural surface for A).
+
+### 5. RETURN
+
+Hand back the assembled markdown to the caller. Do not write to disk; the orchestrator's audit artefact is the canonical home.
+
+## Rules
+
+- **Verifier-burden is mandatory** here too. A finding without a runnable grep is dropped; the operator must be able to re-confirm the duplication or the silence.
+- **Drift hypothesis is mandatory.** A finding without a Chapter 4 sentence is dropped. "CLAUDE.md is incomplete" is not a drift hypothesis; "agents in fresh sessions will reinvent the `with_tenant` wrapper because nothing in CLAUDE.md points at it" is.
+- **No auto-fix.** This skill returns findings; it does not edit CLAUDE.md. The operator decides whether to converge prescriptions or add pointers.
+- **Both failure modes are real and orthogonal.** A CLAUDE.md can fail mode A and not mode B, or vice versa, or both. Always run both audits when this skill is dispatched in audit mode.
+- **User-level CLAUDE.md is read but never proposed for edit.** The skill audits `~/.claude/CLAUDE.md` if it appears in `claude_md_paths`, but its convergence proposals for that file are listed as "operator considers" rather than "edit here". User-level config is operator-personal; the audit informs, it does not prescribe.
