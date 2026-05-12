@@ -53,11 +53,11 @@ Two modes. The orchestrator picks one before doing any work.
 
 ### Explicit keyword wins
 
-When `args` contains the literal token `quick`, `audit`, or names a specific sub-skill (`sweep`, `checklist`, `triage`, `learn`, `upstream`, `instructions`), route accordingly without further inspection.
+When `args` contains explicit routing keywords, route accordingly without further inspection. Two equivalent forms are accepted (the bare form is what an operator types after `/drydry:drydry`; the keyed form is what an autonomous caller passes through `args`):
 
-- `quick` -> quick mode
-- `audit` -> audit mode
-- `sweep` / `checklist` / `triage` / `learn` / `upstream` / `instructions` -> dispatch that sub-skill directly with the remaining args as its input
+- `quick` or `mode: quick` -> quick mode
+- `audit` or `mode: audit` -> audit mode
+- `sweep` / `checklist` / `triage` / `learn` / `upstream` / `instructions`, or `skill: <name>` -> dispatch that sub-skill directly with the remaining args as its input
 
 ### Implicit signal from context
 
@@ -126,6 +126,8 @@ Steps:
 6. **(Optional) Dispatch `drydry:upstream`.** When the operator named a framework (Rails, Devise, SwiftUI, React) or when the project has a recognisable manifest (Gemfile, Package.swift, package.json), include a cross-toolbox section: does the operator have helpers that duplicate framework functionality?
 7. **(Optional) Dispatch `drydry:instructions`.** When the project has CLAUDE.md files (project-level or referenced from user-level), include a CLAUDE.md audit section: do the instructions themselves cause DRY violations?
 8. **Write the artefact.** Two-section markdown file: `## Detection method chosen` (the checklist version, the sub-skills invoked, the verifier conventions; Chapter 8) and `## Findings` (one subsection per checklist item with the verified hits, drift hypotheses, triage, and contrarian verdict if applicable). Add `## Checklist gaps` when the sweep surfaced "interesting but off-list" hits (Chapter 3 keeps them out of the findings proper). Add `## Side quests` when out-of-scope follow-ups surfaced.
+
+Note on `drydry:learn`. The audit pipeline above does NOT dispatch `learn` as part of a normal run; `learn` is a one-off enrichment that updates the checklist vocabulary from external sources and is invoked explicitly via `/drydry:drydry learn <topic>`. Audit mode reuses whatever checklist the most recent `learn` run produced (via `drydry:checklist`'s seed templates), but does not trigger a fresh `learn` itself. See the Sub-skills table below for the full when-to-dispatch matrix.
 9. **Report.** One short summary to the operator: scope, number of findings, triage breakdown, path to the artefact.
 
 The artefact is written to the project root by default, named `<scope>-drydry-findings.md` where `<scope>` is a slug of the directory or package the audit covered. The operator decides whether to convert findings into commits, or to address them out-of-process; that decision is not the orchestrator's.
@@ -140,8 +142,8 @@ Rules in this mode:
 
 - **Never ask the operator.** The "ask once" fallback in the No-signal section does not apply. If the implicit signals are weak, pick a default and dispatch.
 - **Default when ambiguous:** if `args` references a directory, package, or multi-file scope -> audit mode; if `args` references two snippets, one file, or a transcript excerpt -> quick mode; if `args` names a sub-skill explicitly, dispatch that sub-skill directly.
-- **Caller-named mode wins.** `mode: quick` or `mode: audit` in `args` bypasses inference.
-- **Caller-named sub-skill wins.** `skill: sweep` (etc.) in `args` dispatches that sub-skill directly with the remaining args as its input.
+- **Caller-named mode wins.** `mode: quick` or `mode: audit` in `args` (or the equivalent bare token `quick` / `audit`) bypasses inference. The Routing section above lists both forms as equivalent; either is accepted here too.
+- **Caller-named sub-skill wins.** `skill: sweep` (etc.) in `args`, or the bare token `sweep` / `checklist` / `triage` / `learn` / `upstream` / `instructions`, dispatches that sub-skill directly with the remaining args as its input.
 - **No proposal line, no override prompt.** Produce the verdict or the artefact directly.
 - **Pride and gurus gates** are the caller's responsibility, not the orchestrator's. A rover at INSPECT has already scheduled its own pride and gurus passes; the orchestrator does not double-up.
 
