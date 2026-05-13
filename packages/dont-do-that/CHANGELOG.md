@@ -17,6 +17,12 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous.
 
+## [v1.0.52]
+
+### Added
+
+- **New PreToolUse guard `no-code-comments`.** Blocks Edit, Write, MultiEdit that add a code comment to a programming-language file. Pass: `https?://` URL, `allow-comment` escape, common pragma (`@ts-ignore`, `noqa`, `eslint-disable`, ...), or shebang on line 1.
+
 ## [v1.0.48]
 
 ### Breaking
