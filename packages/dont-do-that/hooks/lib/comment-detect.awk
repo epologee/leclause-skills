@@ -3,13 +3,16 @@
 # of the form LINE_NUMBER:COMMENT_BODY.
 #
 # Invocation:
-#   awk -v MODE=slash -f comment-detect.awk < source.{ts,js,go,rs,swift,java,kt,c,cpp,cs,php}
-#   awk -v MODE=hash  -f comment-detect.awk < source.{py,rb,sh,zsh,bash,pl,r,ex,exs,cr}
+#   awk -v MODE=slash -f comment-detect.awk < source.{ts,js,go,rs,swift,java,kt,c,cpp,cs}
+#   awk -v MODE=hash  -f comment-detect.awk < source.{py,rb,sh,zsh,bash,pl,ex,exs,cr}
 #
 # MODE=slash recognises:
 #   line block:   // ...
 #   block block:  /* ... */ (spans newlines)
 #   string types: "..." '...' `...` (template literal, spans newlines)
+#   In NORMAL state, a backslash-then-anything sequence is consumed as a
+#   pair so regex-literal escapes (/foo\/bar/) and stray backslashes do not
+#   mis-trigger // comment detection on the trailing slash.
 #
 # MODE=hash recognises:
 #   line block:   # ...
@@ -18,6 +21,9 @@
 # Strings shield their contents from comment detection. Block comments stay
 # open across newlines; the emitted body is the joined content with newlines
 # replaced by a single space so consumers can compare bodies as flat strings.
+# Trailing whitespace is stripped from every emitted body so block-comment
+# closers on their own line do not introduce a body that differs only in
+# end-of-line padding from an inline equivalent.
 
 BEGIN {
   if (MODE == "") MODE = "slash"
@@ -33,6 +39,7 @@ BEGIN {
 
 END {
   if (state == "BLOCK") {
+    sub(/[[:space:]]+$/, "", block_buf)
     print block_start_line ":" block_buf
   }
 }
@@ -47,6 +54,7 @@ function process_line(src,    n, i, ch, nx, nx2, buf) {
 
     if (state == "BLOCK") {
       if (ch == "*" && nx == "/") {
+        sub(/[[:space:]]+$/, "", block_buf)
         print block_start_line ":" block_buf
         block_buf = ""
         state = "NORMAL"
@@ -96,8 +104,10 @@ function process_line(src,    n, i, ch, nx, nx2, buf) {
     }
 
     if (MODE == "slash") {
+      if (ch == "\\" && i < n) { i += 2; continue }
       if (ch == "/" && nx == "/") {
         buf = substr(src, i+2)
+        sub(/[[:space:]]+$/, "", buf)
         print NR ":" buf
         return
       }
@@ -116,6 +126,7 @@ function process_line(src,    n, i, ch, nx, nx2, buf) {
     } else {
       if (ch == "#") {
         buf = substr(src, i+1)
+        sub(/[[:space:]]+$/, "", buf)
         print NR ":" buf
         return
       }

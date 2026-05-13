@@ -471,6 +471,30 @@ expect_deny "no-code-comments: MultiEdit first edit adds comment" \
   "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"MultiEdit", tool_input:{file_path:"/tmp/x.ts", edits:[{old_string:"a", new_string:"a;\n// added"}, {old_string:"b", new_string:"b;"}]}}')" \
   "no-code-comments"
 
+expect_allow "no-code-comments: Edit adds JS regex literal with escaped slashes" \
+  "$(pretool_edit "/tmp/x.ts" "let x = 1;" $'let x = 1;\nconst re = /https?:\\/\\//g;')"
+
+expect_allow "no-code-comments: Edit adds split on URL regex in .js" \
+  "$(pretool_edit "/tmp/x.js" "let x = 1;" $'let x = 1;\nconst parts = url.split(/\\/\\//)[1];')"
+
+expect_deny "no-code-comments: bare allow-comment without colon is blocked" \
+  "$(pretool_edit "/tmp/x.py" "x = 1" $'x = 1\n# Use allow-comment to bypass')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: pylint mid-prose is blocked" \
+  "$(pretool_edit "/tmp/x.py" "x = 1" $'x = 1\n# I hate pylint: it is annoying')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: noqa mid-prose is blocked" \
+  "$(pretool_edit "/tmp/x.py" "x = 1" $'x = 1\n# the noqa rule is dumb')" \
+  "no-code-comments"
+
+expect_allow "no-code-comments: noqa at body start passes" \
+  "$(pretool_edit "/tmp/x.py" "import os" $'import os  # noqa: F401')"
+
+expect_allow "no-code-comments: rubocop pragma at body start passes" \
+  "$(pretool_edit "/tmp/x.rb" "def foo; end" $'def foo  # rubocop:disable Style/EmptyMethod\nend')"
+
 # --- Summary ---
 
 TOTAL=$((PASS + FAIL))
