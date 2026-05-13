@@ -88,6 +88,7 @@ function process_line(src,    n, i, ch, nx, nx2, buf) {
     }
 
     if (state == "TRIPLE_DQ") {
+      if (ch == "\\" && i < n) { i += 2; continue }
       if (ch == "\"" && nx == "\"" && nx2 == "\"") {
         state = "NORMAL"; i += 3; continue
       }
@@ -96,6 +97,7 @@ function process_line(src,    n, i, ch, nx, nx2, buf) {
     }
 
     if (state == "TRIPLE_SQ") {
+      if (ch == "\\" && i < n) { i += 2; continue }
       if (ch == "'" && nx == "'" && nx2 == "'") {
         state = "NORMAL"; i += 3; continue
       }

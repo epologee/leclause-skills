@@ -35,8 +35,17 @@ guard_no_code_comments() {
   mode=$(dd_ncc_mode_for "$file_path")
   [ -z "$mode" ] && return 0
 
-  awk_lib="$DIR/lib/comment-detect.awk"
-  [ -f "$awk_lib" ] || return 0
+  if [ -n "${DIR:-}" ] && [ -f "$DIR/lib/comment-detect.awk" ]; then
+    awk_lib="$DIR/lib/comment-detect.awk"
+  else
+    local guard_dir
+    guard_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    awk_lib="$guard_dir/../lib/comment-detect.awk"
+  fi
+  if [ ! -f "$awk_lib" ]; then
+    printf '[dont-do-that/no-code-comments] internal error: comment-detect.awk not found at %s\n' "$awk_lib" >&2
+    exit 2
+  fi
 
   case "$tool" in
     Edit)
@@ -160,7 +169,14 @@ dd_ncc_is_allowed() {
     *"allow-comment:"*) return 0 ;;
   esac
 
-  local trimmed="${body#"${body%%[![:space:]]*}"}"
+  local trimmed="$body"
+  while true; do
+    case "$trimmed" in
+      "") break ;;
+      [[:space:]/!\*]*) trimmed="${trimmed:1}" ;;
+      *) break ;;
+    esac
+  done
   case "$trimmed" in
     frozen_string_literal*)                                                              return 0 ;;
     "@ts-ignore"*|"@ts-expect-error"*|"@ts-nocheck"*|"@ts-check"*)                       return 0 ;;
@@ -179,7 +195,8 @@ dd_ncc_is_allowed() {
     "Copyright "*|"SPDX-License-Identifier"*|"License:"*|"Licensed under"*)               return 0 ;;
     "All rights reserved"*|"See LICENSE"*|"see LICENSE"*)                                 return 0 ;;
     encoding:*|coding:*|"-*- coding:"*)                                                   return 0 ;;
-    go:*)                                                                                 return 0 ;;
+    "go:build"*|"go:generate"*|"go:embed"*|"go:linkname"*|"go:noinline"*)                  return 0 ;;
+    "go:nosplit"*|"go:noescape"*|"go:nointerface"*|"go:wasmimport"*)                       return 0 ;;
   esac
 
   return 1
