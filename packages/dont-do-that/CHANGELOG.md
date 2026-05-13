@@ -23,6 +23,11 @@ Version numbers may therefore be non-contiguous.
 
 - **New PreToolUse guard `no-code-comments`.** Blocks Edit, Write, MultiEdit that add a code comment to a programming-language file. Pass: `https?://` URL, `allow-comment: <reason>` (colon required), pragma at body start (`@ts-ignore`, `noqa`, ...), or shebang on line 1.
 
+### Note
+
+- **Doc comments (`///`, `//!`, `/** */`) count as comments** and are blocked. Use `allow-comment: generates API docs` if your Swift/Rust/JSDoc project relies on source-derived documentation.
+- **JSX (`.jsx`) and TSX (`.tsx`) are excluded** because text content between JSX tags can legitimately contain `//`. Plain `.js`/`.ts` files are still checked.
+
 ## [v1.0.48]
 
 ### Breaking
