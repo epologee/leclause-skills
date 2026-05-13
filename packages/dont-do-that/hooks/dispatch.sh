@@ -12,11 +12,18 @@ EVENT=$(dd_event "$INPUT")
 case "$EVENT" in
   PreToolUse)
     TOOL=$(dd_tool_name "$INPUT")
-    [ "$TOOL" = "Bash" ] || exit 0
-    source "$DIR/guards/no-remote.sh"
-    guard_no_remote "$INPUT"
-    source "$DIR/guards/followup.sh"
-    guard_followup "$INPUT"
+    case "$TOOL" in
+      Bash)
+        source "$DIR/guards/no-remote.sh"
+        guard_no_remote "$INPUT"
+        source "$DIR/guards/followup.sh"
+        guard_followup "$INPUT"
+        ;;
+      Edit|Write|MultiEdit)
+        source "$DIR/guards/no-code-comments.sh"
+        guard_no_code_comments "$INPUT"
+        ;;
+    esac
     ;;
 
   PostToolUse)
