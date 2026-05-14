@@ -17,6 +17,17 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous.
 
+## [v1.0.52]
+
+### Added
+
+- **New PreToolUse guard `no-code-comments`.** Blocks Edit, Write, MultiEdit that add a code comment to a programming-language file. Pass: `https?://` URL, `allow-comment: <reason>` (colon required), pragma at body start (`@ts-ignore`, `noqa`, ...), or shebang on line 1.
+
+### Note
+
+- **Doc comments (`///`, `//!`, `/** */`) count as comments** and are blocked. Use `allow-comment: generates API docs` if your Swift/Rust/JSDoc project relies on source-derived documentation.
+- **JSX (`.jsx`) and TSX (`.tsx`) are excluded** because text content between JSX tags can legitimately contain `//`. Plain `.js`/`.ts` files are still checked.
+
 ## [v1.0.48]
 
 ### Breaking

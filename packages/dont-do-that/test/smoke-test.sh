@@ -28,10 +28,22 @@ posttool_edit() {
     '{hook_event_name:"PostToolUse", tool_name:"Edit", tool_input:{file_path:$f, new_string:$c}}'
 }
 
+pretool_edit() {
+  local file="$1" old="$2" new="$3"
+  jq -cn --arg f "$file" --arg o "$old" --arg n "$new" \
+    '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:$o, new_string:$n}}'
+}
+
+pretool_write() {
+  local file="$1" content="$2"
+  jq -cn --arg f "$file" --arg c "$content" \
+    '{hook_event_name:"PreToolUse", tool_name:"Write", tool_input:{file_path:$f, content:$c}}'
+}
+
 expect_block() {
   local description="$1" payload="$2"
   local out
-  out=$(echo "$payload" | bash "$DISPATCH" 2>/dev/null)
+  out=$(printf '%s' "$payload" | bash "$DISPATCH" 2>/dev/null)
   if echo "$out" | grep -q '"decision":"block"'; then
     # Verify uniform mnemonic prefix.
     if echo "$out" | grep -q '\[dont-do-that/'; then
@@ -51,7 +63,7 @@ expect_block() {
 expect_block_mnemonic() {
   local description="$1" mnemonic="$2" payload="$3"
   local out
-  out=$(echo "$payload" | bash "$DISPATCH" 2>/dev/null)
+  out=$(printf '%s' "$payload" | bash "$DISPATCH" 2>/dev/null)
   if echo "$out" | grep -q "\[dont-do-that/${mnemonic}\]"; then
     PASS=$((PASS + 1))
   else
@@ -64,7 +76,7 @@ expect_block_mnemonic() {
 expect_pass() {
   local description="$1" payload="$2"
   local out
-  out=$(echo "$payload" | bash "$DISPATCH" 2>/dev/null)
+  out=$(printf '%s' "$payload" | bash "$DISPATCH" 2>/dev/null)
   if echo "$out" | grep -q '"decision":"block"'; then
     echo "FAIL [pass expected]: ${description}"
     echo "  output: ${out}"
@@ -78,7 +90,7 @@ expect_deny() {
   local description="$1" payload="$2" expected_substring="${3:-}"
   local stderr_file exit_code stderr_content
   stderr_file=$(mktemp)
-  echo "$payload" | bash "$DISPATCH" >/dev/null 2>"$stderr_file"
+  printf '%s' "$payload" | bash "$DISPATCH" >/dev/null 2>"$stderr_file"
   exit_code=$?
   stderr_content=$(cat "$stderr_file")
   rm -f "$stderr_file"
@@ -108,7 +120,7 @@ expect_allow() {
   local description="$1" payload="$2"
   local stderr_file exit_code
   stderr_file=$(mktemp)
-  echo "$payload" | bash "$DISPATCH" >/dev/null 2>"$stderr_file"
+  printf '%s' "$payload" | bash "$DISPATCH" >/dev/null 2>"$stderr_file"
   exit_code=$?
   rm -f "$stderr_file"
   if [ "$exit_code" -ne 0 ]; then
@@ -123,7 +135,7 @@ expect_allow() {
 expect_context() {
   local description="$1" payload="$2"
   local out
-  out=$(echo "$payload" | bash "$DISPATCH" 2>/dev/null)
+  out=$(printf '%s' "$payload" | bash "$DISPATCH" 2>/dev/null)
   if echo "$out" | grep -q '"additionalContext"'; then
     if echo "$out" | grep -q '\[dont-do-that/dash\]'; then
       PASS=$((PASS + 1))
@@ -352,6 +364,188 @@ expect_context "dash: em-dash in Edit new_string" \
 
 expect_allow "dash: clean Edit new_string passes silent" \
   "$(posttool_edit "/tmp/x.md" "No dash here.")"
+
+# --- no-code-comments ---
+
+expect_deny "no-code-comments: Edit adds // comment in .ts" \
+  "$(pretool_edit "/tmp/x.ts" "let x = 1;" $'let x = 1;\n// dumb explanation\nlet y = 2;')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: Edit adds # comment in .py" \
+  "$(pretool_edit "/tmp/x.py" "x = 1" $'x = 1\n# dumb explanation\ny = 2')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: Edit adds multi-line block in .ts" \
+  "$(pretool_edit "/tmp/x.ts" "let x = 1;" $'let x = 1;\n/* multi\n line\n block */\nlet y = 2;')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: Edit adds // comment in .swift" \
+  "$(pretool_edit "/tmp/x.swift" "let x = 1" $'let x = 1\n// dumb explanation\nlet y = 2')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: Edit adds # comment in .rb" \
+  "$(pretool_edit "/tmp/x.rb" "x = 1" $'x = 1\n# dumb\ny = 2')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: Edit adds // comment in .go" \
+  "$(pretool_edit "/tmp/x.go" "var x = 1" $'var x = 1\n// dumb explanation\nvar y = 2')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: Edit adds /// doc comment in .rs" \
+  "$(pretool_edit "/tmp/x.rs" "let x = 1;" $'let x = 1;\n/// dumb explanation\nfn foo() {}')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: Edit adds JSDoc /** */ in .ts" \
+  "$(pretool_edit "/tmp/x.ts" "function foo() {}" $'/**\n * does something\n */\nfunction foo() {}')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: Edit changes existing comment body in .py" \
+  "$(pretool_edit "/tmp/x.py" $'# old text\nx = 1' $'# new text\nx = 1')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: Write new .swift with bare comment" \
+  "$(pretool_write "/tmp/new-x.swift" $'import Foundation\nlet x = 1\n// bad comment')" \
+  "no-code-comments"
+
+expect_allow "no-code-comments: Edit adds string containing // in .ts" \
+  "$(pretool_edit "/tmp/x.ts" "let x = 1;" $'let x = 1;\nlet u = "// not a comment";')"
+
+expect_allow "no-code-comments: Edit adds string containing # in .py" \
+  "$(pretool_edit "/tmp/x.py" "x = 1" $'x = 1\nu = "# not a comment"')"
+
+expect_allow "no-code-comments: Edit adds template literal with // in .ts" \
+  "$(pretool_edit "/tmp/x.ts" "let x = 1;" $'let x = 1;\nlet t = `// inside template`;')"
+
+expect_allow "no-code-comments: Edit adds triple-quoted text with # in .py" \
+  "$(pretool_edit "/tmp/x.py" "x = 1" $'x = 1\ny = """\n# not a comment\n"""')"
+
+expect_allow "no-code-comments: Edit adds URL comment in .swift" \
+  "$(pretool_edit "/tmp/x.swift" "let x = 1" $'let x = 1\n// see https://example.com/foo\nlet y = 2')"
+
+expect_allow "no-code-comments: Edit adds URL comment in .py" \
+  "$(pretool_edit "/tmp/x.py" "x = 1" $'x = 1\n# see https://example.com\ny = 2')"
+
+expect_allow "no-code-comments: Edit adds allow-comment escape in .py" \
+  "$(pretool_edit "/tmp/x.py" "x = 1" $'x = 1\n# allow-comment: legacy quirk\ny = 2')"
+
+expect_allow "no-code-comments: Edit adds frozen_string_literal pragma in .rb" \
+  "$(pretool_edit "/tmp/x.rb" "x = 1" $'# frozen_string_literal: true\nx = 1\ny = 2')"
+
+expect_allow "no-code-comments: Edit adds @ts-ignore pragma in .ts" \
+  "$(pretool_edit "/tmp/x.ts" "let x = any;" $'// @ts-ignore\nlet x = any;')"
+
+expect_allow "no-code-comments: Edit adds noqa pragma in .py" \
+  "$(pretool_edit "/tmp/x.py" "import os" $'import os  # noqa: F401\nimport sys')"
+
+expect_allow "no-code-comments: Edit adds go:build directive in .go" \
+  "$(pretool_edit "/tmp/x.go" "package main" $'//go:build linux\npackage main')"
+
+expect_allow "no-code-comments: Edit adds eslint-disable pragma in .ts" \
+  "$(pretool_edit "/tmp/x.ts" "let x = 1;" $'// eslint-disable-next-line\nlet x = 1;')"
+
+expect_allow "no-code-comments: Write new .sh with shebang on line 1" \
+  "$(pretool_write "/tmp/new-x.sh" $'#!/usr/bin/env bash\necho hi')"
+
+expect_allow "no-code-comments: Edit adds // comment in .md (non-code file)" \
+  "$(pretool_edit "/tmp/x.md" "# Heading" $'# Heading\n// looks like a comment but markdown ignores it')"
+
+expect_allow "no-code-comments: Edit adds # in .yml (non-code file)" \
+  "$(pretool_edit "/tmp/x.yml" "key: value" $'key: value\n# yaml comment is fine')"
+
+expect_allow "no-code-comments: Edit adds // in .json (non-code file)" \
+  "$(pretool_edit "/tmp/x.json" '{}' $'{}\n// not actually json')"
+
+expect_allow "no-code-comments: Edit preserves existing comment unchanged" \
+  "$(pretool_edit "/tmp/x.py" $'# existing\nx = 1' $'# existing\nx = 1\ny = 2')"
+
+expect_allow "no-code-comments: Edit removes a comment (no new comment)" \
+  "$(pretool_edit "/tmp/x.py" $'# leaving\nx = 1' "x = 1")"
+
+expect_allow "no-code-comments: Edit on file with no extension passes" \
+  "$(pretool_edit "/tmp/x" "old" $'old\n// looks like comment')"
+
+expect_allow "no-code-comments: Edit on .css passes (style-only language)" \
+  "$(pretool_edit "/tmp/x.css" "body {}" $'body {}\n/* css comments are fine */')"
+
+expect_deny "no-code-comments: MultiEdit first edit adds comment" \
+  "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"MultiEdit", tool_input:{file_path:"/tmp/x.ts", edits:[{old_string:"a", new_string:"a;\n// added"}, {old_string:"b", new_string:"b;"}]}}')" \
+  "no-code-comments"
+
+expect_allow "no-code-comments: Edit adds JS regex literal with escaped slashes" \
+  "$(pretool_edit "/tmp/x.ts" "let x = 1;" $'let x = 1;\nconst re = /https?:\\/\\//g;')"
+
+expect_allow "no-code-comments: Edit adds split on URL regex in .js" \
+  "$(pretool_edit "/tmp/x.js" "let x = 1;" $'let x = 1;\nconst parts = url.split(/\\/\\//)[1];')"
+
+expect_deny "no-code-comments: bare allow-comment without colon is blocked" \
+  "$(pretool_edit "/tmp/x.py" "x = 1" $'x = 1\n# Use allow-comment to bypass')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: pylint mid-prose is blocked" \
+  "$(pretool_edit "/tmp/x.py" "x = 1" $'x = 1\n# I hate pylint: it is annoying')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: noqa mid-prose is blocked" \
+  "$(pretool_edit "/tmp/x.py" "x = 1" $'x = 1\n# the noqa rule is dumb')" \
+  "no-code-comments"
+
+expect_allow "no-code-comments: noqa at body start passes" \
+  "$(pretool_edit "/tmp/x.py" "import os" $'import os  # noqa: F401')"
+
+expect_allow "no-code-comments: rubocop pragma at body start passes" \
+  "$(pretool_edit "/tmp/x.rb" "def foo; end" $'def foo  # rubocop:disable Style/EmptyMethod\nend')"
+
+expect_allow "no-code-comments: SPDX license header passes" \
+  "$(pretool_edit "/tmp/x.rs" "fn main() {}" $'// SPDX-License-Identifier: MIT\nfn main() {}')"
+
+expect_allow "no-code-comments: Licensed under MIT passes" \
+  "$(pretool_edit "/tmp/x.rb" "x = 1" $'# Licensed under the MIT License, see LICENSE for details\nx = 1')"
+
+expect_allow "no-code-comments: @generated marker passes" \
+  "$(pretool_edit "/tmp/x.ts" "let x = 1;" $'// @generated by tsoa\nlet x = 1;')"
+
+expect_allow "no-code-comments: Auto-generated marker passes" \
+  "$(pretool_edit "/tmp/x.py" "x = 1" $'# Auto-generated by protoc-gen-py. Do not edit.\nx = 1')"
+
+expect_allow "no-code-comments: .jsx files are excluded from inspection" \
+  "$(pretool_edit "/tmp/x.jsx" "let x = 1;" $'let x = 1;\n// this passes because jsx is excluded')"
+
+expect_allow "no-code-comments: .tsx files are excluded from inspection" \
+  "$(pretool_edit "/tmp/x.tsx" "let x = 1;" $'let x = 1;\n// this passes because tsx is excluded')"
+
+expect_deny "no-code-comments: .js still checked (not jsx)" \
+  "$(pretool_edit "/tmp/x.js" "let x = 1;" $'let x = 1;\n// this is still blocked in plain js')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: Swift /// doc comment blocked by design" \
+  "$(pretool_edit "/tmp/x.swift" "func foo() {}" $'/// Documentation\nfunc foo() {}')" \
+  "no-code-comments"
+
+expect_allow "no-code-comments: Swift /// doc with allow-comment escape" \
+  "$(pretool_edit "/tmp/x.swift" "func foo() {}" $'/// Documentation. allow-comment: generates API docs\nfunc foo() {}')"
+
+expect_allow "no-code-comments: /// doc with @generated pragma passes (marker chars stripped)" \
+  "$(pretool_edit "/tmp/x.rs" "fn foo() {}" $'/// @generated by build.rs\nfn foo() {}')"
+
+expect_allow "no-code-comments: /** */ block with @generated pragma passes (marker chars stripped)" \
+  "$(pretool_edit "/tmp/x.ts" "let x = 1;" $'/** @generated by openapi */\nlet x = 1;')"
+
+expect_allow "no-code-comments: //! Rust inner-doc with @generated passes" \
+  "$(pretool_edit "/tmp/x.rs" "fn foo() {}" $'//! @generated by build.rs\nfn foo() {}')"
+
+expect_deny "no-code-comments: prose body starting with 'go:' is blocked (not a Go directive)" \
+  "$(pretool_edit "/tmp/x.go" "package main" $'// go: fix this later\npackage main')" \
+  "no-code-comments"
+
+expect_allow "no-code-comments: //go:generate directive passes" \
+  "$(pretool_edit "/tmp/x.go" "package main" $'//go:generate stringer -type=Pill\npackage main')"
+
+expect_allow "no-code-comments: //go:embed directive passes" \
+  "$(pretool_edit "/tmp/x.go" "package main" $'//go:embed static/*\npackage main')"
+
+expect_deny "no-code-comments: Write new .sh with comment after shebang is blocked" \
+  "$(pretool_write "/tmp/new-x-after-shebang.sh" $'#!/usr/bin/env bash\n# sets up environment\nexport PATH=$PATH:/foo')" \
+  "no-code-comments"
 
 # --- Summary ---
 
