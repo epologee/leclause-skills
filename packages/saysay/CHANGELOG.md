@@ -16,3 +16,9 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
+
+## [v1.0.13]
+
+### Changed
+
+- **Speech follows the system voice, not the work product.** When your macOS voice is Dutch and you write English work, saysay now describes the work in Dutch instead of piping English text through a Dutch voice.
