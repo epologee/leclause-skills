@@ -136,9 +136,9 @@ Steps:
 
 2.5. **Contrarian pass on the checklist (mandatory).** A calling session that formulated its own list has every incentive to declare it complete. The author of the checklist is the author of any miss. Drydry closes that gap by running a contrarian Sonnet subagent against the formulated checklist *before* sweep runs. This is the analog of Chapter 7's contrarian-on-rejects, applied to the checklist itself, and it is the structural floor under the Formulation step: the worse the calling session's priors (a rover with thin scope context, a session new to the domain idiom, a session under turn-budget pressure), the more value the contrarian recovers.
 
-   Spawn one Sonnet subagent via the Agent tool with `subagent_type: Explore`. Pass the scope, the formulated checklist, and this brief:
+   Spawn one Sonnet subagent via the Agent tool with `subagent_type: Explore`. The Explore agent type ships with Read, Glob, Grep, and Bash; the subagent uses those tools to walk the scope independently, not to reason about the calling session's checklist in isolation. Independent codebase access is what makes step 2.5 an omission detector rather than a logical-consistency checker. Pass the scope path, the formulated checklist, and this brief:
 
-   > You are reviewing a duplication checklist for a codebase you have access to. The calling session formulated this list by reading the scope; your job is to find what the list is failing to name.
+   > You are reviewing a duplication checklist for a codebase you have direct read access to. The calling session formulated this list by reading the scope; your job is to walk the scope yourself and find what the list is failing to name. You are not reasoning about the prompts in the abstract; you are grepping the code, reading files, and producing concrete file:line evidence.
    >
    > For the checklist below, find:
    > 1. **Domain-value drift the list missed.** Are there canonical formatters, helpers, or view components whose call-sites the list does not audit? Walk the scope: which domain values get rendered, logged, spoken, or interpolated outside their canonical channel, in shapes the checklist did not name?
@@ -167,7 +167,12 @@ Steps:
 
 7. **(Optional) Dispatch `drydry:instructions`.** When the project has CLAUDE.md files (project-level or referenced from user-level), include a CLAUDE.md audit section: do the instructions themselves cause DRY violations?
 
-8. **Write the artefact.** Two-section markdown file at `<scope>-drydry-findings-<checklist-version>.md` (the checklist version timestamp from step 2 is appended so two audits against the same scope in the same session do not silently overwrite). Sections: `## Detection method chosen` (the checklist version, who formulated the checklist, the formulation prompts used, the sub-skills invoked, the verifier conventions; Chapter 8) and `## Findings` (one subsection per checklist item with the verified hits, drift hypotheses, triage, and contrarian verdict if applicable). Add `## Checklist gaps` when the sweep surfaced "interesting but off-list" hits (Chapter 3 keeps them out of the findings proper). Add `## Side quests` when out-of-scope follow-ups surfaced.
+8. **Write the artefact, including the checklist itself.** Two files land in the current working directory:
+
+   - `<scope>-drydry-checklist-<version>.md` contains the session-formulated checklist after the step 2.5 contrarian merge, verbatim. The checklist is its own artefact, not an ephemeral intermediate. Persisting it lets a second audit run on the same scope diff against the first checklist (catching vocabulary drift between developers and between weeks), and lets a reader of the findings file see exactly what the sweep was allowed to look for.
+   - `<scope>-drydry-findings-<checklist-version>.md` carries two sections. `## Detection method chosen` records the checklist version, who formulated the checklist, the formulation prompts that produced entries versus the ones logged "not applicable", the contrarian's verdict on step 2.5, the sub-skills invoked, and the verifier conventions (Chapter 8). `## Findings` has one subsection per checklist item with the verified hits, drift hypotheses, triage, and contrarian verdict if applicable. Add `## Checklist gaps` when the sweep surfaced "interesting but off-list" hits (Chapter 3 keeps them out of the findings proper). Add `## Side quests` when out-of-scope follow-ups surfaced.
+
+   The two filenames share the version timestamp so they can be read together; two audits against the same scope in the same session produce two pairs and do not silently overwrite.
 
 9. **Report.** One short summary to the operator: scope, number of findings, triage breakdown, path to the artefact.
 
