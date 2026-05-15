@@ -353,7 +353,7 @@ The Foresight is a scope-discipline tool, not a TODO list. "Address everything" 
 
 Foresight is Plan-time prediction; Three fates (above) classifies findings after they surface in SURVEY or INSPECT. The two rubrics run at different moments and serve different roles; do not collapse them.
 
-The Foresight is operator-visible. The rover does not ask the operator to confirm it (the rover is autonomous); the operator reads it later, and pride and gurus compare their INSPECT findings against it.
+The Foresight is operator-visible. The rover does not ask the operator to confirm it; the operator reads it later, and pride and gurus compare their INSPECT findings against it.
 
 **Plan-vs-Dispatch check (mandatory, multiple times).** The Dispatch block in the loop file holds the operator's verbatim invocation; it is the source of truth. Context is your interpretation and can itself have shrunk scope. Every check compares against Dispatch, never only against Context.
 
