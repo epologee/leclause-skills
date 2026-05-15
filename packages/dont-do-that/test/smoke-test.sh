@@ -355,6 +355,42 @@ expect_allow "no-remote: non-git commands pass" \
 cd "$ORIG_PWD"
 rm -rf "$NO_REMOTE2"
 
+# --- no-worktree-deploy --- allow-comment: section divider matches existing smoke-test.sh pattern
+
+pretool_bash_cwd() {
+  local cmd="$1" cwd="$2"
+  jq -cn --arg c "$cmd" --arg w "$cwd" \
+    '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$c}, cwd:$w}'
+}
+
+WT_MAIN=$(mktemp -d)
+git -C "$WT_MAIN" init -q
+git -C "$WT_MAIN" commit --allow-empty -q -m "init"
+WT_BRANCH=$(mktemp -u)
+git -C "$WT_MAIN" worktree add -q -b feature "$WT_BRANCH"
+
+expect_deny "no-worktree-deploy: ansible-playbook from worktree blocked" \
+  "$(pretool_bash_cwd 'ansible-playbook site.yml' "$WT_BRANCH")" \
+  "no-worktree-deploy"
+expect_allow "no-worktree-deploy: ansible-playbook --check from worktree passes" \
+  "$(pretool_bash_cwd 'ansible-playbook --check site.yml' "$WT_BRANCH")"
+expect_allow "no-worktree-deploy: ansible-playbook --syntax-check from worktree passes" \
+  "$(pretool_bash_cwd 'ansible-playbook --syntax-check site.yml' "$WT_BRANCH")"
+expect_allow "no-worktree-deploy: ansible-playbook from canonical checkout passes" \
+  "$(pretool_bash_cwd 'ansible-playbook site.yml' "$WT_MAIN")"
+expect_allow "no-worktree-deploy: git worktree commands from worktree pass" \
+  "$(pretool_bash_cwd 'git status' "$WT_BRANCH")"
+expect_allow "no-worktree-deploy: non-ansible command from worktree passes" \
+  "$(pretool_bash_cwd 'echo hello' "$WT_BRANCH")"
+
+git -C "$WT_MAIN" worktree remove -f "$WT_BRANCH" 2>/dev/null || rm -rf "$WT_BRANCH"
+rm -rf "$WT_MAIN"
+
+NON_GIT=$(mktemp -d)
+expect_allow "no-worktree-deploy: ansible-playbook outside git repo passes" \
+  "$(pretool_bash_cwd 'ansible-playbook site.yml' "$NON_GIT")"
+rm -rf "$NON_GIT"
+
 # --- block-inline-dashes ---
 # The awk dash-detect needs an em-dash in a non-code line. We use printf
 # to inject the raw byte so the literal stays out of the file.

@@ -17,6 +17,12 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous.
 
+## [v1.0.59]
+
+### Added
+
+- **New PreToolUse:Bash guard `no-worktree-deploy`.** Blocks `ansible-playbook` when the cwd is a git worktree, so branch state cannot land on shared infrastructure before merging to the default branch. Read-only flags pass (`--check`, `--syntax-check`, `--list-tasks`, `--list-hosts`, `--list-tags`, `--version`, `--help`, `-h`).
+
 ## [v1.0.52]
 
 ### Added
