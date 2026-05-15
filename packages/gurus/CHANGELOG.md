@@ -21,4 +21,4 @@ without a `## [vX.Y.Z]` section stays silent on every update.
 
 ### Changed
 
-- Eric Evans replaces Tobi Lutke on the `/gurus:software` panel. Panel size stays at eight, threshold stays 6+/8. Evans brings a domain-modeling lens (ubiquitous language, bounded contexts, aggregates, anti-corruption layers) the panel was missing; Lutke's pragmatic-shipping lens overlapped heavily with Thoughtbot and Hickey across past reviews.
+- Eric Evans replaces Tobi Lutke on the `/gurus:software` panel; size and 6+/8 threshold unchanged. Evans brings the domain-modeling lens (ubiquitous language, bounded contexts, aggregates, anti-corruption layers) the panel was missing.
