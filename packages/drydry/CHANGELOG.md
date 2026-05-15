@@ -21,12 +21,12 @@ without a `## [vX.Y.Z]` section stays silent on every update.
 
 ### Breaking
 
-- Audit mode no longer hands you a canned checklist. The calling session formulates the duplication checklist by reading the codebase against eight formulation prompts in `drydry:drydry` step 2.
-- `drydry:checklist` is now opt-in. Pass `seed-from <domain>` to fetch baked templates as a starting point; the session rewrites them against the actual codebase before passing to sweep.
+- Audit mode no longer hands you a canned checklist. The calling session formulates the duplication checklist itself against eight formulation prompts in `drydry:drydry` step 2.
+- `drydry:checklist` is now opt-in via `seed-from <domain>`. No-keyword audits never dispatch it.
 
-### Changed
+### Added
 
-- README Chapter 3 clarifies that the allow-list discipline stays while the source of the list shifts to the calling session. Adds a Portier worked example showing why the source matters.
+- New mandatory step 2.5: a contrarian Sonnet subagent reads the formulated checklist against the scope and surfaces what it is failing to name. Audits the omission of findings the way Chapter 7 audits the rejection of findings.
 
 ## [v1.0.9]
 
