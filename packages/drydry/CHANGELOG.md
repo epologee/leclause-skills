@@ -17,6 +17,17 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
 
+## [v1.0.12]
+
+### Breaking
+
+- Audit mode no longer hands you a canned checklist. The calling session formulates the duplication checklist itself against eight formulation prompts in `drydry:drydry` step 2.
+- `drydry:checklist` is now opt-in via `seed-from <domain>`. No-keyword audits never dispatch it.
+
+### Added
+
+- New mandatory step 2.5: a contrarian Sonnet subagent reads the formulated checklist against the scope and surfaces what it is failing to name. Audits the omission of findings the way Chapter 7 audits the rejection of findings.
+
 ## [v1.0.9]
 
 ### Added
