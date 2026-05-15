@@ -119,7 +119,9 @@ Sometimes a criterion cannot be verified with available tools:
 - Timing-sensitive measurements without a stable baseline
 - Behaviors that only manifest under rare conditions
 
-Mark these `unverified: <specific reason>` in the Done criteria. Do not claim them met. The rover does not decide on its own that an unverified criterion is "acceptable" and push on. The rover also does not route unverified criteria to the operator; there is no operator-accept path inside an autonomous mission. The rover's job is to make every criterion verifiable and produce the evidence. This is the same category-2 contract that `rover`'s "No half-measures" section defines: a finding leaves the list only with concrete evidence of non-issue (or is fixed); a Done criterion is one instance of that rule.
+Mark these `unverified: <specific reason>` in the Done criteria. Do not claim them met. The rover does not decide on its own that an unverified criterion is "acceptable" and push on. The rover also does not route unverified criteria to the operator; there is no operator-accept path inside an autonomous mission. The rover's job is to make every criterion verifiable and produce the evidence.
+
+Done criteria are not findings. The three-fates rubric from `rover` applies to findings raised by pride, gurus, end-user, and technical passes; it does not apply here. Done criteria are the mission's destination, not weights along the way. There is no fate-2 cost-value-skip path for a Done criterion: every criterion is either met with evidence, or unverified (which blocks STOW until the rover produces a verification route). Fate 3 (reject-as-non-issue) does not apply either: a Done criterion was committed to during SURVEY and proves the mission delivered what the Dispatch asked for, so it cannot retroactively be a non-issue.
 
 ### Unverified blocks STOW, not INSPECT activity
 

@@ -20,7 +20,7 @@ In an ordinary workflow, code review and "sleeping on it" catch the pride-level 
 
 The pride check injects an independent skeptic before the loop transitions to its "done" states. If the loop is good at what it does, the pride check usually finds something real. When it finds nothing, it has to explain what it examined and why nothing was flagged. Vague "looks good" is rejected.
 
-**Pride is not a deferral engine.** Its purpose is to verify that everything is done, not to produce a list of things the rover can defer to "later" or "follow-up". When pride finds something, the rover goes back to DRIVE and fixes it. There is no "log and ship" for any finding. There is no "we will address this in a follow-up". There is no operator-accept path for rejecting findings. Either the rover fixes it, or a second contrarian pass confirms it was a non-issue. Pride's output drives the loop back into work, not toward the exit.
+**Pride is not a deferral engine.** Its purpose is to verify that everything is done, not to produce a list of things the rover can defer to "later" or "follow-up". When pride finds something, the rover applies the three-fates rubric from `rover`'s "Three fates" section: fix in a new DRIVE cycle, cost-value-skip with a structured rationale (concrete output cost, concrete value, named canon-vraag), or reject-as-non-issue with a second contrarian pass confirming the reject as hollow. There is no "log and ship" for any finding. There is no "we will address this in a follow-up". There is no operator-accept path for rejecting findings. Pride's output drives the loop back into work or into a logged engineering call, not toward the exit.
 
 ## When to run
 
@@ -139,13 +139,14 @@ Pass the collected diff to the subagent. Large diffs: `git diff --stat "$RANGE"`
 
 ## What to do with findings
 
-Pride is not a deferral mechanism. Its output is a list of things to fix, not a list to route around. There is no "log and ship" path. Every finding gets one of two fates inside the current mission: fixed, or rejected with concrete evidence of non-issue via the second-pass gate below.
+Pride is not a deferral mechanism. Its output is a list of things to weigh, not a list to route around. There is no "log and ship" path. Every finding goes through one of the three fates from `rover`'s "Three fates" section: fix in a new DRIVE cycle, cost-value-skip with a structured rationale, or reject-as-non-issue with the second-pass gate below.
 
 **Inside a running loop (auto-triggered):**
 
 1. Write findings to the loop file's `## Log` section under a `[HH:MM] Pride check findings:` header
-2. Set Phase back to DRIVE if there is anything actionable
-3. Do NOT forward findings to the operator mid-loop. The operator is not consulted mid-mission; the rover fixes everything before the next handoff.
+2. For each finding, name the fate and the rationale: fate 1 (fix) lists the DRIVE target; fate 2 (cost-value-skip) lists concrete output cost (lines that would be added, files that would gain surface, maintenance burden), concrete value (severity, likelihood, who would notice), and the canon-vraag from `rover` that landed the call; fate 3 (reject-as-non-issue) triggers the second-pass gate.
+3. Set Phase back to DRIVE if there is anything in fate 1
+4. Do NOT forward findings to the operator mid-loop. The operator is not consulted mid-mission; the rover processes everything before the next handoff.
 
 **Invoked manually (`/autonomous:pride`):**
 
@@ -155,17 +156,17 @@ Pride is not a deferral mechanism. Its output is a list of things to fix, not a 
 
 ### Every reject gets a second pass
 
-Every finding is either **fixed** in a follow-up DRIVE cycle or **rejected** with a written reason that names a concrete fact (not a feeling). "Bewuste keuze" without pointing at where that choice was made is not a reason. "Out of scope" is never a reason at all inside an autonomous rover: the rover does not down-scope. Neither is "pre-existing" or "not introduced by this mission": authorship and timing are not scope boundaries, see `rover`'s "Origin is not a scope argument".
+Fate 3 (reject-as-non-issue) is the suspect move. The rover built the work, so it has every incentive to wave a finding away; a second reader who did not build it is the most reliable correction available. A threshold-based gate ("run pass 2 only when rejects exceed N%") quietly contradicts this principle by admitting a band where rejects pass unreviewed. Any ratio above zero is arbitrary and defensible only by feel, and feel about rejects has no reason to be well-calibrated: the author's incentive to keep a reject standing is exactly the incentive the second pass exists to counter.
 
-The principle: rejects are the suspect move. The rover built the work, so it has every incentive to wave a finding away; a second reader who did not build it is the most reliable correction available. A threshold-based gate ("run pass 2 only when rejects exceed N%") quietly contradicts this principle by admitting a band where rejects pass unreviewed. Any ratio above zero is arbitrary and defensible only by feel, and feel about rejects has no reason to be well-calibrated: the author's incentive to keep a reject standing is exactly the incentive the second pass exists to counter.
+So the rule is flat: **any fate-3 reject triggers a second pride pass** before it is final. Run pride a second time with a different subagent and a stricter brief ("the author rejected the following findings as non-issues; tell me which rejects are hollow and which ones are real"), reconcile the two reports, log both runs in the loop file. A fate-3 reject is only final after the second-run subagent independently agrees (concrete-evidence-of-non-issue, per `rover`'s fate-3 definition). If the second pass says the finding is real, the rover fixes it (fate 1) or, if cost outweighs value, applies fate 2 with a structured rationale.
 
-So the rule is flat: **any reject triggers a second pride pass** before it is final. Run pride a second time with a different subagent and a stricter brief ("the author rejected the following findings; tell me which rejects are hollow and which ones are real"), reconcile the two reports, log both runs in the loop file. A reject is only final after the second-run subagent independently agrees (concrete-evidence-of-non-issue, per `rover`'s category-2 definition). If the second pass says the finding is real, the rover fixes it.
+**Fate 2 (cost-value-skip) does not trigger a second pride pass.** The structured rationale itself is the evidence: concrete output cost, concrete value, named canon-vraag from `rover`. "Bewuste keuze" without that structure is not a fate-2 rationale, it is a feeling, and feelings do not retire findings. "Out of scope" is never a fate-2 rationale inside an autonomous rover: scope is the Dispatch's job, not the rover's; the rover weighs output cost against value, not scope-fit. Neither is "pre-existing" or "not introduced by this mission" a fate-2 rationale: authorship and timing are not output-cost arguments, see `rover`'s "Origin is not a scope argument".
 
-There is no operator-accept path: the operator is not consulted mid-mission. The rover does not retire a finding unilaterally, and the operator is not consulted to retire one either. If there are no rejects in a pass, no second pass is needed; the expensive case is reject-heavy work, and that is exactly the case where the check earns its keep.
+There is no operator-accept path for any fate. The operator is not consulted mid-mission. The rover does not retire a finding unilaterally outside the three fates, and the operator is not consulted to retire one either.
 
 ### Banned closing language
 
-The following phrases are evidence the rover is handing off half-finished work. Any of them in an artefact, a communiqué, a commit message, or a mid-loop status line sends the rover back to DRIVE, no exceptions:
+The following phrases are evidence the rover is handing off half-finished work. Any of them in an outbound artefact (commit messages, communiqués, PR descriptions, prose deliverables, mid-loop status lines visible to the operator) sends the rover back to DRIVE, no exceptions:
 
 - "mostly works", "mostly done", "largely addressed", "grotendeels"
 - "roughly done", "roughly complete", "a rough pass"
@@ -175,7 +176,9 @@ The following phrases are evidence the rover is handing off half-finished work. 
 - "will follow up later", "later polish", "polish-for-later"
 - "not quite there", "not fully done", "almost done"
 
-The pattern these share: an acknowledgement that the work is not complete, paired with a suggestion that completion is optional. Pride rejects that combination. Either the work is complete or it is not; if it is not, every remaining item becomes a tracked finding with one of two fates (fix now, or reject with concrete evidence of non-issue via the second-pass gate) before anything ships.
+The pattern these share: an acknowledgement that the work is not complete, paired with a suggestion that completion is optional. Pride rejects that combination in outbound artefacts. Either the work is complete or it is not; if it is not, every remaining item is a tracked finding routed through one of the three fates (see `rover`'s "Three fates").
+
+These phrases are NOT banned inside the mission-internal fate-2 cost-value rationale blocks in the loop file's pride or gurus findings log. Inside that structure the same wording is the conclusion of a logged engineering call (concrete output cost, concrete value, named canon-vraag), not a hand-wave. Pride reviews outbound artefacts; the rover's own findings log is not an outbound artefact, so the structured fate-2 form is allowed there even when its words overlap with phrases banned elsewhere.
 
 ## What counts as "nothing found"
 
