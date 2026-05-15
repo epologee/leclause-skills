@@ -21,7 +21,7 @@ Version numbers may therefore be non-contiguous.
 
 ### Added
 
-- **New PreToolUse:Bash guard `no-worktree-deploy`.** Blocks `ansible-playbook` when the cwd is a git worktree, so branch state cannot land on shared infrastructure before merging to the default branch. Read-only flags pass (`--check`, `--syntax-check`, `--list-tasks`, `--list-hosts`, `--list-tags`, `--version`, `--help`, `-h`).
+- **New PreToolUse:Bash guard `no-worktree-deploy`.** Blocks `ansible-playbook` when cwd is a git worktree, so branch state cannot land on shared infrastructure pre-merge. Read-only flags still pass (`--check`, `--syntax-check`, `--list-*`, `--version`, `--help`).
 
 ## [v1.0.52]
 
