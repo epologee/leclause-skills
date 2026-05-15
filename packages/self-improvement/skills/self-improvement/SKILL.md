@@ -26,18 +26,44 @@ re-shows the section on demand without touching the sentinel.
 
 # Self-Improvement
 
-Update skills, hook reasons, and CLAUDE.md files based on user feedback. Skills and hook reasons are the default targets when feedback arises in their context; CLAUDE.md is a last resort for skill-independent behavior. Detects duplication, determines optimal location, can extract CLAUDE.md sections to skills, and creates new skills via TDD approach.
+Update hooks, skills, project code, and CLAUDE.md files based on user feedback. CLAUDE.md is the **absolute last resort**, not the first reflex. Detects duplication, determines optimal location along two axes (enforcement strength and scope of applicability), can extract CLAUDE.md sections to skills, and creates new skills via TDD approach.
 
-## STOP: answer this question first
+## STOP: walk both ladders before editing anything
 
-**Before you scan or edit anything: does this feedback arise from a skill that just ran or is being mentioned?** If so, the skill source is the default target, not CLAUDE.md. CLAUDE.md as default is the wrong answer. The failing pattern is: feedback is about what `/eye-of-the-beholder` (or any other skill) should have caught, and a CLAUDE.md rule gets proposed. CLAUDE.md does not win over skill content in the context where the skill runs; the skill does.
+Every piece of feedback gets classified along two axes before any edit. The failing pattern is: feedback arises in project P, around skill S, while running command C, and a rule gets pinned to P's CLAUDE.md because that is the nearest writable file. CLAUDE.md should almost never be the answer.
 
-Signals that this is skill-level feedback:
-- The user mentions a skill literally ("waarom vangt `/name` X niet").
-- The feedback concerns the quality or completeness of what a skill delivered.
-- The user triggered `/self-improvement` after a skill output, not after a general-behavior observation.
+### Axis 1: enforcement ladder (highest to lowest)
 
-On any of these signals: go directly to "Skill-related feedback: skill content first" below. Skip the CLAUDE.md scan unless you have explicitly determined that the feedback is skill-independent.
+Walk from 1 to 4 and stop at the first level that can structurally address the feedback. Do not skip levels.
+
+1. **Hook / structural enforcement.** Can a hook fire on this? PreToolUse, PostToolUse, SessionStart, SessionEnd, UserPromptSubmit, Stop, or a git-native hook (commit-msg, pre-push). Settings.json deny rules count here too. Hooks fire deterministically regardless of which skill is loaded and regardless of how attentive the model is in the moment. If a hook can block or warn, the hook script is the target.
+2. **Skill or plugin.** If no hook fits: is there an existing skill that should already cover this (and the wording needs sharpening), or does a new skill / plugin need to exist? Skill content reaches the model only when the description matches, but it carries more nuance than a hook reason.
+3. **Project code.** If no skill fits: is the feedback pointing at a recurring pattern in the project code itself, where the same fix keeps being applied because the underlying structure keeps making the same mistake possible? Refactor the code (consolidate parallel paths, rename, add a type guard, delete dead lookalikes) so the trigger no longer exists. The user often phrases this as "elke keer dat we hier langskomen herhalen we dit patroon".
+4. **CLAUDE.md.** Last resort. CLAUDE.md is text the model has to remember to apply under load; it drifts and is the weakest form of enforcement. Only when none of the three above can address the feedback structurally.
+
+Other rungs may sit between these (helper scripts in `bin/`, test fixtures that pin behavior, type definitions, settings.json permission tuning). Treat the four named levels as a minimum, not an exhaustive list.
+
+### Axis 2: scope ladder (broadest to narrowest)
+
+After choosing the enforcement level, choose the scope. Walk from A to D and stop at the broadest scope where the principle still holds.
+
+A. **Cross-project / language-agnostic.** The principle would apply equally in a Ruby project, a Swift project, a Go project. Target: a shared skill / plugin in this marketplace, or `~/.claude/README.md` for non-marketplace personal contexts. Never a single project's CLAUDE.md.
+B. **Cross-project but language- or framework-specific.** Applies to all React projects, or all Rails projects, or all iOS projects. Target: a framework-scoped skill, or a shared README section that names the framework.
+C. **One repo, multiple subprojects.** Target: that repo's root CLAUDE.md or a repo-level skill.
+D. **One subproject only.** Target: that subproject's CLAUDE.md, or a subproject-scoped skill.
+
+**Scope-underclaim is the most common drift.** The feedback arose in project P does NOT mean the target is P. Scope = where the principle applies, not where it was triggered. If you cannot say with conviction "this principle only applies to project P and would not apply to any sibling project", you have not yet reached the right level. A concrete recent failure mode worth remembering: the user-level rule "no pre-existing-test-failure claim without a baseline run on the mission base branch" arose during one iOS mission and got pinned to that one project's CLAUDE.md, despite being a generic commit-discipline rule that belongs in `gitgit:commit-discipline` (which already governs commit attestation and `Red-then-green` self-attestation). A waste of opportunity for growth: the same principle could have sharpened a marketplace skill and benefited every project, every language, every team member.
+
+### Combining the two axes
+
+The final target is the cell at the intersection of the enforcement level and the scope. Examples:
+
+- Generic commit-discipline rule → enforcement level 1 (PreToolUse hook on `git commit`) or 2 (sharpen `gitgit:commit-discipline` skill), scope A (cross-project). Target: hook script or skill source under `packages/gitgit/`.
+- "In this Rails app always use travel_to in time-sensitive specs" → enforcement level 4 (CLAUDE.md), scope B (Rails-specific). Target: the project's CLAUDE.md.
+- "The same `pbxproj` corruption keeps happening on every xcodegen run" → enforcement level 3 (fix the project code or the xcodegen config), scope C (one repo). Target: that repo's xcodegen YAML.
+- "Claude keeps using em-dashes in prose despite the existing hook" → enforcement level 1 (sharpen the existing `block-inline-dashes` hook reason), scope A. Target: the hook script's reason text.
+
+**Default-bias correction.** The shortest path is to pin a rule to the nearest CLAUDE.md of the current working directory. That path is almost always wrong. The shortest path optimizes for "fastest to write" and ignores both "highest enforcement" and "broadest applicability". A skill or hook edit takes longer to write but reaches more sessions and resists drift; that is the trade /self-improvement is meant to lean into.
 
 ## Triggers
 
@@ -79,91 +105,147 @@ In such a project, improvements go into the relevant plugin itself:
 
 On every `/self-improvement`, check first: is this a marketplace? `ls packages/*/.claude-plugin/plugin.json 2>/dev/null` answers the question. If yes, find the plugin the feedback belongs to and improve there.
 
-## Hook-related feedback: hook reason first
+## Level 1: Hook / structural enforcement
 
-When feedback concerns Claude's behavior around a hook (misuse of escape hatches, unclear reasons, undesired pattern in response), the **hook reason** is usually the right place to improve. Reasons:
+The first question on every piece of feedback. The hook reason is the only text Claude is GUARANTEED to see when the hook fires. A hook fires deterministically; a skill activates only on description match; a CLAUDE.md rule only reaches users of that same CLAUDE.md, and only when the model remembers to apply it.
 
-1. The hook reason is the only text Claude is GUARANTEED to see when the hook fires
-2. A skill activates only on description match (no guarantee that it intervenes on a hook fire)
-3. A CLAUDE.md rule only reaches users of the same CLAUDE.md
+When a hook already exists for the area: sharpen the reason. Name explicit anti-patterns in the text ("`🧭 dit was een reflex` is contradictory"). The reason text travels with every fire.
 
-**Order of interventions for hook feedback:**
+When no hook exists but one could: propose the hook event, the matcher, and the script location. For marketplace plugins, hook scripts live under `packages/<plugin>/hooks/scripts/<hook>.sh`; for personal use, `~/.claude/hooks/`. Wire the entry in the plugin's `hooks.json` or in `~/.claude/settings.json` under the matching event.
 
-1. **First:** Sharpen the hook reason. Name explicit anti-patterns in the text ("`🧭 dit was een reflex` is contradictory").
-2. **Next:** Skill in the plugin, only if the workflow is too complex for a hook reason and the pattern is broader than one hook fire.
-3. **Last resort:** CLAUDE.md, only for personal projects, never for marketplace plugins.
+When the feedback concerns a hook the user encountered (escape-hatch misuse, unclear reason, the gate firing in the wrong situation): the hook script is the target. Do not write a CLAUDE.md rule about how to interact with the hook.
 
-## Skill-related feedback: skill content first
+**Order of interventions inside Level 1:**
 
-When feedback arises during (or about) a specific skill invocation, the **skill content** is the right place to improve, NOT CLAUDE.md. The skill contains the instructions the user wants to sharpen; those instructions only land in Claude's context when the skill runs. Firing a CLAUDE.md rule at a skill problem misses the target: the skill wins in its own context.
+1. **First:** Sharpen the hook reason. Reason text is read every fire.
+2. **Next:** Adjust the hook's matcher or detection logic, if the gate is firing on the wrong inputs.
+3. **Adjacent:** Add a new hook only when the behavior is well-defined enough that a script can detect it programmatically.
 
-Signals that feedback is skill-level:
-- The user names the skill ("/eye-of-the-beholder vangt X niet", "waarom doet /inspire Y niet").
-- The observation describes a gap in what a skill should catch, not a pattern in Claude's default behavior.
-- The feedback quotes skill language verbatim.
+If Level 1 cannot address the feedback, drop to Level 2.
 
-**Order of interventions for skill feedback:**
+## Level 2: Skill or plugin
 
-1. **First:** Locate the skill source. Plugin skills live under `~/github.com/<owner>/<plugin-repo>/packages/<plugin>/skills/<name>/` or comparable plugin source. The `~/.claude/plugins/cache/` is a cache and not a workplace.
-2. **Sharpen the skill.** If the principle is already there but is not being followed, make it more explicit: tie measurement to judgment, add a checkpoint, give a concrete counter-example from the current situation.
-3. **CLAUDE.md only when the behavior is skill-independent.** Only when the feedback concerns Claude's general working style (e.g., "always apply skills fully" / "pas skills altijd volledig toe"), not the content of a specific skill.
+When no hook can structurally block the behavior, the next question is whether a skill carries the right level of nuance. Skill content reaches the model only when the skill's description matches the current context, but skills can encode workflows, checklists, decision trees, and rationalization tables that a hook reason cannot fit.
 
-If the source is not local, find it remotely via the plugin cache (`git config --get remote.origin.url` in `~/.claude/plugins/marketplaces/<owner>/`). Do not ask the user to clone the repo; first check whether a sibling org under `~/github.com/` has it.
+Two flavors of Level 2 work:
 
-### Rationalizations that drift toward CLAUDE.md (do not do)
+**Sharpen an existing skill.** When the feedback names a skill, or when an existing skill already covers the broader area, the source is that skill's `SKILL.md`. If the principle is already there but is not being followed, the wording is too weak. Make it explicit: tie measurement to judgment, add a checkpoint, add a concrete counter-example from the current situation, add a red-flag thought to interrupt the rationalization in flight.
+
+**Create a new skill or plugin.** When no skill covers the area but the workflow is well-defined and would benefit multiple sessions, draft a new skill. Use the TDD approach documented later in this file. In a marketplace project, the new skill lands under `packages/<plugin>/skills/<name>/` (existing plugin) or in a new plugin directory. Outside a marketplace, `~/.claude/skills/<name>/`.
+
+**Locating skill sources.** Plugin skills live under `~/github.com/<owner>/<plugin-repo>/packages/<plugin>/skills/<name>/` or comparable plugin source. `~/.claude/plugins/cache/` is a cache and not a workplace; edits there are overwritten on the next `claude plugins update`. If the source is not local, find the upstream via `git config --get remote.origin.url` in `~/.claude/plugins/marketplaces/<owner>/`; check whether a sibling org under `~/github.com/` already has it before suggesting a clone.
+
+**Scope check before editing a skill.** If the named skill belongs to one project but the principle is cross-project, the right target is a shared skill in the marketplace, not a one-project copy. Ask: would this same principle apply in a Ruby project, a Swift project, a Go project, a React project? If yes, look for an existing cross-project skill that already governs the area (`gitgit:commit-discipline`, `testing-philosophy`, `programming-philosophy`, `verification-and-diagnosis`) before extending a narrower one.
+
+If Level 2 cannot address the feedback, drop to Level 3.
+
+### Rationalizations that drift toward CLAUDE.md or toward narrow scope (do not do)
 
 | Excuse | Reality |
 |--------|---------|
-| "This is general Claude behavior so CLAUDE.md" / "Dit is algemene Claude-gedrag dus CLAUDE.md" | No: the user triggered it during a skill. The problem is that the skill did not enforce the rule. |
+| "This is general Claude behavior so CLAUDE.md" / "Dit is algemene Claude-gedrag dus CLAUDE.md" | No: the user triggered it during a skill or hook fire. The problem is that the skill / hook did not enforce the rule. |
 | "The skill is in a cache, I cannot reach the source" / "De skill staat in een cache, ik kan niet bij de bron" | The source is under `~/github.com/<owner>/<plugin-repo>/`. Find it, do not re-clone. |
-| "CLAUDE.md is faster to reach" / "CLAUDE.md is sneller bereikbaar" | Faster to reach does not solve the problem. CLAUDE.md does not reach Claude at the moment the skill runs. |
+| "CLAUDE.md is faster to reach" / "CLAUDE.md is sneller bereikbaar" | Faster to reach does not solve the problem. CLAUDE.md does not reach the model at the moment the hook fires or the skill runs. |
 | "The principle is already in the skill, so nothing can be added there" / "Het principe staat al in de skill, dus daar kan niks bij" | If the principle is there but is not being followed, it is too weakly worded. Sharpen it. See "/self-improvement ALWAYS means a change". |
-| "CLAUDE.md is a broader catch" / "CLAUDE.md is een bredere vangst" | Broader is not more on-target. The specific skill context wins in its own runtime. |
-| "The user will probably want it in CLAUDE.md again" / "User zal het waarschijnlijk wel weer in CLAUDE.md willen" | That is a guess, not an observation. Read the feedback: does it name a skill? Then skill. |
+| "CLAUDE.md is a broader catch" / "CLAUDE.md is een bredere vangst" | Broader CLAUDE.md is not more on-target. The specific hook / skill context wins in its own runtime. |
+| "The user will probably want it in CLAUDE.md again" / "User zal het waarschijnlijk wel weer in CLAUDE.md willen" | That is a guess, not an observation. Read the feedback: does it name a skill or hook? Then skill or hook. |
+| "The feedback came up in project P, so the rule belongs in P's CLAUDE.md" | Scope underclaim. Where the feedback arose is not the same as where the principle applies. Ask: would this rule hold in a sibling project? If yes, the target is cross-project (a marketplace skill or user-level), not P. |
+| "There is no marketplace skill that exactly covers this area" / "Er is geen marketplace skill die hier precies over gaat" | Then look at the adjacent ones (`gitgit:commit-discipline`, `testing-philosophy`, `programming-philosophy`, `verification-and-diagnosis`). A near-adjacent skill that absorbs the rule beats a project-specific copy. |
+| "This is iOS-specific (or Rails-specific, etc.) so it has to be project-level" | Language- or framework-specific is scope B, not scope D. A skill scoped to that framework still beats a single project's CLAUDE.md. |
 
 ### Red flags to recognize
 
-If you catch yourself on one of these thoughts during /self-improvement, stop and go to the skill source:
+If you catch yourself on one of these thoughts during /self-improvement, stop and re-walk both ladders:
 
-- "Let me first read `~/.claude/README.md`" / "Laat ik eerst even `~/.claude/README.md` lezen" while the feedback names a skill
-- "I will add a rule to Werkwijze" / "Ik voeg een rule toe aan Werkwijze" without first having looked up the named skill
-- "The scan starts with Glob on CLAUDE.md" / "De scan begint met Glob op CLAUDE.md" before you have established that this is CLAUDE.md feedback
-- Preparing an Edit call on `~/.claude/README.md` while you have not yet located a skill source
+- "Let me first read `~/.claude/README.md`" while the feedback names a skill or hook
+- "I will add a rule to Werkwijze" / "Ik voeg een rule toe aan Werkwijze" without first having looked up the named skill or hook
+- "The scan starts with Glob on CLAUDE.md" before you have established that this is Level 4 (CLAUDE.md) feedback
+- Preparing an Edit on a project's CLAUDE.md while the principle would also hold in a sibling project
+- Pinning a generic commit-discipline / test-discipline / verification-discipline rule to one project's CLAUDE.md instead of the corresponding shared skill (`gitgit:commit-discipline`, `testing-philosophy`, `verification-and-diagnosis`)
+- Preparing an Edit call on `~/.claude/README.md` while you have not yet located a hook or skill source that could carry the rule with stronger enforcement
 
 Default route for skill feedback: `find ~/github.com -type d -name "<skill-name>" -path "*/skills/*"` to find the source, then Edit there.
+
+## Level 3: Project code (eliminate the recurring trigger)
+
+Sometimes the right fix is not in the Claude tooling at all; it is in the project code that keeps triggering the same correction. Signals:
+
+- The same fix has been applied two or more times in the same area
+- The same drift keeps appearing between two locations that should be in sync
+- The same gotcha keeps biting (an ambiguous API, two functions with overlapping names, an implicit invariant)
+- The user says "elke keer dat we hier langskomen", "weer", "alweer", "voor de zoveelste keer"
+
+The structural fix is to make the mistake impossible:
+
+- Consolidate two parallel paths into one (often a `/drydry:drydry` candidate)
+- Rename a confusingly-named function or file so the mistake stops being inviting
+- Move a constant out of two duplicated definitions into a shared module
+- Turn a runtime check into a compile-time guard (types, contracts, schemas)
+- Delete dead code that keeps being mistaken for live code
+- Add a test that pins the invariant so the next break is caught at suite-time, not in production
+
+Once the trigger is gone from the code, the behavior cannot recur, regardless of which skill is loaded or how attentive the model is. This level beats CLAUDE.md every time it applies. The drawback is that Level 3 work happens inside the project being audited, which means it touches more than the Claude config; it is real code work with real review implications. Worth it.
+
+If Level 3 cannot address the feedback, drop to Level 4.
+
+## Level 4: CLAUDE.md (absolute last resort)
+
+CLAUDE.md is the catch for principles that:
+
+- Cannot be hook-enforced (the model judgment required is too contextual for a script)
+- Cannot live in a skill (the description would not match the contexts where the rule matters, or the rule is too general to belong to one skill's surface area)
+- Cannot be designed away in code (the principle is about the model's working style, not about a code structure)
+
+Even at Level 4, the scope ladder still applies: a CLAUDE.md rule in `~/.claude/README.md` (cross-project personal context) is broader than one in a project's CLAUDE.md, and a deviation-from-user-level note in a project's CLAUDE.md beats a duplicate of the user-level rule.
+
+In a marketplace project, user-level CLAUDE.md is excluded as a target for plugin-related feedback (see "Plugin marketplace projects" above). Plugin-related feedback at Level 4 goes into `packages/<plugin>/README.md` or the relevant SKILL.md's prose, not into `~/.claude/README.md`.
 
 ## Workflow
 
 ```dot
 digraph self_improvement {
-  "User input received" -> "Skill feedback?"
-  "Skill feedback?" -> "Locate skill source" [label="yes (default)"]
-  "Skill feedback?" -> "Hook feedback?" [label="no"]
-  "Hook feedback?" -> "Open hook script" [label="yes"]
-  "Hook feedback?" -> "CLAUDE.md feedback?" [label="no"]
-  "CLAUDE.md feedback?" -> "Scan all CLAUDE.md" [label="yes"]
-  "CLAUDE.md feedback?" -> "Consider new skill" [label="no"]
-  "Locate skill source" -> "Sharpen skill"
-  "Open hook script" -> "Sharpen hook reason"
-  "Scan all CLAUDE.md" -> "Check duplication"
-  "Check duplication" -> "Determine best location"
-  "Determine best location" -> "Determine language"
-  "Sharpen skill" -> "Determine language"
-  "Sharpen hook reason" -> "Determine language"
-  "Determine language" -> "Apply edit directly"
-  "Apply edit directly" -> "Show what was applied"
+  "User input received" -> "Can a hook structurally block this? (Level 1)"
+  "Can a hook structurally block this? (Level 1)" -> "Sharpen / add hook" [label="yes"]
+  "Can a hook structurally block this? (Level 1)" -> "Can a skill / plugin catch this? (Level 2)" [label="no"]
+  "Can a skill / plugin catch this? (Level 2)" -> "Sharpen / create skill" [label="yes"]
+  "Can a skill / plugin catch this? (Level 2)" -> "Recurring code pattern? (Level 3)" [label="no"]
+  "Recurring code pattern? (Level 3)" -> "Refactor project code" [label="yes"]
+  "Recurring code pattern? (Level 3)" -> "CLAUDE.md (Level 4, last resort)" [label="no"]
+  "Sharpen / add hook" -> "Scope check"
+  "Sharpen / create skill" -> "Scope check"
+  "Refactor project code" -> "Scope check"
+  "CLAUDE.md (Level 4, last resort)" -> "Scope check"
+  "Scope check" -> "Cross-project? Find shared target" [label="yes"]
+  "Scope check" -> "Project-specific target" [label="no"]
+  "Cross-project? Find shared target" -> "Apply edit"
+  "Project-specific target" -> "Apply edit"
+  "Apply edit" -> "Show what was applied"
 }
 ```
 
-### Step 0: Classify the feedback
+### Step 0: Walk both ladders
 
-Before you scan anything: which type is this?
+Before you scan anything, ask in order:
 
-1. **Skill feedback** (user names a skill, feedback concerns skill output quality, `/self-improvement` triggered directly after a skill invocation): skip Step 1, go to "Skill-related feedback: skill content first" above. Locate the skill source and edit there.
-2. **Hook feedback** (behavior around a hook, escape-hatch misuse, unclear hook reason): skip Step 1, go to "Hook-related feedback: hook reason first".
-3. **CLAUDE.md feedback** (general Claude working style, skill-independent pattern, conventions): proceed to Step 1.
+**Enforcement ladder (highest first):**
 
-In doubt between (1) and (3): default to skill. The skill wins in its own runtime; CLAUDE.md does not.
+1. **Can a hook structurally block this?** (PreToolUse, PostToolUse, SessionStart, SessionEnd, UserPromptSubmit, Stop, git-native hooks like commit-msg / pre-push, settings.json deny rules). If yes, the hook reason or a new hook is the target. Go to "Level 1" above.
+2. **Can a skill or plugin catch this?** If no hook fits but the feedback describes a workflow gap that a skill could carry: sharpen the existing skill or create a new one. Go to "Level 2" above.
+3. **Is the project code itself the recurring trigger?** If the same fix keeps being applied because the project code keeps making the same mistake possible: refactor the code so the trigger no longer exists. Go to "Level 3" above.
+4. **CLAUDE.md as last resort.** Only when none of the above can structurally address the feedback. Proceed to Step 1.
+
+**Scope ladder (broadest first):**
+
+Once the enforcement level is chosen, ask: where does this principle apply?
+
+- A. Cross-project / language-agnostic → shared skill / marketplace plugin / user-level
+- B. Cross-project but framework-specific → framework-scoped skill or shared section
+- C. One repo, multiple subprojects → repo-level CLAUDE.md or repo-level skill
+- D. One subproject only → subproject CLAUDE.md or subproject skill
+
+**Default-bias correction.** The failing pattern is to jump straight to the nearest CLAUDE.md of the current working directory. That path optimizes for "fastest to write" and ignores both "highest enforcement" and "broadest applicability". A faster path to a weaker enforcement that helps fewer sessions is the wrong trade. Walk both ladders; do not skip rungs.
+
+In doubt between a skill edit and a CLAUDE.md edit: default to the skill. The skill wins in its own runtime; CLAUDE.md does not. In doubt between a project-specific target and a cross-project target: default to cross-project. Where the feedback arose is not the same as where the principle applies.
 
 ### Step 1: Scan (only for CLAUDE.md feedback)
 
@@ -236,30 +318,48 @@ Propose to update or clean up project-level.
 
 ### Step 3: Determine best location
 
-**First:** Is the current project a plugin marketplace (see "Plugin marketplace projects" above)? If so, user-level paths are EXCLUDED for feedback that belongs to a plugin. Improvements land in `packages/<plugin>/...`.
+The target is the intersection of the chosen enforcement level (Step 0, ladder 1) and the chosen scope (Step 0, ladder 2). Use the tables below as cross-references, not as the primary decision.
 
-**For CLAUDE.md (non-marketplace projects):**
+**Marketplace gate.** Is the current project a plugin marketplace (see "Plugin marketplace projects" above)? If so, user-level paths are EXCLUDED for feedback that belongs to a plugin. Improvements at any level land under `packages/<plugin>/...`.
 
-| Criterion | Location |
-|-----------|----------|
-| Applies to ALL projects | `~/.claude/README.md` (user-level) |
-| Applies to specific language/framework | Project CLAUDE.md where that framework is used |
-| Applies to one specific project | That project's CLAUDE.md |
-| Already in 3+ projects identically | Consolidate to user-level |
+**Scope-first sanity check before picking a target.** Ask "would this same principle apply in a sibling project, in another language, in another framework?" If the answer is yes for two of the three, the scope is A or B (cross-project), not C or D. A target in `~/projects/<owner>/<repo>/CLAUDE.md` is wrong for an A-scope principle, regardless of which project triggered the feedback.
 
-**For Skills:**
+**For hook reasons (Level 1):**
 
-| Criterion | Location |
-|-----------|----------|
-| Workflow usable in all projects, personal use | `~/.claude/skills/` (user-level) |
-| Workflow belongs to a plugin in a marketplace | `packages/<plugin>/skills/<name>/` (plugin-level) |
-| Project-specific workflow (non-marketplace) | `~/projects/{owner}/{repo}/.claude/skills/` |
+| Scope | Location |
+|-------|----------|
+| Cross-project, plugin-distributed | `packages/<plugin>/hooks/scripts/<hook>.sh` reason text |
+| Cross-project, personal | `~/.claude/hooks/<hook>.sh` reason text |
+| Project-specific gate | `.git/hooks/` or repo-level pre-commit config |
 
-**For hook reasons (in marketplace or personal):**
+**For skills (Level 2):**
 
-| Criterion | Location |
-|-----------|----------|
-| Feedback concerns Claude's behavior around a hook | The hook script itself, sharpen the `reason` text |
+| Scope | Location |
+|-------|----------|
+| Workflow usable in all projects, marketplace-shareable | `packages/<plugin>/skills/<name>/` (existing or new plugin) |
+| Workflow usable in all projects, personal | `~/.claude/skills/<name>/` |
+| Framework-specific workflow, marketplace-shareable | `packages/<framework-plugin>/skills/<name>/` |
+| Repo-specific workflow | `<repo>/.claude/skills/<name>/` |
+| Subproject-specific workflow | `<repo>/<subdir>/.claude/skills/<name>/` |
+
+**For project code (Level 3):**
+
+| Signal | Location |
+|--------|----------|
+| Same fix applied 2+ times in same area | Refactor that area; consolidate parallel paths |
+| Drift between two locations that should be in sync | Single source of truth; one definition imported by both |
+| Ambiguous API keeps biting | Rename; introduce a type guard; delete the ambiguous lookalike |
+| Implicit invariant keeps being violated | Add a test pinning the invariant; add a runtime assertion at the boundary |
+
+**For CLAUDE.md (Level 4, last resort):**
+
+| Scope | Location |
+|-------|----------|
+| Applies to ALL projects (personal context) | `~/.claude/README.md` (user-level) |
+| Applies to all projects of a framework | Section in the relevant project's CLAUDE.md, replicated across projects via a `/self-improvement` consolidation pass |
+| Applies to one specific repo | That repo's root CLAUDE.md |
+| Applies to one subproject inside a repo | That subproject's CLAUDE.md |
+| Already in 3+ project CLAUDE.md's identically | Consolidate to user-level or extract to a skill (see "CLAUDE.md -> Skill Extraction" below) |
 
 **Hierarchy within a project:**
 - Repo-root CLAUDE.md: general project conventions
@@ -406,19 +506,30 @@ OK?
 
 ## Examples
 
+Each example walks both ladders and lands on a specific target.
+
 **User:** "Voortaan geen emoji's in commit messages"
 
--> Scan -> No duplicate -> User-level (general) -> Dutch
--> Proposal: Add to `~/.claude/CLAUDE.md` section "Git richtlijnen"
+-> Enforcement: Level 1 (a commit-msg hook can detect emoji unicode ranges; pre-commit / `commit-msg` hook beats remembering a rule).
+-> Scope: A (cross-project, language-agnostic).
+-> Target: a new check in `gitgit:commit-discipline` or its `commit-msg` hook, not user-level CLAUDE.md.
 
 **User:** "In dit Rails project altijd `travel_to` gebruiken in specs"
 
--> Scan -> No duplicate -> Project-level (Rails-specific) -> English (project language)
--> Proposal: Add to project's `CLAUDE.md` section "Testing"
+-> Enforcement: Level 4 (no hook can detect missing `travel_to`; the call is contextual). Level 2 candidate: extending `testing-philosophy` if the principle generalizes.
+-> Scope: B (Rails-specific, cross-project if the team has multiple Rails repos) or D (this one project).
+-> Target: if B, add to `testing-philosophy` or a Rails-scoped section in a shared skill; if D, the project's CLAUDE.md `Testing` section.
 
 **User:** "Stop met die Co-Authored-By trailer"
 
--> Scan -> Already in user-level -> Report: "This is already in ~/.claude/CLAUDE.md line 72"
+-> Enforcement: Level 1 (already enforced by `gitgit:commit-trailers` guard) AND Level 4 (already in user-level CLAUDE.md).
+-> Report: already covered at the highest enforcement level; no further edit needed unless the rule is being bypassed despite the hook. If bypassed, check the hook's bypass conditions, not CLAUDE.md.
+
+**User:** "Geestig hoe kan het dan dat we al die tijd lekker committen zonder tests te draaien?"
+
+-> Enforcement: Level 2 (sharpen `gitgit:commit-discipline` which already governs `Red-then-green` self-attestation), or Level 1 if a `pre-push` hook can detect a missing test run via timestamp comparison.
+-> Scope: A (every language has tests; the discipline of running them before claiming green is universal).
+-> Anti-pattern to avoid: pinning "always run a baseline on the mission base branch before claiming pre-existing failure" to one iOS project's CLAUDE.md. That principle holds in any test framework, on any language, and belongs in the marketplace `gitgit:commit-discipline` skill where it benefits every session, not just iOS work.
 
 ## /self-improvement ALWAYS means a change
 
