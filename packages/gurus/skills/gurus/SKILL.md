@@ -37,7 +37,7 @@ re-shows the section on demand without touching the sentinel.
 
 Three panels live under this plugin:
 
-- **`gurus:software`** does opinionated code review with eight engineering personas (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). Consensus across 6+/8 yields an action plan.
+- **`gurus:software`** does opinionated code review with eight engineering personas (Beck, Fowler, Uncle Bob, DHH, Metz, Evans, Hickey, Thoughtbot). Consensus across 6+/8 yields an action plan.
 - **`gurus:council`** critiques a decision or idea with five adversarial lenses (pre-mortem, first-principles, opportunity-finder, stranger, action), anonymous peer review, and chairman synthesis.
 - **`gurus:writers`** reviews a piece of prose with six writers (Didion, Saunders, Rovelli, Watts, Gladwell, Urban). Consensus across 4+/6 yields an action plan of edits, cuts, and rewrites.
 

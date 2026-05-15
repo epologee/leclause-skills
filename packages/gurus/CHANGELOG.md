@@ -16,3 +16,9 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
+
+## [v1.0.29]
+
+### Changed
+
+- Eric Evans replaces Tobi Lutke on the `/gurus:software` panel; size and 6+/8 threshold unchanged. Evans brings the domain-modeling lens (ubiquitous language, bounded contexts, aggregates, anti-corruption layers) the panel was missing.
