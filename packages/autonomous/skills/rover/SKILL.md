@@ -351,6 +351,8 @@ This is not an approval gate. The rover writes the paragraph, logs it, and keeps
 
 The Foresight is a scope-discipline tool, not a TODO list. "Address everything" is not one of the actions. The `noise` category is the anti-creep escape: it is legitimate, and the rover takes responsibility for declining it on purpose rather than treating every reviewer concern as in-scope. If more than five concerns surface, the Plan is too broad; invoke `decide` to narrow it before writing the Foresight.
 
+Spread the entries across distinct axes (content, prose-craft, usability, structure, framework conventions). A Foresight concentrated on one axis predicts what the rover already sees and misses what the review passes will surface from the other axes.
+
 Foresight is Plan-time prediction; Three fates (above) classifies findings after they surface in SURVEY or INSPECT. The two rubrics run at different moments and serve different roles; do not collapse them.
 
 The Foresight is operator-visible. The rover does not ask the operator to confirm it; the operator reads it later, and pride and gurus compare their INSPECT findings against it.
