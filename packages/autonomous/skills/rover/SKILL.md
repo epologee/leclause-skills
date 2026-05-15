@@ -69,7 +69,7 @@ Every rover output goes through `pride` before it leaves the rover. Every output
 Rationalisations the rover will generate to skip this, and the correct response to each:
 
 - "This is pure research, there is no diff, so pride has nothing to look at." Wrong. The research brief is the artefact. Pride reviews the brief: confidence laundering, unsourced claims, over-stated positions, missing caveats, weak references, locations or names invented from training data.
-- "Findings can go into a follow-up, I want to hand off now." Wrong. Pride findings are fixed in a new DRIVE cycle inside this mission. "Later" is a skip, and the rover does not skip. The only alternative to "fix" is "reject with concrete evidence of non-issue via pride's second-pass gate", never "defer".
+- "Findings can go into a follow-up, I want to hand off now." Wrong. Pride findings are processed in this mission via one of the three fates in the "Three fates" section above: fix in a new DRIVE cycle, cost-value-skip with structured rationale, or reject-as-non-issue with pride's second-pass evidence. "Later" is none of those.
 - "Tests are green, so pride is redundant." Wrong. Green proves behaviour under the tests that exist. Pride asks what the user would hate regardless of whether a test covered it.
 - "I already thought about this while writing." Wrong. You thought about the happy path while producing the artefact. Pride is an independent, hostile read.
 - "The user will review it anyway." Wrong. The rover operates at a distance precisely because the operator is not doing line-by-line review. Pride is the stand-in. Skipping it outsources review to the operator.
@@ -88,7 +88,7 @@ Invocation contract:
 
 - Pass the mission context in `args`: a one-paragraph summary of the Dispatch, the branch name, and a short pointer to the diff (for code missions) or to the decision artefact (for council missions). The orchestrator's skill-invoked path reads this and routes without asking the operator anything; see the `gurus:gurus` "Skill-invoked" section.
 - The orchestrator returns a verdict (one panel) or a combined verdict (when the mission mixes code and decision and both panels run). Either form lands in the loop file under a `[HH:MM] Gurus review findings:` block.
-- Findings get the same two-fates treatment as pride and verify findings: fixed in a new DRIVE cycle, or rejected with concrete evidence of non-issue via pride's second-pass gate. There is no third option. "The panel is opinionated" is not evidence of non-issue; opinionated is the panel's job, and the rover addresses every finding with value, however small.
+- Findings get the same three-fates treatment as pride and verify findings: fix, cost-value-skip with structured rationale, or reject-as-non-issue with pride's second-pass evidence (see "Three fates" above). "The panel is opinionated" is not evidence of non-issue; opinionated is the panel's job. The rover weighs each finding on output cost vs value, not on whether the panel made the call confidently.
 
 INSPECT cannot transition to STOW without that block on record for the current mission. If the rover catches itself about to write the communiqué without a `Gurus review findings:` block in the Log, stop and run gurus.
 
@@ -127,26 +127,50 @@ PRELAUNCH is optional and only written to the loop file when setup step 2 surfac
 
 The loop is autonomous. It does not ask questions mid-phase. When it hits a choice, it invokes `decide`. Before any artefact leaves the rover (push, PR, handoff communiqué, research brief, generated doc, media, or any other deliverable), it invokes `pride` to catch what it missed. No human is required to keep it moving, but you can intervene via the `## Input` section or the `/autonomous:stop` and `/autonomous:wake` commands at any time.
 
-## No half-measures
+## Three fates, not two
 
-The rover does not "roughly" finish missions. "Most findings addressed" is not a STOW state; "a few small nits remain" is not an acceptable communiqué line; "will polish later" is not a planning decision the rover gets to make. The operator is spending the time of an autonomous loop precisely to avoid a report that reads "we have done it sort of". Every finding the rover surfaces during SURVEY or INSPECT has exactly two possible fates before the mission can stop:
+The rover does not "roughly" finish missions. "Most findings addressed" is not a STOW state; "a few small nits remain" is not an acceptable communiqué line; "will polish later" is not a planning decision the rover gets to make. The operator is spending the time of an autonomous loop precisely to avoid a report that reads "we have done it sort of".
 
-1. **Fixed**, with evidence logged in the loop file.
-2. **Rejected with concrete evidence of non-issue**, subject to the pride skill's second-pass gate (a second contrarian subagent must independently confirm the reject as hollow).
+But thinking hard and producing a lot are two different things. The rover keeps the full INSPECT pass and the full guru/pride/end-user/technical work: it must keep thinking hard so it does not miss a finding. What the rover stops doing is treating every surfaced finding as binding action. Findings are weighed on cost-vs-value before they trigger a DRIVE cycle, and "cost" here means **output weight added to the deliverable**, not work-effort spent producing it.
 
-Deferrals, polish-laters, and "we will come back to this" are the failure mode this rover exists to stop. When the rover catches itself about to transition to STOW while any finding is neither in category 1 nor category 2, the correct response is to loop back to DRIVE and finish the item. If the rover catches itself writing language that matches the effort-and-scope reflex pattern (see `pride`'s category 9 for code, 8 for prose), the rover reverts the text and goes back to DRIVE instead of paraphrasing the feeling.
+Every finding the rover surfaces during SURVEY or INSPECT has exactly three possible fates before the mission can stop:
 
-**The canonical definition of category 2** (referenced by `pride` and `verify`): an explicit reject of a finding requires concrete evidence that the finding was a non-issue. Evidence includes a pride second pass whose subagent confirms the reject as hollow. The rover never promotes its own "feels low-priority" to category 2. There is no operator-accept path: the operator is not consulted mid-mission, so "the operator said so" is not available as evidence. Either the rover proves the finding was hollow with a second contrarian pass, or it fixes it.
+1. **Fixed** with evidence logged in the loop file. The default for findings of real value at proportionate output cost.
+2. **Skipped on cost-vs-value** with a structured rationale logged in the same block. The rationale names concrete output cost (lines that would be added to address the finding, files that would gain new surface, complexity introduced, maintenance burden, comprehension load on future readers), concrete value (severity if it lands, likelihood of harm, who would notice), and which canon-vraag below landed the call. The rover applies this fate when the addition the finding asks for would outweigh what the finding lifts on this mission's scope; it never applies it to dodge work that fits the mission.
+3. **Rejected as non-issue** with concrete evidence that the finding is hollow, subject to the pride skill's second-pass gate (a second contrarian subagent must independently confirm the reject as hollow). For findings that turn out not to be real, not for findings that are real but marginal.
 
-The operator never has to reopen a mission because the rover shipped a three-quarter version. Every finding is addressed inside this mission.
+Deferrals, polish-laters, and "we will come back to this" are still the failure mode this rover exists to stop. Fate 2 is not a polish-later by another name: a cost-value-skip finding is closed in this mission, not reopened later. The rover writes the rationale once, the finding leaves the list, and the mission proceeds.
 
-## Effort is not a scope argument
+The discipline is: think more, produce less when possible. Tokens spent on review are cheap; lines shipped become permanent surface that has to be maintained, can host bugs, and weighs on every future reader of the deliverable. If the core of the mission is two lines and an INSPECT pass is suggesting fifteen findings whose fixes would land 200 more lines around them, the cumulative addition itself becomes the problem. Fate 2 exists for that case.
+
+When the rover catches itself about to transition to STOW while any finding is neither in fate 1, 2, nor 3, the correct response is to loop back to DRIVE and finish the item. If the rover catches itself writing language that matches the effort-and-scope reflex pattern outside a fate-2 rationale block (see `pride`'s category 9 for code, 8 for prose), the rover reverts the text and goes back to DRIVE instead of paraphrasing the feeling.
+
+### The canon-vragen
+
+The engineering literature already names the questions that separate a fix-worth-its-weight finding from a marginal one. The rover applies them as a checklist on every fate-2 candidate; the canon-vraag that landed the call goes in the rationale.
+
+- **Beck:** is this the simplest thing that could possibly work, or would the fix add a complication?
+- **Fowler:** is this a real smell that bites later, or just a different style than the reviewer prefers?
+- **Uncle Bob:** is the output cost of this fix disproportionate to its expected value?
+- **Hickey:** would the fix conflate ease (familiar shape) with simple (decomplected)?
+- **YAGNI:** is the fix defending against a case that has not materialised and may never?
+- **Knuth:** is this premature optimisation, where the lines added now cost more than the worst case they prevent?
+- **Tversky/Kahneman:** every finding feels actionable when it surfaces; most surface findings are marginal. Anchor on the base rate, not the salience.
+- **The senior-reviewer test:** in a code review of the actual diff size, would a senior reviewer push back on this finding, or would they nod and approve the diff as it stands?
+
+These same personas live inside `gurus:software` (Beck, Fowler, Uncle Bob, Hickey, others). gurus uses them to *find* findings; the rover uses them to *weigh* findings after they surface. Different role, same instruments.
+
+**The canonical definition of fate 3** (referenced by `pride` and `verify`): an explicit reject of a finding requires concrete evidence that the finding was a non-issue. Evidence includes a pride second pass whose subagent confirms the reject as hollow. The rover never promotes its own "feels low-priority" to fate 3; low priority is the case for fate 2, not fate 3. There is no operator-accept path: the operator is not consulted mid-mission, so "the operator said so" is not available as evidence. Either the rover proves the finding was hollow with a second contrarian pass (fate 3), logs a cost-value rationale (fate 2), or fixes it (fate 1).
+
+The operator never has to reopen a mission because the rover shipped a three-quarter version. Every finding is processed inside this mission via one of the three fates.
+
+## Work-effort is not a scope argument; output-cost is fate 2
 
 LLM-written planning language systematically overstates work. "Editing six files" reads in training data as "a half-day task"; in this rover's actual tool flow it is ten minutes of Edit/Write/Bash calls. When the rover catches itself about to skip work because it "will take long", the first action is to check that estimate against concrete reality: count files, count the edits per file, count the verifications. Ten seconds each, not ten minutes each. A number arrived at honestly almost always shrinks by an order of magnitude.
 
-Even when the honest estimate is genuinely large, it is still not a scope argument for a rover. Skipping a finding "because it is too much work" is the failure mode the rover exists to prevent. "Long" is the rover's native habitat, not its excuse.
+Even when the honest work estimate is genuinely large, work-effort is still not a scope argument for a rover. Tokens are cheap; rover time is what the operator is spending precisely to avoid having to do the thinking themselves. "Long to compute" is the rover's native habitat, not its excuse. Skipping a finding "because it is too much work" is the failure mode this rover exists to prevent.
 
-The following phrases are banned in rover artefacts for the same reason the closing-language list in `pride` is banned. They are all reflex-rationalisations of effort-based scope reduction:
+The following phrases name work-effort, not output cost. They are banned in rover artefacts, communiqués, commit messages, and mid-loop status lines, with no exception:
 
 - "dit kost te veel tijd", "this would take too long"
 - "te groot voor deze mission", "too big for this pass"
@@ -155,11 +179,13 @@ The following phrases are banned in rover artefacts for the same reason the clos
 - "pragmatisch om dit over te slaan", "pragmatic to skip this"
 - "zou een aparte mission verdienen", "warrants a separate mission"
 
-When the rover types any of these, the correct response is the same as with pride's banned-closing language: revert, go back to DRIVE, do the work.
+When the rover writes any of these anywhere, the correct response is: revert, go back to DRIVE, do the work.
 
-There is no scope-expansion escape. The rover does not ask the operator about scope boundaries; there is no channel to ask on. Every finding the rover raises is in-destination by virtue of the rover having raised it, and every in-destination finding gets addressed. If a finding genuinely sits outside the Dispatch, the rover still addresses it: the tooling (branches, CI, linting, PR review after the mission) catches any overreach before it lands in shared state.
+What IS a legitimate cause for skipping a finding is **output cost outweighing value**: the fix would add lines, files, or surface to the deliverable whose maintenance burden, bug surface, and reader-comprehension load exceed the value the finding lifts. That call goes into a structured fate-2 rationale block (see "Three fates" above), not into a banned work-effort phrase. The same words might appear inside the structure ("this would land 80 lines of plumbing for a marginal style finding"), but the structure is what makes it a logged engineering call rather than a reflex; concrete output cost, concrete value, named canon-vraag.
 
-The rover has exactly one action for every finding: **address it**. There is no "skip" action, no "ask" action, no "defer" action. A finding leaves the list in exactly two ways: it is fixed with evidence, or it is rejected with concrete evidence of non-issue (the pride second pass confirms it as hollow). "I feel this is low priority", "this is minor", "this is marginal" are not causes. Little value is still value, and the rover addresses everything with value, however small.
+There is no scope-expansion escape via Dispatch boundaries. The rover does not ask the operator about scope boundaries; there is no channel to ask on. Every finding the rover raises is in-destination by virtue of the rover having raised it, and every in-destination finding goes through one of the three fates. If a finding genuinely sits outside the Dispatch, the rover still processes it: the tooling (branches, CI, linting, PR review after the mission) catches any overreach before it lands in shared state.
+
+The rover has three legitimate actions per finding: **fix** (fate 1), **cost-value-skip with rationale** (fate 2), **reject-as-non-issue with second-pass evidence** (fate 3). There is no "later" action, no "ask" action, no "defer" action. "I feel this is low priority", "this is minor", "this is marginal" are feelings, not rationales; the canon-vragen above land the call, not a feeling.
 
 ## Origin is not a scope argument
 
@@ -176,7 +202,7 @@ The reflex to sidestep this is to classify inherited items as "pre-existing", "f
 
 (These phrases are legitimate when they describe external-action gates the rover is structurally forbidden from taking: "the push is left for the operator" in `stop`'s Next actions is not a scope reflex, it is a factual statement about who holds the permission.)
 
-Every open item on the branch gets the same two fates as every pride finding: fixed, or rejected with concrete evidence of non-issue via pride's second-pass gate. "It was filed thirteen days ago" is not evidence of non-issue; it is a date. For each inherited review thread, the rover reads the full thread against HEAD before classifying: a comment superseded by a later commit is resolved (name the commit), a comment the original reviewer has retracted in a follow-up is resolved (name the retraction), silence on the thread is not retraction. Anything still live on the current code is still live, whether it was filed this morning or last quarter.
+Every open item on the branch gets the same three fates as every pride finding: fix, cost-value-skip with structured rationale, or reject-as-non-issue with pride's second-pass evidence (see "Three fates" above). "It was filed thirteen days ago" is not evidence of non-issue; it is a date. For each inherited review thread, the rover reads the full thread against HEAD before classifying: a comment superseded by a later commit is resolved (name the commit), a comment the original reviewer has retracted in a follow-up is resolved (name the retraction), silence on the thread is not retraction. Anything still live on the current code is still live, whether it was filed this morning or last quarter.
 
 There is one narrow exception: an item whose resolution would require editing code no commit on this branch has ever touched. The rover claims this exception by logging the evidence: the files referenced by the item, the file list of the branch's diff against its base, and the absence of overlap. Without that evidence the exception does not apply. Items that pass the exception are not deferred; they are genuinely not on this deliverable and do not appear anywhere in the communiqué except, at most, as a one-line aside in the Traverse prose naming the thread and why it is outside ("a thread on `app/other_file.rb` remains open but this branch never touches that file").
 
@@ -295,7 +321,7 @@ _Operator-to-rover only. Write new input here during a running loop; the loop re
 
 ## Instructions
 
-You are an autonomous loop. Follow the phase machine below. No user-feedback during a rover action. Forbidden. The operator is not available, not consulted, not asked, not escalated to. Use `decide` at every fork. Fix every finding or prove it is a non-issue via pride's second-pass gate; never defer, postpone, plan out, or down-scope. Run `pride` before any output leaves the rover. This covers every artefact, not just pushes: code, documents, prose, research briefs, plans, letters, songs, videos, audio, slides, scripts, configs. Including this one. If you cannot point to a `[HH:MM] Pride check findings:` block in the Log that covers what you are about to hand off, pride has not run. Stop and run it. Run `gurus:gurus` once per mission at INSPECT before STOW; the orchestrator routes between `gurus:software`, `gurus:council`, or any future panel based on the mission context you pass in `args`. Never name a gurus sub-panel directly. If you cannot point to a `[HH:MM] Gurus review findings:` block in the Log, gurus has not run. Stop and run it.
+You are an autonomous loop. Follow the phase machine below. No user-feedback during a rover action. Forbidden. The operator is not available, not consulted, not asked, not escalated to. Use `decide` at every fork. Every finding goes through one of three fates (fix, cost-value-skip with structured rationale, reject-as-non-issue with pride's second-pass evidence; see "Three fates" in `rover`); never defer, postpone, plan out, or down-scope. Run `pride` before any output leaves the rover. This covers every artefact, not just pushes: code, documents, prose, research briefs, plans, letters, songs, videos, audio, slides, scripts, configs. Including this one. If you cannot point to a `[HH:MM] Pride check findings:` block in the Log that covers what you are about to hand off, pride has not run. Stop and run it. Run `gurus:gurus` once per mission at INSPECT before STOW; the orchestrator routes between `gurus:software`, `gurus:council`, or any future panel based on the mission context you pass in `args`. Never name a gurus sub-panel directly. If you cannot point to a `[HH:MM] Gurus review findings:` block in the Log, gurus has not run. Stop and run it. Run `trim` as the final INSPECT pass, after gurus and before STOW. Trim is the only pass biased toward subtraction and is a hard gate; without a `[HH:MM] Trim findings:` block in the Log, INSPECT does not complete.
 
 ### Phases
 
@@ -333,19 +359,21 @@ During DRIVE, verify each significant change as you go (run the code, screenshot
 When the feature does what the Done criteria say it should, transition to INSPECT.
 
 **INSPECT**
-Five passes. Each one can send the rover back to DRIVE with a specific target. INSPECT only completes when all five are clean, and the pride and gurus passes are hard gates: no transition out of INSPECT without a pride log entry and a gurus log entry on record.
+Six passes. Each one can send the rover back to DRIVE with a specific target. INSPECT only completes when all six are clean, and the pride, gurus, and trim passes are hard gates: no transition out of INSPECT without a pride log entry, a gurus log entry, and a trim log entry on record.
 
 1. **Verify pass.** Invoke `verify` against the loop file's Done criteria. Any criterion without evidence, or with failed evidence, sends the rover back to DRIVE. INSPECT only transitions out to STOW once every criterion is met with evidence. An unverified criterion is not a closing state: the rover goes back to DRIVE, finds a verification route, and produces the evidence (see `verify`'s "Unverified blocks STOW" section for tactics).
 
-2. **Pride pass (hard gate).** This is the first of two pride obligations the rover carries; the other is per-artefact pride (see the "Pride is a hard gate" section above), which runs again at every handoff moment, including `stop`'s drafted communiqué. The INSPECT pride pass covers the batch of work produced since the previous pride log entry. Invoke `pride` on that batch. A contrarian subagent looks for what the user would hate: duplicate fixes, type smells, ugly helpers, defensive filtering, race conditions, confidence laundering, over-claims, ungrounded references, missing sources, and the effort-and-scope reflex pattern (`pride` category 9 for code, 8 for prose). Findings are either fixed in a new DRIVE cycle, or rejected with concrete evidence of non-issue subject to `pride`'s second-pass gate: any reject forces a second pride run with a different subagent, and a reject is final only once that second contrarian pass independently confirms it as hollow. The outcome is logged under a `[HH:MM] Pride check findings:` block in the Log. INSPECT cannot transition to STOW without that block for the current batch of work. No exemption for "there is no diff": if the rover produced a research brief, a plan, a letter, a video script, or any other artefact, pride runs on that artefact.
+2. **Pride pass (hard gate).** This is the first of two pride obligations the rover carries; the other is per-artefact pride (see the "Pride is a hard gate" section above), which runs again at every handoff moment, including `stop`'s drafted communiqué. The INSPECT pride pass covers the batch of work produced since the previous pride log entry. Invoke `pride` on that batch. A contrarian subagent looks for what the user would hate: duplicate fixes, type smells, ugly helpers, defensive filtering, race conditions, confidence laundering, over-claims, ungrounded references, missing sources, and the effort-and-scope reflex pattern (`pride` category 9 for code, 8 for prose). Findings get the three-fates treatment from the "Three fates" section above (fix, cost-value-skip with structured rationale, or reject-as-non-issue with pride's second-pass evidence). A reject (fate 3) forces a second pride run with a different subagent and is final only once that second contrarian pass independently confirms it as hollow; a fate-2 cost-value-skip requires the structured rationale (concrete output cost, concrete value, named canon-vraag) but no second pride run. The outcome is logged under a `[HH:MM] Pride check findings:` block in the Log. INSPECT cannot transition to STOW without that block for the current batch of work. No exemption for "there is no diff": if the rover produced a research brief, a plan, a letter, a video script, or any other artefact, pride runs on that artefact.
 
 3. **End-user pass.** Spawn a Sonnet subagent (Agent tool with `model: "sonnet"`) with only the stated goal and the application domain. Not the code, not the plan. The agent uses the feature as a user and reports confusion, missing feedback, edge cases, dead ends. Default to fixing, not deferring.
 
 4. **Technical pass.** Spawn a Sonnet subagent (Agent tool with `model: "sonnet"`) that reviews the diff against the plan. Does it match the goal? Odd jumps? Unnecessary complexity? Missed alternatives? Before the technical review, if the project has tech-specific skills matching the changed file types, load them. The subagent returns its findings; the loop reads them on the session model and decides whether they send the rover back to DRIVE.
 
-5. **Gurus pass (hard gate).** Invoke `gurus:gurus` via the Skill tool with mission context in `args`: the Dispatch summary, the branch name, and a pointer to the diff or decision artefact. The orchestrator routes between `gurus:software`, `gurus:council`, or any future panel and returns a verdict. The rover never names a sub-panel directly; routing is the orchestrator's job. Log the outcome under a `[HH:MM] Gurus review findings:` block. Findings are either fixed in a new DRIVE cycle, or rejected with concrete evidence of non-issue subject to `pride`'s second-pass gate. INSPECT cannot transition to STOW without this block on record. See the "Gurus is a hard gate" section above for the contract.
+5. **Gurus pass (hard gate).** Invoke `gurus:gurus` via the Skill tool with mission context in `args`: the Dispatch summary, the branch name, and a pointer to the diff or decision artefact. The orchestrator routes between `gurus:software`, `gurus:council`, or any future panel and returns a verdict. The rover never names a sub-panel directly; routing is the orchestrator's job. Log the outcome under a `[HH:MM] Gurus review findings:` block. Findings get the three-fates treatment from the "Three fates" section above (fix, cost-value-skip with structured rationale, or reject-as-non-issue with pride's second-pass evidence). INSPECT cannot transition to STOW without this block on record. See the "Gurus is a hard gate" section above for the contract.
 
-When all five passes are clean and both the pride and gurus log entries exist, transition to STOW.
+6. **Trim pass (hard gate).** Invoke `trim` via the Skill tool. A contrarian subagent walks the mission diff against the Dispatch and asks the inverse of every other pass: what got added that does not earn its weight? Findings get the three-fates treatment (fate 1 removes the chunk, fate 2 keeps it with a logged cost-value rationale, fate 3 routes the trim finding itself to pride's second-pass gate). Any removals land in a separate "trim" commit inside INSPECT, before STOW, so the diff history shows build, review fixes, and subtraction as distinct steps. The outcome is logged under a `[HH:MM] Trim findings:` block. INSPECT cannot transition to STOW without this block on record. See the `trim` skill for the contract; the key point is that this pass is biased toward subtraction, which is the only INSPECT pass with that bias, and it runs last so the rover has the full picture of what got added by the earlier passes.
+
+When all six passes are clean and the pride, gurus, and trim log entries exist, transition to STOW.
 
 **STOW**
 Final housekeeping before handoff. Mars rovers literally stow their robotic arm and instruments before driving on or going into uplink; the software equivalent is removing what got used during build and review but should not ship.
@@ -478,13 +506,14 @@ These are project-specific and not hardcoded in this skill.
 - Ask the operator anything mid-mission. Not "A or B?", not "is this in scope?", not "are you ok with this reject?", not any phrasing. The rover decides; the tooling catches.
 - Stop the mission during setup because the tree was dirty or the starting branch was not what the rover expected. Both are autonomous: step 2 creates the mission branch regardless of where the operator was standing, step 3 commits any leftover changes, and the rest of setup proceeds.
 - Post a question or request into `## Input`. That section is operator-to-rover only.
-- Defer, postpone, plan, or down-scope any finding. Every finding is either fixed or rejected with concrete evidence of non-issue via pride's second-pass gate.
+- Defer, postpone, plan, or down-scope any finding. Every finding goes through one of the three fates in this session (fix, cost-value-skip with structured rationale, reject-as-non-issue with pride second-pass evidence).
 - Push without explicit user approval (pushes are an external action outside the autonomy directive)
 - Transition out of DRIVE with a dirty working tree
 - Hand off any artefact (code, docs, prose, research brief, media, communiqué, anything) without a pride pass logged in the loop file for that artefact
 - Treat "there is no diff" as an excuse to skip pride; the produced artefact is the review target
 - Transition out of INSPECT to STOW without a `Gurus review findings:` block on record for the current mission. Gurus is a hard gate
 - Invoke a gurus sub-panel directly (`gurus:software` or `gurus:council`) from the rover. The rover knows one entrypoint, `gurus:gurus`; the orchestrator picks the panel and tomorrow may pick a panel that does not exist today
+- Transition out of INSPECT to STOW without a `Trim findings:` block on record. Trim is the subtraction-pass hard gate; STOW is mechanical cleanup that does not replace it
 - Type "🏁", "mission complete", or any equivalent closing language without a pride log entry on record
 - Assume any personal or team integration skill exists without the operator naming it at invocation
 - Write loop files anywhere other than `.autonomous/` in the git root
