@@ -321,7 +321,7 @@ _Operator-to-rover only. Write new input here during a running loop; the loop re
 
 ## Instructions
 
-You are an autonomous loop. Follow the phase machine below. No user-feedback during a rover action. Forbidden. The operator is not available, not consulted, not asked, not escalated to. Use `decide` at every fork. Every finding goes through one of three fates (fix, cost-value-skip with structured rationale, reject-as-non-issue with pride's second-pass evidence; see "Three fates" in `rover`); never defer, postpone, plan out, or down-scope. Run `pride` before any output leaves the rover. This covers every artefact, not just pushes: code, documents, prose, research briefs, plans, letters, songs, videos, audio, slides, scripts, configs. Including this one. If you cannot point to a `[HH:MM] Pride check findings:` block in the Log that covers what you are about to hand off, pride has not run. Stop and run it. Run `gurus:gurus` once per mission at INSPECT before STOW; the orchestrator routes between `gurus:software`, `gurus:council`, or any future panel based on the mission context you pass in `args`. Never name a gurus sub-panel directly. If you cannot point to a `[HH:MM] Gurus review findings:` block in the Log, gurus has not run. Stop and run it.
+You are an autonomous loop. Follow the phase machine below. No user-feedback during a rover action. Forbidden. The operator is not available, not consulted, not asked, not escalated to. Use `decide` at every fork. Every finding goes through one of three fates (fix, cost-value-skip with structured rationale, reject-as-non-issue with pride's second-pass evidence; see "Three fates" in `rover`); never defer, postpone, plan out, or down-scope. Run `pride` before any output leaves the rover. This covers every artefact, not just pushes: code, documents, prose, research briefs, plans, letters, songs, videos, audio, slides, scripts, configs. Including this one. If you cannot point to a `[HH:MM] Pride check findings:` block in the Log that covers what you are about to hand off, pride has not run. Stop and run it. Run `gurus:gurus` once per mission at INSPECT before STOW; the orchestrator routes between `gurus:software`, `gurus:council`, or any future panel based on the mission context you pass in `args`. Never name a gurus sub-panel directly. If you cannot point to a `[HH:MM] Gurus review findings:` block in the Log, gurus has not run. Stop and run it. Run `trim` as the final INSPECT pass, after gurus and before STOW. Trim is the only pass biased toward subtraction and is a hard gate; without a `[HH:MM] Trim findings:` block in the Log, INSPECT does not complete.
 
 ### Phases
 
@@ -359,7 +359,7 @@ During DRIVE, verify each significant change as you go (run the code, screenshot
 When the feature does what the Done criteria say it should, transition to INSPECT.
 
 **INSPECT**
-Five passes. Each one can send the rover back to DRIVE with a specific target. INSPECT only completes when all five are clean, and the pride and gurus passes are hard gates: no transition out of INSPECT without a pride log entry and a gurus log entry on record.
+Six passes. Each one can send the rover back to DRIVE with a specific target. INSPECT only completes when all six are clean, and the pride, gurus, and trim passes are hard gates: no transition out of INSPECT without a pride log entry, a gurus log entry, and a trim log entry on record.
 
 1. **Verify pass.** Invoke `verify` against the loop file's Done criteria. Any criterion without evidence, or with failed evidence, sends the rover back to DRIVE. INSPECT only transitions out to STOW once every criterion is met with evidence. An unverified criterion is not a closing state: the rover goes back to DRIVE, finds a verification route, and produces the evidence (see `verify`'s "Unverified blocks STOW" section for tactics).
 
@@ -371,7 +371,9 @@ Five passes. Each one can send the rover back to DRIVE with a specific target. I
 
 5. **Gurus pass (hard gate).** Invoke `gurus:gurus` via the Skill tool with mission context in `args`: the Dispatch summary, the branch name, and a pointer to the diff or decision artefact. The orchestrator routes between `gurus:software`, `gurus:council`, or any future panel and returns a verdict. The rover never names a sub-panel directly; routing is the orchestrator's job. Log the outcome under a `[HH:MM] Gurus review findings:` block. Findings get the three-fates treatment from the "Three fates" section above (fix, cost-value-skip with structured rationale, or reject-as-non-issue with pride's second-pass evidence). INSPECT cannot transition to STOW without this block on record. See the "Gurus is a hard gate" section above for the contract.
 
-When all five passes are clean and both the pride and gurus log entries exist, transition to STOW.
+6. **Trim pass (hard gate).** Invoke `trim` via the Skill tool. A contrarian subagent walks the mission diff against the Dispatch and asks the inverse of every other pass: what got added that does not earn its weight? Findings get the three-fates treatment (fate 1 removes the chunk, fate 2 keeps it with a logged cost-value rationale, fate 3 routes the trim finding itself to pride's second-pass gate). Any removals land in a separate "trim" commit inside INSPECT, before STOW, so the diff history shows build, review fixes, and subtraction as distinct steps. The outcome is logged under a `[HH:MM] Trim findings:` block. INSPECT cannot transition to STOW without this block on record. See the `trim` skill for the contract; the key point is that this pass is biased toward subtraction, which is the only INSPECT pass with that bias, and it runs last so the rover has the full picture of what got added by the earlier passes.
+
+When all six passes are clean and the pride, gurus, and trim log entries exist, transition to STOW.
 
 **STOW**
 Final housekeeping before handoff. Mars rovers literally stow their robotic arm and instruments before driving on or going into uplink; the software equivalent is removing what got used during build and review but should not ship.
@@ -511,6 +513,7 @@ These are project-specific and not hardcoded in this skill.
 - Treat "there is no diff" as an excuse to skip pride; the produced artefact is the review target
 - Transition out of INSPECT to STOW without a `Gurus review findings:` block on record for the current mission. Gurus is a hard gate
 - Invoke a gurus sub-panel directly (`gurus:software` or `gurus:council`) from the rover. The rover knows one entrypoint, `gurus:gurus`; the orchestrator picks the panel and tomorrow may pick a panel that does not exist today
+- Transition out of INSPECT to STOW without a `Trim findings:` block on record. Trim is the subtraction-pass hard gate; STOW is mechanical cleanup that does not replace it
 - Type "🏁", "mission complete", or any equivalent closing language without a pride log entry on record
 - Assume any personal or team integration skill exists without the operator naming it at invocation
 - Write loop files anywhere other than `.autonomous/` in the git root
