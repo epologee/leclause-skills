@@ -117,7 +117,7 @@ Full eight-chapter discipline. Produces a `<scope>-drydry-findings-<checklist-ve
 
 Steps:
 
-1. **Resolve scope.** Read what the operator named: a directory, a glob, a package, a project root. Run `wc -l $(find <scope> -type f \( -name '*.swift' -o -name '*.rb' -o ... \))` to gauge size. If the scope is unclear, ask once.
+1. **Resolve scope.** Read what the operator named: a directory, a glob, a package, a project root. To gauge size, first discover which extensions are in scope (`find <scope> -type f | sed -E 's/.*\.//' | sort -u`), then run `wc -l` against the matching files (`wc -l $(find <scope> -type f \( -name '*.swift' -o -name '*.rb' \))` substituting the extensions you discovered). If the scope is unclear, ask once.
 
 2. **Formulate the checklist (the calling session does this work).** Drydry does not hand the calling session a canned list of patterns. Instead the orchestrator instructs the calling session to read the scope and formulate a six-to-ten item duplication checklist by walking these formulation prompts against the actual codebase:
 
@@ -130,7 +130,7 @@ Steps:
    - **Parallel surfaces for the same UX need.** Which UX needs (confirm-destructive-action, present-warning, request-input) are solved with two or more presentation surfaces (sheet + popover + alert; modal + drawer) without a documented "which one when" rule?
    - **Off-template patterns specific to this project.** What patterns does *this* codebase have that no general checklist would name? Discovery heuristic: skim the project's top-level directories and `git log --oneline | head -200` for nouns that recur in commit subjects without belonging to a standard framework concept (a custom routing convention, a homegrown event bus, a specific data-shaping idiom, a domain-specific synchronisation primitive). Each recurring noun is a candidate pattern; ask "if two files implemented this concept differently, would drift hurt?" and add a checklist entry when the answer is yes.
 
-   The calling session writes the checklist as markdown in the same shape `drydry:sweep` consumes: six to ten items, each with `pattern_id`, short title, one-paragraph description, grep-friendly signatures. Stamp the checklist with `v<YYYY-MM-DD>T<HH>-<MM>` from `date +%Y-%m-%dT%H-%M` so the audit artefact can cite it (Chapter 8). The plugin does not enforce a minimum or maximum; six to ten is a sharpness target, not a rule. **Hard ban: the calling session does not load a canned template from `drydry:checklist` by default.** The whole point of this step is that the session has read the codebase and shaped the list to what is actually there. A canned template is the opposite of that work.
+   The calling session writes the checklist as markdown in the same shape `drydry:sweep` consumes: six to ten items, each with `pattern_id`, short title, one-paragraph description, grep-friendly signatures. Stamp the checklist with `v<YYYY-MM-DD>T<HH>-<MM>` from `date +%Y-%m-%dT%H-%M` so the audit artefact can cite it (Chapter 8). Six to ten is a sharpness target, not a hard rule. **Minimum evidence before declaring step 2 complete: every formulation prompt is either answered with at least one checklist entry or explicitly logged as "not applicable to this scope" with a one-sentence reason.** Skipping a prompt silently is the failure mode step 2.5's contrarian pass is designed to catch; declaring "no applicable patterns" is allowed but only with the reason on record. **Hard ban: the calling session does not load a canned template from `drydry:checklist` by default.** The whole point of this step is that the session has read the codebase and shaped the list to what is actually there. A canned template is the opposite of that work.
 
    When the operator explicitly asks for inspiration (`/drydry:drydry audit ... seed-from <domain>`, or the calling session lacks priors on the domain idiom), step 2 may dispatch `drydry:checklist` to fetch the seed examples for that domain (iOS/SwiftUI, Rails, React/TypeScript, Markdown prose, design tokens, generic) as a *starting point only*. The session still reads the codebase and rewrites or extends the seed before passing it to sweep; the seed becomes vocabulary, not verdict. Without the explicit `seed-from` keyword or operator request, checklist is not invoked.
 
@@ -151,8 +151,9 @@ Steps:
    The orchestrator reads the contrarian's reply:
 
    - **Additional entries returned.** Merge them into the checklist and log the merge in the artefact's `## Detection method chosen` paragraph. The merged checklist is what sweep runs against.
-   - **"No additional forms found" with concrete justification.** Log the contrarian pass and the justification in the artefact. Sweep proceeds against the unchanged checklist.
-   - **Vague "looks good" without specifics.** Re-run the contrarian with a sharper brief; do not accept the verdict.
+   - **"No additional forms found" with concrete justification (at least three sentences naming what was examined and why the list is complete).** Log the contrarian pass and the justification in the artefact. Sweep proceeds against the unchanged checklist.
+   - **Mixed reply (some concrete additions plus conversational tail).** Extract the concrete additions, merge them, log the merge. Discard the conversational tail; do not treat it as findings.
+   - **Vague "looks good" without specifics, or a reply whose only "additions" are restatements of existing entries.** Re-run the contrarian once with a sharper brief naming a specific gap to probe (for example "you did not address App Intents; does the scope contain any?"). If the second run is also vague or hollow, log the contrarian pass as inconclusive and proceed; the audit artefact's `## Detection method chosen` paragraph records the inconclusive verdict so a follow-up audit can sharpen the formulation. Do not loop more than twice.
 
    This step is non-negotiable. A calling session that produced its own checklist without a contrarian pass is a Portier-shaped audit waiting to happen: discipline on the discipline of how findings are handled, no discipline on what the discipline is allowed to see.
 
@@ -170,13 +171,13 @@ Steps:
 
 9. **Report.** One short summary to the operator: scope, number of findings, triage breakdown, path to the artefact.
 
-The artefact is written to the project root by default, named `<scope>-drydry-findings.md` where `<scope>` is a slug of the directory or package the audit covered. The operator decides whether to convert findings into commits, or to address them out-of-process; that decision is not the orchestrator's.
+The artefact is written to the project root by default, named `<scope>-drydry-findings-<checklist-version>.md` (matching step 8 above), where `<scope>` is a slug of the directory or package the audit covered. The operator decides whether to convert findings into commits, or to address them out-of-process; that decision is not the orchestrator's.
 
 ## Skill-invoked (autonomous callers)
 
 When this orchestrator is invoked by another skill rather than typed by the operator (a rover at INSPECT, an auto-loop, or any future caller that passes context through `args`), the operator is not in the loop and cannot answer a routing question. Routing must complete from `args` alone.
 
-Detection: `args` carries explicit mission context (a scope, a checklist, a mode keyword, a domain hint, a directory path). Treat any non-empty caller-supplied context as the autonomous path.
+Detection: `args` carries explicit mission context as a single prose string (not a structured dict). The string carries some combination of a scope, a checklist, a mode keyword, a domain hint, a directory path; the orchestrator parses keywords out of it. Examples that route correctly: `"audit packages/somerepo/src/ for SwiftUI duplication"`, `"audit packages/somerepo/src/ seed-from ios-swiftui"`, `"quick: are these two files duplicates? <path1> <path2>"`, `"sweep packages/somerepo/src/ with this checklist: ..."`. Treat any non-empty caller-supplied context as the autonomous path.
 
 Rules in this mode:
 
