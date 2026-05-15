@@ -21,4 +21,4 @@ without a `## [vX.Y.Z]` section stays silent on every update.
 
 ### Changed
 
-- `/self-improvement` now walks an enforcement ladder (hook → skill → code → CLAUDE.md) and a scope ladder (cross-project → project-specific) before proposing a target. Expect more hook and skill edits where you used to get CLAUDE.md additions, and fewer project-CLAUDE.md rules for principles that belong in shared marketplace skills.
+- `/self-improvement` treats CLAUDE.md as last resort. Walks an enforcement ladder (hook → skill → code → CLAUDE.md) plus a scope ladder (cross-project → project) before picking a target. Expect more hook or skill edits where you used to get CLAUDE.md additions.
