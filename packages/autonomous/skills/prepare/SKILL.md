@@ -15,12 +15,12 @@ Prepare is to rover what writing-a-letter-and-leaving-it-on-the-desk is to picki
 
 Free-form text describing:
 - The mission (what the rover should do, in action verbs)
-- The target repo (path on disk, an `owner/repo` slug that maps to `~/github.com/<owner>/<repo>`, or a phrase like "the acme/foo rover")
+- The target repo (a path on disk: absolute, tilde-expanded, or relative to the current working directory)
 - Optional: integrations (`notify_on_done`, `reviewbot`, `commit_splitter`) the same way rover parses them
 
 Examples:
 
-- `/autonomous:prepare prepare this for the acme/foo rover`
+- `/autonomous:prepare ~/code/foo fix the OAuth flow`
 - `/autonomous:prepare /Users/me/projects/foo fix the OAuth flow`
 - `/autonomous:prepare ../bar refactor the Settings page`
 
@@ -28,7 +28,7 @@ The conversation up to this point is the source of mission context. The operator
 
 ## What it does
 
-1. **Resolve target repo path.** Tilde-expand. Recognise an absolute path or a relative path (`./`, `../`). Map an `owner/repo` slug or a "the X/Y rover" phrase to `~/github.com/<owner>/<repo>` if that path exists. For a bare repo name, glob `~/github.com/*/<name>`; if exactly one match, use it; if zero or multiple, ask the operator (this is the only case prepare halts for input, it has nothing else to fall back on). Verify the resolved path has `.git/`. If not, surface the error and stop.
+1. **Resolve target repo path.** Accept an absolute path, a tilde-expanded path, or a relative path (`./`, `../`, or anything containing a `/`). Anything else (a bare name, an `owner/repo` slug, a phrase) is not a path; ask the operator for an explicit one (this is the only case prepare halts for input, it has nothing else to fall back on). Operators who want slug-style invocation can document a personal mapping in their own CLAUDE.md or a shell function; the skill itself stays neutral about clone layout. Verify the resolved path has `.git/`. If not, surface the error and stop.
 
 2. **Distil mission `<NAME>`.** ALL-CAPS, hyphens, no spaces. Goal not mechanism. Same conventions as rover. `ADD-RAW-SOURCES-SUPPORT.md` not `RAW-SOURCES-CLI-WORK.md`. Distil from the dispatch's action verbs.
 

@@ -39,7 +39,7 @@ End a loop on purpose, with a recap.
 
    ### Language
 
-   The communiqué is written in the language of the Dispatch block. If the operator dispatched the rover in Dutch, the communiqué is Dutch; if English, English. Mixed-language dispatches (prose in one language with technical terms in another) follow the dominant prose language of the Dispatch, not of the Context, Plan, or Log (those may have drifted into English during execution). The rover does not translate the work; it writes the report in the same language the operator asked the question in, so the operator does not context-switch between briefing and report. Operator override takes precedence: if a later `## Input` entry names a language ("report in English", "schrijf het in het Nederlands"), the rover follows that.
+   The communiqué is written in the language of the Dispatch block. Whatever language the operator dispatched the rover in, the communiqué matches that. Mixed-language dispatches (prose in one language with technical terms in another) follow the dominant prose language of the Dispatch, not of the Context, Plan, or Log (those may have drifted into another language during execution). The rover does not translate the work; it writes the report in the same language the operator asked the question in, so the operator does not context-switch between briefing and report. Operator override takes precedence: if a later `## Input` entry names a language (e.g. "report in English", or the same instruction in any other operator language), the rover follows that.
 
    ### Shape of the communiqué
 

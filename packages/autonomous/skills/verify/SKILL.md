@@ -31,7 +31,7 @@ Invocation: `/autonomous:verify --propose <loop-file>` or called by rover at end
    - **Concrete:** names a specific file, command, endpoint, UI element, or observable state
    - **Observable:** you can run, see, or measure it, not just "know" it
    - **Binary:** either met or not met, not a spectrum
-   - **Aligned with the Dispatch's action verbs:** if Dispatch says "make X work on Windows," at least one criterion must directly assert that X works on Windows. Doc-quality criteria alone (file exists, in Dutch, no em-dashes) do not satisfy an action-verb dispatch.
+   - **Aligned with the Dispatch's action verbs:** if Dispatch says "make X work on Windows," at least one criterion must directly assert that X works on Windows. Doc-quality criteria alone (file exists, word count is high enough, formatting passes a lint) do not satisfy an action-verb dispatch.
 4. Write the criteria into the loop file under `## Done criteria` (create the section if missing).
 
 ### Good vs bad criteria
