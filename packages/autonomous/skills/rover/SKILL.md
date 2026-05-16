@@ -92,28 +92,13 @@ Invocation contract:
 
 INSPECT cannot transition to STOW without that block on record for the current mission. If the rover catches itself about to write the communiqué without a `Gurus review findings:` block in the Log, stop and run gurus.
 
-## Read context, do not prescribe medium
+## Read context, do not prescribe infrastructure
 
-The rover is the loop machinery and the discipline (pride, gurus, verify, decide, three fates, the phase cycle). It is not "an agent that ships code". A mission can produce code, prose (a letter, a chapter, a report), a visual (a generated image, a video, a deck), audio (a TTS clip, an outline), a mix, or anything else the operator's environment can hold. The shape of the output is determined by the operator's context the rover runs in, not by the rover's own template.
+The rover is the loop machinery and the discipline (pride, gurus, verify, decide, three fates, the phase cycle). Its core competence is software work, but the shape of any given mission is determined by the operator's context the rover runs in, not by the rover's own template. What the working directory, the existing tools, and the Dispatch describe is what the rover produces.
 
-Concretely, the rover does not enumerate mediums and pick a rail per medium. It reads what is already in front of it and derives the next step from that:
+The rover does not climb the infrastructure ladder unprompted. Hosting, remotes, forks, repos on third-party services, build pipelines, deployment configs: these are operator-territory and fall outside the rover's autonomy directive on the same principle as a push. The rover acts on them only when the Dispatch explicitly asks, or when the operator's environment already has them in place and the work fits inside them.
 
-- The Dispatch wording (action verbs, output nouns, references to existing files)
-- The working directory and the files already present
-- The tools, scripts, and configuration the operator has installed (git, bin/, project conventions, skill-level integrations)
-- Existing remotes, existing CI, existing build scripts
-
-The rover then takes the autonomous step that fits THAT context. The phase machine and the hard gates (pride, gurus, verify, push approval) apply regardless of the output medium, because they are about how work is done, not about what the work is.
-
-What the rover does NOT do: assume infrastructure that is not already there, because the rover's training is full of "code work, git, github, PR" patterns and that becomes a default reflex when the actual mission is something else.
-
-- Creating a remote, forking a repo, attaching a new origin URL, or running `gh repo create`: never autonomous. Those bind work to an account with permission, billing, visibility, and team implications the rover cannot weigh. The CLAUDE.md inviolable gate covers it and the `no-remote-create` hook enforces it. The `~/github.com/<owner>/<name>` filesystem convention is the operator's ordering scheme; it is layout, not a contract that github is already in the picture.
-- Initialising a git repo where none exists, scaffolding a build pipeline, adding a deployment config, generating a `.github/` directory: not automatic. Add these only when the Dispatch explicitly asks for them, or when they already exist on disk and the work fits inside them.
-- For prose, visual, audio, or generated-media missions: the working directory holds the artefact in the obvious file form (`.md`, `.png`, `.mp4`, etc.) and the loop file in `.autonomous/<NAME>.md` tracks phase and pride passes. No branch, no commit-per-step, no PR. The discipline still applies; only the git/PR layer drops out when it is not already part of the context.
-
-The failure mode this paragraph closes: rover reads "the path lives under `~/github.com/<owner>/<name>`" as "this is a github project today" and creates the missing remote so its downstream PR-workflow rules can fire. That inversion turns a filesystem convention into a hosting contract the operator never agreed to. Filesystem layout is layout, not state.
-
-When the context is ambiguous: default to LESS infrastructure, not more. A scratch sketch can always be upgraded into a tracked project in a follow-up mission; a remote that was spawned, a PR that was filed, or a deployment that was triggered cannot be retracted as cleanly.
+When the context is ambiguous: default to LESS infrastructure, not more. A scratch sketch can be upgraded into a tracked project in a follow-up mission; an infrastructure layer spawned without an ask is harder to retract.
 
 ## What you see in the first 60 seconds
 
@@ -440,7 +425,7 @@ If STOW uncovers something that requires a logic change (for example, a "prematu
 
 When the diff is clean and the cleanup commit has landed, transition to STANDBY.
 
-If a remote ALREADY EXISTS on this repo AND the work is code-on-a-branch (mission branch was created in setup step 2), create a Draft PR. Otherwise stop at local commits. The rover does NOT create the remote, fork the repo, or run `gh repo create` to enable a PR workflow that did not exist before this mission; remote creation is operator-territory regardless of how natural the next step feels. If `reviewbot` is configured, invoke it after the PR is up.
+PR creation is not a rover default. The rover commits the work locally on the mission branch. A Draft PR is only created when either the Dispatch explicitly asks for one, or the project's documented convention (read `CLAUDE.md`) treats every mission as PR-bound. When neither holds, the rover stops at local commits and any remote-side workflow is the operator's. If `reviewbot` is configured AND a PR was created, invoke it after the PR is up.
 
 **STANDBY**
 
@@ -551,7 +536,6 @@ These are project-specific and not hardcoded in this skill.
 - Post a question or request into `## Input`. That section is operator-to-rover only.
 - Defer, postpone, plan, or down-scope any finding. Every finding goes through one of the three fates in this session (fix, cost-value-skip with structured rationale, reject-as-non-issue with pride second-pass evidence).
 - Push without explicit user approval (pushes are an external action outside the autonomy directive)
-- Create a remote, fork a repo, run `gh repo create`, or attach a new origin URL. Hosting binds the work to an account with permission, billing, visibility, and team implications the rover cannot weigh. The filesystem convention `~/github.com/<owner>/<name>` is layout, not a hosting contract
 - Transition out of DRIVE with a dirty working tree
 - Hand off any artefact (code, docs, prose, research brief, media, communiqué, anything) without a pride pass logged in the loop file for that artefact
 - Treat "there is no diff" as an excuse to skip pride; the produced artefact is the review target
