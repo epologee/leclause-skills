@@ -21,8 +21,10 @@ case "$EVENT" in
     # Conflating them in a single bypass would silently lift the lock when
     # the operator only wanted to quiet commit-msg validation.
     source "$DIR/guards/git-dash-c.sh"
+    source "$DIR/guards/git-config-override.sh"
     source "$DIR/guards/repo-deny.sh"
     guard_git_dash_c "$INPUT"
+    guard_git_config_override "$INPUT"
     guard_repo_deny "$INPUT"
 
     # Session-level kill-switch: when the operator has run
