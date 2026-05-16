@@ -16,6 +16,8 @@ case "$EVENT" in
       Bash)
         source "$DIR/guards/no-remote.sh"
         guard_no_remote "$INPUT"
+        source "$DIR/guards/no-remote-create.sh"
+        guard_no_remote_create "$INPUT"
         source "$DIR/guards/no-worktree-deploy.sh"
         guard_no_worktree_deploy "$INPUT"
         source "$DIR/guards/followup.sh"
