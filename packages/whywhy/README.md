@@ -1,6 +1,6 @@
 # whywhy
 
-Drill N layers deep into a question or goal (default 7). Claude autonomously asks and answers "why?" itself, building a chain of reasoning, then analyzes the chain for a better direction toward the goal.
+Drill N layers deep into a question or goal (default 10). Claude autonomously asks and answers "why?" itself, building a chain of reasoning, then analyzes the chain for a better direction toward the goal.
 
 The classic five-whys exercise, but autonomous and slightly deeper. Useful when the surface-level answer feels too convenient.
 
@@ -8,7 +8,7 @@ The classic five-whys exercise, but autonomous and slightly deeper. Useful when 
 
 ### `/whywhy [n] <question, goal, or statement>`
 
-Generates an `n`-deep "why?" chain (default 7), then analyzes the chain for:
+Generates an `n`-deep "why?" chain (default 10), then analyzes the chain for:
 
 - assumptions that broke down
 - layers where the reasoning forked

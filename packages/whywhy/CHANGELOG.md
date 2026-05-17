@@ -16,3 +16,10 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
+
+## [v1.0.15]
+
+### Changed
+
+- `/whywhy` can now self-activate via the Skill tool when the description matches the conversation context. Direct `/whywhy [count] <statement>` invocation is unchanged.
+- Default chain length raised from 7 to 10. Pass an integer to override, e.g. `/whywhy 5 ...`.

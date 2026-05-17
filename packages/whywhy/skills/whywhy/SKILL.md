@@ -1,8 +1,7 @@
 ---
 name: whywhy
 user-invocable: true
-description: Drill N layers deep into a question or goal (default 7). Claude asks and answers "why?" itself, then analyses the chain for a better direction.
-disable-model-invocation: true
+description: Drill N layers deep into a question or goal (default 10). Claude asks and answers "why?" itself, then analyses the chain for a better direction. Use when tackling unclear decisions, vague goals, root-cause analysis, or self-improvement on something that is not working as desired.
 args: "[count] <question, goal, or statement>"
 ---
 
@@ -28,19 +27,19 @@ re-shows the section on demand without touching the sentinel.
 
 # Why
 
-Ask yourself "why?" N times and answer each layer yourself. Then analyze the chain for a direction that better approaches the original goal. Based on Toyota's 5 Whys, extended to 7 layers by default.
+Ask yourself "why?" N times and answer each layer yourself. Then analyze the chain for a direction that better approaches the original goal. Based on Toyota's 5 Whys, extended to 10 layers by default.
 
 ## Arguments
 
 `/whywhy [count] <question>`
 
 - If the first token is a pure integer (e.g. `10`), use that as the number of layers and the rest as the statement.
-- Otherwise: default to 7 layers and use the full input as the statement.
+- Otherwise: default to 10 layers and use the full input as the statement.
 - Minimum 3 layers, maximum 20. Outside that range: clamp to the boundary and mention it briefly before starting.
 
 Examples:
-- `/whywhy werkt dit nog?` → 7 layers
-- `/whywhy 10 werkt dit nog?` → 10 layers
+- `/whywhy werkt dit nog?` → 10 layers
+- `/whywhy 13 werkt dit nog?` → 13 layers
 - `/whywhy 5 waarom is deze PR zo groot?` → 5 layers
 
 ## When to use

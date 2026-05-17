@@ -39,7 +39,7 @@ The `@leclause` suffix in the second command is the marketplace alias that the f
 | **screen-recording** | `/screen-recording` | | | | Automated screen recordings and demo videos of browser-based features. |
 | **self-improvement** | `/self-improvement` | | | | Update CLAUDE.md and skills based on feedback. Detects duplication and extracts large sections into skills. |
 | **testing-philosophy** | ❌ | ✅ | | | Opinionated testing guide covering TDD workflow, Cucumber/Gherkin, flaky test diagnosis, and test suite health. |
-| **whywhy** | `/whywhy [n]` | ✅ | | | Drill N layers deep into a question or goal (default 7), then analyze the chain for a better direction. |
+| **whywhy** | `/whywhy [n]` | ✅ | | | Drill N layers deep into a question or goal (default 10), then analyze the chain for a better direction. |
 
 **Auto column:** skills with a check in this column self-activate when Claude matches the skill's `description` frontmatter against the conversation context. No hook is involved, no separate frontmatter flag; Claude reads the description and decides whether the skill fits the current task.
 

@@ -89,7 +89,7 @@
     },
     {
       "name": "whywhy",
-      "description": "Drill N layers deep into a question or goal (default 7). Claude autonomously asks and answers 'why?' N times, then analyzes the chain for a better direction.",
+      "description": "Drill N layers deep into a question or goal (default 10). Claude autonomously asks and answers 'why?' N times, then analyzes the chain for a better direction.",
       "source": "./packages/whywhy"
     },
     {
