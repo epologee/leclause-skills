@@ -186,9 +186,9 @@ The `plugins[*].source` field in `marketplace.json` passes through two layers, a
   - `claude plugin install <plugin>@<marketplace>` fails with `Plugin "<plugin>" not found in marketplace`.
   - The settings.json entry remains as an orphan; `enabledPlugins` has `<plugin>@<marketplace>: true` even though nothing ever installed.
 
-**Conclusion.** `source` must be a real subdirectory, not the marketplace root. Working forms in this setup: `"./packages/<plugin>"` (leclause, tank), `"./plugins/<plugin>"` (stekker-brains). Single-plugin repo where the plugin claims the root: move `.claude-plugin/plugin.json` and `skills/` to e.g. `./packages/<plugin>/` and update `source` accordingly. The marketplace-level `.claude-plugin/marketplace.json` stays at repo root.
+**Conclusion.** `source` must be a real subdirectory, not the marketplace root. Working forms in this setup: `"./packages/<plugin>"` (leclause), `"./plugins/<plugin>"` (stekker-brains). Single-plugin repo where the plugin claims the root: move `.claude-plugin/plugin.json` and `skills/` to e.g. `./packages/<plugin>/` and update `source` accordingly. The marketplace-level `.claude-plugin/marketplace.json` stays at repo root.
 
-**Local-vs-remote is not a factor.** The schema test was only run against a local directory, but both local (tank, brains-local) and remote (leclause, stekker-brains) marketplaces in the active setup already use subpaths. The rule is source-independent.
+**Local-vs-remote is not a factor.** The schema test was only run against a local directory, but both local and remote (leclause, stekker-brains) marketplaces in the active setup already use subpaths. The rule is source-independent.
 
 **Diagnostic signal chain.** When `claude plugin marketplace add` succeeds but `claude plugin marketplace list` does not show the marketplace and install fails with "Plugin not found in marketplace", `source` is the first thing to verify. Schema pass does not imply runtime pass.
 

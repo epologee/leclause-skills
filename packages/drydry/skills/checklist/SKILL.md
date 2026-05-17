@@ -28,7 +28,7 @@ effort: medium
 
 This skill exists for the narrow case where the calling session wants a starting point because it has no priors on the domain idiom (a fresh session on an unfamiliar Rails project, a first-time SwiftUI audit, a prose-deduplication pass against a doc style new to the operator). The operator opts in with `/drydry:drydry audit ... seed-from <domain>` or the calling session explicitly requests inspiration. The session then rewrites or extends the seed by reading the codebase before passing the final checklist to `drydry:sweep`. The seed becomes vocabulary, not verdict.
 
-The bare seed templates ship as illustrative examples (see "Seed templates" below). They are deliberately generic; this codebase is not a generic codebase, and any audit that treats the seed as the checklist is producing a Portier-shaped miss in waiting (the SwiftUI seed only knew View-rendering; the four user-facing String builders carrying raw plate text fell silently outside the allow-list because the canned template had no entry for them).
+The bare seed templates ship as illustrative examples (see "Seed templates" below). They are deliberately generic; this codebase is not a generic codebase, and any audit that treats the seed as the checklist is producing a template-canning miss in waiting (the SwiftUI seed only knew View-rendering; the four user-facing String builders carrying raw plate text fell silently outside the allow-list because the canned template had no entry for them).
 
 Not user-invocable.
 
@@ -63,7 +63,7 @@ Version the checklist with a full date-time stamp (`v2026-05-12T14-23`, derived 
 
 ## Seed templates (built-in)
 
-### `ios-swiftui` (the Portier seed)
+### `ios-swiftui`
 
 1. `confirmation-surfaces`: confirmation popovers, sheets, and dialogs solving the same destructive-action UX need with diverged copy or styling.
 2. `domain-types`: parallel structs or enums modelling the same domain concept (Permit, Plate, Visitor) with subtle field-name drift.

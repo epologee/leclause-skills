@@ -4,7 +4,7 @@ Per-axis irreducible floor when comparing a CSS-rendered candidate against a can
 
 A floor is "irreducible" when no CSS knob can move the axis any closer to the reference without breaking another axis. A floor is "reducible-with-effect" when a side-effect knob (typically `filter:blur` or a stacked `box-shadow`) can reduce the floor at the cost of fidelity on a different axis.
 
-Reference baseline: 32x32 device-pixel canvas-PNG favicon, dark squircle plus orange "31" digits, drawn via the same `renderFaviconBadge` function the inbox-zero project uses. Candidate baseline: a CSS pill rendered at 16 CSS pixels at DPR 2 with `width:16px`, `height:16px`, `display:inline-flex`, `font-family:ui-sans-serif`.
+Reference baseline: 32x32 device-pixel canvas-PNG favicon, dark squircle plus orange "31" digits, drawn via a `renderFaviconBadge` function. Candidate baseline: a CSS pill rendered at 16 CSS pixels at DPR 2 with `width:16px`, `height:16px`, `display:inline-flex`, `font-family:ui-sans-serif`.
 
 ## Floors
 
