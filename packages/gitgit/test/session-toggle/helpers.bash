@@ -74,7 +74,7 @@ if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--show-toplevel" ]]; then
   printf '%s\n' "${BATS_TEST_TMPDIR:-/}"; exit 0
 fi
 
-REAL_GIT=$(command -v -p git 2>/dev/null || true)
+REAL_GIT=$(PATH="/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin" command -v git 2>/dev/null || true)
 if [[ -n "$REAL_GIT" ]]; then exec "$REAL_GIT" "$@"; fi
 
 printf 'git shim: unhandled: %s\n' "$*" >&2

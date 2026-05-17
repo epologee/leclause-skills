@@ -111,7 +111,7 @@ fi
 if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--short" ]]; then
   exit 1
 fi
-REAL=$(command -v -p git 2>/dev/null || true)
+REAL=$(PATH="/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin" command -v git 2>/dev/null || true)
 [[ -n "$REAL" ]] && exec "$REAL" "$@"
 exit 1
 SHIM2

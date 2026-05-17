@@ -28,7 +28,7 @@ setup() {
 
   cat > "$shim_bin/git" <<'SHIM'
 #!/usr/bin/env bash
-REAL_GIT=$(command -v -p git 2>/dev/null || true)
+REAL_GIT=$(PATH="/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin" command -v git 2>/dev/null || true)
 args=("$@")
 
 if [[ "${args[0]}" = "interpret-trailers" && "${args[1]}" = "--parse" ]]; then

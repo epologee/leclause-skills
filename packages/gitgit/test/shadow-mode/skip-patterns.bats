@@ -26,7 +26,7 @@ if [[ "${args[0]}" = "log" && "${args[*]}" =~ "%B" ]]; then printf '%s\n' "$GIT_
 if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--abbrev-ref" ]]; then printf '%s\n' "$GIT_SHIM_HEAD_ABBREV"; exit 0; fi
 if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "--short" ]]; then printf '%s\n' "$GIT_SHIM_HEAD_SHORT"; exit 0; fi
 if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "HEAD" ]]; then printf 'abc1234def5678\n'; exit 0; fi
-REAL=$(command -v -p git 2>/dev/null || true)
+REAL=$(PATH="/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin" command -v git 2>/dev/null || true)
 [[ -n "$REAL" ]] && exec "$REAL" "$@"
 printf 'git shim: unhandled: %s\n' "$*" >&2; exit 1
 SHIM

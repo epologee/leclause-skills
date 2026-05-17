@@ -44,7 +44,7 @@ setup() {
 # Responds to the argument patterns that validate-body.sh uses;
 # delegates everything else to the real git.
 
-REAL_GIT=$(command -v -p git 2>/dev/null || true)
+REAL_GIT=$(PATH="/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin" command -v git 2>/dev/null || true)
 
 # Strip leading "git" if invoked as "git <subcommand>".
 args=("$@")

@@ -26,7 +26,7 @@ if [[ "$1" == "diff" && "$*" =~ "--name-only" ]]; then
   printf '%s\n' "$GIT_SHIM_DIFF_NAMES"
   exit 0
 fi
-REAL=$(command -v -p git 2>/dev/null || true)
+REAL=$(PATH="/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin" command -v git 2>/dev/null || true)
 [[ -n "$REAL" ]] && exec "$REAL" "$@"
 printf 'git shim: unhandled: %s\n' "$*" >&2
 exit 1
