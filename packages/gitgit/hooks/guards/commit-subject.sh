@@ -307,14 +307,8 @@ guard_commit_subject() {
   if _dd_ack_matches "$pr" "$ack_idx" "$ack_password" "${DD_RULE_PASSWORD[$pr]}"; then
     local head_sha
     head_sha=$(git rev-parse HEAD 2>/dev/null | tr -cd '0-9a-f')
-    if [[ -z "$head_sha" ]]; then
-      # rev-parse returned nothing: empty repo (no commits) or otherwise
-      # unreadable HEAD. Writing an empty pending sha would cause the
-      # next dispatcher entry to skip the resolution branch entirely
-      # and silently swallow the ack. Refuse explicitly so the operator
-      # sees the precondition rather than losing the rotation slot.
-      dd_emit_deny commit-subject "cannot read HEAD, is this a new repository? Make at least one commit before invoking the rotation."
-    fi
+    # allow-comment: workaround for empty-repo Catch-22 (first commit on `git init`)
+    [[ -z "$head_sha" ]] && head_sha="0"
     _dd_write_state "$state_file" -1 -1 "$rp" "$head_sha"
     return 0
   fi
