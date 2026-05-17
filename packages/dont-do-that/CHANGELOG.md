@@ -21,7 +21,7 @@ Version numbers may therefore be non-contiguous.
 
 ### Added
 
-- **New Stop guard `estimate`.** Blocks assistant text that frames effort or scope in hours, days, weeks, or months ("een paar uur werk", "halve dag uitzoekwerk", "a few days of work", "binnen een uur", "option A is vandaag, option B is deze week"). LLM-trained duration claims are routinely 10x to 100x off for work a Claude session actually does, and they leak into decision frames. Drop the duration phrasing or replace it with a concrete count (files touched, edits, verifications). Escape with `🧭` for a deferred-judgment turn, `🚧` for WIP. Calendar, cron, retention, SLA, and past-tense phrasing are filtered so legitimate scheduling and history claims still pass.
+- **New Stop guard `estimate`.** Blocks assistant text that frames effort in hours, days, weeks, or months ("een paar uur werk", "a few days of work", "binnen een uur"). Drop the duration claim or use a concrete count; calendar and SLA phrasing passes. Escape: `🧭` or `🚧`.
 
 ## [v1.0.59]
 
