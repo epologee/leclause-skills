@@ -313,6 +313,40 @@ expect_allow "followup: Bewust uitgesteld escape" \
 expect_allow "followup: non-gh command passes" \
   "$(pretool_bash 'echo follow-up')"
 
+# --- visual-verify-before-send --- allow-comment: section header
+# allow-comment: graham send of a media file requires a recent Read on a preview PNG/JPG in the transcript
+# allow-comment: without that, the assistant is sending unverified output
+
+VVBS_DIR=$(mktemp -d)
+echo '{"role":"assistant","message":{"content":[{"type":"text","text":"hi"}]}}' \
+  > "$VVBS_DIR/empty.jsonl"
+echo '{"role":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/foo/preview.png"}}]}}' \
+  > "$VVBS_DIR/with-read.jsonl"
+
+vvbs_payload() {
+  local cmd="$1" transcript="$2"
+  jq -cn --arg c "$cmd" --arg t "$transcript" \
+    '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$c}, transcript_path:$t}'
+}
+
+expect_deny "visual-verify: graham file mp4 without recent Read denied" \
+  "$(vvbs_payload 'graham file out/iter25.mp4 caption' "$VVBS_DIR/empty.jsonl")" \
+  "visual-verify-before-send"
+
+expect_allow "visual-verify: graham file mp4 with recent Read allowed" \
+  "$(vvbs_payload 'graham file out/iter25.mp4 caption' "$VVBS_DIR/with-read.jsonl")"
+
+expect_allow "visual-verify: verified-visually escape allowed" \
+  "$(vvbs_payload 'graham file out/iter25.mp4 caption # verified-visually' "$VVBS_DIR/empty.jsonl")"
+
+expect_allow "visual-verify: graham status passes silently" \
+  "$(vvbs_payload 'graham status' "$VVBS_DIR/empty.jsonl")"
+
+expect_allow "visual-verify: non-media graham file path passes" \
+  "$(vvbs_payload 'graham file /tmp/notes.txt caption' "$VVBS_DIR/empty.jsonl")"
+
+rm -rf "$VVBS_DIR"
+
 # --- no-remote ---
 # Each case sets up a temp git repo and cd's in before invoking the hook,
 # because the guard reads `git remote` against the current working directory.
