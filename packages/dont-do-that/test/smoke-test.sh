@@ -297,6 +297,59 @@ expect_pass "duh: WIP hatch" \
 expect_pass "duh: clean text" \
   "$(stop_payload "Geverifieerd: alle tests groen na de wijziging, geen verdere actie nodig op deze branch. 🏁")"
 
+# --- time-estimate --- allow-comment: section divider matches existing smoke-test.sh pattern
+
+expect_block_mnemonic "estimate: paar uur werk" "estimate" \
+  "$(stop_payload "Een werkende minimale Ansible-setup is een paar uur eerlijk werk voor twee hosts.")"
+
+expect_block_mnemonic "estimate: halve dag" "estimate" \
+  "$(stop_payload "5-minuten belletje versus halve dag uitzoekwerk maakt de afweging duidelijker.")"
+
+expect_block_mnemonic "estimate: dagje" "estimate" \
+  "$(stop_payload "Dat is een dagje sleutelen op de queue-config, niet meer dan dat.")"
+
+expect_block_mnemonic "estimate: kost een week" "estimate" \
+  "$(stop_payload "De refactor van de auth-laag kost een week om netjes door alle clients heen te krijgen.")"
+
+expect_block_mnemonic "estimate: takes a day" "estimate" \
+  "$(stop_payload "Wiring this up properly would take a day of careful refactoring through the stack.")"
+
+expect_block_mnemonic "estimate: few days of work" "estimate" \
+  "$(stop_payload "Adding the new ingest pipeline would be a few days of work across services.")"
+
+expect_block_mnemonic "estimate: binnen een uur" "estimate" \
+  "$(stop_payload "Dat is binnen een uur te bouwen en testbaar op een lokale Postgres.")"
+
+expect_block_mnemonic "estimate: comparison frame vandaag-deze week" "estimate" \
+  "$(stop_payload "Optie A is vandaag te leveren, optie B is deze week want raakt meerdere services.")"
+
+expect_pass "estimate: clean substantive text" \
+  "$(stop_payload "Zes files aangeraakt, drie edits per file, tests groen na de tweede iteratie. 🏁")"
+
+expect_pass "estimate: 🧭 escape" \
+  "$(stop_payload "🧭 Welke route wil je verder uitwerken voor de auth-rewrite, route A of B?")"
+
+expect_pass "estimate: WIP hatch" \
+  "$(stop_payload "Een paar uur werk nog op de queue 🚧")"
+
+expect_pass "estimate: mutex skips" \
+  "$(stop_payload "Een paar uur werk." true)"
+
+expect_pass "estimate: cron context not estimate" \
+  "$(stop_payload "De cron loopt elke dag om 03:00 en draait de backup-rotation netjes door. 🏁")"
+
+expect_pass "estimate: retention window not estimate" \
+  "$(stop_payload "De retention window staat op 7 dagen, oudere rijen vallen automatisch uit de view. 🏁")"
+
+expect_pass "estimate: past tense not estimate" \
+  "$(stop_payload "Twee weken geleden landde de migratie en sindsdien draait alles stabiel op productie. 🏁")"
+
+expect_pass "estimate: actual measured duration" \
+  "$(stop_payload "Mission duration: 13:51 to 14:27 is 36 minutes voor deze diagnose-iteratie. 🏁")"
+
+expect_pass "estimate: SLA fact not estimate" \
+  "$(stop_payload "Info Support draaide drie weken live onder SLA zonder regressies in de error budget. 🏁")"
+
 # --- block-followup-without-issue ---
 
 expect_deny "followup: follow-up taal in gh api body" \

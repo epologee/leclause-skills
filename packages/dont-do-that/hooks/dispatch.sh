@@ -66,11 +66,13 @@ case "$EVENT" in
     # these to avoid re-blocking on the same text across consecutive fires.
     if ! dd_stop_active "$INPUT"; then
       source "$DIR/guards/cache.sh"
+      source "$DIR/guards/estimate.sh"
       source "$DIR/guards/premature.sh"
       source "$DIR/guards/verify.sh"
       source "$DIR/guards/duh.sh"
       source "$DIR/guards/compliance.sh"
       guard_cache "$INPUT"
+      guard_estimate "$INPUT"
       guard_premature "$INPUT"
       guard_verify "$INPUT"
       guard_duh "$INPUT"

@@ -61,6 +61,9 @@ Sister to `verify`. Blocks Stop when the assistant offers a recipe ("je kunt dit
 **`tool-error`** (nudge-after-tool-error) in `hooks/guards/tool-error.sh`
 Blocks Stop when the last significant event in the transcript was a failed tool call. Also runs when `stop_hook_active` is true. Maximum two nudges per session (hard cap), with LINE_FILE tracking so we only fire on new errors. Pass condition: analyse the error and retry instead of giving up.
 
+**`estimate`** in `hooks/guards/estimate.sh`
+Blocks Stop when the assistant text frames effort or scope in hours, days, weeks, or months ("een paar uur eerlijk werk", "halve dag uitzoekwerk", "dagje sleutelen", "kost een week", "takes a day", "a few days of work", "binnen een uur", "this is a week of work", and the comparison frame "option A is vandaag, option B is deze week"). LLM-trained duration claims are routinely 10x to 100x off for work a Claude session actually does, and decisions get made on the inflated figure. Mutex-respecting (skips when `stop_hook_active` is true) and runs before `premature` so the specific reason surfaces instead of the generic close-out nudge. False-positive guards drop hits on the same line as past-tense markers (geleden, ago, sinds, afgelopen), calendar and scheduling tokens (cron, every, elke, recurring, schedule), retention windows (retention, TTL, cooldown, backoff), measurement language (duration:, since, running, loopt, wait, the last, history, uptime, live, expir, bracket), legal and SLA facts (loon, opzegtermijn, SLA, jaarrekening, in productie), and absolute-time references (over X uur, tomorrow, morgen, gisteren). Pass conditions: drop the duration phrasing, replace it with a concrete count (files touched, edits, verifications), prefix the turn with `🧭` for a deferred-judgment user-choice, or close with `🚧` for WIP.
+
 ## Skills
 
 **`/duh`** in `skills/duh/SKILL.md`
