@@ -18,6 +18,7 @@ guard_git_dash_c() {
   if [[ "$command" =~ ^git[[:space:]]+-C[[:space:]] ]]; then
     local target_dir
     target_dir=$(echo "$command" | sed -E 's/^git[[:space:]]+-C[[:space:]]+("[^"]+"|[^ ]+).*/\1/' | tr -d '"')
+    target_dir="${target_dir/#$HOME/\~}"
     dd_emit_deny "git-dash-c" "git -C is annoying due to Claude Code's prefix-based permission matching. Use 'cd ${target_dir}' first, then run the git command directly."
   fi
 }

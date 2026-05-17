@@ -35,6 +35,14 @@ load helpers
   [[ "$output" != *"git-dash-c"* ]]
 }
 
+@test "git -C \$HOME/foo is denied with the home prefix rewritten to ~" {
+  run_dispatch "git -C $HOME/foo status"
+
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"cd ~/foo"* ]]
+  [[ "$output" != *"cd $HOME/foo"* ]]
+}
+
 @test "git status with -C later in the command passes silently" {
   # The original regex was anchored at ^git -C, so a -C as a value to a later
   # flag is not blocked. We pass `--grep=-C` as a benign placeholder; the
