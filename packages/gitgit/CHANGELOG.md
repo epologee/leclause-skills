@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.111]
+
+### Added
+
+- **Rotation Rule 15 (`steiger`): no internal AI-tooling vocabulary in commit subject/body.** Targets skill names, phase terms, and politer rewrites like "consensus reached"; surfaces on rotation, not a hard block.
+
 ## [v1.0.107]
 
 ### Breaking

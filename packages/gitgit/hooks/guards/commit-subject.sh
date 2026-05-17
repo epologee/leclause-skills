@@ -27,7 +27,7 @@ source "$_DD_HERE/../lib/rotation-rules.sh"
 
 # Rule 3 (idx 2) is owned by commit-format structurally and stays out of
 # the rotation so it does not double up as an ack-bypassable reminder.
-_DD_ROTATION_SLOTS=(3 4 5 6 7 8 9 10 11 12 13)
+_DD_ROTATION_SLOTS=(3 4 5 6 7 8 9 10 11 12 13 14)
 
 _dd_read_state_line() {
   local file="$1" line_no="$2" default="$3"
@@ -97,7 +97,7 @@ _dd_deny_and_exit() {
   local rule_idx="$1" msg="$2" pv="$3" pr="$4" rp="$5" state_file="$6" ack_sha="${7:-}"
   local num=$((rule_idx + 1))
   _dd_write_state "$state_file" "$pv" "$pr" "$rp" "$ack_sha"
-  dd_emit_deny commit-subject "Rule ${num}/14: ${msg}"
+  dd_emit_deny commit-subject "Rule ${num}/15: ${msg}"
 }
 
 guard_commit_subject() {

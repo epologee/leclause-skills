@@ -156,34 +156,34 @@ expect_warning_subject "format: 58-char subject emits aspirational warning" \
 reset_state
 expect_deny "subject: activity-word Fix denies with rule 1" \
   "$(pretool_bash 'git commit -m "Fix the typo"')" \
-  "Rule 1/14"
+  "Rule 1/15"
 
 reset_state
 expect_deny "subject: activity-word Add denies with rule 1" \
   "$(pretool_bash 'git commit -m "Add authentication middleware"')" \
-  "Rule 1/14"
+  "Rule 1/15"
 
 reset_state
 expect_deny "subject: -am flag still detects activity-word violation" \
   "$(pretool_bash 'git commit -am "Add logging"')" \
-  "Rule 1/14"
+  "Rule 1/15"
 
 reset_state
 expect_deny "subject: --message= still detects activity-word violation" \
   "$(pretool_bash 'git commit --message="Fix typo"')" \
-  "Rule 1/14"
+  "Rule 1/15"
 
 # --- commit-subject: rule 2 (trigger phrasing) ---
 
 reset_state
 expect_deny "subject: Address review phrasing denies with rule 2" \
   "$(pretool_bash 'git commit -m "Address review findings"')" \
-  "Rule 2/14"
+  "Rule 2/15"
 
 reset_state
 expect_deny "subject: Apply PR comments denies with rule 2" \
   "$(pretool_bash 'git commit -m "Apply PR comments"')" \
-  "Rule 2/14"
+  "Rule 2/15"
 
 # --- commit-subject: ack-rule token format unchanged ---
 
@@ -207,7 +207,7 @@ expect_deny "subject: ack-rule on still-violating subject denies with still viol
 reset_state
 expect_deny "subject: clean subject in fresh state surfaces rule 4" \
   "$(pretool_bash 'git commit -m "Use policy on the read path"')" \
-  "Rule 4/14"
+  "Rule 4/15"
 
 reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
@@ -218,7 +218,7 @@ reset_state
 run "$(pretool_bash 'git commit -m "Use policy on the read path"')"
 expect_deny "subject: wrong ack number still denies pending rule 4" \
   "$(pretool_bash 'git commit -m "Use policy on the read path" # ack-rule9:solist')" \
-  "Rule 4/14"
+  "Rule 4/15"
 
 reset_state
 # Rotation advances on confirmed commit success (HEAD changes), which the
@@ -228,7 +228,7 @@ reset_state
 printf 'pv=-1\npr=-1\nrp=1\nack_pending_sha=\n' > "$TMP_STATE"
 expect_deny "subject: rotation slot rp=1 surfaces Rule 5" \
   "$(pretool_bash 'git commit -m "Require session context on create"')" \
-  "Rule 5/14"
+  "Rule 5/15"
 
 # --- commit-subject: editor-mode blocked ---
 
@@ -264,7 +264,7 @@ heredoc_body_json=$(jq -cn --arg cmd "$heredoc_body_cmd" \
   '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$cmd}}')
 expect_deny "subject: ack inside heredoc body is stripped, does not count" \
   "$heredoc_body_json" \
-  "Rule 4/14"
+  "Rule 4/15"
 
 # --- state file migration: old path copied to new path on first run ---
 

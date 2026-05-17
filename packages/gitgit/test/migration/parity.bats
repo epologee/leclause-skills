@@ -39,7 +39,7 @@ teardown() {
   run bash -c "echo '$(pretool_bash 'git commit -m "Fix the typo"')' | bash '$GITGIT_DISPATCH' 2>&1 >/dev/null"
   [ "$status" -eq 2 ]
   echo "$output" | grep -q '\[gitgit/commit-subject\]'
-  echo "$output" | grep -q 'Rule 1/14'
+  echo "$output" | grep -q 'Rule 1/15'
 }
 
 # --- 2. ack-rule token clears pending state ---
@@ -55,7 +55,7 @@ teardown() {
 
 @test "ack-rule clears rotation reminder: ack-rule12:bewijsstuk advances state" {
   # Advance rotation to slot 12 (idx 11, rule 12) by walking through earlier slots.
-  # Slot order: 3 4 5 6 7 8 9 10 11 12 13 (0-indexed 0..10 in _DD_ROTATION_SLOTS).
+  # Slot order: 3 4 5 6 7 8 9 10 11 12 13 14 (0-indexed 0..11 in _DD_ROTATION_SLOTS).
   # Slot index 8 in the array is rule 12 (1-indexed). We need rp=8 in state file.
   # Write state directly: pv=-1 pr=-1 rp=8 (points to slot index 8 => rule index 11 => rule 12).
   printf '%s\n' '-1' '-1' '8' > "$STATE_FILE"
@@ -63,7 +63,7 @@ teardown() {
   # Clean commit should surface rule 12 reminder.
   run bash -c "echo '$(pretool_bash 'git commit -m "Introduce session context guard"')' | bash '$GITGIT_DISPATCH' 2>&1 >/dev/null"
   [ "$status" -eq 2 ]
-  echo "$output" | grep -q 'Rule 12/14'
+  echo "$output" | grep -q 'Rule 12/15'
 
   # Now ack-rule12 should pass it.
   run bash -c "echo '$(pretool_bash 'git commit -m "Introduce session context guard" # ack-rule12:bewijsstuk')' | bash '$GITGIT_DISPATCH' 2>&1"
@@ -96,11 +96,11 @@ teardown() {
 
 # --- 4. "Address review" denied with rule 2 ---
 
-@test "subject starting with Address review is denied with Rule 2/14" {
+@test "subject starting with Address review is denied with Rule 2/15" {
   run bash -c "echo '$(pretool_bash 'git commit -m "Address review findings"')' | bash '$GITGIT_DISPATCH' 2>&1 >/dev/null"
   [ "$status" -eq 2 ]
   echo "$output" | grep -q '\[gitgit/commit-subject\]'
-  echo "$output" | grep -q 'Rule 2/14'
+  echo "$output" | grep -q 'Rule 2/15'
 }
 
 # --- 5. commit-format uses [gitgit/commit-format] mnemonic ---

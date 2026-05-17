@@ -256,10 +256,11 @@ to the rule, so looking it up forces one exposure per cycle.
 | 12 | `bewijsstuk` | Commit check is evidence (test ran, endpoint hit), not gut feel. |
 | 13 | `kralen` | Never squash merge; preserve history. |
 | 14 | `voorwaarts` | Amend is forbidden unless stripping unpushed secrets/PII; use a new commit. |
+| 15 | `steiger` | No internal AI-tooling or process vocabulary in subject/body (skill names, phase terms, "after the panel reviewed", "consensus reached"). |
 
 Rule 3 (subject length 50/72) is enforced structurally by
 `commit-format.sh` and is not in the rotation. Rules 1 and 2 only
-land on you after a real violation in the subject; rules 4-14 rotate in
+land on you after a real violation in the subject; rules 4-15 rotate in
 slot order, one per commit. State lives in
 `~/.claude/var/gitgit-commit-rule-state` and shifts after every
 *confirmed* commit success, not on every ack-match: the guard records

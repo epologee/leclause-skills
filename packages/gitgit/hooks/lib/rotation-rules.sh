@@ -26,4 +26,5 @@ DD_RULE_PASSWORD=(
   "bewijsstuk"  # 12: commit check is evidence, not gut feel
   "kralen"      # 13: preserve history, no squash merge
   "voorwaarts"  # 14: no amend, always a new commit
+  "steiger"     # allow-comment: 15: no internal AI-tooling or process vocabulary in subject/body
 )
