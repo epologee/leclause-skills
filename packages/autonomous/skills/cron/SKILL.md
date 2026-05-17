@@ -82,9 +82,10 @@ The `jq` lookup returns the version Claude Code is currently loading, which matc
 ## When to change the cron
 
 **Nothing to do (STANDBY idle tick):**
-1. Increment `watch_checks` in the loop file
-2. If the new value crosses a backoff threshold, `CronDelete` old job, `CronCreate` with new interval, update `cron_job_id`
-3. Log a one-line tick with timestamp (`date +%H:%M`) including the new `watch_checks` value and the current interval. Silent ticks hide whether the cron is actually running.
+1. **Check operator presence first.** Backoff exists for unattended scenarios (the operator is AFK, the loop runs overnight, the session is paused mid-deploy waiting on CI). When the operator is actively responding in the same session, bumping `watch_checks` is the wrong response: it pretends the operator is absent when in fact a turnaround is seconds away, and it conflates "no work to do this tick" with "loop is being abandoned". Operator-present signal: the most recent non-cron message in the conversation is operator free-form text from the last few minutes (anything that does NOT match the cron template prompt starting with "First run /model sonnet to downgrade"). If that signal fires, this tick is a no-op: log a one-line "operator-active tick, no backoff" entry with the timestamp, leave `watch_checks` untouched, leave the cron unchanged, and end the turn.
+2. Operator absent or genuinely idle: increment `watch_checks` in the loop file.
+3. If the new value crosses a backoff threshold, `CronDelete` old job, `CronCreate` with new interval, update `cron_job_id`.
+4. Log a one-line tick with timestamp (`date +%H:%M`) including the new `watch_checks` value and the current interval. Silent ticks hide whether the cron is actually running.
 
 **New input or phase becomes active:**
 1. Reset `watch_checks: 0`

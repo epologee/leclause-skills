@@ -54,10 +54,13 @@ The goal of the current work in 1-2 sentences. Not the technical details, but th
 Where do we stand? Phase (if an auto-loop is active), what has been done, what is running in the background. Name the branch and any uncommitted changes if present.
 
 **To do**
-What is still open? What is waiting for input, what is running autonomously, what does the user need to decide. End with a concrete next-step proposal.
+What is still open? What is waiting for input, what is running autonomously, what does the user need to decide.
+
+**Closing line (mandatory).** The recap MUST end with a single bolded sentence that names the next-action owner and the next action, in the form `**<owner>: <action>**`. Owner is one of: `operator` (user needs to do or say something), `claude` (Claude is working on it and will continue), `external` (waiting on CI, a deploy, a third party). Action is the concrete next step in 5 to 12 words. Examples: `**operator: zeg "ship" om de push naar main te triggeren.**`, `**claude: DRIVE op finding F3, ETA twee ticks.**`, `**external: CI run #4123 draait, geen actie van jou nodig.**`. Without this closing line the recap is incomplete; a vague "let me know" or a multi-sentence wrap-up defeats the point. The operator reads the closing line first and decides from there whether to scroll up for context.
 
 ## Guidelines
 
+- **Match conversation language.** Recap is operator-facing prose; write in the language the operator is using in this conversation, not the language of the project files. A Dutch-speaking operator reading an English recap pays a translation tax for no benefit.
 - **Short and concrete.** No file listings, no technical enumerations. Functional description.
 - **Honest about uncertainty.** If context was lost to compaction, say so. Do not guess.
 - **Always actionable.** After reading, the user should know what the next concrete step is.
