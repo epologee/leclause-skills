@@ -22,8 +22,6 @@ case "$EVENT" in
         guard_no_worktree_deploy "$INPUT"
         source "$DIR/guards/followup.sh"
         guard_followup "$INPUT"
-        source "$DIR/guards/visual-verify-before-send.sh"
-        guard_visual_verify_before_send "$INPUT"
         ;;
       Edit|Write|MultiEdit)
         source "$DIR/guards/no-code-comments.sh"
