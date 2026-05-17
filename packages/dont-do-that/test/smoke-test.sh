@@ -636,6 +636,21 @@ expect_deny "no-code-comments: Write new .sh with comment after shebang is block
   "$(pretool_write "/tmp/new-x-after-shebang.sh" $'#!/usr/bin/env bash\n# sets up environment\nexport PATH=$PATH:/foo')" \
   "no-code-comments"
 
+expect_allow "no-code-comments: Ruby method notation Recipes#create in .rb passes" \
+  "$(pretool_edit "/tmp/x.rb" "x = 1" $'x = 1\ndescribe Recipes, "#create" do\nend')"
+
+expect_allow "no-code-comments: Edit snippet starting mid-string with #method does not fire" \
+  "$(pretool_edit "/tmp/x.rb" 'from API"' 'from Recipes#create"')"
+
+expect_allow "no-code-comments: bash parameter expansion \$foo#bar passes in .sh" \
+  "$(pretool_edit "/tmp/x.sh" "x=1" $'x=1\necho $foo#bar')"
+
+expect_allow "no-code-comments: bare http URL as expression in .ts passes" \
+  "$(pretool_edit "/tmp/x.ts" "let x = 1;" $'let x = 1;\nlet u = http://blabla;')"
+
+expect_allow "no-code-comments: s3:// scheme as expression in .ts passes" \
+  "$(pretool_edit "/tmp/x.ts" "let x = 1;" $'let x = 1;\nlet u = s3://bucket/key;')"
+
 # --- Summary ---
 
 TOTAL=$((PASS + FAIL))

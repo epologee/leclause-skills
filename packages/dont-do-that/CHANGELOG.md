@@ -17,6 +17,12 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous.
 
+## [v1.0.66]
+
+### Fixed
+
+- **`no-code-comments` only flags `#` or `//` at line start or after whitespace.** Ruby `Recipes#create`, bash `$foo#bar`, bare URLs like `let u = http://blabla;`, and Edit snippets that begin mid-string with a `#method` reference now pass.
+
 ## [v1.0.64]
 
 ### Added

@@ -13,10 +13,18 @@
 #   In NORMAL state, a backslash-then-anything sequence is consumed as a
 #   pair so regex-literal escapes (/foo\/bar/) and stray backslashes do not
 #   mis-trigger // comment detection on the trailing slash.
+#   `//` only opens a comment when at the start of a line or preceded by
+#   whitespace, so `http://foo` written as a bare expression does not get
+#   mis-read as a comment whose body has lost the URL prefix.
 #
 # MODE=hash recognises:
 #   line block:   # ...
 #   string types: "..." '...' """...""" '''...'''
+#   A `#` only opens a comment when it sits at the start of a line or is
+#   preceded by whitespace. `Recipes#create` (Ruby method notation) and
+#   `$foo#bar` (bash parameter expansion in the wild) therefore do not fire,
+#   even when an Edit snippet begins mid-string and the state machine has no
+#   way to know we started inside one.
 #
 # Strings shield their contents from comment detection. Block comments stay
 # open across newlines; the emitted body is the joined content with newlines
@@ -107,7 +115,7 @@ function process_line(src,    n, i, ch, nx, nx2, buf) {
 
     if (MODE == "slash") {
       if (ch == "\\" && i < n) { i += 2; continue }
-      if (ch == "/" && nx == "/") {
+      if (ch == "/" && nx == "/" && (i == 1 || substr(src, i-1, 1) ~ /[[:space:]]/)) {
         buf = substr(src, i+2)
         sub(/[[:space:]]+$/, "", buf)
         print NR ":" buf
@@ -126,7 +134,7 @@ function process_line(src,    n, i, ch, nx, nx2, buf) {
       i++
       continue
     } else {
-      if (ch == "#") {
+      if (ch == "#" && (i == 1 || substr(src, i-1, 1) ~ /[[:space:]]/)) {
         buf = substr(src, i+1)
         sub(/[[:space:]]+$/, "", buf)
         print NR ":" buf
