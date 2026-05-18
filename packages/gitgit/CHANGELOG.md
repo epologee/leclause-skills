@@ -21,7 +21,7 @@ the version without producing an entry here).
 
 ### Changed
 
-- **Rule 1 banlist widened with capability-laundering verbs.** `Land`, `Make`, `Work`, `Do`, `Get`, `Tweak`, `Surface` now deny on subject start; `Address` and `Apply` deny unconditionally (Rule 2's trigger-conditional version still fires first when followed by `review/feedback/findings/comments/pride`). Rewrite the subject to name the actual change.
+- **Rule 1 banlist widened.** `Land`, `Make`, `Work`, `Do`, `Get`, `Tweak`, `Surface`, `Address`, and `Apply` now deny at subject start. Rewrite the subject to name the actual capability change.
 
 ## [v1.0.111]
 
