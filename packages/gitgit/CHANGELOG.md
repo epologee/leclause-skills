@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.112]
+
+### Changed
+
+- **Rule 1 banlist widened.** `Land`, `Make`, `Work`, `Do`, `Get`, `Tweak`, `Surface`, `Address`, and `Apply` now deny at subject start. Rewrite the subject to name the actual capability change.
+
 ## [v1.0.111]
 
 ### Added

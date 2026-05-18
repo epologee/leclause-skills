@@ -151,7 +151,7 @@ guard_commit_subject() {
   fi
 
   # Rule 1 (idx 0) / Rule 2 (idx 1) violation detection on the subject.
-  local activity_re='^(Fix|Improve|Update|Change|Refactor|Add|Extract|Move|Remove|Rename|Drop|Create|Clear)[[:space:]]'
+  local activity_re='^(Fix|Improve|Update|Change|Refactor|Add|Extract|Move|Remove|Rename|Drop|Create|Clear|Land|Make|Work|Do|Get|Tweak|Surface|Address|Apply)[[:space:]]'
   local trigger_re='^(Address|Apply)[[:space:]]+.*(review|feedback|findings|comments|pride)'
   local violation_idx=-1
   shopt -s nocasematch
