@@ -107,6 +107,8 @@ The rover is tempted by proxies because they are cheaper than real evidence. Rej
 | "The feature should work" | Unchecked hypothesis | Run the feature end-to-end |
 | "I followed the pattern" | Pattern imitation, not correctness | Prove this instance behaves |
 | "No errors in the console" | Absence is not presence | Confirm the positive outcome happened |
+| "The pipeline works on one example, so the matrix criterion is met" | Single-instance evidence does not satisfy a quantitative criterion | Run the full matrix, produce every output the criterion names, list each one |
+| "The simulator boot loop would burn context, so I tick the criterion now" | Cost is a fate-2 candidate for findings; Done criteria have no fate-2 path | Either produce the full evidence, or mark `unverified: <route the operator needs to take>` and stay in DRIVE |
 
 When a proxy is the only thing available, label it: `unverified, only proxy evidence: <X>`. Honesty beats a false green.
 
@@ -140,6 +142,16 @@ The rover **never** upgrades `unverified` to a tick on its own, never silently d
 | "Verification would take forever" | If verifying the mission takes longer than doing it, the mission is probably too big. Split. |
 | "The tests cover it" | Tests are a form of verification, but rarely the full criterion. What did the user see? |
 | "I already checked" | Show the evidence. If you cannot cite it, you did not check. |
+
+## Quantitative criteria need quantitative evidence
+
+A Done criterion that names a count or a matrix (`bin/capture-shots produces 40 PNGs`, `all 10 scenes render`, `both locales receive a preview`, `every endpoint returns 200`) is met only when every named instance is produced and listed. Proving the mechanism on one instance proves the mechanism; it does not prove the criterion. The two are not the same.
+
+The temptation is structural: when the matrix is wide (40 outputs, hours of simulator boots, a long sweep) and the mechanism is verified on one example, the rover wants to upgrade "mechanism proven" to "criterion met" because the marginal cost of the remaining N-1 runs feels disproportionate to the marginal information. That trade is wrong twice. First, the criterion was committed to during SURVEY precisely because the matrix matters; the rover does not get to redefine the criterion at INSPECT to be the part it already finished. Second, the rover routinely discovers that the mechanism works on the first instance but fails on the second or third (a scene flag the schema does not expose, a locale-specific font fallback, a device-class path the mechanism hardcoded). The matrix runs are the discovery surface, not the formality.
+
+If the matrix is genuinely too expensive to run in this session, the move is `unverified: requires <concrete-route>` with a route the operator could take, not a tick. Unverified blocks STOW, so the mission stays open and the operator sees the gap in the next read of the loop file. A ticked criterion that was not actually verified is worse than an unverified one: the operator stops looking, the gap rots, and the next reader of the communiqué believes a lie.
+
+Red flag: when typing a verify-pass log entry, watch for the construction "running N more iterations would exceed prudent context; the one-scene verification proves the pipeline works." That sentence shape is the proxy this section exists to prevent. The correct continuation is `unverified: needs full matrix run via bin/X`. Then stay in DRIVE until the matrix evidence exists, or transition out only because the operator's environment legitimately blocks the run and the unverified state is documented for them to pick up.
 
 ## Interaction with other skills
 
