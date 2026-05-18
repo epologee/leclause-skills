@@ -173,7 +173,54 @@ expect_deny "subject: --message= still detects activity-word violation" \
   "$(pretool_bash 'git commit --message="Fix typo"')" \
   "Rule 1/15"
 
-# --- commit-subject: rule 2 (trigger phrasing) ---
+# --- commit-subject: rule 1 covers capability-laundering verbs --- allow-comment: section divider matches existing smoke-test.sh pattern
+
+reset_state
+expect_deny "subject: capability-laundering Land denies with rule 1" \
+  "$(pretool_bash 'git commit -m "Land BESS cash plannings on MiniZinc"')" \
+  "Rule 1/15"
+
+reset_state
+expect_deny "subject: capability-laundering Make denies with rule 1" \
+  "$(pretool_bash 'git commit -m "Make the auth work"')" \
+  "Rule 1/15"
+
+reset_state
+expect_deny "subject: capability-laundering Work denies with rule 1" \
+  "$(pretool_bash 'git commit -m "Work on retry path"')" \
+  "Rule 1/15"
+
+reset_state
+expect_deny "subject: capability-laundering Do denies with rule 1" \
+  "$(pretool_bash 'git commit -m "Do the retry path"')" \
+  "Rule 1/15"
+
+reset_state
+expect_deny "subject: capability-laundering Get denies with rule 1" \
+  "$(pretool_bash 'git commit -m "Get the auth working"')" \
+  "Rule 1/15"
+
+reset_state
+expect_deny "subject: capability-laundering Tweak denies with rule 1" \
+  "$(pretool_bash 'git commit -m "Tweak the config"')" \
+  "Rule 1/15"
+
+reset_state
+expect_deny "subject: capability-laundering Surface denies with rule 1" \
+  "$(pretool_bash 'git commit -m "Surface the error"')" \
+  "Rule 1/15"
+
+reset_state
+expect_deny "subject: Address without trigger phrase denies with rule 1" \
+  "$(pretool_bash 'git commit -m "Address pagination bug"')" \
+  "Rule 1/15"
+
+reset_state
+expect_deny "subject: Apply without trigger phrase denies with rule 1" \
+  "$(pretool_bash 'git commit -m "Apply rate limit on signup"')" \
+  "Rule 1/15"
+
+# --- commit-subject: rule 2 (trigger phrasing) takes precedence over rule 1 --- allow-comment: section divider matches existing smoke-test.sh pattern
 
 reset_state
 expect_deny "subject: Address review phrasing denies with rule 2" \

@@ -243,8 +243,8 @@ to the rule, so looking it up forces one exposure per cycle.
 
 | Rule | Password | Rule |
 |------|----------|------|
-| 1 | `gedrag` | Subject = new behavior/capability, no git action ("Fix/Add/..."). |
-| 2 | `effect` | Subject says WHAT the system does, not the WHY trigger ("Address feedback"). |
+| 1 | `gedrag` | Subject = new behavior/capability, no git action or capability-laundering verb ("Fix/Add/Land/Make/Address/Apply/Tweak/Surface/..."). |
+| 2 | `effect` | Subject says WHAT the system does, not the WHY trigger ("Address feedback"). Fires before Rule 1 when the trigger phrase matches. |
 | 4 | `essentie` | Body only when needed: 2-4 sentences why. |
 | 5 | `dubbelop` | No file listings or class inventory; the diff already shows files. |
 | 6 | `proza` | No bullet dumps or meta-narrative ("reviewer asked", "tests failed"). |

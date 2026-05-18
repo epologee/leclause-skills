@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.112]
+
+### Changed
+
+- **Rule 1 banlist widened with capability-laundering verbs.** `Land`, `Make`, `Work`, `Do`, `Get`, `Tweak`, `Surface` now deny on subject start; `Address` and `Apply` deny unconditionally (Rule 2's trigger-conditional version still fires first when followed by `review/feedback/findings/comments/pride`). Rewrite the subject to name the actual change.
+
 ## [v1.0.111]
 
 ### Added
