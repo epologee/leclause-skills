@@ -15,7 +15,7 @@ guard_commit_format() {
   local input="$1"
   local command
   command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
-  [[ ! "$command" =~ git[[:space:]]+commit ]] && return 0
+  dd_is_git_commit_command "$command" || return 0
 
   # Delegate message extraction to the shared parser in common.sh so there
   # is a single canonical implementation (heredoc-first, -m fallback).

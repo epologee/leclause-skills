@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.117]
+
+### Fixed
+
+- **Commit guards no longer fire on `git commit` as substring.** A `for f in ... ; head "$f"; done` with a filename like `gitgit commit discipline.md`, a `grep -n "git commit" ...`, or an `echo "...git commit..."` passes cleanly. Quoted strings and heredoc bodies are stripped before the gate, and a left-side word boundary anchors the match.
+
 ## [v1.0.112]
 
 ### Changed

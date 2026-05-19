@@ -104,7 +104,7 @@ guard_commit_subject() {
   local input="$1"
   local command
   command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
-  [[ ! "$command" =~ git[[:space:]]+commit ]] && return 0
+  dd_is_git_commit_command "$command" || return 0
 
   # Direct pointer to the SKILL.md so Claude can Read the file without
   # grep-fishing through the plugin cache. The lookup itself stays

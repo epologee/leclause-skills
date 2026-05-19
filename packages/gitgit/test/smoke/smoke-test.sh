@@ -294,6 +294,18 @@ reset_state
 expect_allow "subject: gh pr create passes silent" \
   "$(pretool_bash 'gh pr create')"
 
+reset_state
+expect_allow "subject: for-loop reading a path that contains 'git commit' substring passes silent" \
+  "$(pretool_bash 'for f in "/tmp/Per-session rotation namespace for gitgit commit discipline.md"; do head -25 "$f"; done')"
+
+reset_state
+expect_allow "subject: grep with 'git commit' inside a quoted pattern passes silent" \
+  "$(pretool_bash 'grep -n "git commit" /tmp/file.sh')"
+
+reset_state
+expect_allow "subject: echo of a string that mentions git commit passes silent" \
+  "$(pretool_bash 'echo "remember to run git commit later"')"
+
 # --- ack token stripped from heredoc body (no gaming) ---
 
 reset_state

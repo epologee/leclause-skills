@@ -23,7 +23,7 @@ guard_commit_body() {
   # Only act on git commit commands.
   local command
   command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
-  [[ ! "$command" =~ git[[:space:]]+commit ]] && return 0
+  dd_is_git_commit_command "$command" || return 0
 
   # Extract the commit message. Empty means editor-mode; commit-format.sh
   # already handles editor-mode, so skip silently here.

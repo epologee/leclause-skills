@@ -15,7 +15,7 @@ load helpers
   local before
   before=$(shadow_log_line_count)
 
-  run_dispatch 'git commit -m "Tweak readme wording" # ack-rule4:essentie'
+  run_dispatch 'git commit -m "Readme typo on the install snippet" # ack-rule4:essentie'
 
   # Trivial: must pass.
   [ "$status" -eq 0 ]

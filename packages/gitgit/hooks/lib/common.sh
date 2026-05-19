@@ -253,6 +253,13 @@ dd_extract_commit_message() {
 # grammar as dd_extract_commit_message; together the two functions form
 # inverses over the heredoc body. Used by commit-subject.sh to detect
 # ack tokens outside the message.
+dd_is_git_commit_command() {
+  local command="$1"
+  local stripped
+  stripped=$(dd_strip_commit_message "$command")
+  [[ "$stripped" =~ (^|[^A-Za-z0-9_/.-])git[[:space:]]+commit($|[[:space:]]) ]]
+}
+
 dd_strip_commit_message() {
   local command="$1"
   local stripped
