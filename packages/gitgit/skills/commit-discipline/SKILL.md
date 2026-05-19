@@ -243,7 +243,7 @@ to the rule, so looking it up forces one exposure per cycle.
 
 | Rule | Password | Rule |
 |------|----------|------|
-| 1 | `gedrag` | Subject = new behavior/capability, no git action or capability-laundering verb ("Fix/Add/Land/Make/Address/Apply/Tweak/Surface/..."). |
+| 1 | `gedrag` | Subject = new behavior/capability, no git action or capability-laundering verb. The literal regex covers Fix/Add/Land/Make/Address/Apply/Tweak/Surface/Plant/Place/Pin/Lay/Anchor/Set/Stand/Mount/Install, but the rule is broader than the list: any verb that describes what YOU did to the artifact ("plant"/"sow"/"ground"/"hook"/"wire"/"bring"/"ship") is a dodge of the same category. If you find yourself reaching for a new placement or attachment verb to slip past the regex, that itself is the signal the subject is still git-action-shaped. Rewrite so the subject describes what the system can do now that it could not before. |
 | 2 | `effect` | Subject says WHAT the system does, not the WHY trigger ("Address feedback"). Fires before Rule 1 when the trigger phrase matches. |
 | 4 | `essentie` | Body only when needed: 2-4 sentences why. |
 | 5 | `dubbelop` | No file listings or class inventory; the diff already shows files. |
