@@ -366,6 +366,21 @@ expect_allow "followup: Bewust uitgesteld escape" \
 expect_allow "followup: non-gh command passes" \
   "$(pretool_bash 'echo follow-up')"
 
+expect_allow "followup: echoing a string that mentions gh api and body passes" \
+  "$(pretool_bash 'echo "see the gh api docs section about body fields"')"
+
+expect_allow "followup: grep for gh api in a code file with body keyword passes" \
+  "$(pretool_bash 'grep -n "gh api" /tmp/notes.md | grep body')"
+
+expect_allow "followup: cat of a path that contains gh api substring and body word passes" \
+  "$(pretool_bash 'cat "/tmp/Per-session gh api reference for body shaping.md"')"
+
+expect_allow "followup: echoing a sentence about gh api body fields and follow-up plans passes" \
+  "$(pretool_bash 'echo "the gh api docs body section mentions follow-up workflow"')"
+
+expect_allow "followup: grep for follow-up in a notes file that also names gh api and body passes" \
+  "$(pretool_bash 'grep -n "follow-up" /tmp/Notes-on-gh-api-body.md')"
+
 # --- no-remote ---
 # Each case sets up a temp git repo and cd's in before invoking the hook,
 # because the guard reads `git remote` against the current working directory.

@@ -17,6 +17,12 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous.
 
+## [v1.0.68]
+
+### Fixed
+
+- **`followup` no longer fires on `gh api` as substring.** Filenames or echoed strings with `gh api` pass; the body deferral check now requires `--field`/`-f`/`--raw-field`/`-F` or `--input`, not the bare word `body` anywhere.
+
 ## [v1.0.66]
 
 ### Fixed
