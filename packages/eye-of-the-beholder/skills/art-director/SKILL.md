@@ -13,15 +13,15 @@ Claude starts a product or feature and picks visual properties by feel. A hue fr
 
 The same applies to teams that do have a brand: if that brand lives in three people's heads and not on paper, every new developer invents a slightly different palette. After a year the product has visual wear through accumulated loose choices. At the code level that is called technical debt; at the brand level it has no name, but extracting it costs just as much.
 
-**Art-director works upfront.** The output is not UI, but a set of artifacts that make future UI work more concrete and less reflex-driven. Brand brief, visual language, design-system architecture. After that impeccable can refer to those artifacts while building ("the brand hue is this one, not that one") instead of re-choosing per feature. And eye-of-the-beholder can verify afterward against an existing rhythm instead of a loose intuition.
+**Art-director works upfront.** The output is not UI, but a set of artifacts that make future UI work more concrete and less reflex-driven. Brand brief, visual language, design-system architecture. After that the build-time discipline (whichever skill in the session governs feature-level visual implementation) can refer to those artifacts while building ("the brand hue is this one, not that one") instead of re-choosing per feature. And eye-of-the-beholder can verify afterward against an existing rhythm instead of a loose intuition.
 
 ## Positioning
 
 Art-director sits between discovery and production. Three skills, three moments:
 
 - **art-director**, define the standard. Upfront, once per project or per brand refresh. Delivers `brand.md`, `visual-language.md`, and a `design-system/` skeleton.
-- **impeccable**, use the standard while building. Per feature. Refers back to art-director's artifacts for concrete choices ("take the hue from `visual-language.md`", not "choose a warm accent color").
-- **eye-of-the-beholder**, verify after every change. Diagnostic. Screenshot, observe, compare with intent. Refers to impeccable for rules and to art-director for brand context.
+- **The build-time discipline** (whichever skill in the session governs feature-level visual implementation), use the standard while building. Per feature. Refers back to art-director's artifacts for concrete choices ("take the hue from `visual-language.md`", not "choose a warm accent color").
+- **eye-of-the-beholder**, verify after every change. Diagnostic. Screenshot, observe, compare with intent. Refers to the build-time discipline for rules and to art-director for brand context.
 
 The three are not interchangeable. A design system without a brand is a catalog without a voice. Brand without a design system is a poster without execution. A UI without eye-of-the-beholder is a statically correct image that breaks under movement or on a different screen. Each skill has its own moment.
 
@@ -38,11 +38,11 @@ Art-director must NOT activate on every piece of design work. That was the mista
 
 **Do not activate:**
 
-- Small UI tweak (spacing, color of a button, new view in an existing flow). That is impeccable + eye-of-the-beholder.
+- Small UI tweak (spacing, color of a button, new view in an existing flow). That is the build-time discipline plus eye-of-the-beholder.
 - Per-component visual review. That is eye-of-the-beholder.
-- Anti-AI-slop check on a feature. That is impeccable.
+- Anti-AI-slop check on a feature. That is the build-time discipline.
 - Single-screen layout fix. That is eye-of-the-beholder.
-- "Make the colors a bit nicer" without brand context. Route to impeccable's `colorize` or `bolder` sub-skill.
+- "Make the colors a bit nicer" without brand context. Route to the build-time discipline's color or styling sub-skill.
 
 If the question is "build this screen", art-director is the wrong answer. If the question is "what is the visual identity of this product", it is the right one.
 
@@ -111,7 +111,7 @@ Type is the voice of a brand on the page. A pairing consists of display (heading
 
 Color expresses mood. Small nuances carry far.
 
-- **Choose in OKLCH, not HSL.** OKLCH is perceptually uniform: two colors with the same L value feel equally light, which is not true with HSL. For details, see impeccable's `reference/color-and-contrast.md`. The point here is that you choose a brand hue that is perceptually stable across light and dark.
+- **Choose in OKLCH, not HSL.** OKLCH is perceptually uniform: two colors with the same L value feel equally light, which is not true with HSL. The point here is that you choose a brand hue that is perceptually stable across light and dark; the canonical reference is the OKLCH spec and the W3C CSS Color 4 module.
 - **Document a physical reference, not emotional labels.** "The brand hue is a deep blue-green inspired by old library spines (rough texture, lightly weathered)" is stronger than "a calm blue-green". The first gives a verifiable mental image to test against at a future choice. The second is an emotional label that means something slightly different to every next reviewer.
 - **60-30-10 as a starting point.** A rule of thumb from interior design that also works for screen color: 60% neutral, 30% secondary, 10% brand accent. Not a law, but a first check on how much of your screen you want to give to the brand.
 - **Secondary palette.** 2-4 colors that are supporting. One status green, one warning yellow, one danger red, optionally one extra accent. Choose them in relation to the brand hue, not independently.
@@ -131,7 +131,7 @@ Geometry expresses attitude. Corner radius, border weight, surface depth, shadow
 Time is the fourth design dimension. How fast something moves communicates temperament.
 
 - **Duration as brand expression.** Brand "unhurried, careful" = longer durations (250-400 ms) with expo-out curves (eases that start fast and end softly). Brand "snappy, efficient" = shorter durations (120-180 ms) with standard ease-out. Brand "playful" = micro-bounce easing on state changes.
-- **Ease vocabulary.** Define 3-5 named eases: `--ease-entrance`, `--ease-exit`, `--ease-gentle`, `--ease-snappy`. For the normative details on which eases to use when, see impeccable's `reference/motion-design.md`.
+- **Ease vocabulary.** Define 3-5 named eases: `--ease-entrance`, `--ease-exit`, `--ease-gentle`, `--ease-snappy`. The normative details on which eases to use when belong to the build-time motion discipline in the session.
 - **References.** See the design-motion-principles documentation (Emil Kowalski, Jakub Krehel, Jhey Tompkins) for per-designer motion vocabularies. Walter's *Designing for Emotion* for how motion relates to personality.
 
 ### 2.5 Photography and illustration tone
@@ -182,7 +182,7 @@ For each component: what does it promise? Document that per component.
 - **States.** Hover, focus-visible, active, disabled, loading, error. Each explicit.
 - **Variants.** Primary / secondary / destructive / ghost. Each with a brand rationale: why does this variant exist and when do you use it?
 - **Slots.** Can the component accept children? Which? With what constraints?
-- **A11y requirements.** Role, keyboard support, screen-reader names, contrast-ratio minimums. For the normative contrast ratios see impeccable's `reference/color-and-contrast.md`.
+- **A11y requirements.** Role, keyboard support, screen-reader names, contrast-ratio minimums. The canonical contrast ratios are WCAG 2.1 SC 1.4.3 (4.5:1 normal text, 3:1 large text and UI components); AAA tightens to 7:1 and 4.5:1.
 - **Do / don't.** Two short lists with usage examples. Not describing all combinations, just preventing the most common mistakes.
 
 Template: `templates/design-system/components/_example.md`.
@@ -217,15 +217,15 @@ Public reference systems to study how others solve it:
 
 Not to copy, but to study patterns and taxonomies.
 
-## Division of labor with eye-of-the-beholder and impeccable
+## Division of labor across the three moments
 
-The three skills are a chain. Order in the project lifecycle:
+The chain has three moments in the project lifecycle:
 
 - **art-director** (once, upstream). Delivers `brand.md`, `visual-language.md`, and `design-system/` skeleton. After this step "our brand" exists in writing.
-- **impeccable** (per feature, while building). Applies the standard. Refers back to art-director's artifacts for concrete choices ("from `visual-language.md`: hue is `oklch(0.62 0.18 260)`"). For the normative rules (contrast ratios, transform/opacity-only, spacing scale) impeccable has its own reference files.
-- **eye-of-the-beholder** (per change, afterward). Verifies visually. Screenshot, observe, compare with intent. Refers to impeccable for rules and to art-director for brand context. Applies observation questions that neither of the other two skills asks ("can you read secondary text without squinting?").
+- **Build-time discipline** (per feature, while building). Whichever skill in the session governs feature-level visual implementation applies the standard. Refers back to art-director's artifacts for concrete choices ("from `visual-language.md`: hue is `oklch(0.62 0.18 260)`"). The normative rules (contrast ratios, transform/opacity-only, spacing scale) come from that skill or from canonical specs (WCAG, OKLCH, framework docs).
+- **eye-of-the-beholder** (per change, afterward). Verifies visually. Screenshot, observe, compare with intent. Refers to the build-time discipline for rules and to art-director for brand context. Applies observation questions that neither of the other two moments asks ("can you read secondary text without squinting?").
 
-What is NOT art-director's territory: implementation CSS (impeccable + eye-of-the-beholder), per-component visual review (eye-of-the-beholder), anti-AI-slop checklists (impeccable), single-screen layout fixes (eye-of-the-beholder).
+What is NOT art-director's territory: implementation CSS (build-time and eye-of-the-beholder), per-component visual review (eye-of-the-beholder), anti-AI-slop checklists (build-time), single-screen layout fixes (eye-of-the-beholder).
 
 ## Output artifacts
 

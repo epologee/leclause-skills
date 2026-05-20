@@ -66,7 +66,7 @@ Per axis: what has this brand chosen, why, with which source? Each block has fou
 
 **Rationale**: *Which tempo speaks the brand personality? Fast ease-out = efficient, longer expo = deliberate, micro-bounce = playful.*
 
-**Reference**: [e.g. impeccable's `reference/motion-design.md` for normative rules, Walter *Designing for Emotion* for personality coupling.]
+**Reference**: [e.g. the build-time motion-design reference your session uses, Walter *Designing for Emotion* for personality coupling.]
 
 ---
 

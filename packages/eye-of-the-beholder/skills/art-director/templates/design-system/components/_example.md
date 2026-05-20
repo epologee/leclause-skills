@@ -51,7 +51,7 @@ Each variant: when do you use it, with which brand rationale?
 - **Role**: [e.g. button (native) or role="button" if non-button element].
 - **Keyboard support**: Space and Enter activate, Tab adds to tab order, Shift+Tab goes back. Disabled does not skip Tab if `aria-disabled`.
 - **Screen reader name**: via children text, or `aria-label` when icon only.
-- **Contrast ratios** (per variant, per state, against typical background): minimum WCAG AA (4.5:1 for body text, 3:1 for UI boundaries). Checked against impeccable's `reference/color-and-contrast.md`.
+- **Contrast ratios** (per variant, per state, against typical background): minimum WCAG AA (4.5:1 for body text, 3:1 for UI boundaries). Checked against WCAG 2.1 SC 1.4.3.
 - **Reduced motion**: respects `prefers-reduced-motion: reduce`; animations removed or instant.
 - **Minimum touch target**: 44x44 px on mobile.
 
@@ -79,5 +79,5 @@ Each variant: when do you use it, with which brand rationale?
 
 - Frost, *Atomic Design*: button as atom + combination rules.
 - Kholmatova, *Design Systems*: states as part of component contract.
-- impeccable's `reference/color-and-contrast.md`: AA/AAA thresholds.
-- impeccable's `reference/interaction-design.md`: keyboard + focus patterns.
+- WCAG 2.1 SC 1.4.3: AA/AAA contrast thresholds.
+- W3C WAI-ARIA Authoring Practices and the WHATWG HTML spec: keyboard + focus patterns.

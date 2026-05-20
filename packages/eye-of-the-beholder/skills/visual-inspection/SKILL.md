@@ -46,8 +46,8 @@ A row that says `no` is an open todo. Done means: all rows say `yes`, with scree
 
 1. **Identify the reference.** Which element does the user point to? Record a locator (CSS selector, aria-label, or bounding box on the page).
 2. **Identify the axes.** Read back the user's sentence. Which properties did they name? Write them out as columns in the table. Do not guess extra axes; do not add axes the user did not name.
-3. **Screenshot the reference.** Headless browser, devtools screenshot, or user-provided. Crop tightly around the element so neighboring UI does not distract. Preferably at the zoom factor the user is viewing.
-4. **Measure the reference per axis.** Devtools computed styles, or pixel measurement on the screenshot for properties that cannot be read from a one-liner (e.g. effective corner radius with nested borders). Put the values in the table.
+3. **Screenshot the reference.** A tightly-cropped PNG at the zoom factor the user is viewing. Any capture route that delivers that (headless browser, devtools screenshot, user-provided image, browser MCP, OS screen-capture utility) is fine.
+4. **Measure the reference per axis.** Whichever measurement route reads the property (devtools computed styles for runtime values, pixel measurement on the screenshot for properties that cannot be read from a one-liner like effective corner radius with nested borders). Put the values in the table.
 5. **Implement.** Write the CSS / SwiftUI / whatever.
 6. **Screenshot the result.** Same crop strategy. Same zoom.
 7. **Measure the result per axis.** Fill in the table.

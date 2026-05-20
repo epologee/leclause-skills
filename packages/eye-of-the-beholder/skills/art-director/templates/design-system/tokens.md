@@ -156,5 +156,5 @@ Two anti-patterns to avoid:
 ## References used
 
 - Curtis, Eightshapes Medium: 3-layer model from Module 3.1 of SKILL.md.
-- impeccable's `reference/color-and-contrast.md`: OKLCH + WCAG contrast thresholds (for normative rules, verify your palette against AA/AAA after filling in).
+- WCAG 2.1 SC 1.4.3 for AA/AAA contrast thresholds (4.5:1 for body text and 3:1 for large text / UI boundaries; AAA tightens to 7:1 and 4.5:1). Verify your palette against those after filling in. The OKLCH spec and CSS Color 4 module are the canonical references for perceptually uniform color.
 - eye-of-the-beholder's surface-delta 1.07x rule: for surface-0 to surface-2 ratio check in dark mode.

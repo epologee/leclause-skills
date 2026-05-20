@@ -199,7 +199,7 @@ Each of these patterns signals an incomplete token system. The fix is rarely "ad
 
 **2. WCAG contrast math.** For each text color used on each background used, calculate the ratio. You do not need to squint; the math gives the definitive answer.
 
-For the AA/AAA threshold table, including the reasoning behind 4.5:1 and 3:1, see impeccable's `reference/color-and-contrast.md`. The formula below stays here because observational work often needs to calculate a ratio on the spot without switching tools.
+The WCAG 2.1 thresholds are 4.5:1 for normal text against background, 3:1 for large text (18pt or 14pt bold) and for UI components. AAA tightens to 7:1 and 4.5:1 respectively. The formula below lets observational work calculate a ratio on the spot without switching tools.
 
 WCAG 2.1 SC 1.4.3 formula:
 
@@ -267,27 +267,21 @@ A transition can look correct on a single frame but be out of sync under the hoo
 
 **3. Compositor-only properties.** Transform and opacity are animated by the compositor without layout. Width, top, left, padding, margin are layout properties and trigger reflow per frame. For small elements that is fine. For rows of 5+ items or with parallel transitions it can jank. `contain: layout` on animating children isolates the reflow to their own box. `will-change: transform` (not `will-change: width`, which is an anti-pattern per MDN) promotes the element to its own layer.
 
-The normative rule "transform and opacity only" for animations also lives in impeccable's `reference/motion-design.md`. What stays here: the observational diagnosis (reflow check on rows, `contain: layout` as a tactical fix, `will-change: width` as a specific anti-pattern) because those are about recognizing an existing problem, not about which rule to follow while building.
+The normative rule "transform and opacity only" for animations is the build-time standard that the project's design discipline should carry; what stays here is the observational diagnosis (reflow check on rows, `contain: layout` as a tactical fix, `will-change: width` as a specific anti-pattern) because those are about recognizing an existing problem, not about which rule to follow while building.
 
 ### Recording and dissecting yourself
 
 Verifying an animation without recording it is the same as verifying a layout without a screenshot. Workflow:
 
-**1. Reproduce.** User provides a GIF or MP4, OR you record it yourself. Self-recording options:
+**1. Reproduce.** User provides a GIF or MP4, OR you record it yourself. Self-recording can come from many routes: a headless browser test driver that saves screenshots in a loop, a manual screen-recording app, a structured user-flow recorder, a browser MCP with capture, or whichever capture tool already lives in the session's environment. Save the recording to a scratch directory that is gitignored.
 
-- **Headless browser test driver** (Cuprite, Playwright): `session.driver.save_screenshot(path, full: true)` in a loop with `sleep` in between, or sequential snapshots with explicit viewport resizes.
-- **Screen recording** (macOS: CleanShot, Cmd+Shift+5): quick but manual.
-- **Chrome DevTools Recorder**: structured, when you want to reproduce a user flow.
-
-Save the recording to `tmp/` or a scratch directory that is gitignored.
-
-**2. Dissect.** Frame extraction via `ffmpeg`:
+**2. Dissect.** Extract frames at a useful rate (around 15 fps is enough for 200-400ms transitions, giving 3-6 frames over the animation; 30 fps for longer or subtler animations, at the cost of file size). Whatever extractor the session has works (a frame-grabber CLI, a Playwright video reader, a ffmpeg invocation, a screen-recording app's export); the outcome is decoded frames the Read tool can open. One concrete ffmpeg recipe:
 
 ```bash
 ffmpeg -i capture.mp4 -vf "fps=15,scale=900:-1" /tmp/frame_%03d.png
 ```
 
-`fps=15` is enough for 200-400ms transitions (3-6 frames over the animation). `scale=900:-1` keeps file sizes small so the Read tool can view the frames. For longer or more subtle animations: increase to `fps=30` and live with the larger files.
+`scale=900:-1` keeps file sizes small so the Read tool can view the frames.
 
 Read the frames via the Read tool. Per frame: apply the scan questions from "How to look" (edges, rhythm, odd one out). Compare frame N with frame N+1: what changed, what should not have changed, what SHOULD have changed?
 
@@ -295,16 +289,16 @@ Read the frames via the Read tool. Per frame: apply the scan questions from "How
 
 **4. Mid-animation inspection.** Rest-state screenshots only prove the end positions, not the journey. For intermediate inspection:
 
-- **Slow-mo trick**: override the duration custom property via JS in a test: `document.querySelector('.root').style.setProperty('--duration', '1s')`. Trigger the transition, sleep 100-500ms, sample `getComputedStyle(element).transform` or `.visibility`. The 5x or 10x slowdown gives you a wide window to read mid-animation values.
+- **Slow-mo trick**: override the duration custom property via JS in a test: `document.querySelector('.root').style.setProperty('--duration', '1s')`. Trigger the transition, sleep 100-500ms, sample `getComputedStyle(element).transform` or `.visibility`. The 5x or 10x slowdown gives a wide window to read mid-animation values.
 - **Multiple samples**: at t=50, 100, 150, 200ms take a snapshot, verify that the values interpolate monotonically and that related elements are in sync at each sample point.
 
-**5. Rest-vs-mid testing.** An animation test that only checks rest state is broken by definition: it cannot fail on the halfway-through-the-animation bugs the user actually experiences. Write an explicit mid-animation assertion when it is critical that elements run in sync. The slow-mo trick makes this writable in Cucumber/Playwright without race conditions.
+**5. Rest-vs-mid testing.** An animation test that only checks rest state is broken by definition: it cannot fail on the halfway-through-the-animation bugs the user actually experiences. Write an explicit mid-animation assertion when it is critical that elements run in sync. The slow-mo trick makes this writable in any browser-driving test framework without race conditions.
 
 ### Pixel-level animation sampling
 
 When you look at frames visually and the movements seem "roughly right", or you cannot tell whether a progress bar is retreating from 10% to 5%, that is the image-viewer limit: a 4px-wide bar over a 60px-tall row renders a 5% difference as 3 pixels. You cannot see that in a scaled-compressed image view. You need to read the pixel data directly from the frames.
 
-**Technique**: ffmpeg extracts a 1-pixel-wide vertical slice at the bar position, per frame. Decode the raw RGB bytes from a PPM header. Classify each pixel as `P` (purple/selected), `A` (amber/unread), `.` (background) based on RGB thresholds. Count the P and A pixels per frame to get an exact percentage.
+**Technique** (four steps, language-agnostic): extract a 1-pixel-wide vertical slice at the bar position per frame, decode the raw RGB bytes, classify each pixel by RGB threshold into a small set of categories (selected colour, unread colour, background), count per category per frame to get an exact percentage. Reference implementation in Node + ffmpeg (sessions can wire the same four steps in any language and any frame extractor):
 
 ```javascript
 const { execSync } = require('child_process')
@@ -365,15 +359,15 @@ for (let n = 0; n < 50; n++) {
 
 **Bjango / Spiekermann (optical adjustments):** Mathematically identical shapes are optically unequal. Circles must overshoot the baseline and x-height. Sharp points of triangles must extend outside the bounding box. Vertical lines must appear thicker than horizontal ones to weigh equally. It is not an illusion to be fixed, it is how eyes work.
 
-## Division of labor with art-director and impeccable
+## Division of labor across the three moments
 
-Eye-of-the-beholder is diagnostic. It looks at what IS there and compares it to intent. Two sister skills are responsible for other moments in the chain.
+Eye-of-the-beholder is diagnostic. It looks at what IS there and compares it to intent. The other two moments in the chain are upstream (defining the standard) and build-time (applying it).
 
 **art-director** (same plugin, sister skill) works upstream. Before CSS exists: define brand (who are we), visual language (how do we speak visually), and design-system architecture (how does this scale). Delivers `brand.md`, `visual-language.md`, and a `design-system/` skeleton. When eye-of-the-beholder observes that a hue does not fit or a spacing does not rhythm, the underlying standard should live in art-director's artifacts, not in every reviewer's head.
 
-**impeccable** (external plugin) uses the standard while building. Per feature. Contains the normative rules in `reference/color-and-contrast.md`, `motion-design.md`, `typography.md`, `spatial-design.md`, and others. Eye-of-the-beholder refers to impeccable for the rules; impeccable refers to art-director's artifacts for the concrete brand choices within those rules.
+**Build-time design discipline** (whichever skill in the session governs this) uses the standard while building. Per feature. The normative rules (transform/opacity-only for animations, WCAG contrast ratios, spacing scale) come from there or from canonical sources (WCAG, OKLCH, framework docs). Eye-of-the-beholder refers to those rules; the build-time discipline refers to art-director's artifacts for the concrete brand choices within those rules.
 
-The chain over time: art-director once (for a new product, brand refresh, first DS foundation), impeccable per feature while building, eye-of-the-beholder per change afterward to verify visually. When eye-of-the-beholder signals a problem that does not sit in a single view but occurs system-wide (e.g. an uncoordinated spacing scale), that is a signal that art-director work is incomplete or missing.
+The chain over time: art-director once (for a new product, brand refresh, first DS foundation), the build-time discipline per feature while building, eye-of-the-beholder per change afterward to verify visually. When eye-of-the-beholder signals a problem that does not sit in a single view but occurs system-wide (e.g. an uncoordinated spacing scale), that is a signal that art-director work is incomplete or missing.
 
 ## Common blind spots
 
