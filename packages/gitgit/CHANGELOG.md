@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.120]
+
+### Changed
+
+- **Visual-trailer errors point at capture-route categories.** A failing `missing-visual` or `visual-na-on-ui-touch` guard now hints at where capture routes live (browser drivers, OS utilities, simulator tools, project-launch flows).
+
 ## [v1.0.117]
 
 ### Fixed

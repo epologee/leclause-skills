@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
 
+## [v1.0.34]
+
+### Changed
+
+- **Sibling-skill references use suggestion-with-fallback.** `gurus:software` and `gurus:writers` recommend `/auto-loop` for autonomous handoff with a fallback for sessions that lack it; stop-mechanism examples cover both `/auto-loop` and `/autonomous:stop`.
+
 ## [v1.0.29]
 
 ### Changed

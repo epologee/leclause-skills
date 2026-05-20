@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
 
+## [v1.0.91]
+
+### Added
+
+- **Rover Tool-gap is not a destination.** Mid-mission tool-gaps (capturing a screenshot, transcribing audio, rendering a diagram) are now DRIVE work, not STANDBY triggers; the rover scans loaded skills, deferred tools, PATH, and sibling projects before declaring STANDBY.
+
 ## [v1.0.76]
 
 ### Changed
