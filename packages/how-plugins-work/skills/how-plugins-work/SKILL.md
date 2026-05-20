@@ -111,11 +111,11 @@ Lean reference: `dont-do-that:just-a-question` describes what the skill enforces
 
 ## Model selection
 
-A skill **cannot** change the session model. The model the user chose at session start (or via `/model`) runs through all turns, including turns fired by cron. A skill that outputs `/model haiku` as text behaves like a fake user input, is unreliable, and persists after the skill run, corrupting the user session.
+A skill **cannot** change the session model. The model the user chose at session start (or via `/model`) runs through all turns, including turns fired by cron. A skill that outputs `/model <name>` as text behaves like a fake user input, is unreliable, and persists after the skill run, corrupting the user session.
 
 **Subagents can.** The `Agent`/`Task` tool accepts a `model` parameter (`haiku`, `sonnet`, `opus`). A subagent runs in a separate conversation context with its own model, returns a result, and does not touch the session model. This is the correct mechanism for:
 
-- Token savings in cron-driven loops (delegate poll work to a Sonnet or Haiku subagent)
+- Token savings in cron-driven loops (delegate poll work to a Sonnet subagent)
 - Parallel independent tasks (multiple agents on different models at the same time)
 - Reserving the session model for reasoning while mechanical work runs cheaper
 
