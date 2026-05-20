@@ -152,6 +152,8 @@ If Level 2 cannot address the feedback, drop to Level 3.
 | "The feedback came up in project P, so the rule belongs in P's CLAUDE.md" | Scope underclaim. Where the feedback arose is not the same as where the principle applies. Ask: would this rule hold in a sibling project? If yes, the target is cross-project (a marketplace skill or user-level), not P. |
 | "There is no marketplace skill that exactly covers this area" / "Er is geen marketplace skill die hier precies over gaat" | Then look at the adjacent ones (`gitgit:commit-discipline`, `testing-philosophy`, `programming-philosophy`, `verification-and-diagnosis`). A near-adjacent skill that absorbs the rule beats a project-specific copy. |
 | "This is iOS-specific (or Rails-specific, etc.) so it has to be project-level" | Language- or framework-specific is scope B, not scope D. A skill scoped to that framework still beats a single project's CLAUDE.md. |
+| "Het raakt ook een generieke gate (push / test / verify) dus zet ik het ook in CLAUDE.md" / "It also touches a generic gate so I will edit CLAUDE.md too" | Skill-specifiek gedrag (hoe een specifieke skill een algemene regel interpreteert, een carve-out maakt, of zijn eigen surface invult) hoort UITSLUITEND in de skill. Wanneer de feedback gaat over hoe `/ship-it`, `/touche`, `/review-bot-party`, of een andere custom skill een algemene regel toepast, is de skill HET ENIGE doel. CLAUDE.md ook patchen verdubbelt de bookkeeping en vervuilt de algemene secties met workflow-nuance van één skill. De algemene CLAUDE.md-regel staat er al; de skill draagt zijn eigen interpretatie. |
+| "Beide bewerken voor double enforcement" / "Editing both for double enforcement" | Double enforcement is in dit geval double trouble. De skill wint in zijn eigen runtime; CLAUDE.md hoeft niet te weten hoe een specifieke skill zijn eigen push/test/verify-surface interpreteert. Eén bron van waarheid per gedragsregel. |
 
 ### Red flags to recognize
 
@@ -163,6 +165,8 @@ If you catch yourself on one of these thoughts during /self-improvement, stop an
 - Preparing an Edit on a project's CLAUDE.md while the principle would also hold in a sibling project
 - Pinning a generic commit-discipline / test-discipline / verification-discipline rule to one project's CLAUDE.md instead of the corresponding shared skill (`gitgit:commit-discipline`, `testing-philosophy`, `verification-and-diagnosis`)
 - Preparing an Edit call on `~/.claude/README.md` while you have not yet located a hook or skill source that could carry the rule with stronger enforcement
+- Preparing edits on BOTH the source of a specific skill AND a user-level CLAUDE.md section for the same rule. Custom-skill behaviour belongs IN that skill, full stop. CLAUDE.md does not need to mirror how `/ship-it` (or any other skill) interprets its own surface.
+- Justifying a CLAUDE.md edit with "het raakt ook de generieke push/test/verify regel" while the feedback came from a specific skill firing. The skill is the carry-target; the generic rule already exists.
 
 Default route for skill feedback: `find ~/github.com -type d -name "<skill-name>" -path "*/skills/*"` to find the source, then Edit there.
 
