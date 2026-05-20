@@ -17,7 +17,7 @@ Reviews the current visual state. Captures a screenshot, lists concrete observat
 
 ### `/art-director`
 
-Produces `brand.md` + `visual-language.md` + `design-system/` skeleton from stakeholder interviews, competitive scan, and brand strategy. Three modules: brand identity discovery (Wheeler), visual language translation across type / color / form / motion / photography, and design-system architecture with the Curtis 3-layer token model and Frost atomic component taxonomy. Artefacts become the standard that impeccable applies per feature and eye-of-the-beholder verifies per change.
+Produces `brand.md` + `visual-language.md` + `design-system/` skeleton from stakeholder interviews, competitive scan, and brand strategy. Three modules: brand identity discovery (Wheeler), visual language translation across type / color / form / motion / photography, and design-system architecture with the Curtis 3-layer token model and Frost atomic component taxonomy. Artefacts become the standard that the session's build-time discipline applies per feature and eye-of-the-beholder verifies per change.
 
 ## Auto-trigger
 

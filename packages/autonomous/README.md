@@ -26,7 +26,7 @@ Spawns a contrarian agent that reviews a rover artefact for what the user would 
 
 ### `/autonomous:verify [--propose <loop-file> | <loop-file> | free text]`
 
-Evidence discipline. With `--propose`, writes Done criteria into the loop file at the end of ANALYZE. Default mode ticks each criterion with evidence at the end of REVIEW.
+Evidence discipline. With `--propose`, writes Done criteria into the loop file at the end of SURVEY. Default mode ticks each criterion with evidence at the end of INSPECT.
 
 ## Internal skills (loaded by the rover)
 
@@ -36,7 +36,7 @@ Evidence discipline. With `--propose`, writes Done criteria into the loop file a
 ## Phase machine
 
 ```
-ANALYZE -> IMPLEMENT -> REVIEW -> STOW -> OBSERVE
+SURVEY -> DRIVE -> INSPECT -> STOW -> STANDBY
 ```
 
 The loop is autonomous. It does not ask questions mid-phase. When it hits a choice it invokes `decide`. Before any artefact leaves the rover (push, PR, handoff communiqué, research brief, generated doc, media, or any other deliverable) it invokes `pride`. Pushes themselves are never autonomous: the user must say "push" or equivalent.
@@ -47,7 +47,7 @@ Lives in `.autonomous/<NAME>.md` at the git root. Holds context, plan, Done crit
 
 ## Cost awareness
 
-A cron at one-minute cadence drives many Claude turns. During active phases that is the point. During OBSERVE the backoff progresses to 60-minute intervals and auto-stops after roughly 5 hours of sustained idleness. For small tasks consider whether an ordinary conversation is cheaper.
+A cron at one-minute cadence drives many Claude turns. During active phases that is the point. During STANDBY the backoff progresses to 60-minute intervals and auto-stops after roughly 5 hours of sustained idleness. For small tasks consider whether an ordinary conversation is cheaper.
 
 ## Installation
 
