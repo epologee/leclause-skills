@@ -34,7 +34,7 @@ Examples: the operator asked for feature X, research shows feature X will break 
 
 ## The six principles
 
-These are opinionated defaults, inspired by the gstack autoplan framework. They are not universal truths. A loop running in a codebase where your team has different priors (say, minimal dependencies over completeness) will want to override them. Do that by adding a section to the loop file's `## Context` that reorders or replaces these; the loop respects Context-level overrides.
+These are opinionated defaults. They are not universal truths. A loop running in a codebase where your team has different priors (say, minimal dependencies over completeness) will want to override them. Do that by adding a section to the loop file's `## Context` that reorders or replaces these; the loop respects Context-level overrides.
 
 Apply these in order. Earlier principles win ties.
 
