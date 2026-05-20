@@ -5,8 +5,10 @@ description: >
   Reference skill for the gitgit commit body schema: subject + WHY
   paragraph + Slice / Tests / Red-then-green trailers parsed via
   git interpret-trailers, with opt-out enum tokens. Read this skill
-  when the hook denies a commit and you want the canonical schema,
-  examples, escape-hatches, and troubleshooting.
+  when about to run git commit, git add, or git push, or after a
+  hook deny prefixed [gitgit/...]. The body holds the canonical
+  schema, the AI quick reference for passing the gate in one
+  attempt, examples, escape-hatches, and troubleshooting.
 argument-hint: ""
 ---
 
@@ -35,6 +37,127 @@ diverges.
 Claude Code does not offer a native PreCommit lifecycle event
 (https://github.com/anthropics/claude-code/issues/4834, closed not planned),
 so the two-layer architecture is final, not provisional.
+
+## Quick reference for AI: pass the gate in one attempt
+
+Sessions that come in cold burn many turns rediscovering the same shape of
+command that survives both the PreToolUse extractor and `git interpret-trailers`.
+The schema below is the one that does. Use it verbatim; deviations from this
+shape almost always lose attempts.
+
+### Canonical commit form
+
+```bash
+git commit -m "$(cat <<'EOF'
+Subject line, imperative, under 50 chars
+
+Body paragraph. Two sentences or 60+ chars ending in a period. Wrap
+each line at 72 chars so the line-length guard passes.
+
+Slice: <opt-out token or layer description>
+Red-then-green: <spec-path>:<line> # <test-name>   (or `n/a (reason)`)
+Verified: <operator-confirmed | path | red-then-green | n/a (reason)>
+EOF
+)" # ack-rule<N>:<password>
+```
+
+Why this exact shape works: `dd_extract_commit_message` in `hooks/lib/common.sh`
+tries heredoc bodies first and reads the full body verbatim. The `-m` fallback
+joins multiple `-m` values with `\n\n` (one paragraph per flag), which leaves
+trailers in earlier paragraphs invisible to `git interpret-trailers --parse`
+later in `validate-body.sh`. Inside a single heredoc the trailers sit
+contiguous at the bottom of one paragraph, so the validator sees them. The
+ack token rides as a trailing shell comment after the closing `)"`, where
+`dd_strip_commit_message` (same file) keeps it intact for the rule-rotation
+regex in `commit-subject.sh`.
+
+### Anti-patterns that cost attempts
+
+- **Multiple `-m` flags for trailers.** Each `-m` becomes its own paragraph
+  separated by a blank line; `git interpret-trailers` only treats the LAST
+  paragraph as a trailer block. A commit with `-m "Slice: foo" -m
+  "Red-then-green: bar" -m "Verified: baz"` fails with `missing-slice` even
+  though all three trailers are present, because only `Verified` ends up in
+  the trailer paragraph. Put trailers contiguous inside the heredoc.
+- **Embedded `\n` or real newlines inside a `-m` argument.** The extractor's
+  `grep -oE` reads the bash command string line by line, so a newline inside
+  the quotes truncates the captured body before the validator sees it. Either
+  the body becomes "empty" (`missing-body`) or the subject is read as
+  editor-mode. Use the heredoc form instead.
+- **`-F path` or `-F -`.** The `commit-subject` guard denies any commit that
+  yields an empty extracted subject (via `dd_extract_commit_message`); `-F`
+  falls under that because the extractor sees no `-m` flag and the heredoc
+  walk picks up nothing useful. The deny message is "Editor-mode commit hides
+  the subject. Pass inline: git commit -m '...'". No `--no-verify`-adjacent
+  flag combination makes `-F` pass the PreToolUse layer.
+- **Subjects with conjunctions.** ` and `, ` + `, ` & ` (each surrounded by
+  spaces) are rejected by `commit-format` as bundled changes. Rewrite into a
+  cohesive single verb, split into two commits, or add `# allow-conjunction:
+  <reason>` inside the body when the joined form is genuinely atomic.
+- **Body lines over 72 chars.** Inside the heredoc, wrap manually; the
+  validator measures actual line length, not paragraph length.
+- **Manually exporting `GITGIT_TRIVIAL_OK=1`.** The PreToolUse guard sets
+  this automatically when the staged diff has at most 1 file and at most 5
+  insertions; the git-native commit-msg hook re-derives it from the staged
+  diff every run and ignores any exported value. There is no manual override
+  short of `git commit --no-verify` (audit-logged noodknop).
+
+### Rule-rotation expectations
+
+Every `git commit` invocation fires one thematic reminder from the rotation
+table (see "Rotation reminders" below). This is per-commit, not per-session;
+even a warm session that just landed a clean commit fires the next slot on
+the next commit. Acknowledge by appending `# ack-rule<N>:<password>` to the
+same bash command line, where `<password>` is the mnemonic listed against
+rule N in the table. The mnemonic is intentionally referential to the rule's
+principle so the lookup counts as one exposure per ack cycle; do not memoise
+the passwords from a prior commit.
+
+Plan for **two bash invocations per commit**: the first surfaces the rule
+number, the second includes the ack. The rotation advances by one slot on
+every landed commit, so the password the previous attempt printed is the
+password the current attempt needs.
+
+### Opt-out tokens for housekeeping commits
+
+`Slice:` accepts opt-out tokens that relax `Tests:`, `Red-then-green:`, and
+`Verified:` requirements:
+
+- `docs-only`: only documentation files (`.md`, `.txt`, `.rst`, README)
+- `config-only`: configuration without behaviour change (`.gitignore`,
+  YAML/TOML/INI tweaks that do not flip behaviour)
+- `migration-only`: pure database migrations
+- `spec-only`: only spec/test files (the diff IS the red phase)
+- `chore-deps`: dependency bumps, lockfile updates
+- `revert`: full revert of an earlier commit
+- `merge`: merge commits (typically created automatically)
+- `wip`: work-in-progress; accepted at commit time, blocked at push
+
+For the first five, `Red-then-green` and `Tests` drop. `Verified` still
+applies in the schema but accepts `n/a (reason)` with a one-phrase rationale
+from the closed enum (`no behaviour change`, `no ui touched`, etc.).
+`revert`, `merge`, and `wip` carry their own semantics; see "Opt-out enum"
+below for the per-token rules.
+
+When the body still triggers `missing-slice` on an opt-out token, the
+problem is almost always structural (multi `-m`, not heredoc) and not the
+token itself; check the canonical form first.
+
+### Single-attempt checklist
+
+Before invoking `git commit`, verify:
+
+- [ ] Subject under 50 chars, imperative, no conjunction
+- [ ] Body wrapped at 72 chars per line, 60+ chars total, ends in `.`
+- [ ] Trailers contiguous at the bottom of the heredoc
+- [ ] Ack token appended after `)"` with the password for the rule the
+      previous attempt surfaced (or skip on a true first attempt and accept
+      the reminder fire)
+- [ ] No `-F`, no embedded `\n` literals, no quoted multi-line `-m`
+
+If the gate still denies, the deny output names the specific check
+(`missing-body`, `body-line-too-long`, `missing-slice`, etc.); fix that one
+thing and re-submit, do not rewrite the whole message.
 
 ## The schema
 

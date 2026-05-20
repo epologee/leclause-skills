@@ -44,6 +44,9 @@ case "$EVENT" in
 
     source "$DIR/lib/validate-body.sh"
     source "$DIR/lib/example-synth.sh"
+    # allow-comment: first-contact briefing lands before commit guards
+    source "$DIR/guards/git-first-contact.sh"
+    guard_git_first_contact "$INPUT"
     # Slice 7: push-wip-gate fires on `git push`, alongside git-dash-c. Both
     # are git-command-specific guards that gate the call before any commit-
     # message logic runs.
