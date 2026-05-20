@@ -60,6 +60,16 @@ If the mission brief contains halts the rover can drive past in one session, the
 
 The failure mode: driving halfway, stopping at the arbitrary halt, entering STANDBY, and burning hours of backoff while the operator is at dinner. The operator came back expecting progress and got a queue. That is the radio-delay inefficiency the rover exists to avoid.
 
+## Tool-gap is not a destination
+
+A friction-point mid-mission is not a STANDBY trigger. The reflex pattern: the rover hits a sub-task that needs a tool (capture a screenshot for the Visual trailer, transcribe an audio file, render a diagram, generate test data, talk to a database), tries the first tool that comes to mind, finds it needs setup or is not loaded, reverts the in-flight edit, logs "operator presence required for X", and backs off into STANDBY. Every step of that reflex feels like caution. It is not caution; it is the rover treating one failed branch as the whole tree.
+
+The reality: there are countless ways to do almost any sub-task. Every Claude Code session loads its own mix of skills, MCP servers, and CLIs, and the host machine carries its own history of installed tooling and prior projects. The right route is whichever already works in this specific environment, or the one you set up in the time it would take to write a deferral. Before declaring a tool-gap that justifies STANDBY, look around: scan the loaded skill descriptions for the capability, scan the deferred-tools list for something loadable, scan PATH and the package manager, scan sibling projects under `~/github.com/` for prior solutions to the same problem. Do not enumerate a fixed menu; enumerate whatever this machine actually has.
+
+STANDBY on a tool-gap is only legitimate when that look-around produces zero candidates. Two failed tools is two failed tools, not a search. If a candidate needs setup, the setup is a DRIVE task of the same order as any other; do the setup, take the longer path, keep the in-flight edit. Reverting the working tree to a clean state because the tooling for one sub-task needs setup is the radio-delay failure mode in a different costume.
+
+Specific red flag: catching yourself typing "operator presence required for X" or "X needs an operator-side setup step" while X is a capability that could be supplied with a creative read of the local environment plus a reasonable amount of setup time. Stop, look around, take the longer path. The operator dispatched a destination, not a constraint that the rover must reach it through any specific tool.
+
 ## Pride is a hard gate
 
 Every rover output goes through `pride` before it leaves the rover. Every output. Not just pushes. Not just diffs. Not just "code changes." If the rover produces an artefact, `pride` runs on that artefact first, findings get addressed, and the pass is logged in the loop file under a `[HH:MM] Pride check findings:` block. No log block, no handoff. No exceptions.
@@ -388,6 +398,8 @@ When the feature does what the Done criteria say it should, transition to INSPEC
 
 **INSPECT**
 Six passes. Each one can send the rover back to DRIVE with a specific target. INSPECT only completes when all six are clean, and the pride, gurus, and trim passes are hard gates: no transition out of INSPECT without a pride log entry, a gurus log entry, and a trim log entry on record.
+
+**Silent omission of a pass is forbidden.** Every one of the six passes either runs (with its log block) or, for the non-hard-gate passes (verify, end-user, technical), is closed with an explicit fate-2 cost-value rationale logged in the loop file under a `[HH:MM] <pass-name> pass skipped:` block that names concrete output cost, concrete value, and the canon-vraag that landed the call. Hard-gate passes (pride, gurus, trim) have no fate-2 path: they run, period. The failure mode this rule exists to catch: a side-quest (operator feedback received mid-INSPECT, a contrarian challenge that triggered an unscheduled refactor, a tool-friction detour that ate two turns) replaces remaining passes in working memory, the rover declares post-side-quest progress as if it were closing state, and the un-run passes silently drop. Operator feedback received during INSPECT is itself a DRIVE cycle that re-enters INSPECT at the top of the remaining passes; the feedback work never counts as substitute for any pass. When the rover catches itself about to declare mission-complete with any pass neither logged-as-run nor logged-as-fate-2-skipped, the correct response is to run or close that pass before any further closing language.
 
 1. **Verify pass.** Invoke `verify` against the loop file's Done criteria. Any criterion without evidence, or with failed evidence, sends the rover back to DRIVE. INSPECT only transitions out to STOW once every criterion is met with evidence. An unverified criterion is not a closing state: the rover goes back to DRIVE, finds a verification route, and produces the evidence (see `verify`'s "Unverified blocks STOW" section for tactics).
 
