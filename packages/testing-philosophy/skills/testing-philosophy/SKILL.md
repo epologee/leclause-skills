@@ -41,15 +41,15 @@ This is not optional. This is not "where possible". This is ALWAYS, for every fe
 
 The spec bounds the work. If there is no spec for it, it does not exist as a requirement. Want to do more? Write a new spec first. This prevents scope creep, gold plating, and the urge to "real quick" / "even snel" slip in something extra.
 
-## UI/UX bugs get Cucumber scenarios
+## UI/UX bugs get end-to-end behaviour tests
 
-When a bug involves user interaction (buttons, forms, navigation, confirm dialogs, status transitions in the browser): write a Cucumber scenario, not a unit spec. Cucumber describes behavior from the user's perspective and tests the full stack including JavaScript.
+When a bug involves user interaction (buttons, forms, navigation, confirm dialogs, status transitions in the browser): write a behaviour test in the project's end-to-end framework (Cucumber, Playwright, Cypress, XCUITest, RSpec system specs, whichever the project uses). Behaviour tests describe behavior from the user's perspective and exercise the full stack including the front-end runtime.
 
-Unit specs (RSpec requests, model specs) are for server-side logic. Cucumber scenarios are for everything a user sees and does.
+Unit specs are for server-side logic. End-to-end behaviour tests are for everything a user sees and does. The split is who-sees-it, not which framework.
 
-## Gherkin scenarios are domain documentation
+## Behaviour scenarios are domain documentation
 
-Feature files describe behavior in domain language, not UI interactions. They are documentation that happens to be executable.
+When the project uses Gherkin-style scenarios: feature files describe behavior in domain language, not UI interactions. They are documentation that happens to be executable.
 
 **Declarative (good):** `When I create a todo "Buy groceries"` -> describes intent, survives UI redesigns.
 **Imperative (forbidden):** `When I fill in the "title" field with "Buy groceries" And I click the "Add" button` -> breaks on every UI change, reads like a test script rather than documentation.
@@ -132,15 +132,14 @@ Reading source code to deduce whether something works is not verification. Grepp
 **When you encounter a flaky spec:**
 1. Stop current work
 2. Gather context: spec path, command to run it, error output, failure rate
-3. Propose starting dedicated investigation with full context
-4. Generate `claude -p` command with:
+3. Propose starting a dedicated investigation with full context (a fresh session, a separate sub-task, or whichever isolation mechanism the harness offers). The brief includes:
    - Spec file path and line number
    - Exact command to run the spec
    - Error output from the last failure
    - Estimated failure rate (e.g. "fails ~30% of the time")
    - Hypothesis about the cause (race condition, timing, shared state, etc.)
-5. NEVER automatically try to fix it during other work
-6. NEVER "retry until green" or mask flakiness
+4. NEVER automatically try to fix it during other work
+5. NEVER "retry until green" or mask flakiness
 
 ## Failing specs block everything
 
