@@ -170,6 +170,7 @@ guard_commit_subject() {
   # the natural scope for the discipline. Migrations chain: legacy
   # dont-do-that location → global gitgit path → per-toplevel path.
   local state_file per_toplevel=""
+  local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
   if [[ -n "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]]; then
     state_file="$GITGIT_COMMIT_RULE_STATE_FILE"
   else
@@ -189,10 +190,10 @@ guard_commit_subject() {
         # No hex hasher available; fall back to the global file rather
         # than fabricating a hash. Worktrees of different repos will
         # share state on this host, which is the prior behaviour.
-        per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state"
+        per_toplevel="$global_state"
       fi
     else
-      per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state"
+      per_toplevel="$global_state"
     fi
     state_file="$per_toplevel"
   fi
@@ -203,7 +204,6 @@ guard_commit_subject() {
     # are atomic so two simultaneous sessions cannot race a partial
     # destination.
     local migration_src=""
-    local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
     if [[ "$per_toplevel" != "$global_state" && -f "$global_state" ]]; then
       migration_src="$global_state"
     fi
@@ -225,15 +225,14 @@ guard_commit_subject() {
 
   # allow-comment: per-session layer fixes concurrent-session rotation race; see SKILL.md
   if [[ -z "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]] && [[ -n "$per_toplevel" ]]; then
-    local session_id session_key global_state_path
+    local session_id session_key
     session_id=$(dd_session_id "$input")
     if [[ -n "$session_id" ]]; then
       session_key=$(printf '%s' "$session_id" | shasum 2>/dev/null | cut -c1-8)
       [[ -z "$session_key" ]] && session_key=$(printf '%s' "$session_id" | md5sum 2>/dev/null | cut -c1-8)
       [[ -z "$session_key" ]] && session_key=$(printf '%s' "$session_id" | md5 -q 2>/dev/null | cut -c1-8)
     fi
-    global_state_path="$HOME/.claude/var/gitgit-commit-rule-state"
-    if [[ -n "$session_key" && "$per_toplevel" != "$global_state_path" ]]; then
+    if [[ -n "$session_key" && "$per_toplevel" != "$global_state" ]]; then
       state_file="${per_toplevel}-${session_key}"
       if [[ ! -f "$state_file" ]]; then
         if [[ -f "$per_toplevel" ]]; then

@@ -417,9 +417,11 @@ under session B does not change the slot session A's hook will ask
 A to ack on A's next commit.
 
 The first dispatch under a fresh session id inherits the rotation
-state from the per-toplevel file (if one exists from earlier work in
-the repo), so a new session continues where the operator left off
-instead of resetting to slot 0. The per-toplevel file itself is not
+position (`rp`) from the per-toplevel file (if one exists from earlier
+work in the repo); transient flow-state (`pv`, `pr`, `ack_pending_sha`)
+is reset, so the new session continues at the next slot in the cycle
+instead of resetting to slot 0 and is not asked to acknowledge an
+earlier session's in-flight rule. The per-toplevel file itself is not
 archived after this inherit; other sessions in the same repo also
 inherit from it. Stale per-session files older than 7 days are
 opportunistically pruned the first time a session creates its own
