@@ -20,6 +20,8 @@ case "$EVENT" in
         guard_no_remote_create "$INPUT"
         source "$DIR/guards/no-worktree-deploy.sh"
         guard_no_worktree_deploy "$INPUT"
+        source "$DIR/guards/pr-discipline.sh"
+        guard_pr_discipline "$INPUT"
         source "$DIR/guards/followup.sh"
         guard_followup "$INPUT"
         ;;

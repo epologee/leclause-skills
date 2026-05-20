@@ -666,6 +666,59 @@ expect_allow "no-code-comments: bare http URL as expression in .ts passes" \
 expect_allow "no-code-comments: s3:// scheme as expression in .ts passes" \
   "$(pretool_edit "/tmp/x.ts" "let x = 1;" $'let x = 1;\nlet u = s3://bucket/key;')"
 
+# --- pr-discipline --- allow-comment: section divider matches existing smoke-test.sh pattern
+
+expect_deny "pr-discipline: gh pr create with Plant title" \
+  "$(pretool_bash 'gh pr create --title "Plant planner-analysis section" --body "honest body text"')" \
+  "pr-discipline"
+
+expect_deny "pr-discipline: gh pr create with Land title" \
+  "$(pretool_bash 'gh pr create --title "Land the new dispatch path" --body "honest body text"')" \
+  "pr-discipline"
+
+expect_deny "pr-discipline: gh pr create with Ship title" \
+  "$(pretool_bash 'gh pr create --title "Ship the redesigned card" --body "honest body text"')" \
+  "pr-discipline"
+
+expect_allow "pr-discipline: capability-shape title passes" \
+  "$(pretool_bash 'gh pr create --title "Read planning rows beyond one site" --body "honest body text"')"
+
+expect_allow "pr-discipline: title beginning with The passes" \
+  "$(pretool_bash 'gh pr create --title "The cache survives a daemon restart" --body "honest body text"')"
+
+expect_deny "pr-discipline: body with ## Summary header" \
+  "$(pretool_bash $'gh pr create --title "Honest title here" --body "## Summary\n- foo\n- bar"')" \
+  "pr-discipline"
+
+expect_deny "pr-discipline: body with ## Test plan header" \
+  "$(pretool_bash $'gh pr create --title "Honest title here" --body "## Test plan\n- [ ] foo"')" \
+  "pr-discipline"
+
+expect_deny "pr-discipline: body with Generated with Claude Code footer" \
+  "$(pretool_bash $'gh pr create --title "Honest title here" --body "Body text.\n\n🤖 Generated with Claude Code"')" \
+  "pr-discipline"
+
+expect_deny "pr-discipline: body with Co-Authored-By anthropic trailer" \
+  "$(pretool_bash $'gh pr create --title "Honest title" --body "Body.\n\nCo-Authored-By: Claude <noreply@anthropic.com>"')" \
+  "pr-discipline"
+
+expect_allow "pr-discipline: non-gh command passes silently" \
+  "$(pretool_bash 'echo hello')"
+
+expect_allow "pr-discipline: gh pr view (read-only subcommand) passes" \
+  "$(pretool_bash 'gh pr view 1234')"
+
+expect_deny "pr-discipline: gh pr edit --title with Drop verb" \
+  "$(pretool_bash 'gh pr edit 1234 --title "Drop the legacy adapter"')" \
+  "pr-discipline"
+
+expect_allow "pr-discipline: git commit body mentioning gh pr create as text passes" \
+  "$(pretool_bash $'git commit -m "Subject\n\nThe commit-body talks about gh pr create as a literal phrase, not invokes it. Generated with Claude Code is also mentioned as a banned pattern, not a real footer."')"
+
+expect_deny "pr-discipline: gh pr create after cd is still caught" \
+  "$(pretool_bash 'cd /tmp && gh pr create --title "Plant the section" --body "honest body text"')" \
+  "pr-discipline"
+
 # --- Summary ---
 
 TOTAL=$((PASS + FAIL))
