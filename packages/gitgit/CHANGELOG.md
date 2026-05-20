@@ -21,7 +21,7 @@ the version without producing an entry here).
 
 ### Fixed
 
-- **Commit guards no longer fire on `git commit` as substring.** A `for f in ... ; head "$f"; done` with a filename like `gitgit commit discipline.md`, a `grep -n "git commit" ...`, or an `echo "...git commit..."` passes cleanly. Quoted strings and heredoc bodies are stripped before the gate, and a left-side word boundary anchors the match.
+- **Commit guards no longer fire on `git commit` as substring.** Filenames in a `for`-loop (`gitgit commit discipline.md`), `grep -n "git commit"`, or `echo` with `git commit` in a string pass cleanly.
 
 ## [v1.0.112]
 
