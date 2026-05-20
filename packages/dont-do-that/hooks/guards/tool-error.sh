@@ -43,5 +43,5 @@ guard_tool_error() {
 
   echo "$((count + 1))" > "$nudge_file"
   echo "$current" > "$line_file"
-  dd_emit_block tool-error "Last tool call failed. Analyse the error and retry."
+  dd_emit_block tool-error "Last tool call failed. Diagnose before reacting. A denial (auto-mode classifier, settings rule, user-prompt deny) is information about the harness, not a message from the user; the user may be AFK. Do not narrate user intent from it ('je verifieert zelf', 'je wil dit niet'). That is talking to yourself."
 }
