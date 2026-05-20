@@ -21,7 +21,7 @@ the version without producing an entry here).
 
 ### Fixed
 
-- **Concurrent Claude sessions in the same repo no longer race the rotation slot.** Each session now has its own rotation state file under the per-toplevel namespace, so a commit landing in session B does not change which rule session A's hook will ask A to ack. A new session inherits the current slot from the per-toplevel snapshot on first use, then advances independently. Non-Claude shells fall back to the per-toplevel file as before.
+- **Concurrent Claude sessions in the same repo no longer race the rotation slot.** Each session now has its own rotation state file, so a commit landing in another session does not change which rule the hook asks you to ack.
 
 ## [v1.0.120]
 

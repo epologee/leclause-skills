@@ -422,7 +422,9 @@ the repo), so a new session continues where the operator left off
 instead of resetting to slot 0. The per-toplevel file itself is not
 archived after this inherit; other sessions in the same repo also
 inherit from it. Stale per-session files older than 7 days are
-opportunistically pruned on each session's first read.
+opportunistically pruned on each `git commit` invocation that reaches
+the session-suffix branch (`find -mtime +7 -delete` is idempotent, so
+running it on every invocation costs nothing when no stale files exist).
 
 Non-Claude shells (a `git commit` run manually in a terminal without
 the hook payload carrying a session id) fall back to the per-toplevel

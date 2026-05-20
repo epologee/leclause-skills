@@ -33,7 +33,11 @@ setup_session_test_env() {
 
 toplevel_hash_for() {
   local toplevel="$1"
-  printf '%s' "$toplevel" | shasum 2>/dev/null | cut -c1-8
+  local h
+  h=$(printf '%s' "$toplevel" | shasum 2>/dev/null | cut -c1-8)
+  [[ -z "$h" ]] && h=$(printf '%s' "$toplevel" | md5sum 2>/dev/null | cut -c1-8)
+  [[ -z "$h" ]] && h=$(printf '%s' "$toplevel" | md5 -q 2>/dev/null | cut -c1-8)
+  printf '%s' "$h"
 }
 
 @test "two different session ids resolve to two different state files in the same repo" {

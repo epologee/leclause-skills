@@ -233,7 +233,9 @@ guard_commit_subject() {
       state_file="${per_toplevel}-${session_key}"
       if [[ ! -f "$state_file" && -f "$per_toplevel" ]]; then
         local sess_tmp="${state_file}.tmp.$$"
-        cp "$per_toplevel" "$sess_tmp" 2>/dev/null && mv "$sess_tmp" "$state_file" 2>/dev/null
+        if cp "$per_toplevel" "$sess_tmp" 2>/dev/null; then
+          mv "$sess_tmp" "$state_file" 2>/dev/null || rm -f "$sess_tmp"
+        fi
       fi
       find "$(dirname "$per_toplevel")" \
         -maxdepth 1 -type f \
