@@ -169,7 +169,7 @@ guard_commit_subject() {
   # collapses worktrees of the same repo onto the same state, which is
   # the natural scope for the discipline. Migrations chain: legacy
   # dont-do-that location → global gitgit path → per-toplevel path.
-  local state_file
+  local state_file per_toplevel=""
   if [[ -n "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]]; then
     state_file="$GITGIT_COMMIT_RULE_STATE_FILE"
   else
@@ -184,26 +184,27 @@ guard_commit_subject() {
       [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | md5sum 2>/dev/null | cut -c1-8)
       [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | md5 -q 2>/dev/null | cut -c1-8)
       if [[ -n "$toplevel_hash" ]]; then
-        state_file="$HOME/.claude/var/gitgit-commit-rule-state-${toplevel_hash}"
+        per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state-${toplevel_hash}"
       else
         # No hex hasher available; fall back to the global file rather
         # than fabricating a hash. Worktrees of different repos will
         # share state on this host, which is the prior behaviour.
-        state_file="$HOME/.claude/var/gitgit-commit-rule-state"
+        per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state"
       fi
     else
-      state_file="$HOME/.claude/var/gitgit-commit-rule-state"
+      per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state"
     fi
+    state_file="$per_toplevel"
   fi
   mkdir -p "$(dirname "$state_file")"
-  if [[ ! -f "$state_file" ]]; then
+  if [[ -n "$per_toplevel" && ! -f "$per_toplevel" ]]; then
     # Migration chain: prefer the global gitgit file (older repo-shared
     # state) over the legacy dont-do-that file (oldest). Both copies
     # are atomic so two simultaneous sessions cannot race a partial
     # destination.
     local migration_src=""
     local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
-    if [[ "$state_file" != "$global_state" && -f "$global_state" ]]; then
+    if [[ "$per_toplevel" != "$global_state" && -f "$global_state" ]]; then
       migration_src="$global_state"
     fi
     if [[ -z "$migration_src" ]]; then
@@ -211,14 +212,34 @@ guard_commit_subject() {
       [[ -f "$old_state_file" ]] && migration_src="$old_state_file"
     fi
     if [[ -n "$migration_src" ]]; then
-      local migr_tmp="${state_file}.tmp.$$"
-      if cp "$migration_src" "$migr_tmp" && mv "$migr_tmp" "$state_file"; then
+      local migr_tmp="${per_toplevel}.tmp.$$"
+      if cp "$migration_src" "$migr_tmp" && mv "$migr_tmp" "$per_toplevel"; then
         # Archive the source so subsequent new repos do not all migrate
         # from the same global file and inherit a stale rotation_pos.
         # The first new repo gets the operator's last state; later new
         # repos start fresh.
         mv "$migration_src" "${migration_src}.migrated" 2>/dev/null || true
       fi
+    fi
+  fi
+
+  # allow-comment: per-session layer fixes concurrent-session rotation race; see SKILL.md
+  if [[ -z "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]] && [[ -n "$per_toplevel" ]]; then
+    local session_id session_key global_state_path
+    session_id=$(dd_session_id "$input")
+    session_key=$(printf '%s' "$session_id" | tr -cd '0-9a-zA-Z-' | head -c 8)
+    global_state_path="$HOME/.claude/var/gitgit-commit-rule-state"
+    if [[ -n "$session_key" && "$per_toplevel" != "$global_state_path" ]]; then
+      state_file="${per_toplevel}-${session_key}"
+      if [[ ! -f "$state_file" && -f "$per_toplevel" ]]; then
+        local sess_tmp="${state_file}.tmp.$$"
+        cp "$per_toplevel" "$sess_tmp" 2>/dev/null && mv "$sess_tmp" "$state_file" 2>/dev/null
+      fi
+      find "$(dirname "$per_toplevel")" \
+        -maxdepth 1 -type f \
+        -name "$(basename "$per_toplevel")-*" \
+        -mtime +7 \
+        -delete 2>/dev/null || true
     fi
   fi
 
