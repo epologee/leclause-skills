@@ -47,6 +47,26 @@ When a bug involves user interaction (buttons, forms, navigation, confirm dialog
 
 Unit specs are for server-side logic. End-to-end behaviour tests are for everything a user sees and does. The split is who-sees-it, not which framework.
 
+## End-to-end coverage is not a substitute for unit specs on services, jobs, and stateful wrappers
+
+A green Cucumber/Playwright/system-spec scenario proves that the happy path works through the full stack. It does not prove the internal contracts of any single layer it traverses. Error paths, status transitions, no-op gates, retry behavior, parameter passing across layers, and edge cases live below the e2e cursor and need their own RED-first specs.
+
+The principle is broader than these examples: any class whose public surface
+carries an internal contract (error classes raised, status transitions,
+parameter forwarding, no-op gates, idempotency guards) needs a RED-first
+unit spec, even when an e2e scenario covers the happy path through it. The
+examples below name the artefact types where the trap is strongest, not the
+complete set:
+
+- **Service classes** (`app/services/<name>.rb`, `lib/<gem>/<service>.rb`, Swift `Sources/<Module>/<Service>.swift`, Go `internal/<service>/`). HTTP wrappers, third-party API clients, classifiers, parsers, generators, query objects, presenters: anything whose public surface is a few methods called from elsewhere in the app.
+- **Background jobs and state machines** (`app/jobs/<name>.rb`, queue workers in any stack, Swift `BackgroundTask` subclasses, Rails `ActiveJob` subclasses). Status transitions (`queued -> running -> done | failed`), retry semantics, idempotency guards, no-op early-returns.
+- **External-IO wrappers** (HTTP clients, SQL adapters, file-system adapters, shell-out wrappers). Connection errors, timeouts, malformed responses, unexpected statuses.
+- **Value objects and configuration parsers** when they enforce invariants (validation, type coercion, equality semantics). A pure-data shape without invariants does not need a spec; one that rejects bad input does.
+
+The unit-spec pass tests what the e2e cannot reach: every branch of the state machine, every named exception class, every parameter the wrapper forwards.
+
+A spec written AFTER the implementation locks the spec to whatever the code happens to do, which is the opposite of what a spec is for. The behaviour discovered while writing the spec FIRST (which no-op gates are needed, which exceptions must be raised, which contracts cross the layer) is what shapes the implementation.
+
 ## Behaviour scenarios are domain documentation
 
 When the project uses Gherkin-style scenarios: feature files describe behavior in domain language, not UI interactions. They are documentation that happens to be executable.
@@ -78,6 +98,9 @@ If you catch yourself thinking these thoughts, STOP:
 - "The user is in a hurry"
 - "It's just a rename"
 - "This is a mechanical change"
+- "The e2e (Cucumber/Playwright/system spec) is green, the internals are infrastructure"
+- "This is just a wrapper around an HTTP call / a job around a service"
+- "The mission is spartan, fewer tests are fine" (spartan means no polish, never less measurement-of-done)
 
 -> You are rationalizing. Write the spec first.
 
