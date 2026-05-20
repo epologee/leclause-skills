@@ -40,6 +40,15 @@ toplevel_hash_for() {
   printf '%s' "$h"
 }
 
+session_key_for() {
+  local session_id="$1"
+  local k
+  k=$(printf '%s' "$session_id" | shasum 2>/dev/null | cut -c1-8)
+  [[ -z "$k" ]] && k=$(printf '%s' "$session_id" | md5sum 2>/dev/null | cut -c1-8)
+  [[ -z "$k" ]] && k=$(printf '%s' "$session_id" | md5 -q 2>/dev/null | cut -c1-8)
+  printf '%s' "$k"
+}
+
 @test "two different session ids resolve to two different state files in the same repo" {
   setup_session_test_env
   export GIT_SHIM_TOPLEVEL="$BATS_TEST_TMPDIR/repo-twosid"
@@ -55,8 +64,8 @@ toplevel_hash_for() {
   local count
   count=$(ls "$HOME/.claude/var/gitgit-commit-rule-state-${h}-"* 2>/dev/null | wc -l | tr -d ' ')
   [ "$count" = "2" ]
-  [ -f "$HOME/.claude/var/gitgit-commit-rule-state-${h}-alpha-si" ]
-  [ -f "$HOME/.claude/var/gitgit-commit-rule-state-${h}-beta-sid" ]
+  [ -f "$HOME/.claude/var/gitgit-commit-rule-state-${h}-$(session_key_for "alpha-sid-1")" ]
+  [ -f "$HOME/.claude/var/gitgit-commit-rule-state-${h}-$(session_key_for "beta-sid-22")" ]
 
   unset GIT_SHIM_TOPLEVEL
 }
@@ -76,7 +85,7 @@ toplevel_hash_for() {
   local count
   count=$(ls "$HOME/.claude/var/gitgit-commit-rule-state-${h}-"* 2>/dev/null | wc -l | tr -d ' ')
   [ "$count" = "1" ]
-  [ -f "$HOME/.claude/var/gitgit-commit-rule-state-${h}-stable-s" ]
+  [ -f "$HOME/.claude/var/gitgit-commit-rule-state-${h}-$(session_key_for "stable-sid-001")" ]
 
   unset GIT_SHIM_TOPLEVEL
 }
@@ -107,17 +116,18 @@ toplevel_hash_for() {
   local h per_toplevel per_session
   h=$(toplevel_hash_for "$GIT_SHIM_TOPLEVEL")
   per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state-${h}"
-  per_session="${per_toplevel}-alpha-in"
-  printf 'pv=-1\npr=10\nrp=7\nack_pending_sha=\n' > "$per_toplevel"
+  per_session="${per_toplevel}-$(session_key_for "alpha-inherit")"
+  printf 'pv=-1\npr=-1\nrp=7\nack_pending_sha=\n' > "$per_toplevel"
 
-  run_dispatch_with_session "git commit -m 'Capture HEAD sha when ack matches' # ack-rule11:loep" "alpha-inherit"
-  [ "$status" -eq 0 ] || {
-    printf 'expected dispatch to pass after inherit, got status %s, output: %s\n' "$status" "$output" >&2
-    return 1
-  }
+  run_dispatch_with_session "git commit -m 'Capture HEAD sha when ack matches'" "alpha-inherit"
+  [ "$status" -eq 2 ]
 
   [ -f "$per_session" ]
   [ "$(read_state_field "$per_session" rp)" = "7" ]
+  [[ "$output" == *"Rule 11/15"* ]] || {
+    printf 'expected the deny to fire rule 11 (rotation_slots[7]=10 → rule 11), got: %s\n' "$output" >&2
+    return 1
+  }
   [ -f "$per_toplevel" ]
   [ ! -f "${per_toplevel}.migrated" ]
 
@@ -131,7 +141,7 @@ toplevel_hash_for() {
   local h per_toplevel per_alpha
   h=$(toplevel_hash_for "$GIT_SHIM_TOPLEVEL")
   per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state-${h}"
-  per_alpha="${per_toplevel}-alpha-ra"
+  per_alpha="${per_toplevel}-$(session_key_for "alpha-race-x")"
   printf 'pv=-1\npr=-1\nrp=6\nack_pending_sha=\n' > "$per_toplevel"
 
   run_dispatch_with_session "git commit -m 'Capture HEAD sha when ack matches'" "alpha-race-x"
@@ -154,11 +164,12 @@ toplevel_hash_for() {
   setup_session_test_env
   export GIT_SHIM_TOPLEVEL="$BATS_TEST_TMPDIR/repo-prune"
   mkdir -p "$GIT_SHIM_TOPLEVEL"
-  local h per_toplevel stale_sibling fresh_sibling
+  local h per_toplevel stale_sibling fresh_sibling new_session
   h=$(toplevel_hash_for "$GIT_SHIM_TOPLEVEL")
   per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state-${h}"
   stale_sibling="${per_toplevel}-deadold0"
   fresh_sibling="${per_toplevel}-recently"
+  new_session="${per_toplevel}-$(session_key_for "fresh-prune-test")"
   printf 'pv=-1\npr=-1\nrp=0\nack_pending_sha=\n' > "$per_toplevel"
   printf 'pv=-1\npr=-1\nrp=0\nack_pending_sha=\n' > "$stale_sibling"
   printf 'pv=-1\npr=-1\nrp=0\nack_pending_sha=\n' > "$fresh_sibling"
@@ -170,7 +181,28 @@ toplevel_hash_for() {
   [ ! -f "$stale_sibling" ]
   [ -f "$per_toplevel" ]
   [ -f "$fresh_sibling" ]
-  [ -f "${per_toplevel}-fresh-pr" ]
+  [ -f "$new_session" ]
+
+  unset GIT_SHIM_TOPLEVEL
+}
+
+@test "session inherit copies only rp; pv and ack_pending_sha reset to fresh state" {
+  setup_session_test_env
+  export GIT_SHIM_TOPLEVEL="$BATS_TEST_TMPDIR/repo-inherit-reset"
+  mkdir -p "$GIT_SHIM_TOPLEVEL"
+  local h per_toplevel per_session
+  h=$(toplevel_hash_for "$GIT_SHIM_TOPLEVEL")
+  per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state-${h}"
+  per_session="${per_toplevel}-$(session_key_for "fresh-isolation")"
+  printf 'pv=2\npr=4\nrp=5\nack_pending_sha=feedfacefeedface\n' > "$per_toplevel"
+
+  run_dispatch_with_session "git commit -m 'Drop bad reading on transaction events'" "fresh-isolation"
+  [ "$status" -eq 2 ]
+
+  [ -f "$per_session" ]
+  [ "$(read_state_field "$per_session" rp)" = "5" ]
+  [ "$(read_state_field "$per_toplevel" pv)" = "2" ]
+  [ "$(read_state_field "$per_toplevel" ack_pending_sha)" = "feedfacefeedface" ]
 
   unset GIT_SHIM_TOPLEVEL
 }
@@ -189,7 +221,7 @@ toplevel_hash_for() {
   [ -f "$per_toplevel" ]
   [ ! -f "${per_toplevel}.migrated" ]
 
-  run_dispatch_with_session "git commit -m 'Drop bad reading on transaction events'" "second-se"
+  run_dispatch_with_session "git commit -m 'Drop bad reading on transaction events'" "second-sess"
   [ "$status" -eq 2 ]
   [ -f "$per_toplevel" ]
   [ ! -f "${per_toplevel}.migrated" ]

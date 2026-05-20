@@ -227,21 +227,25 @@ guard_commit_subject() {
   if [[ -z "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]] && [[ -n "$per_toplevel" ]]; then
     local session_id session_key global_state_path
     session_id=$(dd_session_id "$input")
-    session_key=$(printf '%s' "$session_id" | tr -cd '0-9a-zA-Z-' | head -c 8)
+    if [[ -n "$session_id" ]]; then
+      session_key=$(printf '%s' "$session_id" | shasum 2>/dev/null | cut -c1-8)
+      [[ -z "$session_key" ]] && session_key=$(printf '%s' "$session_id" | md5sum 2>/dev/null | cut -c1-8)
+      [[ -z "$session_key" ]] && session_key=$(printf '%s' "$session_id" | md5 -q 2>/dev/null | cut -c1-8)
+    fi
     global_state_path="$HOME/.claude/var/gitgit-commit-rule-state"
     if [[ -n "$session_key" && "$per_toplevel" != "$global_state_path" ]]; then
       state_file="${per_toplevel}-${session_key}"
-      if [[ ! -f "$state_file" && -f "$per_toplevel" ]]; then
-        local sess_tmp="${state_file}.tmp.$$"
-        if cp "$per_toplevel" "$sess_tmp" 2>/dev/null; then
-          mv "$sess_tmp" "$state_file" 2>/dev/null || rm -f "$sess_tmp"
+      if [[ ! -f "$state_file" ]]; then
+        if [[ -f "$per_toplevel" ]]; then
+          _dd_load_state "$per_toplevel"
+          _dd_write_state "$state_file" -1 -1 "$DD_LOADED_RP" ""
         fi
+        find "$(dirname "$per_toplevel")" \
+          -maxdepth 1 -type f \
+          -name "$(basename "$per_toplevel")-*" \
+          -mtime +7 \
+          -delete 2>/dev/null || true
       fi
-      find "$(dirname "$per_toplevel")" \
-        -maxdepth 1 -type f \
-        -name "$(basename "$per_toplevel")-*" \
-        -mtime +7 \
-        -delete 2>/dev/null || true
     fi
   fi
 
