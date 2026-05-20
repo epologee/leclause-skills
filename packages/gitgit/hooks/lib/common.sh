@@ -56,6 +56,25 @@ dd_is_wip() {
   grep -q '🚧' <<< "$1"
 }
 
+dd_cd_to_bash_target() {
+  local input="$1"
+  local command
+  command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
+  [ -z "$command" ] && return 0
+
+  local target=""
+  if [[ "$command" =~ ^[[:space:]]*cd[[:space:]]+(\"[^\"]+\"|\'[^\']+\'|[^[:space:]\&]+)[[:space:]]*\&\& ]]; then
+    target="${BASH_REMATCH[1]}"
+    target="${target#\"}"; target="${target%\"}"
+    target="${target#\'}"; target="${target%\'}"
+    target="${target/#\~/$HOME}"
+  fi
+
+  if [ -n "$target" ] && [ -d "$target" ]; then
+    cd "$target" 2>/dev/null || return 0
+  fi
+}
+
 # dd_assistant_text <input-json> <char-budget> [guard-name]
 # Returns the tail of the current turn's assistant text.
 # When guard-name is set, tracks last-seen transcript line count in

@@ -14,6 +14,8 @@ case "$EVENT" in
     TOOL=$(dd_tool_name "$INPUT")
     [ "$TOOL" = "Bash" ] || exit 0
 
+    dd_cd_to_bash_target "$INPUT"
+
     # The /gitgit:disable-git per-repo lock runs BEFORE the discipline-disable
     # session sentinel. The two answer different questions: disable-git is a
     # safety lock the operator set on this repo, while disable-discipline
