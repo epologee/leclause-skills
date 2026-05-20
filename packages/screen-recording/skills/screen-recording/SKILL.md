@@ -29,16 +29,15 @@ re-shows the section on demand without touching the sentinel.
 
 Automated screen recordings and demo videos of browser-based features.
 
-## Forbidden tools
+## The principle: viewport-only capture
 
-- **NEVER `screencapture`** for demo videos. It records the entire screen, including everything the user is doing at that moment. Not usable as a demo.
-- **NEVER Safari, osascript, or other macOS-specific browser tools.**
+The outcome is a video that captures only the browser viewport, independent of anything else on the screen. Full-screen recorders (`screencapture`, generic OS-level screen recorders) record whatever else the operator was doing at that moment and produce demos full of strangers' notifications and chat windows. Browser-only recorders (Playwright's `recordVideo`, Chrome via MCP, Puppeteer screen-recording, headless browser test drivers with built-in capture) keep the demo to the page under test.
 
-ALWAYS use Playwright's built-in video recording. It captures only the browser viewport, independent of anything else on the screen.
+The script below uses Playwright because that is what this skill ships with; sessions that already have another browser-automation route can use it instead. The shape stays the same: viewport-only, scripted navigation, video saved on context close.
 
-## Core Pattern: Playwright Video Recording
+## Example: Playwright video recording
 
-Playwright can automatically record video from the browser context. No external screen recording tools needed.
+Playwright can automatically record video from the browser context, no external screen recording tool needed.
 
 ```javascript
 import { chromium } from 'playwright';
