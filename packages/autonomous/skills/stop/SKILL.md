@@ -17,10 +17,13 @@ End a loop on purpose, with a recap.
 
 ## What it does
 
-1. Locate the loop file. If an argument is given, use it. If not, list `.autonomous/*.md` candidates in the conversation and ask which to stop. This is the one place where asking is correct: stop is an operator-invoked destructive action, and the operator is present.
+1. Locate the loop file. If an argument is given, use it. If not, list `.autonomous/*.md` candidates in the conversation and ask which to stop. The ask is only correct when stop was operator-invoked (see step 4 on attribution); when stop was rover-invoked the args carry the loop-file path already.
 2. Read `cron_job_id` from the file. Invoke `cron` via the Skill tool to `CronDelete` that id.
 3. Set `cron_job_id: stopped` in the loop file.
-4. Append a final log entry with a timestamp from `date +%H:%M`: `[HH:MM] Stopped by user. Phase at stop: <PHASE>.`
+4. Append a final log entry with a timestamp from `date +%H:%M`. Attribute the stop correctly based on caller:
+   - When the operator typed `/autonomous:stop` (the slash command, with or without a file path argument): `[HH:MM] Stopped by operator. Phase at stop: <PHASE>.`
+   - When another skill invoked `stop` via the Skill tool from inside the loop (the rover's STANDBY entry-check finding zero listeners, an INSPECT pass concluding mission-complete, or any other autonomous trigger that calls into this skill): `[HH:MM] Stopped autonomously (<trigger>). Phase at stop: <PHASE>.` where `<trigger>` names the autonomous reason concretely ("zero listeners after STANDBY entry-check", "INSPECT-complete handoff", "watch_checks cap" from the cron skill's auto-stop path, and so on).
+   - The default attribution is "operator" only when the caller is genuinely the operator. The slash-command invocation is the operator; an autonomous loop calling this skill from inside its own phase machine is the rover. Misattributing a rover-invoked stop as "by user" makes the log read as if the operator pulled the plug when the rover actually closed itself out, which the operator will spot and ask about (this distinction matters; do not collapse it).
 5. Produce a communiqué to the conversation. The communiqué is itself a rover artefact, so run `pride` on the drafted text before transmitting it (log the pride findings in the loop file, fix them or reject them with concrete evidence of non-issue via the second-pass gate, then send the final version).
 
    Not a data dump, not a form with six bullet-headers. A **mission report** written as prose: the operator comes back to the TUI and wants to read a story of the traverse, not grep through section titles. The goal is that after reading, the operator knows where the rover went, what it found, what it changed along the way, and what the next move is, without having to re-read the loop file or ask "are you proud of this?"
