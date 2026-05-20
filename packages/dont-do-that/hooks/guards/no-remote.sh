@@ -16,6 +16,18 @@ guard_no_remote() {
   # operator (`&&`, `;`, `||`, newline). Skip when nothing pushes.
   grep -Eq '(^|&&|;|\|\||[[:space:]])[[:space:]]*git[[:space:]]+push([[:space:]]|$)' <<< "$cmd" || return 0
 
+  # allow-comment: honor leading `cd <path> &&` so the remote check runs in the target repo, mirroring gitgit dd_cd_to_bash_target.
+  local target=""
+  if [[ "$cmd" =~ ^[[:space:]]*cd[[:space:]]+(\"[^\"]+\"|\'[^\']+\'|[^[:space:]\&]+)[[:space:]]*\&\& ]]; then
+    target="${BASH_REMATCH[1]}"
+    target="${target#\"}"; target="${target%\"}"
+    target="${target#\'}"; target="${target%\'}"
+    target="${target/#\~/$HOME}"
+  fi
+  if [ -n "$target" ] && [ -d "$target" ]; then
+    cd "$target" 2>/dev/null || true
+  fi
+
   # Find any configured remote. `git remote` prints one name per line; an
   # empty list means no remote at all.
   local remotes
