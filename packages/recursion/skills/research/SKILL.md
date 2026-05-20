@@ -202,7 +202,7 @@ Research complete: N plans written.
 [titles]
 
 Plans: ~/.claude/recursion/plans/
-Run: /auto-loop ~/.claude/recursion/plans/<file>
+Run: hand `~/.claude/recursion/plans/<file>` to whichever autonomous-execution skill the session has
 ```
 
 ## Safety

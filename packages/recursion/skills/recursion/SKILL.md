@@ -102,7 +102,7 @@ The fresh session then loads the orchestrator, which dispatches via the Skill
 tool to research. One entry point, one code path. The `/model sonnet`
 prepend ensures the loop itself and its synthesis run on Sonnet;
 research's own Track B and round 2 can further delegate within that to
-Sonnet/Haiku without touching the Opus budget.
+additional Sonnet subagents without touching the Opus budget.
 
 ### `/recursion` (one-off tonight)
 
@@ -166,6 +166,6 @@ outside `~/.claude/recursion/`.
 
 | User decision | Action |
 |---------------|--------|
-| Approve | `/auto-loop ~/.claude/recursion/plans/<file>` |
+| Approve | Hand `~/.claude/recursion/plans/<file>` to whichever autonomous-execution skill the session has |
 | Reject | `/recursion reject <file>` (blocklist) |
 | Park | Do nothing, plan stays `proposed`, next run can rediscover it |

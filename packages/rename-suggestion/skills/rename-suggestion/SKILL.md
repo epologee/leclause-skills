@@ -47,17 +47,19 @@ Generate a short, descriptive session name based on the conversation context.
 
 3. **Validation:** if the conversation has no identifiable core topic (session too short, too generic, or exclusively about topics that are not distinguishing such as "configuring Claude"), do not produce a made-up name. In that case use the placeholder `/rename <descriptive-name>` in step 4 and report in one sentence what information is missing to generate an appropriate name.
 
-4. **Copy the full `/rename <name>` command to the clipboard** via the `clipboard-copy` helper from the `clipboard@leclause` plugin (macOS-only). Resolve the plugin first, then source `clipboard-paths.sh`; both failure modes (plugin not installed; or installed but the cache is stale) each get a clear stderr line:
+4. **Copy the full `/rename <name>` command to the clipboard** via whichever clipboard mechanism the session has (a `pbcopy` / `xclip` / `clip.exe` invocation, or a helper such as `clipboard@leclause`'s `clipboard-copy` if installed). The skill ships with one specific resolver as a reference path; sessions that already have a different clipboard route should use it.
+
+   Reference resolver (uses the `clipboard@leclause` helper when installed; otherwise reports and skips):
    ```bash
    IP=$(jq -r '.plugins["clipboard@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
    if [ -z "$IP" ]; then
-     echo "rename-suggestion: clipboard@leclause is not installed; skipping clipboard step. Run: claude plugins install clipboard@leclause to enable." >&2
+     echo "rename-suggestion: no clipboard helper resolved; skipping clipboard step. Pipe '/rename <name>' to whichever clipboard tool your environment uses." >&2
    elif . "$IP/bin/clipboard-paths.sh" && CLIPBOARD_COPY=$(resolve_clipboard_copy); then
      printf '/rename <name>\n' | "$CLIPBOARD_COPY"
    fi
    ```
 
-   The clipboard step is skipped when the resolver fails; the ghost-text suggestion still works because the `/rename` line also appears in the output.
+   The clipboard step is skipped when no helper resolves; the ghost-text suggestion still works because the `/rename` line also appears in the output.
 
 5. **Show the rename command as the very last line:**
    ```
