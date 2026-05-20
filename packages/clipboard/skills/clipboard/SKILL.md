@@ -38,13 +38,13 @@ Copy the core content of your last answer to the macOS clipboard via `clipboard-
 | Argument | Effect |
 |----------|--------|
 | *(none)* | Plain text via `clipboard-copy` (wraps `pbcopy`) |
-| `slack` | Plain text formatted with Slack-native mrkdwn syntax (single-asterisk `*bold*`, bullet character `•`, no HTML). Slack auto-renders mrkdwn on send. Most reliable across Slack desktop, web, and mobile |
+| `slack` | Rich text (HTML) via `clipboard-copy --html` (wraps `pbcopy-html`). Inline code, bold, and lists render correctly when pasted into Slack. Tables are converted to ASCII in a `<pre>` block (Slack does not support HTML tables) |
 
 ## Workflow
 
 1. **Identify the core** of your last substantive answer, the useful content, not the meta-communication around it. If the last answer was itself a clipboard action, login, or other meta-operation, look further back for the last answer with actual content
 2. **Determine the content type** (see table)
-3. **Check the argument**: `slack` → convert to Slack-native mrkdwn (plain text) and use `clipboard-copy` (see section "Slack mode"). No argument → plain text via `clipboard-copy`
+3. **Check the argument**: `slack` → generate HTML and use `clipboard-copy --html` (see section "Slack mode"). No argument → plain text via `clipboard-copy`
 4. **Format and copy**
 5. **Confirm briefly** what was copied (type + first few words)
 
@@ -123,7 +123,7 @@ CLIPBOARD
 
 ### Slack mode
 
-When the `slack` argument is provided, convert the content to Slack-native mrkdwn (plain text, NOT HTML) and call `clipboard-copy` (no `--html`):
+When the `slack` argument is provided, generate HTML instead of plain text and call `clipboard-copy --html`:
 
 ```bash
 IP=$(jq -r '.plugins["clipboard@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
@@ -133,64 +133,63 @@ if [ -z "$IP" ]; then
 fi
 . "$IP/bin/clipboard-paths.sh"
 CLIPBOARD_COPY=$(resolve_clipboard_copy) || exit 1
-"$CLIPBOARD_COPY" <<'CLIPBOARD'
-[Slack mrkdwn content here]
+"$CLIPBOARD_COPY" --html <<'CLIPBOARD'
+[HTML content here]
 CLIPBOARD
 ```
 
-Why plain text mrkdwn and not HTML rich text: Slack desktop reads multiple pasteboard types (HTML, RTF, plain text) and the prediction of which one wins is unreliable across Slack desktop, web, and mobile. Slack-native mrkdwn in the plain-text type renders consistently on send: `*text*` becomes bold, `•` stays as bullet character, etc. HTML rich text paste either renders fully styled OR falls through to the HTML-stripped plain text fallback (no formatting at all), which is the failure mode that prompted this rewrite.
+`clipboard-copy --html` passes the HTML through `pbcopy-html.swift`, which places it on the clipboard as rich text (via `NSPasteboard`). Slack picks this up and renders formatting correctly. A plain text fallback (HTML tags stripped) is also included for apps that do not support rich text.
 
-#### Markdown to Slack mrkdwn conversion
+#### Do not regress to mrkdwn plain text
 
-Slack mrkdwn is NOT regular Markdown. Use these substitutions:
+The `slack` argument exists specifically to produce rich text. If you are tempted to switch this back to Slack-native mrkdwn syntax (single-asterisk `*bold*`, `•` bullets, triple-backtick tables) because rich text paste feels unreliable somewhere, do not. That regression has been made before and reverted. The user has explicitly stated that rich text is the entire point of `slack`: bold must paste as bold, not as the literal characters `*bold*`. The frontmatter description ("for rich text") and the plugin description in `plugin.json` ("pbcopy-html for Slack rich text") are load-bearing, not stale text.
 
-| Standard Markdown | Slack mrkdwn |
-|-------------------|--------------|
-| `**bold**` | `*bold*` (SINGLE asterisk) |
-| `*italic*` or `_italic_` | `_italic_` (SINGLE underscore) |
-| `~~strike~~` | `~strike~` (SINGLE tilde) |
-| `` `code` `` | `` `code` `` (unchanged) |
-| ```` ```code``` ```` | ```` ```code``` ```` (unchanged) |
-| `> quote` (single line) | `> quote` (unchanged) |
-| `- list item` | `• list item` (literal bullet character, Slack does NOT auto-format `-`) |
-| `1. numbered` | `1. numbered` (Slack does NOT auto-format, keep manually) |
-| `# header` | `*header*` on its own line (Slack has no headers; emulate with bold) |
-| `[text](url)` | `<url|text>` (angle-bracket form) |
-| Bare URL | Leave as is, Slack auto-links |
+Plain-text mrkdwn does survive consistently across Slack desktop, web, and mobile, but that consistency was a worse-of-both: a user who reads the pasted message before sending sees `*bold*` instead of bold formatting. The user does not want that. If a specific HTML construct genuinely renders worse than its mrkdwn equivalent in some Slack client, narrow the fix to that construct (alternative HTML element, ASCII fallback, narrower wrapper); do not flip the whole mode back to plain text.
 
-#### Pitfalls
+#### Markdown to HTML conversion
 
-The following patterns LOOK harmless but break Slack rendering:
+Convert the content to HTML before passing it to `clipboard-copy --html`:
 
-- **`>>>` at the start of a line triggers multi-line blockquote** that quotes everything to the end of the message. NEVER use `>>>` as a decorative separator. Use a different separator (e.g. `---`, blank line, or a labeled header line with `*Label:*`).
-- **`>` at the start of a line triggers single-line blockquote**. If you do not want a quote, indent or rephrase.
-- **`*` adjacent to non-space characters does not render as bold.** `*word*` works; `*>>>word*` does not (Slack does not recognize the boundary). Bold markers want whitespace or line-boundary on the outside.
-- **Asterisks inside bold are literal.** `*foo *bar* baz*` confuses the parser. Reflow the text.
-- **No headers.** `#`, `##` etc. render literally. Use a bold label on its own line.
-- **Generic Markdown bullets (`-` or `*` at line start) stay literal in Slack.** Use the actual `•` character (U+2022) for visual bullets, or accept literal markers.
+| Markdown | HTML |
+|----------|------|
+| `` `code` `` | `<code>code</code>` |
+| `**bold**` | `<b>bold</b>` |
+| `*italic*` or `_italic_` | `<i>italic</i>` |
+| `- list item` | `<li>list item</li>` (in `<ul>`) |
+| `1. numbered` | `<li>numbered</li>` (in `<ol>`) |
+| Empty line | `<br><br>` |
+| Line break | `<br>` (newlines in HTML source are ignored by rich text paste, ALWAYS use `<br>` for line breaks) |
+| `[text](url)` | `<a href="url">text</a>` |
+| Special characters | **NEVER escape** with HTML entities (`&amp;`, `&gt;`, `&lt;`, `&quot;`). Many apps (Slack, Notion, Teams) render entities literally on rich text paste: `&gt;` appears as the text "&gt;" instead of ">". Write `&`, `>`, `<` directly. Only escape when the character would break an HTML tag (e.g. `<` immediately before a letter). |
+
+Do NOT wrap the full content in `<html>` or `<body>` tags. Rich text paste expects HTML fragments, not complete documents.
 
 #### Tables in Slack mode
 
-Slack mrkdwn has no table syntax. Wrap tables in a triple-backtick code block so the columns align in a monospace font:
+Slack does NOT support `<table>` HTML elements. A `<table>` is flattened to unreadable text without structure.
 
-````
-```
+**NEVER use `<table>`, `<tr>`, `<th>`, or `<td>` tags in Slack mode.**
+
+Convert tables to ASCII format in a `<pre>` block. Slack renders `<pre>` as a monospace code block, keeping columns neatly aligned.
+
+```html
+<pre>
 Requirement                    | Current state           | Gap
 -------------------------------|-------------------------|---------------------------
 Load management at panel level | SensorMaxPowerLimiter   | Depends on sensor data
 Priority per user profile      | Planner on departure    | Concept does not exist
+</pre>
 ```
-````
 
-Rules for tables in Slack:
-- Wrap in ```` ``` ```` triple backticks (a Slack mrkdwn code block, rendered monospace)
+Rules for ASCII tables in `<pre>`:
 - Columns separated by ` | ` (space-pipe-space)
 - Header separated from body by `---...|---...` line
 - Column width: pad with spaces so pipes align vertically
+- No HTML tags inside `<pre>` (no `<code>`, `<b>`, etc.)
 
 #### Example
 
-Source content:
+Markdown content:
 ```
 De job is goed uitgevoerd. Alle platforms uit `PLATFORM_TIMEOUTS` zijn **volledig** backfilled.
 ```
@@ -204,12 +203,10 @@ if [ -z "$IP" ]; then
 fi
 . "$IP/bin/clipboard-paths.sh"
 CLIPBOARD_COPY=$(resolve_clipboard_copy) || exit 1
-"$CLIPBOARD_COPY" <<'CLIPBOARD'
-De job is goed uitgevoerd. Alle platforms uit `PLATFORM_TIMEOUTS` zijn *volledig* backfilled.
+"$CLIPBOARD_COPY" --html <<'CLIPBOARD'
+De job is goed uitgevoerd. Alle platforms uit <code>PLATFORM_TIMEOUTS</code> zijn <b>volledig</b> backfilled.
 CLIPBOARD
 ```
-
-Note the conversion: `**volledig**` (two asterisks, standard Markdown) becomes `*volledig*` (one asterisk, Slack mrkdwn). The backtick code remains unchanged.
 
 ## Confirmation
 
@@ -223,7 +220,7 @@ Examples:
 - `JSON copied: "{"name":"my-project","vers..."`
 - `Code copied: "def calculate_price(kwh..."`
 - `Slack message copied: "Hey team, de deploy van..."`
-- `Slack mrkdwn copied: "De job is goed uitgevoerd. Alle platforms uit `PLATFORM_TIMEOUTS`..."`
+- `Table copied (slack/rich text): "De job is goed uitgev..."`
 
 ## Looking back past meta-answers
 
