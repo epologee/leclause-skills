@@ -531,7 +531,7 @@ validate_body() {
       if [[ -n "$visual_ui_touched" ]]; then
         local na_ui_files
         na_ui_files=$(printf '%s' "$visual_ui_touched" | tr '\n' ',' | sed 's/,$//;s/,/, /g')
-        printf 'visual-na-on-ui-touch: Visual: n/a is not accepted when UI files are touched (%s). Capture a screenshot and supply Visual: <path>.\n' "$na_ui_files" >&2
+        printf 'visual-na-on-ui-touch: Visual: n/a is not accepted when UI files are touched (%s). Capture by any available route (browser drivers, OS-native utilities, simulator tools, project-launch flows) and supply Visual: <path>.\n' "$na_ui_files" >&2
         return 1
       fi
     elif [[ "$visual_value" = "n/a" ]]; then
@@ -557,7 +557,7 @@ validate_body() {
     # Join the newline-separated list with ", " for the single-line error.
     local joined
     joined=$(printf '%s' "$visual_ui_touched" | tr '\n' ',' | sed 's/,$//;s/,/, /g')
-    printf 'missing-visual: Visual trailer is absent; UI files in this commit: %s\n' "$joined" >&2
+    printf 'missing-visual: Visual trailer is absent; UI files in this commit: %s. Capture by any available route (browser drivers, OS-native utilities, simulator tools, project-launch flows) and supply Visual: <path>.\n' "$joined" >&2
     return 1
   fi
 
