@@ -133,7 +133,7 @@ Use this format:
 
 ---
 
-Type **"doe het"** to apply the consensus points now, or hand them to whichever autonomous-execution skill the session has if you want them processed in the background.
+Type **"doe het"** to apply the consensus points now, or **/auto-loop** for autonomous execution. If `/auto-loop` is not installed in your session, hand the consensus points to whichever autonomous-execution skill is available instead.
 ```
 
 ### Step 5: Execution
@@ -143,8 +143,8 @@ On **"doe het"**:
 - One commit per logically independent point
 - Normal commit rules (intent validation)
 
-On **autonomous handoff** (when the session has an auto-loop or background-execution skill available):
-- Hand the consensus points to that skill as tasks
+On **/auto-loop** (or whichever autonomous-execution skill the session has, when `/auto-loop` is not installed):
+- Hand the consensus points to the skill as tasks
 - The background context must indicate that the loop stops itself when all guru points have been completed and committed, using whichever stop mechanism the chosen execution skill provides (for example `CronDelete` plus a recap for auto-loop runners, or `/autonomous:stop` for rover runners). Guru work is finite: there is no external input to wait for after committing.
 
 Discussion points are only executed when the user explicitly approves them.

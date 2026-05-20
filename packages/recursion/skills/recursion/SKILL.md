@@ -166,6 +166,6 @@ outside `~/.claude/recursion/`.
 
 | User decision | Action |
 |---------------|--------|
-| Approve | Hand `~/.claude/recursion/plans/<file>` to whichever autonomous-execution skill the session has |
+| Approve | `/auto-loop ~/.claude/recursion/plans/<file>` (or hand the plan to whichever autonomous-execution skill the session has, when `/auto-loop` is not installed) |
 | Reject | `/recursion reject <file>` (blocklist) |
 | Park | Do nothing, plan stays `proposed`, next run can rediscover it |

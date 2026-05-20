@@ -47,13 +47,13 @@ Generate a short, descriptive session name based on the conversation context.
 
 3. **Validation:** if the conversation has no identifiable core topic (session too short, too generic, or exclusively about topics that are not distinguishing such as "configuring Claude"), do not produce a made-up name. In that case use the placeholder `/rename <descriptive-name>` in step 4 and report in one sentence what information is missing to generate an appropriate name.
 
-4. **Copy the full `/rename <name>` command to the clipboard** via whichever clipboard mechanism the session has (a `pbcopy` / `xclip` / `clip.exe` invocation, or a helper such as `clipboard@leclause`'s `clipboard-copy` if installed). The skill ships with one specific resolver as a reference path; sessions that already have a different clipboard route should use it.
+4. **Copy the full `/rename <name>` command to the clipboard** via the `clipboard@leclause` plugin's `clipboard-copy` helper (macOS-only). If `clipboard@leclause` is not installed, fall back to whichever clipboard mechanism the session has (a `pbcopy` / `xclip` / `clip.exe` invocation directly).
 
    Reference resolver (uses the `clipboard@leclause` helper when installed; otherwise reports and skips):
    ```bash
    IP=$(jq -r '.plugins["clipboard@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
    if [ -z "$IP" ]; then
-     echo "rename-suggestion: no clipboard helper resolved; skipping clipboard step. Pipe '/rename <name>' to whichever clipboard tool your environment uses." >&2
+     echo "rename-suggestion: clipboard@leclause is not installed; skipping clipboard step. Pipe '/rename <name>' to whichever clipboard tool your environment uses, or install clipboard@leclause to enable the helper." >&2
    elif . "$IP/bin/clipboard-paths.sh" && CLIPBOARD_COPY=$(resolve_clipboard_copy); then
      printf '/rename <name>\n' | "$CLIPBOARD_COPY"
    fi
