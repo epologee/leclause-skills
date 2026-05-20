@@ -132,7 +132,7 @@ Reading source code to deduce whether something works is not verification. Grepp
 **When you encounter a flaky spec:**
 1. Stop current work
 2. Gather context: spec path, command to run it, error output, failure rate
-3. Propose starting a dedicated investigation with full context (a fresh session, a separate sub-task, or whichever isolation mechanism the harness offers). The brief includes:
+3. Propose starting a dedicated investigation with full context. The default mechanism is a fresh `claude -p` headless run with the brief below; if `claude -p` is not available in the session, use whichever isolation mechanism the harness offers (a sub-task, a separate session, an out-of-band investigation). The brief includes:
    - Spec file path and line number
    - Exact command to run the spec
    - Error output from the last failure
