@@ -384,11 +384,14 @@ to the rule, so looking it up forces one exposure per cycle.
 Rule 3 (subject length 50/72) is enforced structurally by
 `commit-format.sh` and is not in the rotation. Rules 1 and 2 only
 land on you after a real violation in the subject; rules 4-15 rotate in
-slot order, one per commit. State lives in
-`~/.claude/var/gitgit-commit-rule-state` and shifts after every
-*confirmed* commit success, not on every ack-match: the guard records
-the HEAD sha at the moment the ack matches, and the next dispatcher
-entry advances the rotation slot only when HEAD has actually moved
+slot order, one per commit. State lives under `~/.claude/var/`,
+namespaced first by the worktree's toplevel hash (so two repos do not
+share state) and then by the Claude session id (so two concurrent
+Claude sessions in the same repo do not race each other's slot, see
+"Concurrent sessions" below). State shifts after every *confirmed*
+commit success, not on every ack-match: the guard records the HEAD
+sha at the moment the ack matches, and the next dispatcher entry
+advances the rotation slot only when HEAD has actually moved
 (commit landed). When the commit fails at commit-msg, pre-commit, or
 never runs, the slot stays so the operator acks the same rule again
 on the next attempt instead of burning a fresh rotation slot. The
@@ -400,6 +403,36 @@ The state file is in key=value format: `pv=`, `pr=`, `rp=`, and
 no resolution is pending). The reader also accepts the two legacy
 positional formats (three-line and four-line); the next write
 converges any legacy file to key=value.
+
+#### Concurrent sessions
+
+When two Claude Code sessions work in the same repo at the same time
+(one driving the feature branch, another landing a fix on main, both
+firing `git commit` through this guard), each session has its own
+rotation state file under the per-toplevel namespace. The PreToolUse
+JSON payload carries the Claude session id; the guard derives an
+8-character session key from it and appends it to the per-toplevel
+path. Two sessions therefore advance independently: a commit landing
+under session B does not change the slot session A's hook will ask
+A to ack on A's next commit.
+
+The first dispatch under a fresh session id inherits the rotation
+position (`rp`) from the per-toplevel file (if one exists from earlier
+work in the repo); transient flow-state (`pv`, `pr`, `ack_pending_sha`)
+is reset, so the new session continues at the next slot in the cycle
+instead of resetting to slot 0 and is not asked to acknowledge an
+earlier session's in-flight rule. The per-toplevel file itself is not
+archived after this inherit; other sessions in the same repo also
+inherit from it. Stale per-session files older than 7 days are
+opportunistically pruned the first time a session creates its own
+state file in a repo; subsequent commits inside the same session
+skip the prune, so the directory scan stays bounded to once per
+session per repo.
+
+Non-Claude shells (a `git commit` run manually in a terminal without
+the hook payload carrying a session id) fall back to the per-toplevel
+state file, which is the prior single-rotation behaviour for that
+context.
 
 ### Why this lives in a hook and rotates one rule at a time
 

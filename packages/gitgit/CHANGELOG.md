@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.123]
+
+### Fixed
+
+- **Concurrent Claude sessions in the same repo no longer race the rotation slot.** Each session now has its own rotation state file, so a commit landing in another session does not change which rule the hook asks you to ack.
+
 ## [v1.0.120]
 
 ### Changed
