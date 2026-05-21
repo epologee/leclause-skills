@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
 
+## [v1.0.94]
+
+### Changed
+
+- **Rover no longer creates a new branch on every mission.** When HEAD is on a non-default branch and the mission extends in-flight work, the rover stays on that branch; the start-SHA still lands in the loop file's Log so the operator's commits and the rover's stay separable.
+
 ## [v1.0.91]
 
 ### Added
