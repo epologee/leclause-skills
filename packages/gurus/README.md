@@ -6,7 +6,7 @@ Opinionated panels that challenge a decision from multiple perspectives. Three p
 
 | Skill | Use for | Panel |
 |-------|---------|-------|
-| `gurus:software` | Code review | Eight engineering personas (Beck, Fowler, Uncle Bob, DHH, Metz, Lutke, Hickey, Thoughtbot). Consensus across 6 of 8 yields an action plan. |
+| `gurus:software` | Code review | Eight engineering personas (Beck, Fowler, Uncle Bob, DHH, Metz, Evans, Hickey, Ousterhout). Consensus across 6 of 8 yields an action plan. |
 | `gurus:council` | A decision or idea | Five adversarial lenses (pre-mortem, first-principles, opportunity-finder, stranger, action) plus anonymised peer review plus chairman synthesis. |
 | `gurus:writers` | Prose review (essay, script, manuscript, narrative copy) | Six writers (Didion, Saunders, Rovelli, Watts, Gladwell, Urban). Consensus across 4 of 6 yields an action plan of edits, cuts, and rewrites. |
 | `gurus:gurus` | Orchestrator: you are not sure which panel fits | Reads the context (diff present, abstract question, or prose under discussion), proposes a default, lets you override, then dispatches. Not itself a review; only a router. |

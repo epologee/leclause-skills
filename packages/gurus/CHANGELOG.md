@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
 
+## [v1.0.35]
+
+### Changed
+
+- **`/gurus:software` panel composition shifts: Ousterhout in, Thoughtbot out.** John Ousterhout brings the scope-cutting lens from *A Philosophy of Software Design* (deep modules, defining errors out of existence). Panel size and 6+/8 threshold unchanged.
+
 ## [v1.0.34]
 
 ### Changed

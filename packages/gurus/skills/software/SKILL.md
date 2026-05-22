@@ -1,7 +1,7 @@
 ---
 name: software
 user-invocable: true
-description: Opinionated software engineering review panel. Eight gurus (Beck, Fowler, Uncle Bob, DHH, Metz, Evans, Hickey, Thoughtbot) review code from their own philosophy. Triggers on /gurus:software, code review panel, engineering guru review.
+description: Opinionated software engineering review panel. Eight gurus (Beck, Fowler, Uncle Bob, DHH, Metz, Evans, Hickey, Ousterhout) review code from their own philosophy. Triggers on /gurus:software, code review panel, engineering guru review.
 allowed-tools:
   - Bash(git diff *)
   - Bash(git log *)
@@ -32,16 +32,16 @@ give agents a file list and let them read everything.
 
 | # | Guru | Focus |
 |---|------|-------|
-| 1 | **Thoughtbot** (quorum) | Testability, API design, developer experience, convention adherence. Playbook thinking: iterative, test-first, pragmatic |
-| 2 | **Kent Beck** | Four rules of simple design, eliminating duplication, revealing intent. XP Explained, TDD By Example. "What's the simplest thing that could possibly work?" |
-| 3 | **Martin Fowler** | Code smells, refactoring opportunities, domain modeling, ubiquitous language. Refactoring, PoEAA, bliki. "I smell Feature Envy here." |
-| 4 | **Uncle Bob** | Clean Code, SOLID, function/class size, naming, architecture boundaries, dependency direction. "This function does more than one thing." |
-| 5 | **DHH** | Pragmatism, convention over configuration, against over-abstraction and unnecessary indirection. Rails doctrine, Majestic Monolith. "You don't need a service object here. Ship it." |
-| 6 | **Sandi Metz** | Object responsibility, composition over inheritance, dependency injection, Flocking Rules. POODR, 99 Bottles. "What does this class know that it shouldn't?" |
-| 7 | **Eric Evans** | Domain-driven design, ubiquitous language, bounded contexts, aggregates, entity-vs-value-object, anti-corruption layers. Domain-Driven Design (the blue book). "Does this code speak the language of the domain expert?" |
-| 8 | **Rich Hickey** | Data-oriented design, immutability, simplicity as the absence of complexity. Simple Made Easy, Clojure's philosophy. "Are we simplifying, or are we just making it easy?" Challenges OOP assumptions the rest of the panel shares. |
+| 1 | **Kent Beck** | Four rules of simple design, eliminating duplication, revealing intent. XP Explained, TDD By Example. "What's the simplest thing that could possibly work?" |
+| 2 | **Martin Fowler** | Code smells, refactoring opportunities, domain modeling, ubiquitous language. Refactoring, PoEAA, bliki. "I smell Feature Envy here." |
+| 3 | **Uncle Bob** | Clean Code, SOLID, function/class size, naming, architecture boundaries, dependency direction. "This function does more than one thing." |
+| 4 | **DHH** | Pragmatism, convention over configuration, against over-abstraction and unnecessary indirection. Rails doctrine, Majestic Monolith. "You don't need a service object here. Ship it." |
+| 5 | **Sandi Metz** | Object responsibility, composition over inheritance, dependency injection, Flocking Rules. POODR, 99 Bottles. "What does this class know that it shouldn't?" |
+| 6 | **Eric Evans** | Domain-driven design, ubiquitous language, bounded contexts, aggregates, entity-vs-value-object, anti-corruption layers. Domain-Driven Design (the blue book). "Does this code speak the language of the domain expert?" |
+| 7 | **Rich Hickey** | Data-oriented design, immutability, simplicity as the absence of complexity. Simple Made Easy, Clojure's philosophy. "Are we simplifying, or are we just making it easy?" Challenges OOP assumptions the rest of the panel shares. |
+| 8 | **John Ousterhout** | Strategic vs tactical programming, complexity as change amplification + cognitive load + unknown unknowns, deep modules with narrow interfaces, defining errors out of existence. A Philosophy of Software Design. "Could we move the scope boundary 20% to make 80% of this code disappear?" |
 
-**Characteristic tensions**: DHH vs Uncle Bob on level of abstraction. Beck's simplicity vs Fowler's patterns. Metz's small objects vs DHH's pragmatism. Evans pulls toward rich behavioral models with domain meaning, where Hickey wants plain data and DHH wants Majestic-Monolith pragmatism without explicit bounded contexts; he overlaps with Metz on object responsibility rooted in domain rather than mechanics, and with Fowler, who wrote the foreword to the blue book. Hickey vs the whole panel on OOP as the default lens: his "just use data" is at odds with Metz's objects, Uncle Bob's abstractions, and Fowler's patterns. When 5+ agree despite these tensions, that is a strong signal.
+**Characteristic tensions**: DHH vs Uncle Bob on level of abstraction. Beck's simplicity vs Fowler's patterns. Metz's small objects vs DHH's pragmatism. Evans pulls toward rich behavioral models with domain meaning, where Hickey wants plain data and DHH wants Majestic-Monolith pragmatism without explicit bounded contexts; he overlaps with Metz on object responsibility rooted in domain rather than mechanics, and with Fowler, who wrote the foreword to the blue book. Hickey vs the whole panel on OOP as the default lens: his "just use data" is at odds with Metz's objects, Uncle Bob's abstractions, and Fowler's patterns. Ousterhout adds a scope-cutting axis perpendicular to the rest of the panel: his "deep modules" clash with Metz's small objects and with Uncle Bob's SOLID-style decomposition that tends to produce many shallow interfaces; his "strategic programming" sits against Beck's tactical-by-default TDD rhythm; he overlaps with DHH and Hickey on rejecting unnecessary abstractions, but where DHH ships and Hickey decouples, Ousterhout redraws the scope line. When 5+ agree despite these tensions, that is a strong signal.
 
 ## Workflow
 
