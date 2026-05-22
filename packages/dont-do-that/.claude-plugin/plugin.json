@@ -1,5 +1,5 @@
 {
   "name": "dont-do-that",
   "description": "Guardrail hooks that push back on common AI reflexes: shifting blame, stopping prematurely, delegating verification, asking for confirmation when none was needed, em-dashes in prose, and hallucinated hour/day/week effort estimates.",
-  "version": "1.0.75"
+  "version": "1.0.76"
 }

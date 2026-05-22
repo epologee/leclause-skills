@@ -20,7 +20,7 @@ guard_verify() {
 
   local claim check action
   claim=$(grep -ciE "(zou (nu )?moeten (werken|slagen|kloppen|lukken)|dit zou moeten|should (now )?(work|be fixed|be working|be resolved)|is nu (gefixt|opgelost|hersteld)|is now (fixed|working|resolved))" <<< "$filtered")
-  check=$(grep -ciE "(check of|controleer of|kun je (checken|kijken|testen|verifi)|kan je (checken|kijken|testen|verifi)|kijk of|kijk even|let me know if|can you (check|verify|confirm|test)|werkt het( nu)?\?|klopt (dat|dit)\?|wil je (het )?(testen|checken))" <<< "$filtered")
+  check=$(grep -ciE "(check of|controleer of|kun je (checken|kijken|testen|verifi)|kan je (checken|kijken|testen|verifi)|kijk of|kijk even|let me know if|can you (check|verify|confirm|test)|werkt het( nu)?\?|klopt (dat|dit)\?|wil je (het )?(testen|checken)|test (maar|'m|ff|even|eens|hem)|test het( weer)?|kijk (ff|'ns|maar)|probeer (maar|'ns|hem))" <<< "$filtered")
   action=$(grep -ciE "(refresh de (pagina|browser)|herlaad de (pagina|browser)|probeer (het |de pagina |opnieuw)?(te |eens)?|restart de (server|app)|herstart de (server|app)|try (refreshing|reloading|again|it)|reload the (page|browser))" <<< "$filtered")
 
   if [ "$claim" -gt 0 ] 2>/dev/null; then
