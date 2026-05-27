@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
 
+## [v1.0.20]
+
+### Added
+
+- Audit mode step 2 has a ninth formulation prompt, "Parallel orchestrations above a shared leaf-call". Catches domain actions whose two or more entry points (AppIntent, controller-action, background job, store-method) each orchestrate their own preflight stack above the same leaf-call, a duplication shape the eight previous prompts did not name. Step 2.5's contrarian brief gains a matching fifth question so the omission detector audits the same axis.
+
 ## [v1.0.12]
 
 ### Breaking
