@@ -8,7 +8,7 @@
 
 load helpers
 
-@test "body with missing Slice AND missing Tests reports BOTH codes in one call" {
+@test "missing Slice suppresses derivative downstream errors (only missing-slice fires)" {
   use_trailers "Red-then-green: n/a (test fixture, no spec applies)"$'\n'"Verified: operator-confirmed"
   local body
   body="$(cat <<'MSG'
@@ -23,12 +23,17 @@ Verified: operator-confirmed
 MSG
 )"
   local file
-  file=$(write_fixture "missing-both.txt" "$body")
+  file=$(write_fixture "missing-slice-only.txt" "$body")
 
   run invoke_validator "$file"
   [ "$status" -eq 1 ]
   [[ "$output" == *"missing-slice"* ]]
-  [[ "$output" == *"missing-tests"* ]]
+  # When Slice is missing, the dependent Tests/RTG/Verified checks would all
+  # disappear as soon as an opt-out token is added, so the validator
+  # suppresses them and only surfaces missing-slice. Once the operator
+  # adds a Slice (free-text or opt-out), downstream checks fire on retry
+  # if they apply.
+  [[ "$output" != *"missing-tests"* ]]
 }
 
 @test "body with short Slice AND missing Tests AND bad Verified reports ALL THREE codes" {

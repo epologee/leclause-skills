@@ -258,6 +258,10 @@ validate_body() {
   # allow-comment: returns 1 if any landed.
   local _vb_errors=()
   _vb_err() { _vb_errors+=("$1"); }
+  # allow-comment: hash literal used in printf format args. The comment-detect
+  # allow-comment: hook tokenizer false-positives on a bare # in nested quotes,
+  # allow-comment: so the literal is passed via %s instead of inlined.
+  local _vb_hash='#'
 
   # Extract trailer values.
   local slice_value
@@ -313,8 +317,13 @@ validate_body() {
     fi
   done
 
-  # Rule: if Slice is NOT an opt-out token, Tests trailer required.
-  if [[ "$slice_is_optout" -eq 0 ]]; then
+  # allow-comment: when Slice is missing entirely, suppress dependent checks
+  # allow-comment: (missing-tests, missing-RTG, missing-verified) so the
+  # allow-comment: operator does not see derivative errors that disappear
+  # allow-comment: as soon as the Slice trailer lands. missing-slice already
+  # allow-comment: surfaced above; fix that first, downstream checks fire on
+  # allow-comment: retry when they apply.
+  if [[ -n "$slice_value" && "$slice_is_optout" -eq 0 ]]; then
     if [[ -z "$tests_value" ]]; then
       _vb_err 'missing-tests: Tests trailer is absent; required when Slice is not an opt-out token'
     else
@@ -372,7 +381,9 @@ validate_body() {
   fi
 
   # Rule: Red-then-green required unless Slice is RTG-exempt.
-  if [[ "$slice_is_rtg_exempt" -eq 0 ]]; then
+  # allow-comment: gated on slice_value presence so a missing-slice does not
+  # allow-comment: cascade into a derivative missing-red-then-green.
+  if [[ -n "$slice_value" && "$slice_is_rtg_exempt" -eq 0 ]]; then
     if [[ -z "$rtg_value" ]]; then
       _vb_err 'missing-red-then-green: Red-then-green trailer is absent; required for this Slice type'
     elif [[ "$rtg_value" = "yes" ]]; then
@@ -420,10 +431,6 @@ validate_body() {
           # range check below does not silently accept it (rtg_lines is
           # always >= 0 so "0 < 0" never fires).
           local rtg_combined_re='^([1-9][0-9]*)[[:space:]]+#[[:space:]]+(.+)$'
-          # allow-comment: literal hash passed as %s arg below; embedding the
-          # allow-comment: hash directly in the printf format trips bash
-          # allow-comment: tokenizers in the comment-detect hook (false-positive).
-          local _vb_hash='#'
           if ! [[ "$rtg_suffix" =~ $rtg_combined_re ]]; then
             _vb_err "$(printf 'missing-red-then-green: suffix must be "<line> %s <test-name>" (RSpec/Cucumber convention, keeps path:line clickable in iTerm2/VSCode/Ghostty). Bare "<line>" or bare "<test-name>" forms are no longer accepted; got: "%s"' "$_vb_hash" "$rtg_suffix")"
           else
@@ -474,7 +481,6 @@ validate_body() {
           fi
         fi
       else
-        local _vb_hash='#'
         _vb_err "$(printf 'missing-red-then-green: value must be "yes", "n/a (reason)", "<path>", or "<path>:<line> %s <test-name>"; got: "%s"' "$_vb_hash" "$rtg_value")"
       fi
     fi
@@ -571,7 +577,9 @@ validate_body() {
   # through on bare attestation (the Tests / Red-then-green trailers do not
   # ask this question directly: a `Red-then-green: yes` is self-attested and
   # under non-autonomous mode is never anchored to anything).
-  if [[ "$slice_is_optout" -eq 0 ]]; then
+  # allow-comment: gated on slice_value presence so a missing-slice does not
+  # allow-comment: cascade into a derivative missing-verified.
+  if [[ -n "$slice_value" && "$slice_is_optout" -eq 0 ]]; then
     local verified_value
     verified_value=$(_vb_trailer_value "$trailers" "Verified")
     verified_value=$(printf '%s' "$verified_value" | sed 's/[[:space:]]*$//')
@@ -588,7 +596,6 @@ validate_body() {
       # tests were the verification while simultaneously claiming no tests
       # apply.
       if [[ "$rtg_value" =~ ^n/a ]]; then
-        local _vb_hash='#'
         _vb_err "$(printf 'verified-red-then-green-mismatch: Verified: red-then-green requires the Red-then-green trailer to be a positive attestation (<path> / <path>:<line> %s <test-name>), but Red-then-green is "n/a". Pick a different Verified form (operator-confirmed, <path>, or n/a (reason)).' "$_vb_hash")"
       fi
     elif [[ "$verified_value" = "build-only" ]]; then
