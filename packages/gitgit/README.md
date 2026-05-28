@@ -15,13 +15,13 @@ structured commit body schema across both Claude-driven commits
 2. **Commit-discipline enforcement.** Two-layer hook architecture
    (PreToolUse guards plus git-native hooks) that validates a structured
    body schema: subject + WHY paragraph + Slice / Tests / Red-then-green
-   trailers parsed via `git interpret-trailers`, with seven opt-out enum
-   tokens. `Red-then-green` accepts four forms: `yes` (self-attestation,
-   rejected under `GITGIT_AUTONOMOUS=1`), `n/a (reason >= 10 chars)`,
+   trailers parsed via `git interpret-trailers`, with eight opt-out enum
+   tokens. `Red-then-green` accepts three forms: `n/a (reason >= 10 chars)`,
    `<path>` (a spec file in the staged diff), or `<path>:<line> # <test-name>`
    (line is 1-based, name must match a test declaration in the staged
-   blob). The `# ` separator follows the RSpec / Cucumber convention and
-   keeps `path:line` clickable in iTerm2 / VSCode / Ghostty.
+   blob; the `# ` separator follows the RSpec / Cucumber convention and
+   keeps `path:line` clickable in iTerm2 / VSCode / Ghostty). Bare `yes`
+   is no longer accepted.
 
 Reference for the schema, examples, escape-hatches, and troubleshooting:
 `/gitgit:commit-discipline`.
@@ -162,32 +162,29 @@ reading, restoring the visibility we lost.
 Tests: spec/services/session_spec.rb#start_event_with_bad_reading,
        spec/services/session_spec.rb#stop_event_with_bad_reading
 Slice: handler + service + spec
-Red-then-green: yes
+Red-then-green: spec/services/session_spec.rb:42 # start_event drops invalid meter reading
+Verified: red-then-green
 Resolves: https://example.org/backlog/issues/1234
 ```
 
-The `Slice` value can also be one of seven opt-out tokens: `docs-only`,
-`config-only`, `migration-only`, `chore-deps`, `revert`, `merge`, `wip`.
+The `Slice` value can also be one of eight opt-out tokens: `docs-only`,
+`config-only`, `migration-only`, `spec-only`, `chore-deps`, `revert`,
+`merge`, `wip`.
 Opt-out commits drop the `Tests:` requirement; the documentation /
 config / chore-deps tokens additionally drop the `Red-then-green:`
 requirement.
 
 ## Bypass
 
-Four escape-hatches, each logged for later auditing:
+Escape-hatches, each logged for later auditing:
 
-- `# vsd-skip: <reason>` magic comment in the body (logged to
-  `~/.claude/var/gitgit-skips.log`). Refused on UI-touched commits
-  (`vsd-skip-ui-touch`); use `Visual: <path>` or
-  `Visual: n/a (rationale)` instead.
-- `GITGIT_AUTONOMOUS=1` for unattended commits: refuses `# vsd-skip`
-  outright (`vsd-skip-autonomous`) and refuses `Visual: n/a` on
-  UI-touched commits (`visual-na-autonomous`); only `Visual: <path>`
-  passes.
 - `git commit --no-verify` (logged to `~/.claude/var/gitgit-no-verify.log`
   via the `post-commit` hook)
 - `GITGIT_ALLOW_AI_COAUTHOR=1` to allow a single `@anthropic.com`
   `Co-Authored-By:` trailer
+- `GITGIT_ALLOW_CONJUNCTION=1` or the magic-comment `# allow-conjunction:
+  <reason>` in the body to permit a subject that contains ` and `, ` + `,
+  or ` & ` when the joined form is genuinely atomic
 - `GITGIT_ALLOW_WIP_PUSH=1` or the magic-comment `# allow-wip-push` to
   push a range that contains `Slice: wip` commits (logged to
   `~/.claude/var/gitgit-wip-pushes.log`). Note: `# allow-wip-push` only
