@@ -309,8 +309,15 @@ validate_body() {
   done
 
   # Rule: free-text Slice must be at least 10 chars to carry meaningful context.
+  # allow-comment: track whether Slice is structurally invalid (missing or
+  # allow-comment: too-short). Used downstream to suppress derivative Tests/
+  # allow-comment: RTG/Verified errors that would all disappear once Slice
+  # allow-comment: is fixed; symmetric with the missing-slice suppression.
+  local slice_invalid=0
+  [[ -z "$slice_value" ]] && slice_invalid=1
   if [[ -n "$slice_value" ]] && [[ "$slice_is_optout" -eq 0 ]] && [[ ${#slice_value} -lt 10 ]]; then
     _vb_err "$(printf 'slice-too-short: free-text Slice must be at least 10 chars (got: "%s")' "$slice_value")"
+    slice_invalid=1
   fi
 
   # Determine if Slice value is RTG-exempt.
@@ -328,7 +335,7 @@ validate_body() {
   # allow-comment: as soon as the Slice trailer lands. missing-slice already
   # allow-comment: surfaced above; fix that first, downstream checks fire on
   # allow-comment: retry when they apply.
-  if [[ -n "$slice_value" && "$slice_is_optout" -eq 0 ]]; then
+  if [[ "$slice_invalid" -eq 0 && "$slice_is_optout" -eq 0 ]]; then
     if [[ -z "$tests_value" ]]; then
       _vb_err 'missing-tests: Tests trailer is absent; required when Slice is not an opt-out token'
     else
@@ -388,7 +395,7 @@ validate_body() {
   # Rule: Red-then-green required unless Slice is RTG-exempt.
   # allow-comment: gated on slice_value presence so a missing-slice does not
   # allow-comment: cascade into a derivative missing-red-then-green.
-  if [[ -n "$slice_value" && "$slice_is_rtg_exempt" -eq 0 ]]; then
+  if [[ "$slice_invalid" -eq 0 && "$slice_is_rtg_exempt" -eq 0 ]]; then
     if [[ -z "$rtg_value" ]]; then
       _vb_err 'missing-red-then-green: Red-then-green trailer is absent; required for this Slice type'
     elif [[ "$rtg_value" = "yes" ]]; then
@@ -583,7 +590,7 @@ validate_body() {
   # under non-autonomous mode is never anchored to anything).
   # allow-comment: gated on slice_value presence so a missing-slice does not
   # allow-comment: cascade into a derivative missing-verified.
-  if [[ -n "$slice_value" && "$slice_is_optout" -eq 0 ]]; then
+  if [[ "$slice_invalid" -eq 0 && "$slice_is_optout" -eq 0 ]]; then
     local verified_value
     verified_value=$(_vb_trailer_value "$trailers" "Verified")
     verified_value=$(printf '%s' "$verified_value" | sed 's/[[:space:]]*$//')
