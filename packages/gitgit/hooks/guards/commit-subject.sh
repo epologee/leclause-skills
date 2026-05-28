@@ -271,7 +271,23 @@ guard_commit_subject() {
       # rotation slot on a state we cannot prove succeeded.
       :
     elif [[ "$current_sha" != "$ack_pending_sha" ]]; then
-      rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
+      # allow-comment: amend detection. An amend rewrites the commit in
+      # allow-comment: place: HEAD's parent stays the same as the previous
+      # allow-comment: HEAD's parent. A regular new commit makes the previous
+      # allow-comment: HEAD the parent of the new HEAD. Comparing parents is
+      # allow-comment: the most reliable amend signal: it matches every form
+      # allow-comment: of --amend regardless of message edits, file changes,
+      # allow-comment: or interactive rebase. When the parents match, the
+      # allow-comment: commit object is fresh but the intent is the same as
+      # allow-comment: the previously-acked one; the rotation slot does not
+      # allow-comment: advance because the operator should not pay an extra
+      # allow-comment: ack for a gate-mandated message rewrite.
+      local new_parent old_parent
+      new_parent=$(git rev-parse "${current_sha}^" 2>/dev/null | tr -cd '0-9a-f')
+      old_parent=$(git rev-parse "${ack_pending_sha}^" 2>/dev/null | tr -cd '0-9a-f')
+      if [[ -z "$new_parent" || -z "$old_parent" || "$new_parent" != "$old_parent" ]]; then
+        rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
+      fi
     fi
     ack_pending_sha=""
     _dd_write_state "$state_file" "$pv" "$pr" "$rp" ""
@@ -375,6 +391,22 @@ guard_commit_subject_posttool() {
   current_sha=$(git rev-parse HEAD 2>/dev/null | tr -cd '0-9a-f')
   [[ -z "$current_sha" ]] && return 0
   [[ "$current_sha" = "$ack_pending_sha" ]] && return 0
+
+  # allow-comment: amend detection (mirrors the PreToolUse-entry logic).
+  # allow-comment: HEAD's parent equals the previous HEAD's parent on amend;
+  # allow-comment: differs on a regular new commit. Same parent means the
+  # allow-comment: commit object is a rewrite of the just-acked one and the
+  # allow-comment: rotation slot stays so the operator does not pay an extra
+  # allow-comment: ack for a gate-mandated message rewrite. Returns silently
+  # allow-comment: when an amend is detected: no rp advance, no next-commit
+  # allow-comment: reminder, no state write needed beyond clearing ack-pending
+  # allow-comment: which already happened upstream in PreToolUse resolution.
+  local new_parent old_parent
+  new_parent=$(git rev-parse "${current_sha}^" 2>/dev/null | tr -cd '0-9a-f')
+  old_parent=$(git rev-parse "${ack_pending_sha}^" 2>/dev/null | tr -cd '0-9a-f')
+  if [[ -n "$new_parent" && -n "$old_parent" && "$new_parent" = "$old_parent" ]]; then
+    return 0
+  fi
 
   rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
   local next_slot="${_DD_ROTATION_SLOTS[$rp]}"
