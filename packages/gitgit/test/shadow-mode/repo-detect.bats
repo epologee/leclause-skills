@@ -19,7 +19,7 @@ load helpers
   run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
   # Block-mode: denied.
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
 
   # Shadow log must have grown.
   local after
@@ -38,7 +38,7 @@ load helpers
 
   run_dispatch 'git commit -m "Expose unused import path" # ack-rule4:essentie'
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
 
   local after
   after=$(shadow_log_line_count)
@@ -57,7 +57,7 @@ load helpers
   run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
   # Block-mode denies all repos.
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
 
   # Shadow log grows even for non-leclause-skills repos.
   local after

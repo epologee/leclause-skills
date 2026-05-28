@@ -26,7 +26,7 @@ load helpers
   run_dispatch_no_session \
     'git commit -m "bare subject no body" # ack-rule4:essentie'
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"[gitgit/commit-body]"* ]]
 }
 

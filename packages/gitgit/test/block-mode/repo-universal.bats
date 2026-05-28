@@ -15,7 +15,7 @@ load helpers
   run_dispatch 'git commit -m "Session boundary for other project" # ack-rule4:essentie'
 
   # Block-mode: must deny (exit 2).
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
 }
 
 @test "leclause-skills repo URL also triggers block-mode denial" {
@@ -26,7 +26,7 @@ load helpers
 
   run_dispatch 'git commit -m "Extend leclause plugin" # ack-rule4:essentie'
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
 }
 
 @test "shadow log gets an entry for a non-leclause-skills violation" {
@@ -55,5 +55,5 @@ load helpers
 
   run_dispatch 'git commit -m "Some commit no body" # ack-rule4:essentie'
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
 }

@@ -57,23 +57,36 @@ guard_commit_format() {
 
   [[ ${#hard[@]} -eq 0 && ${#soft[@]} -eq 0 ]] && return 0
 
-  local lines=()
+  # allow-comment: hard violations BLOCK at PreToolUse via dd_emit_deny so the
+  # allow-comment: commit object is never created; the operator rewrites the
+  # allow-comment: message and reruns the same call. Soft nudges (subject
+  # allow-comment: 51-72 chars) stay non-blocking via dd_emit_pre_context so
+  # allow-comment: the operator gets the readability hint without being
+  # allow-comment: forced to amend.
   if [[ ${#hard[@]} -gt 0 ]]; then
-    lines+=("Format issues; amend afterwards with git commit --amend:")
+    local hard_lines=("Format issues; rewrite the commit message and rerun the same git commit call (the commit object has not been created yet):")
     local v
     for v in "${hard[@]}"; do
-      lines+=("- ${v}")
+      hard_lines+=("- ${v}")
     done
-  fi
-  if [[ ${#soft[@]} -gt 0 ]]; then
-    [[ ${#lines[@]} -gt 0 ]] && lines+=("")
+    if [[ ${#soft[@]} -gt 0 ]]; then
+      hard_lines+=("")
+      local s
+      for s in "${soft[@]}"; do
+        hard_lines+=("Note: ${s}")
+      done
+    fi
+    local hard_body
+    hard_body=$(printf '%s\n' "${hard_lines[@]}")
+    dd_emit_deny "commit-format" "$hard_body"
+  elif [[ ${#soft[@]} -gt 0 ]]; then
+    local soft_lines=()
     local s
     for s in "${soft[@]}"; do
-      lines+=("Note: ${s}")
+      soft_lines+=("Note: ${s}")
     done
+    local soft_body
+    soft_body=$(printf '%s\n' "${soft_lines[@]}")
+    dd_emit_pre_context "commit-format" "$soft_body"
   fi
-
-  local body_text
-  body_text=$(printf '%s\n' "${lines[@]}")
-  dd_emit_pre_context "commit-format" "$body_text"
 }
