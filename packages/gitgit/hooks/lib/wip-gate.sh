@@ -54,6 +54,60 @@ wip_gate_parse_range() {
   printf '%s..%s' "$upstream" "$local_ref"
 }
 
+# allow-comment: shared push-arg tokenizer + range resolver, consolidated
+# allow-comment: from duplicate blocks in push-wip-gate.sh and push-body-
+# allow-comment: gate.sh so a new push shape lands in one place.
+# allow-comment: wip_gate_resolve_push_range <bash-command> strips the
+# allow-comment: prefix up to " push ", tokenizes the remaining args
+# allow-comment: (skipping flags and stopping at shell separators or
+# allow-comment: redirections), pairs remote/refspec positionals, and
+# allow-comment: resolves the rev-list range via wip_gate_parse_range,
+# allow-comment: falling back to the tracked upstream when no positional
+# allow-comment: pair is present.
+wip_gate_resolve_push_range() {
+  local command="$1"
+
+  local args="${command#*push}"
+  args="${args# }"
+  args="${args%%#*}"
+
+  local -a positional=()
+  local tok stop=0
+  for tok in $args; do
+    case "$tok" in
+      \;|\&|\&\&|\|\||\|) stop=1 ;;
+      \>*|\<*) stop=1 ;;
+      [0-9]\>*|[0-9]\<*) stop=1 ;;
+    esac
+    [[ "$stop" -eq 1 ]] && break
+    case "$tok" in
+      --) ;;
+      -*) ;;
+      *) positional+=("$tok") ;;
+    esac
+  done
+
+  if [[ "${#positional[@]}" -eq 2 ]]; then
+    local remote="${positional[0]}"
+    local refspec="${positional[1]}"
+    local local_ref remote_branch
+    if [[ "$refspec" == *:* ]]; then
+      local_ref="${refspec%%:*}"
+      remote_branch="${refspec##*:}"
+    else
+      local_ref="$refspec"
+      remote_branch="$refspec"
+    fi
+    [[ -z "$local_ref" ]] && local_ref="HEAD"
+    local upstream="$remote/$remote_branch"
+    wip_gate_parse_range "$upstream" "$local_ref"
+  else
+    local upstream
+    upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
+    wip_gate_parse_range "$upstream" "HEAD"
+  fi
+}
+
 wip_gate_find_wip_commits() {
   local range="$1"
   [[ -z "$range" ]] && return 0

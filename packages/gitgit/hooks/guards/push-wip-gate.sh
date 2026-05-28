@@ -44,55 +44,8 @@ guard_push_wip_gate() {
   local current_branch
   current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
 
-  # Strip leading env-vars + the `git ... push` prefix to get the push args.
-  # Easiest portable shape: chop everything up to and including " push ".
-  local args="${command#*push}"
-  args="${args# }"
-
-  # Strip trailing shell comments (`# ...`) so the magic-comment bypass is
-  # not mis-parsed as positional args. Tokenization below otherwise treats
-  # `#` and the comment word as a remote/refspec pair.
-  args="${args%%#*}"
-
-  # Drop options to find positional args. Crude tokenization: read whitespace-
-  # separated tokens, skip ones starting with "-".
-  local -a positional=()
-  local tok stop=0
-  for tok in $args; do
-    case "$tok" in
-      \;|\&|\&\&|\|\||\|) stop=1 ;;
-      \>*|\<*) stop=1 ;;
-      [0-9]\>*|[0-9]\<*) stop=1 ;;
-    esac
-    [[ "$stop" -eq 1 ]] && break
-    case "$tok" in
-      --) ;;
-      -*) ;;
-      *) positional+=("$tok") ;;
-    esac
-  done
-
-  local range=""
-
-  if [[ "${#positional[@]}" -eq 2 ]]; then
-    local remote="${positional[0]}"
-    local refspec="${positional[1]}"
-    local local_ref remote_branch
-    if [[ "$refspec" == *:* ]]; then
-      local_ref="${refspec%%:*}"
-      remote_branch="${refspec##*:}"
-    else
-      local_ref="$refspec"
-      remote_branch="$refspec"
-    fi
-    [[ -z "$local_ref" ]] && local_ref="HEAD"
-    local upstream="$remote/$remote_branch"
-    range=$(wip_gate_parse_range "$upstream" "$local_ref")
-  else
-    local upstream
-    upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
-    range=$(wip_gate_parse_range "$upstream" "HEAD")
-  fi
+  local range
+  range=$(wip_gate_resolve_push_range "$command")
 
   [[ -z "$range" ]] && return 0
 
