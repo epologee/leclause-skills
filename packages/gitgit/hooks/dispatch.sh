@@ -3,6 +3,7 @@
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$DIR/lib/common.sh"
+source "$DIR/lib/version-skew.sh"
 
 INPUT=$(cat)
 EVENT=$(dd_event "$INPUT")
@@ -11,6 +12,8 @@ case "$EVENT" in
   PreToolUse)
     TOOL=$(dd_tool_name "$INPUT")
     [ "$TOOL" = "Bash" ] || exit 0
+
+    dd_gitgit_version_skew "$INPUT"
 
     dd_cd_to_bash_target "$INPUT"
 
