@@ -18,10 +18,17 @@ guard_commit_format() {
   while IFS= read -r line || [[ -n "$line" ]]; do
     line_num=$((line_num + 1))
 
+    # allow-comment: trailer lines (Key: Value, machine-readable, often carry a
+    # allow-comment: long path) are not narrative and bypass the 72-char ceiling.
+    # allow-comment: The conservative regex matches lines starting with a
+    # allow-comment: capitalised token followed by ': ' which covers the gitgit
+    # allow-comment: schema trailers (Tests/Slice/Red-then-green/Verified/Visual/
+    # allow-comment: PII-Doublecheck) and standard git trailers (Signed-off-by,
+    # allow-comment: Co-Authored-By) without exempting mid-body prose.
     if [[ ${#line} -gt 72 ]]; then
       if [[ $line_num -eq 1 ]]; then
         hard+=("Subject is ${#line} chars, max 72. Tighten: \"${line}\"")
-      else
+      elif [[ ! "$line" =~ ^[A-Z][A-Za-z0-9-]*:[[:space:]] ]]; then
         hard+=("Body line ${line_num} is ${#line} chars, max 72: \"${line}\"")
       fi
     fi
