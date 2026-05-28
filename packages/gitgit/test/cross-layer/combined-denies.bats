@@ -8,12 +8,9 @@
 
 load helpers
 
-@test "subject ack reminder and body missing-body surface together" {
-  # State fixture: pending_rotation=3 (rule 4 reminder), no ack -> subject denies.
+@test "subject ack reminder denies first; body nudge waits for the retry" {
   printf '%s\n%s\n%s\n' '-1' '3' '0' > "$TMPDIR_TEST/commit-rule-state"
 
-  # Non-trivial commit (2 files, 30 insertions), no body trailers
-  # -> commit-body denies missing-body.
   export GIT_SHIM_SHORTSTAT=" 2 files changed, 30 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/services/foo.rb\nspec/services/foo_spec.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
@@ -25,7 +22,7 @@ load helpers
 
   [ "$status" -eq 2 ]
   [[ "$output" == *"ack-rule"* ]]
-  [[ "$output" == *"missing-body"* ]]
+  [[ "$output" != *"missing-body"* ]]
 }
 
 @test "subject ack alone surfaces only the subject deny" {
@@ -100,11 +97,9 @@ EOF
   [[ "$output" != *"should not reach here"* ]]
 }
 
-@test "body deny alone surfaces only the body deny" {
+@test "body nudge alone surfaces only the body context after ack passes" {
   printf '%s\n%s\n%s\n' '-1' '3' '0' > "$TMPDIR_TEST/commit-rule-state"
 
-  # Non-trivial commit, no body trailers, valid ack token -> commit-subject
-  # accepts (rotation advances), commit-body denies.
   export GIT_SHIM_SHORTSTAT=" 2 files changed, 30 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/services/foo.rb\nspec/services/foo_spec.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
@@ -112,7 +107,7 @@ EOF
   local cmd='git commit -m "Use policy on the read path" # ack-rule4:essentie'
   run bash "$DISPATCH" <<< "$(pretool_bash_json "$cmd")"
 
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
   [[ "$output" == *"missing-body"* ]]
   [[ "$output" != *"reminder"* ]]
 }

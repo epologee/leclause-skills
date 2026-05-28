@@ -14,7 +14,7 @@ load helpers
 
   run_dispatch 'git commit -m "Session boundary model for transaction events" # ack-rule4:essentie'
 
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
 }
 
 @test "non-trivial commit WITH valid body passes (exit 0)" {
@@ -42,7 +42,7 @@ Verified: operator-confirmed')")
 
   run_dispatch 'git commit -m "Session boundary model for transaction events" # ack-rule4:essentie'
 
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
   # stderr carries the deny message (bats captures combined output in $output).
   [[ "$output" == *"missing-body"* ]]
 }
@@ -54,7 +54,7 @@ Verified: operator-confirmed')")
 
   run_dispatch 'git commit -m "Session boundary model for transaction events" # ack-rule4:essentie'
 
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
   # The example body always contains a Slice trailer.
   [[ "$output" == *"Slice:"* ]]
   # And a Tests trailer.
@@ -68,7 +68,7 @@ Verified: operator-confirmed')")
 
   run_dispatch 'git commit -m "Session boundary model for transaction events" # ack-rule4:essentie'
 
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
   [[ "$output" == *"docs-only"* ]]
   [[ "$output" == *"config-only"* ]]
   [[ "$output" == *"migration-only"* ]]

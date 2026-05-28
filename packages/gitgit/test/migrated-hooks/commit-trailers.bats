@@ -30,7 +30,7 @@ INNER_CMD
 
   run_dispatch "$cmd"
 
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
   [[ "$output" == *"[gitgit/commit-trailers]"* ]]
   [[ "$output" == *"anthropic"* ]]
 }

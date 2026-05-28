@@ -1,49 +1,32 @@
 #!/bin/bash
-# packages/gitgit/hooks/guards/commit-body.sh
-# PreToolUse:Bash guard (block-mode, slice 4). Parses the commit message from
-# every "git commit" bash command, runs validate_body against it, and on
-# violation emits dd_emit_deny (exit 2, blocks the tool call). Previously
-# shadow-mode in slice 3; now universal across all repos.
-#
-# Shadow log: violations are still written to the shadow log as a parallel
-# audit record regardless of repo. The repo-gate that limited slice 3 to the
-# leclause-skills repo is removed; block-mode is universal.
-#
-# Trivial-commit optimisation: a commit touching <= 1 file and <= 5 insertions
-# sets GITGIT_TRIVIAL_OK=1 before calling validate_body so the validator skips
-# the body requirement. This threshold is unchanged from slice 3.
-#
-# There is no magic-comment opt-out. The legacy `# vsd-skip` comment is
-# rejected by validate_body.sh; the only audit-logged noodknop is
-# `git commit --no-verify`, captured by the post-commit shadow log.
+# allow-comment: PreToolUse:Bash guard. Validates the commit message against the body schema and emits dd_emit_pre_context (additionalContext, non-blocking) when the body falls short. Commit lands; Claude reads the nudge and amends. amend commits validate against HEAD (the to-be-rewritten state); normal commits validate against the staged area.
 
 guard_commit_body() {
   local input="$1"
 
-  # Only act on git commit commands.
   local command
   command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
   dd_is_git_commit_command "$command" || return 0
 
-  # Extract the commit message. Empty means editor-mode; commit-format.sh
-  # already handles editor-mode, so skip silently here.
   local message
   message=$(dd_extract_commit_message "$command")
   [[ -z "$message" ]] && return 0
 
-  # Subject skip-pattern check (Merge / Revert / fixup! / squash! / amend!).
   local subject
   subject=$(printf '%s' "$message" | head -1)
   if validate_body_classify_skip "$subject"; then
     return 0
   fi
 
-  # Trivial-commit detection: <= 1 file AND <= 5 insertions -> set TRIVIAL_OK.
-  local shortstat file_count insertion_count
-  shortstat=$(git diff --cached --shortstat 2>/dev/null || true)
-  file_count=$(git diff --cached --name-only 2>/dev/null | wc -l | tr -d ' ')
+  local validate_ctx="staged"
+  if [[ "$command" == *--amend* ]]; then
+    validate_ctx="HEAD"
+  fi
 
-  # Extract insertions from shortstat output ("N insertions(+)").
+  local shortstat file_count insertion_count
+  shortstat=$(GITGIT_VALIDATE_CONTEXT="$validate_ctx" _vb_delta_shortstat)
+  file_count=$(GITGIT_VALIDATE_CONTEXT="$validate_ctx" _vb_delta_files | grep -c . | tr -d ' ')
+
   insertion_count=0
   if [[ "$shortstat" =~ ([0-9]+)[[:space:]]+insertion ]]; then
     insertion_count="${BASH_REMATCH[1]}"
@@ -55,23 +38,20 @@ guard_commit_body() {
     export GITGIT_TRIVIAL_OK=0
   fi
 
-  # Write message to a temp file and invoke the shared validator.
   local tmpfile
   tmpfile=$(mktemp /tmp/gitgit-commit-msg-XXXXXX)
   printf '%s' "$message" > "$tmpfile"
 
   local violation_output exit_code
-  violation_output=$(validate_body "$tmpfile" 2>&1)
+  violation_output=$(GITGIT_VALIDATE_CONTEXT="$validate_ctx" validate_body "$tmpfile" 2>&1)
   exit_code=$?
 
   rm -f "$tmpfile"
 
-  # exit 0: valid; exit 2: skip (unreadable / template). Both are silent.
   if [[ "$exit_code" -ne 1 ]]; then
     return 0
   fi
 
-  # exit 1: violation. Always write to shadow log (all repos).
   local violation_line
   violation_line=$(printf '%s' "$violation_output" | head -1)
   local violation_code
@@ -85,8 +65,6 @@ guard_commit_body() {
   branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || printf 'unknown')
   short_sha=$(git rev-parse --short HEAD 2>/dev/null || printf 'staging')
   subject_50="${subject:0:50}"
-  # Sanitise pipe characters in all operator-controlled fields so the log
-  # parser does not mistake them for field delimiters. Replacement: dash (-).
   subject_50="${subject_50//|/-}"
   branch="${branch//|/-}"
   violation_code="${violation_code//|/-}"
@@ -95,19 +73,16 @@ guard_commit_body() {
     "$timestamp" "$short_sha" "$branch" "$violation_code" "$subject_50" \
     >> "$logfile"
 
-  # Synthesize a filled example from the staged diff.
   local example
-  example=$(gitgit_synthesize_example 2>/dev/null || printf '<example unavailable>')
+  example=$(GITGIT_VALIDATE_CONTEXT="$validate_ctx" gitgit_synthesize_example 2>/dev/null || printf '<example unavailable>')
 
-  # Opt-out enum list.
   local opt_out_list="docs-only, config-only, migration-only, spec-only, chore-deps, revert, merge, wip"
 
-  # Build the deny message.
-  local deny_msg
-  deny_msg=$(printf '%s\n\nExpected body format:\n\n%s\n\nOpt-out tokens for Slice: %s' \
+  local nudge
+  nudge=$(printf '%s\n\nThe commit will land regardless; amend afterwards with git commit --amend -F <new-message-file>. push-body-gate will block the push if the body is still non-conformant at push time.\n\nExpected body format:\n\n%s\n\nOpt-out tokens for Slice: %s' \
     "$violation_line" \
     "$example" \
     "$opt_out_list")
 
-  dd_emit_deny "commit-body" "$deny_msg"
+  dd_emit_pre_context "commit-body" "$nudge"
 }

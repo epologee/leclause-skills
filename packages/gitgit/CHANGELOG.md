@@ -17,6 +17,18 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.128]
+
+### Breaking
+
+- **commit-format, commit-body, commit-trailers no longer deny at commit-time.** They emit `additionalContext`; the commit lands and Claude amends. The visible deny moves to push-time via `push-body-gate`. `/gitgit:install-hooks`' `commit-msg` is unchanged.
+
+### Added
+
+- **push-body-gate blocks `git push` when any commit in the range has a non-conformant body.** Same range-detection as `push-wip-gate`. Skips `Merge`/`Revert`/`fixup!`/`squash!`/`amend!`/cherry-pick. Bypass with `/gitgit:disable-discipline`.
+
+- **GITGIT_VALIDATE_CONTEXT picks the `validate_body` source.** Values: `staged` (default), `HEAD` (just-landed delta), `<sha>` (used by push-body-gate). `commit --amend` switches to `HEAD` automatically.
+
 ## [v1.0.123]
 
 ### Fixed

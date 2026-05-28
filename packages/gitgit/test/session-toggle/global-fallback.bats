@@ -19,7 +19,6 @@ load helpers
 }
 
 @test "global sentinel absent, no session_id: guards run normally" {
-  # No sentinel of any kind.
   export GIT_SHIM_SHORTSTAT=" 3 files changed, 20 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/foo.rb\napp/models/bar.rb\nspec/models/foo_spec.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
@@ -27,7 +26,8 @@ load helpers
   run_dispatch_no_session \
     'git commit -m "bare subject no body" # ack-rule4:essentie'
 
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[gitgit/commit-body]"* ]]
 }
 
 @test "global sentinel present even when session_id is present: dispatch exits 0" {

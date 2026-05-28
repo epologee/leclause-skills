@@ -43,7 +43,8 @@ load helpers
   run_dispatch_with_session \
     'git commit -m "bare subject no body" # ack-rule4:essentie' \
     "$sid_b"
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[gitgit/commit-body]"* ]]
 }
 
 @test "removing session sentinel re-enables guards for that session" {
@@ -67,5 +68,6 @@ load helpers
   run_dispatch_with_session \
     'git commit -m "bare subject no body" # ack-rule4:essentie' \
     "$sid"
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[gitgit/commit-body]"* ]]
 }

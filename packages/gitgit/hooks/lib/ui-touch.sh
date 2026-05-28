@@ -38,9 +38,14 @@
 # harnesses). Each caller controls its own errexit/pipefail. The functions
 # below handle non-zero returns explicitly via conditionals.
 
+_VB_UI_LIB_DIR_CTX="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+if ! declare -F _vb_delta_files >/dev/null 2>&1; then
+  . "$_VB_UI_LIB_DIR_CTX/vb-context.sh"
+fi
+
 _vb_ui_touched_files() {
   local staged
-  staged=$(git diff --cached --name-only 2>/dev/null || true)
+  staged=$(_vb_delta_files)
   [[ -z "$staged" ]] && return 0
 
   # Newline-separated output keeps filenames with embedded commas or spaces
@@ -65,7 +70,7 @@ _vb_ui_touched_files() {
         # (rationale); false negatives from the staged-only pass were
         # silent and harder to recover from.
         local content_staged=""
-        content_staged=$(git show ":$f" 2>/dev/null || true)
+        content_staged=$(_vb_show_blob "$f")
         local _matched=0
         if printf '%s' "$content_staged" \
             | grep -qE '(import SwiftUI|import UIKit|import AppKit|: View([^A-Za-z0-9_]|$)|: UIView([^A-Za-z0-9_]|$)|: NSView([^A-Za-z0-9_]|$)|UIViewController|NSViewController)'; then

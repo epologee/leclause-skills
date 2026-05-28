@@ -105,9 +105,10 @@ teardown() {
 
 # --- 5. commit-format uses [gitgit/commit-format] mnemonic ---
 
-@test "subject over 72 chars is denied with [gitgit/commit-format] mnemonic" {
-  run bash -c "echo '$(pretool_bash 'git commit -m "Override the upstream defaults that nudge multi-line commits into a heredoc form."')' | bash '$GITGIT_DISPATCH' 2>&1 >/dev/null"
-  [ "$status" -eq 2 ]
+@test "subject over 72 chars surfaces [gitgit/commit-format] nudge via additionalContext" {
+  printf 'pv=-1\npr=3\nrp=0\nack_pending_sha=\n' > "$STATE_FILE"
+  run bash -c "echo '$(pretool_bash 'git commit -m "Override the upstream defaults that nudge multi-line commits into a heredoc form." # ack-rule4:essentie')' | bash '$GITGIT_DISPATCH' 2>&1"
+  [ "$status" -eq 0 ]
   echo "$output" | grep -q '\[gitgit/commit-format\]'
   echo "$output" | grep -q 'max 72'
 }

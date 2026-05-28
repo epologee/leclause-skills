@@ -25,6 +25,9 @@ DISPATCH="$SCRIPT_DIR/../../hooks/dispatch.sh"
 # Override the wip-push log so tests never write to the real log.
 export GITGIT_WIP_PUSH_LOG="$BATS_TEST_TMPDIR/gitgit-wip-pushes.log"
 
+# allow-comment: wip-gate tests focus on wip-vs-clean; push-body-gate fires on the same `git push` event and would deny non-schema-conformant fixtures.
+export GITGIT_PUSH_BODY_GATE_DISABLED=1
+
 # Default shims: no upstream, no commits, no wip. Tests override per case.
 export GIT_SHIM_ORIGIN_URL="https://github.com/someorg/somerepo.git"
 export GIT_SHIM_SHORTSTAT=" 1 file changed, 1 insertion(+)"

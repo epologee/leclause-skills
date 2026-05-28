@@ -7,9 +7,8 @@
 
 load helpers
 
-@test "no sentinel: non-trivial commit without body is blocked" {
+@test "no sentinel: non-trivial commit without body is nudged via additionalContext" {
   local sid="test-session-enabled"
-  # No sentinel written.
 
   export GIT_SHIM_SHORTSTAT=" 3 files changed, 20 insertions(+)"
   export GIT_SHIM_DIFF_NAMES="$(printf 'app/models/foo.rb\napp/models/bar.rb\nspec/models/foo_spec.rb')"
@@ -19,8 +18,8 @@ load helpers
     'git commit -m "bare subject no body" # ack-rule4:essentie' \
     "$sid"
 
-  [ "$status" -eq 2 ]
-  [[ "$output" == *"[gitgit/"* ]]
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[gitgit/commit-body]"* ]]
 }
 
 @test "no sentinel: trivial commit passes even without body" {

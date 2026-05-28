@@ -1,15 +1,5 @@
 #!/bin/bash
-# packages/gitgit/hooks/guards/commit-trailers.sh
-# PreToolUse:Bash guard. Blocks Co-Authored-By: trailers with @anthropic.com
-# email in commit messages, unless explicitly opted in via env var. Absorbed
-# from ~/.claude/hooks/block-coauthored-trailer.sh.
-#
-# Only anthropic.com trailers are blocked; human Co-Authored-By trailers
-# (real teammates) pass. The user-level CLAUDE.md rule has the same scope:
-# AI attribution out, human co-authors fine.
-#
-# Bypass: set GITGIT_ALLOW_AI_COAUTHOR=1 in the environment for one bash call
-# when an anthropic.com co-author trailer is genuinely desired.
+# allow-comment: PreToolUse:Bash guard. Surfaces Co-Authored-By: anthropic.com in the commit message and instructs an amend that strips the trailer. Bypass with GITGIT_ALLOW_AI_COAUTHOR=1 when the AI co-author trailer is genuinely desired.
 
 guard_commit_trailers() {
   local input="$1"
@@ -17,17 +7,13 @@ guard_commit_trailers() {
   command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
   dd_is_git_commit_command "$command" || return 0
 
-  # Explicit opt-in skips the guard silently.
   [[ "${GITGIT_ALLOW_AI_COAUTHOR:-0}" = "1" ]] && return 0
 
   local message
   message=$(dd_extract_commit_message "$command")
   [[ -z "$message" ]] && return 0
 
-  # Case-insensitive match on Co-Authored-By: + anthropic.com email anywhere
-  # in the body. Covers both "noreply@anthropic.com" and any other
-  # "...@anthropic.com" form a future template might generate.
   if grep -qiE '^[[:space:]]*Co-Authored-By:[[:space:]].*@anthropic\.com' <<< "$message"; then
-    dd_emit_deny "commit-trailers" "Co-Authored-By: anthropic email is blocked. Add GITGIT_ALLOW_AI_COAUTHOR=1 to bypass when explicitly desired."
+    dd_emit_pre_context "commit-trailers" "Co-Authored-By: anthropic.com trailer in commit message. The commit will land regardless; amend afterwards to strip the trailer (git commit --amend -F <new-message-file>). Set GITGIT_ALLOW_AI_COAUTHOR=1 if the anthropic co-author trailer is genuinely desired here."
   fi
 }

@@ -50,7 +50,7 @@ load helpers
 
   run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
 }
 
 @test "1-file 6-insertion commit (too many insertions) is denied in block-mode" {
@@ -61,5 +61,5 @@ load helpers
 
   run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
 }

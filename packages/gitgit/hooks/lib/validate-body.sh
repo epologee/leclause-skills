@@ -19,6 +19,9 @@
 # (exit 1) and other expected non-zero returns to abort the sourcing shell.
 # All errors are handled explicitly via conditional checks below.
 
+_VB_LIB_DIR_CTX="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+. "$_VB_LIB_DIR_CTX/vb-context.sh"
+
 # ---------------------------------------------------------------------------
 # Skip-pattern classifier
 # ---------------------------------------------------------------------------
@@ -316,7 +319,7 @@ validate_body() {
 
     # Build staged diff listing.
     local staged_files=""
-    staged_files=$(git diff --cached --name-only 2>/dev/null || true)
+    staged_files=$(_vb_delta_files)
 
     while IFS= read -r path; do
       # Strip anchor suffixes like #method_name.
@@ -395,7 +398,7 @@ validate_body() {
         # the staged-diff lookup uses the canonical name.
         rtg_path=$(printf '%s' "$rtg_path" | sed 's/[[:space:]]*$//')
         local rtg_staged
-        rtg_staged=$(git diff --cached --name-only 2>/dev/null || true)
+        rtg_staged=$(_vb_delta_files)
         if ! grep -qF "$rtg_path" <<< "$rtg_staged" 2>/dev/null; then
           printf 'red-then-green-path-not-in-staged: Red-then-green path "%s" is not in the staged diff. Name a spec file that this commit actually touches, so the red-then-green claim is anchored to the change under review.\n' "$rtg_path" >&2
           return 1
@@ -420,7 +423,7 @@ validate_body() {
           local rtg_name="${BASH_REMATCH[2]}"
 
           local rtg_blob
-          rtg_blob=$(git show ":$rtg_path" 2>/dev/null || true)
+          rtg_blob=$(_vb_show_blob "$rtg_path")
           if [[ -z "$rtg_blob" ]] && [[ -f "$rtg_path" ]]; then
             rtg_blob=$(cat "$rtg_path" 2>/dev/null || true)
           fi

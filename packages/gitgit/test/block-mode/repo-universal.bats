@@ -12,10 +12,10 @@ load helpers
   export GIT_SHIM_DIFF_NAMES="$(printf 'a.rb\nb.rb\nc.rb\nd.rb\ne.rb')"
   export GIT_SHIM_INTERPRET_TRAILERS_OUTPUT=""
 
-  run_dispatch 'git commit -m "Add feature to other project" # ack-rule4:essentie'
+  run_dispatch 'git commit -m "Session boundary for other project" # ack-rule4:essentie'
 
   # Block-mode: must deny (exit 2).
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
 }
 
 @test "leclause-skills repo URL also triggers block-mode denial" {
@@ -26,7 +26,7 @@ load helpers
 
   run_dispatch 'git commit -m "Extend leclause plugin" # ack-rule4:essentie'
 
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
 }
 
 @test "shadow log gets an entry for a non-leclause-skills violation" {
@@ -55,5 +55,5 @@ load helpers
 
   run_dispatch 'git commit -m "Some commit no body" # ack-rule4:essentie'
 
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
 }

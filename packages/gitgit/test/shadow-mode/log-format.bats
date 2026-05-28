@@ -19,7 +19,7 @@ load helpers
   run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
   # Block-mode: denied.
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
 
   # The shadow log must exist and have at least one entry.
   [ -f "$GITGIT_SHADOW_LOG" ]
@@ -70,7 +70,7 @@ load helpers
   run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
   # Block-mode: denied; but directory and log file must now exist.
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
   [ -d "$(dirname "$deep_log")" ]
   [ -f "$deep_log" ]
 }
@@ -120,7 +120,7 @@ SHIM2
   run_dispatch 'git commit -m "Expose session endpoint" # ack-rule4:essentie'
 
   # Block-mode: denied.
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
   [ -f "$GITGIT_SHADOW_LOG" ]
   local sha_field
   sha_field=$(tail -1 "$GITGIT_SHADOW_LOG" | cut -d'|' -f2)
