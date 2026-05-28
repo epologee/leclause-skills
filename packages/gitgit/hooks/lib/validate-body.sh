@@ -262,6 +262,11 @@ validate_body() {
   # allow-comment: hook tokenizer false-positives on a bare # in nested quotes,
   # allow-comment: so the literal is passed via %s instead of inlined.
   local _vb_hash='#'
+  # allow-comment: closed-enum category regex shared by the Visual: n/a and
+  # allow-comment: Verified: n/a rationale checks. Defined once so a future
+  # allow-comment: new category lands in one edit rather than two adjacent
+  # allow-comment: regexes that drift independently.
+  local _vb_category_re='(extract[ -]?only|accessibility[ -]?only|accessibility metadata|debug[ -]?only|spec[ -]?only|test[ -]?only|copy[ -]?only|copy change|metadata[ -]?only|no behaviour change|no behavior change|no visual change|no ui change|no visual impact|no ui impact|byte[ -]?identical|render unchanged|pixel[ -]?identical|backend (rewrite|only)|no ui touched|sound[ -]?only|audio[ -]?only|log[ -]?only|telemetry[ -]?only)'
 
   # Extract trailer values.
   local slice_value
@@ -534,8 +539,7 @@ validate_body() {
       # narrative rationales without one of these tokens read as the
       # author hand-waving past the heuristic; the closed set forces the
       # claim to be classified.
-      local positive_re='(extract[ -]?only|accessibility[ -]?only|accessibility metadata|debug[ -]?only|spec[ -]?only|test[ -]?only|copy[ -]?only|copy change|metadata[ -]?only|no behaviour change|no behavior change|no visual change|no ui change|no visual impact|no ui impact|byte[ -]?identical|render unchanged|pixel[ -]?identical|backend (rewrite|only)|no ui touched|sound[ -]?only|audio[ -]?only|log[ -]?only|telemetry[ -]?only)'
-      if ! [[ "$rationale_lower" =~ $positive_re ]]; then
+      if ! [[ "$rationale_lower" =~ $_vb_category_re ]]; then
         _vb_err "$(printf 'visual-rationale-vague: Visual: n/a rationale must name a recognized category that explains why a screenshot has no meaning for this change. Recognized tokens (case-insensitive): extract-only, accessibility-only, accessibility metadata, debug-only, spec-only, test-only, copy-only, copy change, metadata-only, no behaviour change, no visual change, no ui change, byte-identical, render unchanged, pixel-identical, backend rewrite, backend only, no ui touched, sound-only, audio-only, log-only, telemetry-only. The rationale (got: "%s") matched none of those.' "$rationale")"
       fi
       # Visual: n/a is never accepted on UI-touched commits: the rationale
@@ -615,8 +619,7 @@ validate_body() {
         # identical render, backend-only, no behaviour change, ...).
         local v_rationale_lower
         v_rationale_lower=$(printf '%s' "$v_rationale" | tr '[:upper:]' '[:lower:]')
-        local v_positive_re='(extract[ -]?only|accessibility[ -]?only|accessibility metadata|debug[ -]?only|spec[ -]?only|test[ -]?only|copy[ -]?only|copy change|metadata[ -]?only|no behaviour change|no behavior change|no visual change|no ui change|no visual impact|no ui impact|byte[ -]?identical|render unchanged|pixel[ -]?identical|backend (rewrite|only)|no ui touched|sound[ -]?only|audio[ -]?only|log[ -]?only|telemetry[ -]?only)'
-        if ! [[ "$v_rationale_lower" =~ $v_positive_re ]]; then
+        if ! [[ "$v_rationale_lower" =~ $_vb_category_re ]]; then
           _vb_err "$(printf 'verified-rationale-vague: Verified: n/a rationale must name a recognised category that explains why no verification is meaningful for this change. Recognised tokens (case-insensitive): extract-only, accessibility-only, accessibility metadata, debug-only, spec-only, test-only, copy-only, copy change, metadata-only, no behaviour change, no visual change, no ui change, byte-identical, render unchanged, pixel-identical, backend rewrite, backend only, no ui touched, sound-only, audio-only, log-only, telemetry-only. The rationale (got: "%s") matched none of those.' "$v_rationale")"
         fi
       fi

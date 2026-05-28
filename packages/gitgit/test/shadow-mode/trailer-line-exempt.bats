@@ -98,6 +98,30 @@ MSG
   }
 }
 
+@test "long Cucumber trailer line passes commit-format silently" {
+  local msg
+  msg='Settings page works on Windows
+
+Normal body line.
+Another normal body line.
+
+Slice: short
+Tests: spec/foo.rb
+Red-then-green: yes
+Verified: operator-confirmed
+Cucumber: n/a (no Cucumber feature file in this slice; the next commit will add the feature scenario alongside the implementation)'
+
+  local cmd="git commit -m \"\$(cat <<MSG
+${msg}
+MSG
+)\""
+  run invoke_guard "$cmd"
+  [[ "$output" != *'max 72'* ]] || {
+    printf 'commit-format flagged a long Cucumber trailer that should be exempt; output: %s\n' "$output" >&2
+    return 1
+  }
+}
+
 @test "Co-Authored-By trailer with long email passes silently" {
   local msg
   msg='Settings page works on Windows
