@@ -15,9 +15,7 @@
 #     2. `git push <remote>` (no refspec)                -> use @{u}..HEAD.
 #     3. `git push <remote> <branch>`                    -> use <remote>/<branch>..<branch>.
 #     4. `git push <remote> <local>:<remote-branch>`     -> use <remote>/<remote-branch>..<local>.
-#   Anything more exotic (multiple refspecs, --mirror, --all, --tags) falls
-#   back to "scan the last 50 commits on HEAD". The fallback is logged to
-#   stderr as a warning so the operator knows the gate is in best-effort mode.
+#   allow-comment: workaround for the 50-commit fallback that re-validated already-pushed commits and tripped parallel sessions; exotic forms now scan HEAD~1..HEAD only.
 #
 # Bypass paths.
 #   - GITGIT_ALLOW_WIP_PUSH=1 in the bash command (or shell env).
@@ -59,8 +57,14 @@ guard_push_wip_gate() {
   # Drop options to find positional args. Crude tokenization: read whitespace-
   # separated tokens, skip ones starting with "-".
   local -a positional=()
-  local tok
+  local tok stop=0
   for tok in $args; do
+    case "$tok" in
+      \;|\&|\&\&|\|\||\|) stop=1 ;;
+      \>*|\<*) stop=1 ;;
+      [0-9]\>*|[0-9]\<*) stop=1 ;;
+    esac
+    [[ "$stop" -eq 1 ]] && break
     case "$tok" in
       --) ;;
       -*) ;;
@@ -69,49 +73,26 @@ guard_push_wip_gate() {
   done
 
   local range=""
-  local fallback=0
 
-  case "${#positional[@]}" in
-    0)
-      # `git push`; use the upstream of HEAD.
-      local upstream
-      upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
-      range=$(wip_gate_parse_range "$upstream" "HEAD")
-      ;;
-    1)
-      # `git push <remote>`. Same as bare push for our purposes.
-      local upstream
-      upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
-      range=$(wip_gate_parse_range "$upstream" "HEAD")
-      ;;
-    2)
-      # `git push <remote> <refspec>`.
-      local remote="${positional[0]}"
-      local refspec="${positional[1]}"
-      local local_ref remote_branch
-      if [[ "$refspec" == *:* ]]; then
-        local_ref="${refspec%%:*}"
-        remote_branch="${refspec##*:}"
-      else
-        local_ref="$refspec"
-        remote_branch="$refspec"
-      fi
-      [[ -z "$local_ref" ]] && local_ref="HEAD"
-      local upstream="$remote/$remote_branch"
-      range=$(wip_gate_parse_range "$upstream" "$local_ref")
-      ;;
-    *)
-      # Multiple refspecs or exotic flags. Fall back to scanning the last
-      # 50 commits reachable from HEAD; warn so the operator is aware.
-      printf '[gitgit/push-wip-gate] note: complex push form, scanning last 50 commits on HEAD as fallback.\n' >&2
-      range="HEAD~50..HEAD"
-      fallback=1
-      # If HEAD~50 does not exist (shallow / new repo), drop to all of HEAD.
-      if ! git rev-parse --verify --quiet "HEAD~50" >/dev/null 2>&1; then
-        range="HEAD"
-      fi
-      ;;
-  esac
+  if [[ "${#positional[@]}" -eq 2 ]]; then
+    local remote="${positional[0]}"
+    local refspec="${positional[1]}"
+    local local_ref remote_branch
+    if [[ "$refspec" == *:* ]]; then
+      local_ref="${refspec%%:*}"
+      remote_branch="${refspec##*:}"
+    else
+      local_ref="$refspec"
+      remote_branch="$refspec"
+    fi
+    [[ -z "$local_ref" ]] && local_ref="HEAD"
+    local upstream="$remote/$remote_branch"
+    range=$(wip_gate_parse_range "$upstream" "$local_ref")
+  else
+    local upstream
+    upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
+    range=$(wip_gate_parse_range "$upstream" "HEAD")
+  fi
 
   [[ -z "$range" ]] && return 0
 

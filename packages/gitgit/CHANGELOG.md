@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.133]
+
+### Fixed
+
+- **push-{wip,body}-gate always pick the range from git itself, not from the bash command shape.** Anything other than an explicit `<remote> <local>:<dest>` validates `@{u}..HEAD`; shell pipes and `2>&1` no longer confuse the parser into the old 50-commit fallback.
+
 ## [v1.0.132]
 
 ### Changed

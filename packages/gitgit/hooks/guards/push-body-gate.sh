@@ -21,8 +21,14 @@ guard_push_body_gate() {
   args="${args%%#*}"
 
   local -a positional=()
-  local tok
+  local tok stop=0
   for tok in $args; do
+    case "$tok" in
+      \;|\&|\&\&|\|\||\|) stop=1 ;;
+      \>*|\<*) stop=1 ;;
+      [0-9]\>*|[0-9]\<*) stop=1 ;;
+    esac
+    [[ "$stop" -eq 1 ]] && break
     case "$tok" in
       --) ;;
       -*) ;;
@@ -31,35 +37,25 @@ guard_push_body_gate() {
   done
 
   local range=""
-  case "${#positional[@]}" in
-    0|1)
-      local upstream
-      upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
-      range=$(wip_gate_parse_range "$upstream" "HEAD")
-      ;;
-    2)
-      local remote="${positional[0]}"
-      local refspec="${positional[1]}"
-      local local_ref remote_branch
-      if [[ "$refspec" == *:* ]]; then
-        local_ref="${refspec%%:*}"
-        remote_branch="${refspec##*:}"
-      else
-        local_ref="$refspec"
-        remote_branch="$refspec"
-      fi
-      [[ -z "$local_ref" ]] && local_ref="HEAD"
-      local upstream="$remote/$remote_branch"
-      range=$(wip_gate_parse_range "$upstream" "$local_ref")
-      ;;
-    *)
-      printf '[gitgit/push-body-gate] note: complex push form, scanning last 50 commits on HEAD as fallback.\n' >&2
-      range="HEAD~50..HEAD"
-      if ! git rev-parse --verify --quiet "HEAD~50" >/dev/null 2>&1; then
-        range="HEAD"
-      fi
-      ;;
-  esac
+  if [[ "${#positional[@]}" -eq 2 ]]; then
+    local remote="${positional[0]}"
+    local refspec="${positional[1]}"
+    local local_ref remote_branch
+    if [[ "$refspec" == *:* ]]; then
+      local_ref="${refspec%%:*}"
+      remote_branch="${refspec##*:}"
+    else
+      local_ref="$refspec"
+      remote_branch="$refspec"
+    fi
+    [[ -z "$local_ref" ]] && local_ref="HEAD"
+    local upstream="$remote/$remote_branch"
+    range=$(wip_gate_parse_range "$upstream" "$local_ref")
+  else
+    local upstream
+    upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
+    range=$(wip_gate_parse_range "$upstream" "HEAD")
+  fi
 
   [[ -z "$range" ]] && return 0
 
