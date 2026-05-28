@@ -144,6 +144,15 @@ _VB_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 # ---------------------------------------------------------------------------
 
 # validate_body <commit-msg-file-path>
+# allow-comment: batched-error contract. Every batchable trailer/body check
+# allow-comment: accumulates into _vb_errors[] (defined after the early returns)
+# allow-comment: and all violations are emitted on stderr in one block at the
+# allow-comment: end of the call. Terminal early-returns are reserved for cases
+# allow-comment: that make downstream checks moot: unreadable file (return 2),
+# allow-comment: empty/no-subject (return 2), skip patterns + cherry-pick + trivial
+# allow-comment: single-line (return 0), and the structural single-error states
+# allow-comment: (vsd-skip-removed, single-line missing-body, review-pass-batch)
+# allow-comment: that block further validation regardless of other failures.
 validate_body() {
   local msg_file="$1"
 
@@ -242,6 +251,14 @@ validate_body() {
     fi
   fi
 
+  # allow-comment: batched-error accumulator. Each schema check below calls
+  # allow-comment: _vb_err to push a "<code>: <message>" line onto _vb_errors[]
+  # allow-comment: rather than emitting + returning. The block at the bottom of
+  # allow-comment: validate_body emits every accumulated line on stderr and
+  # allow-comment: returns 1 if any landed.
+  local _vb_errors=()
+  _vb_err() { _vb_errors+=("$1"); }
+
   # Extract trailer values.
   local slice_value
   slice_value=$(_vb_trailer_value "$trailers" "Slice")
@@ -269,8 +286,7 @@ validate_body() {
 
   # Rule: Slice trailer must be present and non-empty.
   if [[ -z "$slice_value" ]]; then
-    printf 'missing-slice: Slice trailer is absent or empty\n' >&2
-    return 1
+    _vb_err 'missing-slice: Slice trailer is absent or empty'
   fi
 
   # Determine if Slice value is an opt-out token.
@@ -284,9 +300,8 @@ validate_body() {
   done
 
   # Rule: free-text Slice must be at least 10 chars to carry meaningful context.
-  if [[ "$slice_is_optout" -eq 0 ]] && [[ ${#slice_value} -lt 10 ]]; then
-    printf 'slice-too-short: free-text Slice must be at least 10 chars (got: "%s")\n' "$slice_value" >&2
-    return 1
+  if [[ -n "$slice_value" ]] && [[ "$slice_is_optout" -eq 0 ]] && [[ ${#slice_value} -lt 10 ]]; then
+    _vb_err "$(printf 'slice-too-short: free-text Slice must be at least 10 chars (got: "%s")' "$slice_value")"
   fi
 
   # Determine if Slice value is RTG-exempt.
@@ -301,87 +316,74 @@ validate_body() {
   # Rule: if Slice is NOT an opt-out token, Tests trailer required.
   if [[ "$slice_is_optout" -eq 0 ]]; then
     if [[ -z "$tests_value" ]]; then
-      printf 'missing-tests: Tests trailer is absent; required when Slice is not an opt-out token\n' >&2
-      return 1
-    fi
+      _vb_err 'missing-tests: Tests trailer is absent; required when Slice is not an opt-out token'
+    else
+      # Rule: at least one Tests path must exist in HEAD tree or staged diff.
+      local tests_ok=0
+      local path
 
-    # Rule: at least one Tests path must exist in HEAD tree or staged diff.
-    local tests_ok=0
-    local path
+      # Collect paths from Tests value (comma- or newline-separated).
+      local tests_paths
+      tests_paths=$(printf '%s' "$tests_value" | tr ',' '\n' | sed 's/^[[:space:]]*//' | grep -v '^$' || true)
 
-    # Collect paths from Tests value (comma- or newline-separated).
-    local tests_paths
-    tests_paths=$(printf '%s' "$tests_value" | tr ',' '\n' | sed 's/^[[:space:]]*//' | grep -v '^$' || true)
+      # Build HEAD tree listing (best-effort; may fail on initial commit).
+      local head_tree=""
+      head_tree=$(git ls-tree -r HEAD --name-only 2>/dev/null || true)
 
-    # Build HEAD tree listing (best-effort; may fail on initial commit).
-    local head_tree=""
-    head_tree=$(git ls-tree -r HEAD --name-only 2>/dev/null || true)
+      # Build staged diff listing.
+      local staged_files=""
+      staged_files=$(_vb_delta_files)
 
-    # Build staged diff listing.
-    local staged_files=""
-    staged_files=$(_vb_delta_files)
+      while IFS= read -r path; do
+        # Strip anchor suffixes like #method_name.
+        local clean_path="${path%%#*}"
+        clean_path="${clean_path%%,*}"
+        clean_path=$(printf '%s' "$clean_path" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        [[ -z "$clean_path" ]] && continue
 
-    while IFS= read -r path; do
-      # Strip anchor suffixes like #method_name.
-      local clean_path="${path%%#*}"
-      clean_path="${clean_path%%,*}"
-      clean_path=$(printf '%s' "$clean_path" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-      [[ -z "$clean_path" ]] && continue
+        if grep -qF "$clean_path" <<< "$head_tree" 2>/dev/null \
+           || grep -qF "$clean_path" <<< "$staged_files" 2>/dev/null; then
+          tests_ok=1
+          break
+        fi
+      done <<< "$tests_paths"
 
-      if grep -qF "$clean_path" <<< "$head_tree" 2>/dev/null \
-         || grep -qF "$clean_path" <<< "$staged_files" 2>/dev/null; then
-        tests_ok=1
-        break
+      # Validate path format for at least one entry.
+      local path_re='[a-zA-Z0-9_./ -]+\.(rb|py|js|ts|go|sh|bash|bats|feature|tsx|jsx|swift)$'
+      local has_valid_format=0
+      while IFS= read -r path; do
+        local clean_path="${path%%#*}"
+        clean_path=$(printf '%s' "$clean_path" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        [[ -z "$clean_path" ]] && continue
+        if [[ "$clean_path" =~ $path_re ]]; then
+          has_valid_format=1
+          break
+        fi
+      done <<< "$tests_paths"
+
+      if [[ "$has_valid_format" -eq 0 ]]; then
+        _vb_err 'missing-tests: Tests trailer contains no valid path (expected e.g. spec/foo_spec.rb)'
       fi
-    done <<< "$tests_paths"
 
-    # Validate path format for at least one entry.
-    local path_re='[a-zA-Z0-9_./ -]+\.(rb|py|js|ts|go|sh|bash|bats|feature|tsx|jsx|swift)$'
-    local has_valid_format=0
-    while IFS= read -r path; do
-      local clean_path="${path%%#*}"
-      clean_path=$(printf '%s' "$clean_path" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-      [[ -z "$clean_path" ]] && continue
-      if [[ "$clean_path" =~ $path_re ]]; then
-        has_valid_format=1
-        break
+      if [[ "$tests_ok" -eq 0 ]]; then
+        _vb_err 'tests-path-not-found: no Tests path exists in HEAD tree or staged diff'
       fi
-    done <<< "$tests_paths"
-
-    if [[ "$has_valid_format" -eq 0 ]]; then
-      printf 'missing-tests: Tests trailer contains no valid path (expected e.g. spec/foo_spec.rb)\n' >&2
-      return 1
-    fi
-
-    if [[ "$tests_ok" -eq 0 ]]; then
-      printf 'tests-path-not-found: no Tests path exists in HEAD tree or staged diff\n' >&2
-      return 1
     fi
   fi
 
   # Rule: Red-then-green required unless Slice is RTG-exempt.
   if [[ "$slice_is_rtg_exempt" -eq 0 ]]; then
     if [[ -z "$rtg_value" ]]; then
-      printf 'missing-red-then-green: Red-then-green trailer is absent; required for this Slice type\n' >&2
-      return 1
-    fi
-
-    # Value must anchor the claim: <path>, <path>:<line> # <test-name>, or
-    # n/a (reason). Bare "yes" is no longer accepted; self-attestation
-    # without an anchor cannot be checked and was the primary leakage path
-    # for commits that claimed Red-then-green but never saw a red phase.
-    if [[ "$rtg_value" = "yes" ]]; then
-      printf 'red-then-green-bare-yes: bare "yes" is no longer accepted. Name the spec that was seen red as "<path>" or "<path>:<line> # <test-name>" (the path must appear in the staged diff, the line must exist in the staged file, and the test name must match a test declaration). n/a (reason >= 10 chars) remains valid when no red-then-green sequence applies.\n' >&2
-      return 1
+      _vb_err 'missing-red-then-green: Red-then-green trailer is absent; required for this Slice type'
+    elif [[ "$rtg_value" = "yes" ]]; then
+      _vb_err 'red-then-green-bare-yes: bare "yes" is no longer accepted. Name the spec that was seen red as "<path>" or path:line followed by hash and test name (the path must appear in the staged diff, the line must exist in the staged file, and the test name must match a test declaration). n/a (reason >= 10 chars) remains valid when no red-then-green sequence applies.'
     elif [[ "$rtg_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
       local rationale="${BASH_REMATCH[1]}"
       if [[ ${#rationale} -lt 10 ]]; then
-        printf 'missing-red-then-green: n/a rationale must be at least 10 chars (got: "%s")\n' "$rationale" >&2
-        return 1
+        _vb_err "$(printf 'missing-red-then-green: n/a rationale must be at least 10 chars (got: %s)' "$rationale")"
       fi
     elif [[ "$rtg_value" = "n/a" ]]; then
-      printf 'missing-red-then-green: bare "n/a" requires a rationale in parens: n/a (reason >= 10 chars)\n' >&2
-      return 1
+      _vb_err 'missing-red-then-green: bare "n/a" requires a rationale in parens: n/a (reason >= 10 chars)'
     else
       # Spec-path forms: "<path>" or "<path>:<line> # <test-name>".
       # The path must end in a recognized spec extension and must appear in
@@ -399,11 +401,14 @@ validate_body() {
         rtg_path=$(printf '%s' "$rtg_path" | sed 's/[[:space:]]*$//')
         local rtg_staged
         rtg_staged=$(_vb_delta_files)
+        # allow-comment: gate the deeper line/name checks on the path-staged
+        # allow-comment: lookup so a missing path does not double-fail.
+        local rtg_path_ok=1
         if ! grep -qF "$rtg_path" <<< "$rtg_staged" 2>/dev/null; then
-          printf 'red-then-green-path-not-in-staged: Red-then-green path "%s" is not in the staged diff. Name a spec file that this commit actually touches, so the red-then-green claim is anchored to the change under review.\n' "$rtg_path" >&2
-          return 1
+          _vb_err "$(printf 'red-then-green-path-not-in-staged: Red-then-green path "%s" is not in the staged diff. Name a spec file that this commit actually touches, so the red-then-green claim is anchored to the change under review.' "$rtg_path")"
+          rtg_path_ok=0
         fi
-        if [[ -n "$rtg_suffix" ]]; then
+        if [[ -n "$rtg_suffix" ]] && [[ "$rtg_path_ok" -eq 1 ]]; then
           # Combined form only: <line> # <test-name>. The bare line-only and
           # bare test-name-only forms were retired: a line number without a
           # name is fragile (line numbers shift), and a name without a line
@@ -415,60 +420,62 @@ validate_body() {
           # range check below does not silently accept it (rtg_lines is
           # always >= 0 so "0 < 0" never fires).
           local rtg_combined_re='^([1-9][0-9]*)[[:space:]]+#[[:space:]]+(.+)$'
+          # allow-comment: literal hash passed as %s arg below; embedding the
+          # allow-comment: hash directly in the printf format trips bash
+          # allow-comment: tokenizers in the comment-detect hook (false-positive).
+          local _vb_hash='#'
           if ! [[ "$rtg_suffix" =~ $rtg_combined_re ]]; then
-            printf 'missing-red-then-green: suffix must be "<line> # <test-name>" (RSpec/Cucumber convention, keeps path:line clickable in iTerm2/VSCode/Ghostty). Bare "<line>" or bare "<test-name>" forms are no longer accepted; got: "%s"\n' "$rtg_suffix" >&2
-            return 1
-          fi
-          local rtg_line="${BASH_REMATCH[1]}"
-          local rtg_name="${BASH_REMATCH[2]}"
+            _vb_err "$(printf 'missing-red-then-green: suffix must be "<line> %s <test-name>" (RSpec/Cucumber convention, keeps path:line clickable in iTerm2/VSCode/Ghostty). Bare "<line>" or bare "<test-name>" forms are no longer accepted; got: "%s"' "$_vb_hash" "$rtg_suffix")"
+          else
+            local rtg_line="${BASH_REMATCH[1]}"
+            local rtg_name="${BASH_REMATCH[2]}"
 
-          local rtg_blob
-          rtg_blob=$(_vb_show_blob "$rtg_path")
-          if [[ -z "$rtg_blob" ]] && [[ -f "$rtg_path" ]]; then
-            rtg_blob=$(cat "$rtg_path" 2>/dev/null || true)
-          fi
-
-          # Line-count check: staged blob must have at least <line> lines.
-          # awk's NR counts lines including an unterminated final line, and
-          # is correct on empty input (NR=0). wc -l with a printf wrapper
-          # over- or under-counts depending on whether the blob ends with a
-          # newline; awk avoids that.
-          local rtg_lines
-          rtg_lines=$(printf '%s' "$rtg_blob" | awk 'END { print NR }')
-          if [[ "$rtg_lines" -lt "$rtg_line" ]]; then
-            printf 'red-then-green-line-out-of-range: Red-then-green names line %s in "%s", but the staged file has only %s lines. Name a line that exists in the file as it stands in this commit.\n' "$rtg_line" "$rtg_path" "$rtg_lines" >&2
-            return 1
-          fi
-
-          # Test-name check: try each known runner pattern. First hit wins.
-          # Quoted-name patterns (Quick / RSpec / Jest / Mocha / bats /
-          # Swift Testing / Cucumber Scenario): match the literal name
-          # inside the quotes or after the keyword. Function-name patterns
-          # (XCTest, pytest): match the bare identifier.
-          local rtg_esc
-          rtg_esc=$(printf '%s' "$rtg_name" | sed 's/[][\.*^$(){}+?|/]/\\&/g')
-          local rtg_patterns=(
-            "(it|describe|context|specify|@test|@Test\\()[[:space:]]*[\"']${rtg_esc}[\"']"
-            "Scenario:[[:space:]]*${rtg_esc}([[:space:]]|$)"
-            "func[[:space:]]+${rtg_esc}[[:space:]]*\\("
-            "def[[:space:]]+${rtg_esc}[[:space:]]*\\("
-          )
-          local pat
-          local rtg_found=0
-          for pat in "${rtg_patterns[@]}"; do
-            if printf '%s' "$rtg_blob" | grep -Eq "$pat" 2>/dev/null; then
-              rtg_found=1
-              break
+            local rtg_blob
+            rtg_blob=$(_vb_show_blob "$rtg_path")
+            if [[ -z "$rtg_blob" ]] && [[ -f "$rtg_path" ]]; then
+              rtg_blob=$(cat "$rtg_path" 2>/dev/null || true)
             fi
-          done
-          if [[ "$rtg_found" -eq 0 ]]; then
-            printf 'red-then-green-test-not-found: Red-then-green names "%s" in "%s", but no matching test (it/Scenario/@test/@Test/func/def) was found in the staged file. Name the test you actually saw red, in the form it appears in the file (the quoted description, the Scenario name, or the func/def identifier).\n' "$rtg_name" "$rtg_path" >&2
-            return 1
+
+            # Line-count check: staged blob must have at least <line> lines.
+            # awk's NR counts lines including an unterminated final line, and
+            # is correct on empty input (NR=0). wc -l with a printf wrapper
+            # over- or under-counts depending on whether the blob ends with a
+            # newline; awk avoids that.
+            local rtg_lines
+            rtg_lines=$(printf '%s' "$rtg_blob" | awk 'END { print NR }')
+            if [[ "$rtg_lines" -lt "$rtg_line" ]]; then
+              _vb_err "$(printf 'red-then-green-line-out-of-range: Red-then-green names line %s in "%s", but the staged file has only %s lines. Name a line that exists in the file as it stands in this commit.' "$rtg_line" "$rtg_path" "$rtg_lines")"
+            else
+              # Test-name check: try each known runner pattern. First hit wins.
+              # Quoted-name patterns (Quick / RSpec / Jest / Mocha / bats /
+              # Swift Testing / Cucumber Scenario): match the literal name
+              # inside the quotes or after the keyword. Function-name patterns
+              # (XCTest, pytest): match the bare identifier.
+              local rtg_esc
+              rtg_esc=$(printf '%s' "$rtg_name" | sed 's/[][\.*^$(){}+?|/]/\\&/g')
+              local rtg_patterns=(
+                "(it|describe|context|specify|@test|@Test\\()[[:space:]]*[\"']${rtg_esc}[\"']"
+                "Scenario:[[:space:]]*${rtg_esc}([[:space:]]|$)"
+                "func[[:space:]]+${rtg_esc}[[:space:]]*\\("
+                "def[[:space:]]+${rtg_esc}[[:space:]]*\\("
+              )
+              local pat
+              local rtg_found=0
+              for pat in "${rtg_patterns[@]}"; do
+                if printf '%s' "$rtg_blob" | grep -Eq "$pat" 2>/dev/null; then
+                  rtg_found=1
+                  break
+                fi
+              done
+              if [[ "$rtg_found" -eq 0 ]]; then
+                _vb_err "$(printf 'red-then-green-test-not-found: Red-then-green names "%s" in "%s", but no matching test (it/Scenario/@test/@Test/func/def) was found in the staged file. Name the test you actually saw red, in the form it appears in the file (the quoted description, the Scenario name, or the func/def identifier).' "$rtg_name" "$rtg_path")"
+              fi
+            fi
           fi
         fi
       else
-        printf 'missing-red-then-green: value must be "yes", "n/a (reason)", "<path>", or "<path>:<line> # <test-name>"; got: "%s"\n' "$rtg_value" >&2
-        return 1
+        local _vb_hash='#'
+        _vb_err "$(printf 'missing-red-then-green: value must be "yes", "n/a (reason)", "<path>", or "<path>:<line> %s <test-name>"; got: "%s"' "$_vb_hash" "$rtg_value")"
       fi
     fi
   fi
@@ -498,8 +505,7 @@ validate_body() {
     if [[ "$visual_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
       local rationale="${BASH_REMATCH[1]}"
       if [[ ${#rationale} -lt 10 ]]; then
-        printf 'missing-visual: n/a rationale must be at least 10 chars (got: "%s")\n' "$rationale" >&2
-        return 1
+        _vb_err "$(printf 'missing-visual: n/a rationale must be at least 10 chars (got: "%s")' "$rationale")"
       fi
       # Reject rationales that defer the screenshot to a future event.
       # The trailer's purpose is to either capture the screenshot now
@@ -513,8 +519,7 @@ validate_body() {
       local deferral_re='(later|deferred|follow[ -]?up|post[ -]?merge|next iteration|iteration when|to be captured|captured on next|captured later|saved for later|next pass|coming next|will capture|will add|will attach|will supply|will provide|will upload|will take|will make)'
       if [[ "$rationale_lower" =~ $deferral_re ]]; then
         local matched="${BASH_REMATCH[1]}"
-        printf 'visual-rationale-defers: Visual: n/a rationale uses deferral language ("%s") that promises a screenshot at a future event. The trailer cannot validate that promise. Either supply Visual: <path> now, or rewrite the rationale to describe why a screenshot has no meaning for this change (extract-only refactor, accessibility metadata, debug-only surface, copy-only).\n' "$matched" >&2
-        return 1
+        _vb_err "$(printf 'visual-rationale-defers: Visual: n/a rationale uses deferral language ("%s") that promises a screenshot at a future event. The trailer cannot validate that promise. Either supply Visual: <path> now, or rewrite the rationale to describe why a screenshot has no meaning for this change (extract-only refactor, accessibility metadata, debug-only surface, copy-only).' "$matched")"
       fi
       # Reject rationales that do not name a recognized non-applicable
       # category. The trailer's two legitimate forms are Visual: <path>
@@ -525,8 +530,7 @@ validate_body() {
       # claim to be classified.
       local positive_re='(extract[ -]?only|accessibility[ -]?only|accessibility metadata|debug[ -]?only|spec[ -]?only|test[ -]?only|copy[ -]?only|copy change|metadata[ -]?only|no behaviour change|no behavior change|no visual change|no ui change|no visual impact|no ui impact|byte[ -]?identical|render unchanged|pixel[ -]?identical|backend (rewrite|only)|no ui touched|sound[ -]?only|audio[ -]?only|log[ -]?only|telemetry[ -]?only)'
       if ! [[ "$rationale_lower" =~ $positive_re ]]; then
-        printf 'visual-rationale-vague: Visual: n/a rationale must name a recognized category that explains why a screenshot has no meaning for this change. Recognized tokens (case-insensitive): extract-only, accessibility-only, accessibility metadata, debug-only, spec-only, test-only, copy-only, copy change, metadata-only, no behaviour change, no visual change, no ui change, byte-identical, render unchanged, pixel-identical, backend rewrite, backend only, no ui touched, sound-only, audio-only, log-only, telemetry-only. The rationale (got: "%s") matched none of those.\n' "$rationale" >&2
-        return 1
+        _vb_err "$(printf 'visual-rationale-vague: Visual: n/a rationale must name a recognized category that explains why a screenshot has no meaning for this change. Recognized tokens (case-insensitive): extract-only, accessibility-only, accessibility metadata, debug-only, spec-only, test-only, copy-only, copy change, metadata-only, no behaviour change, no visual change, no ui change, byte-identical, render unchanged, pixel-identical, backend rewrite, backend only, no ui touched, sound-only, audio-only, log-only, telemetry-only. The rationale (got: "%s") matched none of those.' "$rationale")"
       fi
       # Visual: n/a is never accepted on UI-touched commits: the rationale
       # was structurally a deferral ("evidence lands later") that rarely
@@ -534,12 +538,10 @@ validate_body() {
       if [[ -n "$visual_ui_touched" ]]; then
         local na_ui_files
         na_ui_files=$(printf '%s' "$visual_ui_touched" | tr '\n' ',' | sed 's/,$//;s/,/, /g')
-        printf 'visual-na-on-ui-touch: Visual: n/a is not accepted when UI files are touched (%s). Capture by any available route (browser drivers, OS-native utilities, simulator tools, project-launch flows) and supply Visual: <path>.\n' "$na_ui_files" >&2
-        return 1
+        _vb_err "$(printf 'visual-na-on-ui-touch: Visual: n/a is not accepted when UI files are touched (%s). Capture by any available route (browser drivers, OS-native utilities, simulator tools, project-launch flows) and supply Visual: <path>.' "$na_ui_files")"
       fi
     elif [[ "$visual_value" = "n/a" ]]; then
-      printf 'missing-visual: bare "n/a" requires a rationale in parens: n/a (reason >= 10 chars)\n' >&2
-      return 1
+      _vb_err 'missing-visual: bare "n/a" requires a rationale in parens: n/a (reason >= 10 chars)'
     else
       # Resolve relative to repo root so the check is stable whether the
       # caller is the git-native commit-msg hook (always repo root) or the
@@ -552,16 +554,14 @@ validate_body() {
         resolved="$repo_root/$resolved"
       fi
       if [[ ! -f "$resolved" ]]; then
-        printf 'visual-path-not-found: Visual path "%s" was not found on disk (relative to repo root). Add the file or use Visual: n/a (rationale).\n' "$visual_value" >&2
-        return 1
+        _vb_err "$(printf 'visual-path-not-found: Visual path "%s" was not found on disk (relative to repo root). Add the file or use Visual: n/a (rationale).' "$visual_value")"
       fi
     fi
   elif [[ -n "$visual_ui_touched" ]]; then
     # Join the newline-separated list with ", " for the single-line error.
     local joined
     joined=$(printf '%s' "$visual_ui_touched" | tr '\n' ',' | sed 's/,$//;s/,/, /g')
-    printf 'missing-visual: Visual trailer is absent; UI files in this commit: %s. Capture by any available route (browser drivers, OS-native utilities, simulator tools, project-launch flows) and supply Visual: <path>.\n' "$joined" >&2
-    return 1
+    _vb_err "$(printf 'missing-visual: Visual trailer is absent; UI files in this commit: %s. Capture by any available route (browser drivers, OS-native utilities, simulator tools, project-launch flows) and supply Visual: <path>.' "$joined")"
   fi
 
   # Rule: Verified trailer (self-assessment of how the behaviour change was
@@ -577,11 +577,8 @@ validate_body() {
     verified_value=$(printf '%s' "$verified_value" | sed 's/[[:space:]]*$//')
 
     if [[ -z "$verified_value" ]]; then
-      printf 'missing-verified: Verified trailer is absent. Self-assessment required: how was the new behaviour verified? Use one of: "operator-confirmed" (operator saw it work this session), "<path>" (screenshot/recording/log artefact in repo), "red-then-green" (covered by Red-then-green trailer), or "n/a (reason)" with a recognised category token (extract-only, no behaviour change, copy-only, ...).\n' >&2
-      return 1
-    fi
-
-    if [[ "$verified_value" = "operator-confirmed" ]]; then
+      _vb_err 'missing-verified: Verified trailer is absent. Self-assessment required: how was the new behaviour verified? Use one of: "operator-confirmed" (operator saw it work this session), "<path>" (screenshot/recording/log artefact in repo), "red-then-green" (covered by Red-then-green trailer), or "n/a (reason)" with a recognised category token (extract-only, no behaviour change, copy-only, ...).'
+    elif [[ "$verified_value" = "operator-confirmed" ]]; then
       : # OK: operator attested in conversation; nothing else to anchor.
     elif [[ "$verified_value" = "red-then-green" ]]; then
       # The Verified trailer points at the Red-then-green trailer as the
@@ -591,36 +588,33 @@ validate_body() {
       # tests were the verification while simultaneously claiming no tests
       # apply.
       if [[ "$rtg_value" =~ ^n/a ]]; then
-        printf 'verified-red-then-green-mismatch: Verified: red-then-green requires the Red-then-green trailer to be a positive attestation (<path> / <path>:<line> # <test-name>), but Red-then-green is "n/a". Pick a different Verified form (operator-confirmed, <path>, or n/a (reason)).\n' >&2
-        return 1
+        local _vb_hash='#'
+        _vb_err "$(printf 'verified-red-then-green-mismatch: Verified: red-then-green requires the Red-then-green trailer to be a positive attestation (<path> / <path>:<line> %s <test-name>), but Red-then-green is "n/a". Pick a different Verified form (operator-confirmed, <path>, or n/a (reason)).' "$_vb_hash")"
       fi
     elif [[ "$verified_value" = "build-only" ]]; then
       # build-only was a deferral mechanism that rarely materialised into
       # actual verification. The trailer no longer accepts it; supply a
       # concrete anchor (operator-confirmed, <path>, red-then-green) or
       # n/a (reason) when no behaviour applies.
-      printf 'verified-build-only-removed: Verified: build-only is no longer accepted. Either exercise the change and supply Verified: <path> (screenshot / log / recording), Verified: operator-confirmed, or Verified: red-then-green (with a real Red-then-green anchor), or fall back to Verified: n/a (reason).\n' >&2
-      return 1
+      _vb_err 'verified-build-only-removed: Verified: build-only is no longer accepted. Either exercise the change and supply Verified: <path> (screenshot / log / recording), Verified: operator-confirmed, or Verified: red-then-green (with a real Red-then-green anchor), or fall back to Verified: n/a (reason).'
     elif [[ "$verified_value" =~ ^n/a[[:space:]]*\((.+)\)$ ]]; then
       local v_rationale="${BASH_REMATCH[1]}"
       if [[ ${#v_rationale} -lt 10 ]]; then
-        printf 'missing-verified: n/a rationale must be at least 10 chars (got: "%s")\n' "$v_rationale" >&2
-        return 1
-      fi
-      # Reuse the closed Visual: n/a category set: the question "why is no
-      # screenshot meaningful" and "why is no verification meaningful" have
-      # the same answer space (extract-only refactor, copy change, byte-
-      # identical render, backend-only, no behaviour change, ...).
-      local v_rationale_lower
-      v_rationale_lower=$(printf '%s' "$v_rationale" | tr '[:upper:]' '[:lower:]')
-      local v_positive_re='(extract[ -]?only|accessibility[ -]?only|accessibility metadata|debug[ -]?only|spec[ -]?only|test[ -]?only|copy[ -]?only|copy change|metadata[ -]?only|no behaviour change|no behavior change|no visual change|no ui change|no visual impact|no ui impact|byte[ -]?identical|render unchanged|pixel[ -]?identical|backend (rewrite|only)|no ui touched|sound[ -]?only|audio[ -]?only|log[ -]?only|telemetry[ -]?only)'
-      if ! [[ "$v_rationale_lower" =~ $v_positive_re ]]; then
-        printf 'verified-rationale-vague: Verified: n/a rationale must name a recognised category that explains why no verification is meaningful for this change. Recognised tokens (case-insensitive): extract-only, accessibility-only, accessibility metadata, debug-only, spec-only, test-only, copy-only, copy change, metadata-only, no behaviour change, no visual change, no ui change, byte-identical, render unchanged, pixel-identical, backend rewrite, backend only, no ui touched, sound-only, audio-only, log-only, telemetry-only. The rationale (got: "%s") matched none of those.\n' "$v_rationale" >&2
-        return 1
+        _vb_err "$(printf 'missing-verified: n/a rationale must be at least 10 chars (got: "%s")' "$v_rationale")"
+      else
+        # Reuse the closed Visual: n/a category set: the question "why is no
+        # screenshot meaningful" and "why is no verification meaningful" have
+        # the same answer space (extract-only refactor, copy change, byte-
+        # identical render, backend-only, no behaviour change, ...).
+        local v_rationale_lower
+        v_rationale_lower=$(printf '%s' "$v_rationale" | tr '[:upper:]' '[:lower:]')
+        local v_positive_re='(extract[ -]?only|accessibility[ -]?only|accessibility metadata|debug[ -]?only|spec[ -]?only|test[ -]?only|copy[ -]?only|copy change|metadata[ -]?only|no behaviour change|no behavior change|no visual change|no ui change|no visual impact|no ui impact|byte[ -]?identical|render unchanged|pixel[ -]?identical|backend (rewrite|only)|no ui touched|sound[ -]?only|audio[ -]?only|log[ -]?only|telemetry[ -]?only)'
+        if ! [[ "$v_rationale_lower" =~ $v_positive_re ]]; then
+          _vb_err "$(printf 'verified-rationale-vague: Verified: n/a rationale must name a recognised category that explains why no verification is meaningful for this change. Recognised tokens (case-insensitive): extract-only, accessibility-only, accessibility metadata, debug-only, spec-only, test-only, copy-only, copy change, metadata-only, no behaviour change, no visual change, no ui change, byte-identical, render unchanged, pixel-identical, backend rewrite, backend only, no ui touched, sound-only, audio-only, log-only, telemetry-only. The rationale (got: "%s") matched none of those.' "$v_rationale")"
+        fi
       fi
     elif [[ "$verified_value" = "n/a" ]]; then
-      printf 'missing-verified: bare "n/a" requires a rationale in parens: n/a (reason >= 10 chars)\n' >&2
-      return 1
+      _vb_err 'missing-verified: bare "n/a" requires a rationale in parens: n/a (reason >= 10 chars)'
     elif [[ "$verified_value" == */* ]] || [[ "$verified_value" =~ \.(png|jpg|jpeg|gif|webp|heic|mov|mp4|webm|pdf|txt|log|md|json|html|svg|tiff|bmp)$ ]]; then
       # Path form: artefact in repo. Resolve relative to repo root.
       local v_repo_root
@@ -630,12 +624,10 @@ validate_body() {
         v_resolved="$v_repo_root/$v_resolved"
       fi
       if [[ ! -f "$v_resolved" ]]; then
-        printf 'verified-path-not-found: Verified path "%s" was not found on disk (relative to repo root). Add the artefact or use a different Verified form.\n' "$verified_value" >&2
-        return 1
+        _vb_err "$(printf 'verified-path-not-found: Verified path "%s" was not found on disk (relative to repo root). Add the artefact or use a different Verified form.' "$verified_value")"
       fi
     else
-      printf 'missing-verified: value must be "operator-confirmed", "red-then-green", "build-only", "<path>", or "n/a (reason)"; got: "%s"\n' "$verified_value" >&2
-      return 1
+      _vb_err "$(printf 'missing-verified: value must be "operator-confirmed", "red-then-green", "build-only", "<path>", or "n/a (reason)"; got: "%s"' "$verified_value")"
     fi
   fi
 
@@ -657,13 +649,11 @@ validate_body() {
     fi
 
     if [[ "$why_ok" -eq 0 ]]; then
-      printf 'why-too-short: WHY block needs >= 2 non-empty lines or >= 60 chars ending in . ! or ?\n' >&2
-      return 1
+      _vb_err 'why-too-short: WHY block needs >= 2 non-empty lines or >= 60 chars ending in . ! or ?'
     fi
   else
     # No WHY block at all for a multi-line commit counts as too short.
-    printf 'why-too-short: commit has a trailer block but no WHY narrative above it\n' >&2
-    return 1
+    _vb_err 'why-too-short: commit has a trailer block but no WHY narrative above it'
   fi
 
   # Rule: Anti-copy-paste. Compare SHA1 of WHY block against previous 5 commits.
@@ -705,11 +695,24 @@ validate_body() {
         prev_sha=$(_vb_sha1 "$prev_why")
         if [[ -n "$prev_sha" ]] && [[ "$prev_sha" = "$why_sha" ]]; then
           local short_hash="${commit_hash:0:7}"
-          printf 'duplicate-why: identical narrative as commit %s\n' "$short_hash" >&2
-          return 1
+          _vb_err "$(printf 'duplicate-why: identical narrative as commit %s' "$short_hash")"
+          break
         fi
       done < <(git log -5 --pretty=format:'%H' "$cmp_anchor" 2>/dev/null || true)
     fi
+  fi
+
+  # allow-comment: emission point. Print every accumulated error on stderr in
+  # allow-comment: the order they were detected, then signal failure if any
+  # allow-comment: landed. Order matters: callers that head-pick (push-body-gate)
+  # allow-comment: still see the most foundational miss first because the trailer
+  # allow-comment: checks run before WHY-block and duplicate-why checks.
+  if [[ "${#_vb_errors[@]}" -gt 0 ]]; then
+    local _vb_err_line
+    for _vb_err_line in "${_vb_errors[@]}"; do
+      printf '%s\n' "$_vb_err_line" >&2
+    done
+    return 1
   fi
 
   return 0
