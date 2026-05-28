@@ -97,6 +97,24 @@ _dd_essence_for_rule() {
   fi
 }
 
+# allow-comment: parent-of helper for amend detection. git rev-parse with a
+# allow-comment: trailing ^ fails AND echoes the input to stdout when the
+# allow-comment: argument cannot be resolved (root commit, unknown sha), so
+# allow-comment: piping through tr would falsely fill the parent with bytes
+# allow-comment: from the original sha. Use the exit code as the truth signal:
+# allow-comment: on success print the resolved parent sha, on failure print
+# allow-comment: nothing. Empty string is the correct sentinel for "no
+# allow-comment: parent" so equal-comparison can detect root-amend (both
+# allow-comment: empty) without special-casing.
+_dd_parent_sha() {
+  local sha="$1"
+  [[ -z "$sha" ]] && return 0
+  local out
+  if out=$(git rev-parse --verify --quiet "${sha}^" 2>/dev/null); then
+    printf '%s' "$out"
+  fi
+}
+
 # Writes the new state and then exits the dispatcher with code 2 via
 # dd_emit_deny. Never returns; any code following a call to this
 # function in the same branch is unreachable.
@@ -271,21 +289,16 @@ guard_commit_subject() {
       # rotation slot on a state we cannot prove succeeded.
       :
     elif [[ "$current_sha" != "$ack_pending_sha" ]]; then
-      # allow-comment: amend detection. An amend rewrites the commit in
-      # allow-comment: place: HEAD's parent stays the same as the previous
-      # allow-comment: HEAD's parent. A regular new commit makes the previous
-      # allow-comment: HEAD the parent of the new HEAD. Comparing parents is
-      # allow-comment: the most reliable amend signal: it matches every form
-      # allow-comment: of --amend regardless of message edits, file changes,
-      # allow-comment: or interactive rebase. When the parents match, the
-      # allow-comment: commit object is fresh but the intent is the same as
-      # allow-comment: the previously-acked one; the rotation slot does not
-      # allow-comment: advance because the operator should not pay an extra
-      # allow-comment: ack for a gate-mandated message rewrite.
+      # allow-comment: amend detection via parent comparison. _dd_parent_sha
+      # allow-comment: returns the empty string when the commit has no parent
+      # allow-comment: (root) or the sha cannot be resolved; equal parents
+      # allow-comment: (including both empty for a root-amend) mean the new
+      # allow-comment: commit is a rewrite-in-place of the just-acked one, so
+      # allow-comment: the rotation slot stays.
       local new_parent old_parent
-      new_parent=$(git rev-parse "${current_sha}^" 2>/dev/null | tr -cd '0-9a-f')
-      old_parent=$(git rev-parse "${ack_pending_sha}^" 2>/dev/null | tr -cd '0-9a-f')
-      if [[ -z "$new_parent" || -z "$old_parent" || "$new_parent" != "$old_parent" ]]; then
+      new_parent=$(_dd_parent_sha "$current_sha")
+      old_parent=$(_dd_parent_sha "$ack_pending_sha")
+      if [[ "$new_parent" != "$old_parent" ]]; then
         rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
       fi
     fi
@@ -393,18 +406,12 @@ guard_commit_subject_posttool() {
   [[ "$current_sha" = "$ack_pending_sha" ]] && return 0
 
   # allow-comment: amend detection (mirrors the PreToolUse-entry logic).
-  # allow-comment: HEAD's parent equals the previous HEAD's parent on amend;
-  # allow-comment: differs on a regular new commit. Same parent means the
-  # allow-comment: commit object is a rewrite of the just-acked one and the
-  # allow-comment: rotation slot stays so the operator does not pay an extra
-  # allow-comment: ack for a gate-mandated message rewrite. Returns silently
-  # allow-comment: when an amend is detected: no rp advance, no next-commit
-  # allow-comment: reminder, no state write needed beyond clearing ack-pending
-  # allow-comment: which already happened upstream in PreToolUse resolution.
+  # allow-comment: Equal parents (including both empty for root-amend) means
+  # allow-comment: the commit object is a rewrite of the just-acked one.
   local new_parent old_parent
-  new_parent=$(git rev-parse "${current_sha}^" 2>/dev/null | tr -cd '0-9a-f')
-  old_parent=$(git rev-parse "${ack_pending_sha}^" 2>/dev/null | tr -cd '0-9a-f')
-  if [[ -n "$new_parent" && -n "$old_parent" && "$new_parent" = "$old_parent" ]]; then
+  new_parent=$(_dd_parent_sha "$current_sha")
+  old_parent=$(_dd_parent_sha "$ack_pending_sha")
+  if [[ "$new_parent" = "$old_parent" ]]; then
     return 0
   fi
 

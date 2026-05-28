@@ -90,6 +90,24 @@ if [[ "${args[0]}" = "rev-parse" && "${args[1]}" = "HEAD" ]]; then
   exit 0
 fi
 
+# allow-comment: parent-of helper for commit-subject amend detection.
+# allow-comment: Mock returns a deterministic fake parent so distinct shas
+# allow-comment: resolve to distinct parents (regular new commit, slot
+# allow-comment: advances) and identical shas resolve to identical parents
+# allow-comment: (amend, slot stays). GIT_SHIM_NO_PARENT=1 exits 1 to
+# allow-comment: simulate a root commit.
+if [[ "${args[0]}" = "rev-parse" ]] && \
+   [[ "${args[*]}" =~ "--verify" ]] && [[ "${args[*]}" =~ "--quiet" ]] && \
+   [[ "${args[*]}" == *"^" ]]; then
+  if [[ "${GIT_SHIM_NO_PARENT:-0}" = "1" ]]; then
+    exit 1
+  fi
+  raw="${args[$((${#args[@]} - 1))]}"
+  base="${raw%^}"
+  printf 'parentof_%s\n' "$base"
+  exit 0
+fi
+
 # git rev-parse --show-toplevel
 # Sandboxed to BATS_TEST_TMPDIR so the validator's Visual: path-resolution
 # does not escape the per-test tempdir. GIT_SHIM_TOPLEVEL overrides for

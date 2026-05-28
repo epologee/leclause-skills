@@ -3,7 +3,9 @@
 # A gate-mandated `git commit --amend` of a just-acked commit does not burn
 # a fresh rotation slot. Detection signal: HEAD's parent after the amend
 # equals the previous HEAD's parent (amend keeps the same parent; a regular
-# new commit makes the previous HEAD the parent of the new HEAD).
+# new commit makes the previous HEAD the parent of the new HEAD). The
+# equal-parent rule also covers the root-commit amend: both parents are
+# empty strings and compare equal, so the slot stays.
 
 setup() {
   TMPDIR_TEST="$(mktemp -d)"
@@ -11,23 +13,13 @@ setup() {
   SCRIPT_DIR="$(cd "$(dirname "${BATS_TEST_FILENAME}")" && pwd)"
   DISPATCH="$SCRIPT_DIR/../../hooks/dispatch.sh"
 
-  # Real git repo for the amend semantics (HEAD parent comparison cannot be
-  # shimmed cleanly: it requires git rev-parse to resolve arbitrary <sha>^).
   cd "$TMPDIR_TEST" || return 1
   git init -q
   git config user.email "test@example.com"
   git config user.name "Test"
   git config commit.gpgsign false 2>/dev/null || true
 
-  # First commit so HEAD exists.
-  echo "seed" > seed.txt
-  git add seed.txt
-  git -c core.hooksPath=/dev/null commit -q -m "Seed commit"
-
-  # Pre-seed rotation state with pr=3 (rule 4 idx = essentie) so ack-rule4
-  # passes the pending-rotation branch deterministically.
   STATE_FILE="$TMPDIR_TEST/commit-rule-state"
-  printf 'pv=-1\npr=3\nrp=0\nack_pending_sha=\n' > "$STATE_FILE"
   export GITGIT_COMMIT_RULE_STATE_FILE="$STATE_FILE"
   export GITGIT_SHADOW_LOG="$TMPDIR_TEST/shadow.log"
 }
@@ -35,6 +27,12 @@ setup() {
 teardown() {
   cd /
   rm -rf "$TMPDIR_TEST"
+}
+
+# Pre-seed state to "rule 4 pending" so any ack-rule4 passes the
+# pending-rotation branch deterministically.
+seed_rotation_at_rule4() {
+  printf 'pv=-1\npr=3\nrp=0\nack_pending_sha=\n' > "$STATE_FILE"
 }
 
 run_pretool() {
@@ -53,96 +51,123 @@ run_posttool() {
   run bash "$DISPATCH" <<< "$json"
 }
 
-@test "amend after acked commit keeps rotation slot at the same rp" {
-  # Stage a normal commit that the dispatcher will see ack for.
-  echo "first" > first.txt
-  git add first.txt
+read_rp() {
+  grep '^rp=' "$STATE_FILE" | cut -d= -f2-
+}
 
-  # PreToolUse for the first commit (with valid ack-rule4).
-  run_pretool 'git commit -m "Settings panel reaches Windows" # ack-rule4:essentie'
-  [ "$status" -eq 0 ] || {
-    printf 'PreToolUse for first commit failed: %s\n' "$output" >&2
-    return 1
-  }
+read_ack_pending_sha() {
+  grep '^ack_pending_sha=' "$STATE_FILE" | cut -d= -f2-
+}
 
-  # Actually land the commit so HEAD advances.
-  git -c core.hooksPath=/dev/null commit -q -m "Settings panel reaches Windows"
+# Simulate a full commit cycle: PreToolUse with ack, real git commit, PostToolUse.
+# After: state reflects the landed commit (ack-pending-sha cleared, rp advanced or not).
+land_commit() {
+  local subject="$1"
+  local file="$2"
+  local content="$3"
+  local amend="$4"   # "amend" or empty
 
-  # PostToolUse: HEAD moved, no amend signal (parent of HEAD is the seed,
-  # parent of ack_pending_sha (which was seed) is empty). So rp advances.
-  run_posttool 'git commit -m "Settings panel reaches Windows" # ack-rule4:essentie'
+  printf '%s\n' "$content" > "$file"
+  git add "$file"
 
-  # Read state after PostToolUse.
+  local cmd
+  if [[ "$amend" = "amend" ]]; then
+    cmd="git commit --amend -m \"$subject\" # ack-rule4:essentie"
+  else
+    cmd="git commit -m \"$subject\" # ack-rule4:essentie"
+  fi
+
+  run_pretool "$cmd"
+
+  if [[ "$amend" = "amend" ]]; then
+    git -c core.hooksPath=/dev/null commit --amend --no-edit -q
+  else
+    git -c core.hooksPath=/dev/null commit -m "$subject" -q
+  fi
+
+  run_posttool "$cmd"
+}
+
+@test "amend of a just-acked commit does not advance the rotation slot" {
+  # First, seed the repo with a base commit so HEAD exists.
+  echo "seed" > seed.txt
+  git add seed.txt
+  git -c core.hooksPath=/dev/null commit -q -m "Seed"
+
+  seed_rotation_at_rule4
+
+  # Land a normal commit; PostToolUse should advance the slot.
+  land_commit "Settings panel reaches Windows" "first.txt" "first"
+
   local rp_after_first
-  rp_after_first=$(grep '^rp=' "$STATE_FILE" | cut -d= -f2-)
+  rp_after_first=$(read_rp)
 
-  # Now simulate an amend on the just-landed commit.
-  echo "first-updated" >> first.txt
-  git add first.txt
+  # Re-seed pr=3 (rule 4) so the amend's PreToolUse ack also matches.
+  printf 'pv=-1\npr=3\nrp=%s\nack_pending_sha=\n' "$rp_after_first" > "$STATE_FILE"
 
-  # PreToolUse for the amend.
-  run_pretool 'git commit --amend -m "Settings panel reaches Windows on Linux too"'
-  # Ack already cleared after first commit's PostToolUse; rotation pr is
-  # now whatever PostToolUse advanced to. The amend's PreToolUse may serve
-  # a fresh reminder OR pass with the same ack; either way we focus on
-  # whether the slot advances after the amend lands.
-
-  # Land the amend.
-  git -c core.hooksPath=/dev/null commit --amend -q --no-edit
-
-  # PostToolUse for the amend: should detect amend (same parent) and NOT
-  # advance rp.
-  # The ack_pending_sha state is whatever PreToolUse for the amend wrote.
-  # We assert rp did not advance past rp_after_first.
-  run_posttool 'git commit --amend -m "Settings panel reaches Windows on Linux too"'
+  # Now amend the just-landed commit (same parent = seed; suppression applies).
+  land_commit "Settings panel reaches Windows on Linux too" "first.txt" "first amended" amend
 
   local rp_after_amend
-  rp_after_amend=$(grep '^rp=' "$STATE_FILE" | cut -d= -f2-)
+  rp_after_amend=$(read_rp)
 
-  # The amend must not have advanced the slot.
   [ "$rp_after_amend" = "$rp_after_first" ] || {
-    printf 'rp advanced after amend: rp_after_first=%s rp_after_amend=%s\n' \
+    printf 'amend advanced rp: was %s after first, is %s after amend\n' \
       "$rp_after_first" "$rp_after_amend" >&2
     return 1
   }
 }
 
-@test "regular new commit after acked commit advances rotation slot" {
-  echo "first" > first.txt
-  git add first.txt
+@test "regular new commit after acked commit advances the rotation slot" {
+  echo "seed" > seed.txt
+  git add seed.txt
+  git -c core.hooksPath=/dev/null commit -q -m "Seed"
 
-  run_pretool 'git commit -m "Settings panel reaches Windows" # ack-rule4:essentie'
-  [ "$status" -eq 0 ]
-  git -c core.hooksPath=/dev/null commit -q -m "Settings panel reaches Windows"
+  seed_rotation_at_rule4
 
-  run_posttool 'git commit -m "Settings panel reaches Windows" # ack-rule4:essentie'
+  # First normal commit.
+  land_commit "Settings panel reaches Windows" "first.txt" "first"
+
   local rp_after_first
-  rp_after_first=$(grep '^rp=' "$STATE_FILE" | cut -d= -f2-)
+  rp_after_first=$(read_rp)
 
-  # Regular new commit (not amend).
-  echo "second" > second.txt
-  git add second.txt
+  # Re-seed pr=3 so the second commit's PreToolUse ack matches.
+  printf 'pv=-1\npr=3\nrp=%s\nack_pending_sha=\n' "$rp_after_first" > "$STATE_FILE"
 
-  # Pre-seed pr for the new rotation slot the test wants to ack against;
-  # the operator would do this by reading the PostToolUse reminder.
-  # Compute the next slot index manually.
-  local next_pr
-  next_pr=$(grep '^pr=' "$STATE_FILE" | cut -d= -f2-)
-  # next_pr is currently the slot value (e.g., 3 = essentie). Skip past
-  # the ack matching; we only care about whether rp advances after a
-  # non-amend lands.
-
-  git -c core.hooksPath=/dev/null commit -q -m "Settings panel reaches Windows again"
-  run_posttool 'git commit -m "Settings panel reaches Windows again" # ack-rule4:essentie'
+  # Second normal commit (different parent than the first's parent = different parent than seed).
+  land_commit "Audio output covers macOS too" "second.txt" "second"
 
   local rp_after_second
-  rp_after_second=$(grep '^rp=' "$STATE_FILE" | cut -d= -f2-)
+  rp_after_second=$(read_rp)
 
-  # rp must have advanced because the new HEAD's parent is the previous
-  # commit's sha, not the seed sha that was the previous parent.
   [ "$rp_after_second" != "$rp_after_first" ] || {
-    printf 'rp did not advance after regular new commit: rp_after_first=%s rp_after_second=%s\n' \
+    printf 'regular commit did NOT advance rp: was %s after first, still %s after second\n' \
       "$rp_after_first" "$rp_after_second" >&2
+    return 1
+  }
+}
+
+@test "amend of a root commit (no parent) also keeps the rotation slot" {
+  # Empty repo: the first commit IS the root, no seed beforehand.
+  seed_rotation_at_rule4
+
+  # Land the root commit.
+  land_commit "Settings panel reaches Windows" "first.txt" "first"
+
+  local rp_after_root
+  rp_after_root=$(read_rp)
+
+  printf 'pv=-1\npr=3\nrp=%s\nack_pending_sha=\n' "$rp_after_root" > "$STATE_FILE"
+
+  # Amend the root commit (both parents empty; equal-comparison treats as amend).
+  land_commit "Settings panel reaches Windows everywhere" "first.txt" "amended" amend
+
+  local rp_after_amend
+  rp_after_amend=$(read_rp)
+
+  [ "$rp_after_amend" = "$rp_after_root" ] || {
+    printf 'root-commit amend advanced rp: was %s, is %s after amend\n' \
+      "$rp_after_root" "$rp_after_amend" >&2
     return 1
   }
 }
