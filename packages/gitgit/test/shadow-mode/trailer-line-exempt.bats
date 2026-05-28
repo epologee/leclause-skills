@@ -75,6 +75,29 @@ MSG
   }
 }
 
+@test "long prose line starting with Note prefix still triggers the warning" {
+  local msg
+  msg='Settings page works on Windows
+
+Normal body line.
+Note: this is a long narrative sentence that starts with the Note prefix and exceeds the 72-char ceiling because it is prose, not a trailer.
+
+Slice: short
+Tests: spec/foo.rb
+Red-then-green: yes
+Verified: operator-confirmed'
+
+  local cmd="git commit -m \"\$(cat <<MSG
+${msg}
+MSG
+)\""
+  run invoke_guard "$cmd"
+  [[ "$output" == *'max 72'* ]] || {
+    printf 'commit-format did not flag a long Note: prose line; the trailer allowlist must not exempt mid-body keywords; output: %s\n' "$output" >&2
+    return 1
+  }
+}
+
 @test "Co-Authored-By trailer with long email passes silently" {
   local msg
   msg='Settings page works on Windows

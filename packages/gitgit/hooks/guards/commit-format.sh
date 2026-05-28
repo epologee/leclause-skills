@@ -18,17 +18,18 @@ guard_commit_format() {
   while IFS= read -r line || [[ -n "$line" ]]; do
     line_num=$((line_num + 1))
 
-    # allow-comment: trailer lines (Key: Value, machine-readable, often carry a
-    # allow-comment: long path) are not narrative and bypass the 72-char ceiling.
-    # allow-comment: The conservative regex matches lines starting with a
-    # allow-comment: capitalised token followed by ': ' which covers the gitgit
-    # allow-comment: schema trailers (Tests/Slice/Red-then-green/Verified/Visual/
-    # allow-comment: PII-Doublecheck) and standard git trailers (Signed-off-by,
-    # allow-comment: Co-Authored-By) without exempting mid-body prose.
+    # allow-comment: trailer lines (Key: Value, machine-readable, often carry
+    # allow-comment: a long path) are not narrative and bypass the 72-char
+    # allow-comment: ceiling. The allowlist matches the gitgit schema trailers
+    # allow-comment: plus the standard git trailers. Mid-body prose lines
+    # allow-comment: starting with a capitalised keyword and colon (Note:,
+    # allow-comment: TODO:, BUG:, Warning:) stay subject to the ceiling because
+    # allow-comment: they are narrative and should wrap for readability.
+    local trailer_re='^(Slice|Tests|Red-then-green|Verified|Visual|PII-Doublecheck|Signed-off-by|Co-Authored-By|Co-authored-by|Acked-by|Reviewed-by|Cc|Fixes|Closes|Resolves):[[:space:]]'
     if [[ ${#line} -gt 72 ]]; then
       if [[ $line_num -eq 1 ]]; then
         hard+=("Subject is ${#line} chars, max 72. Tighten: \"${line}\"")
-      elif [[ ! "$line" =~ ^[A-Z][A-Za-z0-9-]*:[[:space:]] ]]; then
+      elif [[ ! "$line" =~ $trailer_re ]]; then
         hard+=("Body line ${line_num} is ${#line} chars, max 72: \"${line}\"")
       fi
     fi
