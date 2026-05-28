@@ -341,20 +341,10 @@ guard_commit_subject() {
       # rotation slot on a state we cannot prove succeeded.
       :
     elif [[ "$current_sha" != "$ack_pending_sha" ]]; then
-      # allow-comment: amend detection via parent comparison. _dd_parent_sha
-      # allow-comment: returns the empty string when the commit has no parent
-      # allow-comment: (root) or the sha cannot be resolved; equal parents
-      # allow-comment: (including both empty for a root-amend) mean the new
-      # allow-comment: commit is a rewrite-in-place of the just-acked one, so
-      # allow-comment: the rotation slot stays. Known false-positive: a
-      # allow-comment: cherry-pick landing while ack_pending_sha is still set
-      # allow-comment: and sharing the same parent as the acked commit would
-      # allow-comment: be misclassified as an amend and skip a slot. Narrow
-      # allow-comment: window (cherry-pick must arrive immediately after the
-      # allow-comment: ack with no intervening commit) and operator-favorable
-      # allow-comment: failure mode (slot stays, no double-ack), so accepted
-      # allow-comment: as cost-value-skip rather than complicated with a
-      # allow-comment: tree-hash comparison.
+      # allow-comment: amend detection via parent comparison; equal parents
+      # allow-comment: (including both empty for root-amend) keep the slot.
+      # allow-comment: Known false-positive: a cherry-pick whose parent
+      # allow-comment: matches ack_pending_sha's parent is misread as amend.
       local new_parent old_parent
       new_parent=$(_dd_parent_sha "$current_sha")
       old_parent=$(_dd_parent_sha "$ack_pending_sha")

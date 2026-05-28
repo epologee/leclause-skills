@@ -197,26 +197,6 @@ Soft nudges (subject 51-72 chars) are non-blocking and appear as context.
   any of the five most recent commits on the current branch.
 - Not validated for content (too easy to bullshit), only structurally.
 
-### Body line length
-
-Prose lines in the body (the WHY paragraph and any continuation text) must
-not exceed 72 characters. The validator reports `body-line-too-long` with
-the offending line number. Trailer lines (any line matching `Key: Value`
-where the key starts with a capital letter) are exempt from this ceiling;
-they carry machine-readable metadata that may contain long paths or URLs.
-
-### Gate timing
-
-The PreToolUse:Bash layer blocks **before** the commit object is created.
-Hard violations from `commit-format` and `commit-body` exit with `dd_emit_deny`
-(exit 2), so the operator rewrites the message and reruns the same call
-without an amend cycle. Soft nudges (subject length 51-72 chars) remain
-non-blocking: the commit proceeds and the readability hint appears as context.
-
-All schema errors for a single commit are collected and emitted together in
-one stderr block, so the operator sees every miss at once rather than fixing
-one error per attempt.
-
 ### Required trailers
 
 | Trailer | Value | Required when |
