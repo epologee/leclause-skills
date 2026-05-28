@@ -10,10 +10,7 @@ guard_push_body_gate() {
   command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
   [[ -z "$command" ]] && return 0
 
-  local push_re='(^|[[:space:];&|])git[[:space:]]+([A-Za-z0-9_=.-]+[[:space:]]+)*push([[:space:]]|$)'
-  if [[ ! "$command" =~ $push_re ]]; then
-    return 0
-  fi
+  dd_is_git_push_command "$command" || return 0
 
   local DIR
   DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

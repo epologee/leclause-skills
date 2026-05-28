@@ -279,6 +279,13 @@ dd_is_git_commit_command() {
   [[ "$stripped" =~ (^|[^A-Za-z0-9_/.-])git[[:space:]]+commit($|[[:space:]]) ]]
 }
 
+dd_is_git_push_command() {
+  local command="$1"
+  local stripped
+  stripped=$(dd_strip_commit_message "$command")
+  [[ "$stripped" =~ (^|[[:space:];\&|])git[[:space:]]+([A-Za-z0-9_=.-]+[[:space:]]+)*push([[:space:]]|$) ]]
+}
+
 dd_strip_commit_message() {
   local command="$1"
   local stripped

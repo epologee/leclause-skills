@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.131]
+
+### Fixed
+
+- **push-{wip,body}-gate no longer fire on `git rebase` or `git commit --amend` when the message body contains "git ... push" text.** The push-detection regex now runs against a heredoc/quoted-string-stripped copy of the command.
+
 ## [v1.0.130]
 
 ### Added
