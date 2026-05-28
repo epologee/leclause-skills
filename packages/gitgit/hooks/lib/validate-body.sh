@@ -682,16 +682,19 @@ validate_body() {
   why_sha=$(_vb_sha1 "$why_block")
 
   if [[ -n "$why_sha" ]]; then
+    local cmp_anchor
+    case "${GITGIT_VALIDATE_CONTEXT:-staged}" in
+      staged) cmp_anchor="HEAD" ;;
+      HEAD|head) cmp_anchor="HEAD^" ;;
+      *) cmp_anchor="${GITGIT_VALIDATE_CONTEXT}^" ;;
+    esac
+
     local log_bodies
-    log_bodies=$(git log -5 --pretty=format:'%B' HEAD 2>/dev/null || true)
+    log_bodies=$(git log -5 --pretty=format:'%B' "$cmp_anchor" 2>/dev/null || true)
 
     if [[ -n "$log_bodies" ]]; then
-      # Split log output into individual commit bodies and check each.
-      # git log -5 --pretty=format:'%B' concatenates bodies with newlines.
-      # We use a sentinel approach: split on double-blank-lines as separators.
       local prev_sha=""
       local prev_hash=""
-      # Process commit log per-commit using git log with separators.
       while IFS= read -r commit_hash; do
         local prev_body
         prev_body=$(git log -1 --pretty=format:'%B' "$commit_hash" 2>/dev/null || true)
@@ -705,7 +708,7 @@ validate_body() {
           printf 'duplicate-why: identical narrative as commit %s\n' "$short_hash" >&2
           return 1
         fi
-      done < <(git log -5 --pretty=format:'%H' HEAD 2>/dev/null || true)
+      done < <(git log -5 --pretty=format:'%H' "$cmp_anchor" 2>/dev/null || true)
     fi
   fi
 

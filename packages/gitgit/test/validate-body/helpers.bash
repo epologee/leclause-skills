@@ -67,10 +67,12 @@ if [[ "${args[0]}" = "diff" && "${args[*]}" =~ "--cached" ]]; then
   exit 0
 fi
 
-# Pattern: git log -5 --pretty=format:'%H' HEAD
-# Use printf with \n so "while read" loop gets newline-terminated lines.
-# Skip output entirely when the shim value is empty (no prior commits).
+# allow-comment: parent-of ref (`<sha>^` / `HEAD^`) returns empty so the duplicate-why self-exclusion path can be exercised; bare refs still return GIT_SHIM_LOG_HASHES.
 if [[ "${args[0]}" = "log" && "${args[*]}" =~ "%H" ]]; then
+  ref="${args[*]: -1}"
+  if [[ "$ref" == *"^"* ]]; then
+    exit 0
+  fi
   [[ -n "$GIT_SHIM_LOG_HASHES" ]] && printf '%s\n' "$GIT_SHIM_LOG_HASHES"
   exit 0
 fi

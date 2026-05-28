@@ -129,6 +129,48 @@ MSG
   [[ "$output" == *"duplicate-why"* ]]
 }
 
+@test "GITGIT_VALIDATE_CONTEXT=<sha> excludes the sha itself from duplicate-why iteration" {
+  export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
+  use_trailers "$WHY_TRAILERS"
+
+  local why_text="When StartTransaction arrives with an invalid reading, the event
+was previously rejected, which masked session starts in analytics."
+
+  export GIT_SHIM_LOG_HASHES="abc1234"
+  export GIT_SHIM_LOG_BODY="$(cat <<MSG
+Same subject as the validated commit
+
+${why_text}
+
+Tests: spec/services/session_spec.rb
+Slice: handler + service + spec
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
+MSG
+)"
+
+  local body
+  body="$(cat <<MSG
+Expose session boundary on transaction events
+
+${why_text}
+
+Tests: spec/services/session_spec.rb
+Slice: handler + service + spec
+Red-then-green: n/a (test fixture, no spec applies)
+Verified: operator-confirmed
+MSG
+)"
+  local file
+  file=$(write_fixture "self-sha.txt" "$body")
+
+  export GITGIT_VALIDATE_CONTEXT=abc1234
+  run invoke_validator "$file"
+  unset GITGIT_VALIDATE_CONTEXT
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"duplicate-why"* ]]
+}
+
 @test "novel WHY block that differs from previous commits passes" {
   export GIT_SHIM_LS_TREE_OUTPUT="spec/services/session_spec.rb"
   use_trailers "$WHY_TRAILERS"
