@@ -100,6 +100,72 @@ _dd_deny_and_exit() {
   dd_emit_deny commit-subject "Rule ${num}/15: ${msg}"
 }
 
+_dd_resolve_commit_subject_state_file() {
+  local input="$1"
+  local state_file per_toplevel=""
+  local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
+  if [[ -n "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]]; then
+    state_file="$GITGIT_COMMIT_RULE_STATE_FILE"
+  else
+    local toplevel toplevel_hash
+    toplevel=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [[ -n "$toplevel" ]]; then
+      toplevel_hash=$(printf '%s' "$toplevel" | shasum 2>/dev/null | cut -c1-8)
+      [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | md5sum 2>/dev/null | cut -c1-8)
+      [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | md5 -q 2>/dev/null | cut -c1-8)
+      if [[ -n "$toplevel_hash" ]]; then
+        per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state-${toplevel_hash}"
+      else
+        per_toplevel="$global_state"
+      fi
+    else
+      per_toplevel="$global_state"
+    fi
+    state_file="$per_toplevel"
+  fi
+  mkdir -p "$(dirname "$state_file")" 2>/dev/null || true
+  if [[ -n "$per_toplevel" && ! -f "$per_toplevel" ]]; then
+    local migration_src=""
+    if [[ "$per_toplevel" != "$global_state" && -f "$global_state" ]]; then
+      migration_src="$global_state"
+    fi
+    if [[ -z "$migration_src" ]]; then
+      local old_state_file="${CLAUDE_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/commit-rule-state}"
+      [[ -f "$old_state_file" ]] && migration_src="$old_state_file"
+    fi
+    if [[ -n "$migration_src" ]]; then
+      local migr_tmp="${per_toplevel}.tmp.$$"
+      if cp "$migration_src" "$migr_tmp" && mv "$migr_tmp" "$per_toplevel"; then
+        mv "$migration_src" "${migration_src}.migrated" 2>/dev/null || true
+      fi
+    fi
+  fi
+  if [[ -z "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]] && [[ -n "$per_toplevel" ]]; then
+    local session_id session_key
+    session_id=$(dd_session_id "$input")
+    if [[ -n "$session_id" ]]; then
+      session_key=$(printf '%s' "$session_id" | shasum 2>/dev/null | cut -c1-8)
+      [[ -z "$session_key" ]] && session_key=$(printf '%s' "$session_id" | md5sum 2>/dev/null | cut -c1-8)
+      [[ -z "$session_key" ]] && session_key=$(printf '%s' "$session_id" | md5 -q 2>/dev/null | cut -c1-8)
+    fi
+    if [[ -n "$session_key" && "$per_toplevel" != "$global_state" ]]; then
+      state_file="${per_toplevel}-${session_key}"
+      if [[ ! -f "$state_file" ]]; then
+        if [[ -f "$per_toplevel" ]]; then
+          _dd_load_state "$per_toplevel"
+          _dd_write_state "$state_file" -1 -1 "$DD_LOADED_RP" ""
+        fi
+        find "$(dirname "$per_toplevel")" \
+          -maxdepth 1 -type f \
+          -name "$(basename "$per_toplevel")-*" \
+          -mtime +7 \
+          -delete 2>/dev/null || true
+      fi
+    fi
+  fi
+  printf '%s' "$state_file"
+}
+
 guard_commit_subject() {
   local input="$1"
   local command
@@ -162,91 +228,8 @@ guard_commit_subject() {
   fi
   shopt -u nocasematch
 
-  # State file. GITGIT_COMMIT_RULE_STATE_FILE overrides for tests.
-  # When no override is set, the path is namespaced by the worktree's
-  # toplevel directory so two repos open in different worktrees do not
-  # share rotation state. The hash of the absolute toplevel path
-  # collapses worktrees of the same repo onto the same state, which is
-  # the natural scope for the discipline. Migrations chain: legacy
-  # dont-do-that location → global gitgit path → per-toplevel path.
-  local state_file per_toplevel=""
-  local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
-  if [[ -n "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]]; then
-    state_file="$GITGIT_COMMIT_RULE_STATE_FILE"
-  else
-    local toplevel toplevel_hash
-    toplevel=$(git rev-parse --show-toplevel 2>/dev/null)
-    if [[ -n "$toplevel" ]]; then
-      # Prefer shasum (present on macOS and most Linux); md5sum on
-      # Linux-minimal images, md5 -q on BSD/macOS without shasum. Each
-      # branch yields a hex string so the namespaced path stays in the
-      # same alphabet regardless of which tool produced it.
-      toplevel_hash=$(printf '%s' "$toplevel" | shasum 2>/dev/null | cut -c1-8)
-      [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | md5sum 2>/dev/null | cut -c1-8)
-      [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | md5 -q 2>/dev/null | cut -c1-8)
-      if [[ -n "$toplevel_hash" ]]; then
-        per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state-${toplevel_hash}"
-      else
-        # No hex hasher available; fall back to the global file rather
-        # than fabricating a hash. Worktrees of different repos will
-        # share state on this host, which is the prior behaviour.
-        per_toplevel="$global_state"
-      fi
-    else
-      per_toplevel="$global_state"
-    fi
-    state_file="$per_toplevel"
-  fi
-  mkdir -p "$(dirname "$state_file")"
-  if [[ -n "$per_toplevel" && ! -f "$per_toplevel" ]]; then
-    # Migration chain: prefer the global gitgit file (older repo-shared
-    # state) over the legacy dont-do-that file (oldest). Both copies
-    # are atomic so two simultaneous sessions cannot race a partial
-    # destination.
-    local migration_src=""
-    if [[ "$per_toplevel" != "$global_state" && -f "$global_state" ]]; then
-      migration_src="$global_state"
-    fi
-    if [[ -z "$migration_src" ]]; then
-      local old_state_file="${CLAUDE_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/commit-rule-state}"
-      [[ -f "$old_state_file" ]] && migration_src="$old_state_file"
-    fi
-    if [[ -n "$migration_src" ]]; then
-      local migr_tmp="${per_toplevel}.tmp.$$"
-      if cp "$migration_src" "$migr_tmp" && mv "$migr_tmp" "$per_toplevel"; then
-        # Archive the source so subsequent new repos do not all migrate
-        # from the same global file and inherit a stale rotation_pos.
-        # The first new repo gets the operator's last state; later new
-        # repos start fresh.
-        mv "$migration_src" "${migration_src}.migrated" 2>/dev/null || true
-      fi
-    fi
-  fi
-
-  # allow-comment: per-session layer fixes concurrent-session rotation race; see SKILL.md
-  if [[ -z "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]] && [[ -n "$per_toplevel" ]]; then
-    local session_id session_key
-    session_id=$(dd_session_id "$input")
-    if [[ -n "$session_id" ]]; then
-      session_key=$(printf '%s' "$session_id" | shasum 2>/dev/null | cut -c1-8)
-      [[ -z "$session_key" ]] && session_key=$(printf '%s' "$session_id" | md5sum 2>/dev/null | cut -c1-8)
-      [[ -z "$session_key" ]] && session_key=$(printf '%s' "$session_id" | md5 -q 2>/dev/null | cut -c1-8)
-    fi
-    if [[ -n "$session_key" && "$per_toplevel" != "$global_state" ]]; then
-      state_file="${per_toplevel}-${session_key}"
-      if [[ ! -f "$state_file" ]]; then
-        if [[ -f "$per_toplevel" ]]; then
-          _dd_load_state "$per_toplevel"
-          _dd_write_state "$state_file" -1 -1 "$DD_LOADED_RP" ""
-        fi
-        find "$(dirname "$per_toplevel")" \
-          -maxdepth 1 -type f \
-          -name "$(basename "$per_toplevel")-*" \
-          -mtime +7 \
-          -delete 2>/dev/null || true
-      fi
-    fi
-  fi
+  local state_file
+  state_file=$(_dd_resolve_commit_subject_state_file "$input")
 
   _dd_load_state "$state_file"
   local pv="$DD_LOADED_PV" pr="$DD_LOADED_PR" rp="$DD_LOADED_RP"
@@ -341,4 +324,52 @@ guard_commit_subject() {
   _dd_deny_and_exit "$pr" \
     "password missing or wrong. Paste '# ack-rule$((pr + 1)):<password>' (lookup: ${skill_pointer})." \
     -1 "$pr" "$rp" "$state_file"
+}
+
+guard_commit_subject_posttool() {
+  local input="$1"
+  local command
+  command=$(jq -r '.tool_input.command // empty' <<< "$input" 2>/dev/null)
+  dd_is_git_commit_command "$command" || return 0
+
+  local state_file
+  state_file=$(_dd_resolve_commit_subject_state_file "$input")
+
+  _dd_load_state "$state_file"
+  local pv="$DD_LOADED_PV" pr="$DD_LOADED_PR" rp="$DD_LOADED_RP"
+  local ack_pending_sha="$DD_LOADED_ACK_SHA"
+
+  [[ "$pv" -ne -1 && "$pv" -ne 0 && "$pv" -ne 1 ]] && pv=-1
+  if [[ "$pr" -ne -1 ]]; then
+    local in_rot=0 slot
+    for slot in "${_DD_ROTATION_SLOTS[@]}"; do
+      [[ "$slot" -eq "$pr" ]] && { in_rot=1; break; }
+    done
+    [[ "$in_rot" -eq 0 ]] && pr=-1
+  fi
+  [[ "$rp" -lt 0 || "$rp" -ge "${#_DD_ROTATION_SLOTS[@]}" ]] && rp=0
+
+  [[ -z "$ack_pending_sha" ]] && return 0
+
+  local current_sha
+  current_sha=$(git rev-parse HEAD 2>/dev/null | tr -cd '0-9a-f')
+  [[ -z "$current_sha" ]] && return 0
+  [[ "$current_sha" = "$ack_pending_sha" ]] && return 0
+
+  rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
+  local next_slot="${_DD_ROTATION_SLOTS[$rp]}"
+  local next_num=$((next_slot + 1))
+
+  _dd_write_state "$state_file" -1 "$next_slot" "$rp" ""
+
+  local skill_dir skill_path skill_pointer
+  skill_dir=$(cd "$_DD_HERE/../../skills/commit-discipline" 2>/dev/null && pwd)
+  skill_path="${skill_dir}/SKILL.md"
+  if [[ -z "$skill_dir" || ! -f "$skill_path" ]]; then
+    skill_pointer="SKILL.md, section 'Rotation reminders'"
+  else
+    skill_pointer="${skill_path}, section 'Rotation reminders'"
+  fi
+
+  dd_emit_context "commit-subject" "Next-commit rotation reminder: include '# ack-rule${next_num}:<password>' on the very next commit (lookup: ${skill_pointer}). The rotation cycles rule ${next_num} into focus so the rule gets read against the next commit rather than slipped past with synonyms."
 }

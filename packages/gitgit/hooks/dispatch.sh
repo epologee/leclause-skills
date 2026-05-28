@@ -51,6 +51,22 @@ case "$EVENT" in
     guard_commit_body "$INPUT"
     guard_commit_trailers "$INPUT"
     ;;
+
+  PostToolUse)
+    TOOL=$(dd_tool_name "$INPUT")
+    [ "$TOOL" = "Bash" ] || exit 0
+
+    SESSION_ID=$(dd_session_id "$INPUT")
+    if [[ -n "$SESSION_ID" ]] && [[ -f "$HOME/.claude/var/gitgit-disabled-$SESSION_ID" ]]; then
+      exit 0
+    fi
+    if [[ -f "$HOME/.claude/var/gitgit-disabled-global" ]]; then
+      exit 0
+    fi
+
+    source "$DIR/guards/commit-subject.sh"
+    guard_commit_subject_posttool "$INPUT"
+    ;;
 esac
 
 exit 0

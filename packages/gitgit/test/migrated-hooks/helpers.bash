@@ -154,3 +154,16 @@ run_dispatch() {
   json=$(pretool_bash_json "$cmd")
   run bash "$DISPATCH" <<< "$json"
 }
+
+posttool_bash_json() {
+  local cmd="$1"
+  jq -cn --arg c "$cmd" \
+    '{hook_event_name:"PostToolUse",tool_name:"Bash",tool_input:{command:$c}}'
+}
+
+run_posttool_dispatch() {
+  local cmd="$1"
+  local json
+  json=$(posttool_bash_json "$cmd")
+  run bash "$DISPATCH" <<< "$json"
+}

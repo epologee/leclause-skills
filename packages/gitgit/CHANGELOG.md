@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.132]
+
+### Changed
+
+- **Rotation reminders shift to PostToolUse: only the first commit per fresh state denies; the next slot arrives as a silent `additionalContext` hint.** Commits outside Claude Code fall back to the v1.0.131 per-commit deny.
+
 ## [v1.0.131]
 
 ### Fixed
