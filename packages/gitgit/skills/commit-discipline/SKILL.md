@@ -378,7 +378,7 @@ to the rule, so looking it up forces one exposure per cycle.
 | 11 | `loep` | Review the staged diff before commit; tool output is not evidence. |
 | 12 | `bewijsstuk` | Commit check is evidence (test ran, endpoint hit), not gut feel. |
 | 13 | `kralen` | Never squash merge; preserve history. |
-| 14 | `voorwaarts` | Amend is forbidden unless stripping unpushed secrets/PII; use a new commit. |
+| 14 | `voorwaarts` | Amend rewrites public history when the commit is already pushed: forbidden in that case. On unpushed commits amend is fine, including gate-mandated rewrites that `push-body-gate` asks for; the prohibition kicks in once the SHAs are public. |
 | 15 | `steiger` | No internal AI-tooling or process vocabulary in subject/body (skill names, phase terms, "after the panel reviewed", "consensus reached"). |
 
 Rule 3 (subject length 50/72) is enforced structurally by

@@ -25,6 +25,25 @@ DD_RULE_PASSWORD=(
   "loep"        # 11: review staged diff before commit
   "bewijsstuk"  # 12: commit check is evidence, not gut feel
   "kralen"      # 13: preserve history, no squash merge
-  "voorwaarts"  # 14: no amend, always a new commit
+  "voorwaarts"  # allow-comment: 14: amend forbidden after push, fine before
   "steiger"     # allow-comment: 15: no internal AI-tooling or process vocabulary in subject/body
+)
+
+# allow-comment: lockstep invariant, keep entries below in sync with column 3 of "Rotation reminders" in packages/gitgit/skills/commit-discipline/SKILL.md; indexing mirrors DD_RULE_PASSWORD (Rule N at idx N-1, slot 2 empty because Rule 3 is owned by commit-format).
+DD_RULE_ESSENCE=(
+  "subject names new system behavior, not the git action you took"
+  "subject names what the system does now, not the trigger ('Address feedback')"
+  ""
+  "body only when needed: 2-4 sentences of WHY"
+  "no file/class inventory in the body; the diff already shows files"
+  "prose, no bullet dumps or meta-narrative ('reviewer asked', 'tests failed')"
+  "atomic commit: split unrelated changes; impl+test of one feature = one commit"
+  "never commit broken code with 'fix in next commit'"
+  "no Co-Authored-By from AI tooling unless asked"
+  "no 'Generated with Claude Code' footer"
+  "review the staged diff before commit; tool output is not evidence"
+  "commit check is evidence (test ran, endpoint hit), not gut feel"
+  "preserve history; never squash merge"
+  "amend forbidden on pushed commits (rewrites public history); fine on unpushed, including gate-mandated fixes"
+  "no AI-tooling/process vocab in subject/body (skill names, phase terms, 'after the panel reviewed')"
 )

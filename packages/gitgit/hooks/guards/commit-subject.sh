@@ -90,6 +90,13 @@ _dd_ack_matches() {
   return 0
 }
 
+_dd_essence_for_rule() {
+  local idx="$1"
+  if [[ "$idx" -ge 0 && "$idx" -lt "${#DD_RULE_ESSENCE[@]}" ]]; then
+    printf '%s' "${DD_RULE_ESSENCE[$idx]}"
+  fi
+}
+
 # Writes the new state and then exits the dispatcher with code 2 via
 # dd_emit_deny. Never returns; any code following a call to this
 # function in the same branch is unreachable.
@@ -186,6 +193,7 @@ guard_commit_subject() {
   if [[ -z "$skill_dir" || ! -f "$skill_path" ]]; then
     dd_emit_deny commit-subject "install appears broken: cannot resolve SKILL.md path. Reinstall gitgit@leclause."
   fi
+  [[ -n "$HOME" && "$skill_path" == "$HOME"/* ]] && skill_path="~${skill_path#$HOME}"
   skill_pointer="${skill_path}, section 'Rotation reminders'"
 
   # Subject extraction: delegate to dd_extract_commit_message (shared parser),
@@ -277,13 +285,16 @@ guard_commit_subject() {
   # Fresh violation: always deny with rule 1 or 2.
   if [[ "$violation_idx" -ge 0 ]]; then
     local rn=$((violation_idx + 1))
+    local v_essence
+    v_essence=$(_dd_essence_for_rule "$violation_idx")
+    local v_row_pointer="${skill_pointer}, row ${rn}"
     if [[ "$ack_idx" -eq "$violation_idx" ]]; then
       _dd_deny_and_exit "$violation_idx" \
-        "\"${subject}\" still violates. Rewrite + '# ack-rule${rn}:<password>' (lookup: ${skill_pointer})." \
+        "subject \"${subject}\" still violates: ${v_essence}. The ack matched but the subject still does. Rewrite the subject (keep the ack), then re-run." \
         "$violation_idx" "$pr" "$rp" "$state_file"
     else
       _dd_deny_and_exit "$violation_idx" \
-        "\"${subject}\" violates. Rewrite + '# ack-rule${rn}:<password>' (lookup: ${skill_pointer})." \
+        "subject \"${subject}\": ${v_essence}. Rewrite, then append '# ack-rule${rn}:<password>' to the bash command (lookup: ${v_row_pointer})." \
         "$violation_idx" "$pr" "$rp" "$state_file"
     fi
   fi
@@ -295,16 +306,22 @@ guard_commit_subject() {
       _dd_write_state "$state_file" -1 "$pr" "$rp"
       return 0
     fi
+    local pv_essence pv_row_pointer
+    pv_essence=$(_dd_essence_for_rule "$pv")
+    pv_row_pointer="${skill_pointer}, row $((pv + 1))"
     _dd_deny_and_exit "$pv" \
-      "\"${subject}\" password missing or wrong. Paste '# ack-rule$((pv + 1)):<password>' (lookup: ${skill_pointer})." \
+      "${pv_essence}. Password missing or wrong for \"${subject}\". Paste '# ack-rule$((pv + 1)):<password>' (lookup: ${pv_row_pointer})." \
       "$pv" "$pr" "$rp" "$state_file"
   fi
 
   # No pending rotation: serve the next slot as a rotating thematic reminder.
   if [[ "$pr" -lt 0 ]]; then
     local selected="${_DD_ROTATION_SLOTS[$rp]}"
+    local sel_essence sel_row_pointer
+    sel_essence=$(_dd_essence_for_rule "$selected")
+    sel_row_pointer="${skill_pointer}, row $((selected + 1))"
     _dd_deny_and_exit "$selected" \
-      "reminder. Paste '# ack-rule$((selected + 1)):<password>' (lookup: ${skill_pointer})." \
+      "reminder: ${sel_essence}. Paste '# ack-rule$((selected + 1)):<password>' (lookup: ${sel_row_pointer})." \
       -1 "$selected" "$rp" "$state_file"
   fi
 
@@ -321,8 +338,11 @@ guard_commit_subject() {
     _dd_write_state "$state_file" -1 -1 "$rp" "$head_sha"
     return 0
   fi
+  local pr_essence pr_row_pointer
+  pr_essence=$(_dd_essence_for_rule "$pr")
+  pr_row_pointer="${skill_pointer}, row $((pr + 1))"
   _dd_deny_and_exit "$pr" \
-    "password missing or wrong. Paste '# ack-rule$((pr + 1)):<password>' (lookup: ${skill_pointer})." \
+    "${pr_essence}. Password missing or wrong. Paste '# ack-rule$((pr + 1)):<password>' (lookup: ${pr_row_pointer})." \
     -1 "$pr" "$rp" "$state_file"
 }
 
@@ -368,8 +388,13 @@ guard_commit_subject_posttool() {
   if [[ -z "$skill_dir" || ! -f "$skill_path" ]]; then
     skill_pointer="SKILL.md, section 'Rotation reminders'"
   else
+    [[ -n "$HOME" && "$skill_path" == "$HOME"/* ]] && skill_path="~${skill_path#$HOME}"
     skill_pointer="${skill_path}, section 'Rotation reminders'"
   fi
 
-  dd_emit_context "commit-subject" "Next-commit rotation reminder: include '# ack-rule${next_num}:<password>' on the very next commit (lookup: ${skill_pointer}). The rotation cycles rule ${next_num} into focus so the rule gets read against the next commit rather than slipped past with synonyms."
+  local next_essence next_row_pointer
+  next_essence=$(_dd_essence_for_rule "$next_slot")
+  next_row_pointer="${skill_pointer}, row ${next_num}"
+
+  dd_emit_context "commit-subject" "Next-commit rotation reminder, rule ${next_num}: ${next_essence}. Include '# ack-rule${next_num}:<password>' on the very next commit (lookup: ${next_row_pointer})."
 }

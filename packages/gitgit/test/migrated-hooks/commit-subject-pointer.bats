@@ -1,30 +1,33 @@
 #!/usr/bin/env bats
 # Pointer fix for commit-subject deny messages: the rotation reminder
-# names the absolute path of the SKILL.md so the password lookup is a
-# direct Read, not a grep through the plugin cache. The lookup itself
-# stays required (the hook does not pre-reveal the password).
-# Broken installs surface loudly rather than silently degrading to the
-# slash-command form (which would re-introduce grep-fishing).
+# names the SKILL.md path so the password lookup is a direct Read, not
+# a grep through the plugin cache. Paths under $HOME are shown with a
+# leading "~" so the deny stays portable across machines and does not
+# leak the operator's home prefix; the underlying path must still
+# resolve to a real file. Broken installs surface loudly rather than
+# silently degrading to the slash-command form (which would re-introduce
+# grep-fishing).
 
 load helpers
 
-@test "rotation reminder names absolute path to commit-discipline SKILL.md" {
+@test "rotation reminder names a SKILL.md path that resolves to the file" {
   run_dispatch "git commit -m 'Drop bad reading on transaction events'"
   [ "$status" -eq 2 ]
-  # Capture the absolute path the hook emitted: anything from the first
-  # leading "/" up to "/SKILL.md".
+  # Capture the path the hook emitted: either absolute (/...) or
+  # home-relative (~/...), up to "/SKILL.md".
   local extracted
-  extracted=$(printf '%s' "$output" | grep -oE '/[A-Za-z0-9_./ -]*/SKILL\.md' | head -1)
+  extracted=$(printf '%s' "$output" | grep -oE '(~|/)[A-Za-z0-9_./ -]*/SKILL\.md' | head -1)
   [[ -n "$extracted" ]] || {
-    printf 'expected absolute SKILL.md path in output, got: %s\n' "$output" >&2
+    printf 'expected SKILL.md path in output, got: %s\n' "$output" >&2
     return 1
   }
-  [[ "$extracted" == /* ]] || {
-    printf 'expected path to be absolute, got: %s\n' "$extracted" >&2
+  [[ "$extracted" == /* || "$extracted" == "~/"* ]] || {
+    printf 'expected path to be absolute or home-relative, got: %s\n' "$extracted" >&2
     return 1
   }
-  [ -f "$extracted" ] || {
-    printf 'expected SKILL.md to exist on disk at: %s\n' "$extracted" >&2
+  local resolved="${extracted/#\~/$HOME}"
+  [ -f "$resolved" ] || {
+    printf 'expected SKILL.md to exist on disk at: %s (resolved from %s)\n' "$resolved" "$extracted" >&2
     return 1
   }
   [[ "$output" =~ "Rotation reminders" ]] || {
