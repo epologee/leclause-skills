@@ -139,70 +139,118 @@ _dd_deny_and_exit() {
   dd_emit_deny commit-subject "Rule ${num}/15: ${msg}"
 }
 
-_dd_resolve_commit_subject_state_file() {
-  local input="$1"
-  local state_file per_toplevel=""
-  local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
+# allow-comment: 8-char hex hash with portable-shasum fallback. Tries
+# allow-comment: shasum, then md5sum, then macOS md5 -q; echoes nothing on
+# allow-comment: total failure so callers can fall back to a default path.
+# allow-comment: Used twice (toplevel hash, session-id hash) inside the
+# allow-comment: state-file resolution.
+_dd_short_hash() {
+  local input="$1" out=""
+  out=$(printf '%s' "$input" | shasum 2>/dev/null | cut -c1-8)
+  [[ -z "$out" ]] && out=$(printf '%s' "$input" | md5sum 2>/dev/null | cut -c1-8)
+  [[ -z "$out" ]] && out=$(printf '%s' "$input" | md5 -q 2>/dev/null | cut -c1-8)
+  printf '%s' "$out"
+}
+
+# allow-comment: pure path math, no I/O beyond the mkdir -p that gives the
+# allow-comment: dirname a safe home. Returns the per-toplevel state file
+# allow-comment: path for this repo, or the global default when no repo is
+# allow-comment: detected. Override via GITGIT_COMMIT_RULE_STATE_FILE.
+_dd_state_file_per_toplevel() {
   if [[ -n "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]]; then
-    state_file="$GITGIT_COMMIT_RULE_STATE_FILE"
-  else
-    local toplevel toplevel_hash
-    toplevel=$(git rev-parse --show-toplevel 2>/dev/null)
-    if [[ -n "$toplevel" ]]; then
-      toplevel_hash=$(printf '%s' "$toplevel" | shasum 2>/dev/null | cut -c1-8)
-      [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | md5sum 2>/dev/null | cut -c1-8)
-      [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | md5 -q 2>/dev/null | cut -c1-8)
-      if [[ -n "$toplevel_hash" ]]; then
-        per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state-${toplevel_hash}"
-      else
-        per_toplevel="$global_state"
-      fi
-    else
-      per_toplevel="$global_state"
-    fi
-    state_file="$per_toplevel"
+    printf '%s' "$GITGIT_COMMIT_RULE_STATE_FILE"
+    return 0
   fi
-  mkdir -p "$(dirname "$state_file")" 2>/dev/null || true
-  if [[ -n "$per_toplevel" && ! -f "$per_toplevel" ]]; then
-    local migration_src=""
-    if [[ "$per_toplevel" != "$global_state" && -f "$global_state" ]]; then
-      migration_src="$global_state"
-    fi
-    if [[ -z "$migration_src" ]]; then
-      local old_state_file="${CLAUDE_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/commit-rule-state}"
-      [[ -f "$old_state_file" ]] && migration_src="$old_state_file"
-    fi
-    if [[ -n "$migration_src" ]]; then
-      local migr_tmp="${per_toplevel}.tmp.$$"
-      if cp "$migration_src" "$migr_tmp" && mv "$migr_tmp" "$per_toplevel"; then
-        mv "$migration_src" "${migration_src}.migrated" 2>/dev/null || true
-      fi
-    fi
+  local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
+  local toplevel
+  toplevel=$(git rev-parse --show-toplevel 2>/dev/null)
+  if [[ -z "$toplevel" ]]; then
+    printf '%s' "$global_state"
+    return 0
   fi
-  if [[ -z "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]] && [[ -n "$per_toplevel" ]]; then
-    local session_id session_key
-    session_id=$(dd_session_id "$input")
-    if [[ -n "$session_id" ]]; then
-      session_key=$(printf '%s' "$session_id" | shasum 2>/dev/null | cut -c1-8)
-      [[ -z "$session_key" ]] && session_key=$(printf '%s' "$session_id" | md5sum 2>/dev/null | cut -c1-8)
-      [[ -z "$session_key" ]] && session_key=$(printf '%s' "$session_id" | md5 -q 2>/dev/null | cut -c1-8)
+  local toplevel_hash
+  toplevel_hash=$(_dd_short_hash "$toplevel")
+  if [[ -z "$toplevel_hash" ]]; then
+    printf '%s' "$global_state"
+    return 0
+  fi
+  printf '%s' "$HOME/.claude/var/gitgit-commit-rule-state-${toplevel_hash}"
+}
+
+# allow-comment: one-shot migration from the legacy global state file (or
+# allow-comment: the even-older dont-do-that location) into the per-toplevel
+# allow-comment: file. No-op when per_toplevel already exists or no migration
+# allow-comment: source is available. The source is renamed to *.migrated
+# allow-comment: after a successful copy so subsequent repos do not also
+# allow-comment: inherit from it.
+_dd_state_file_migrate() {
+  local per_toplevel="$1"
+  [[ -z "$per_toplevel" ]] && return 0
+  [[ -f "$per_toplevel" ]] && return 0
+  local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
+  local migration_src=""
+  if [[ "$per_toplevel" != "$global_state" && -f "$global_state" ]]; then
+    migration_src="$global_state"
+  fi
+  if [[ -z "$migration_src" ]]; then
+    local old_state_file="${CLAUDE_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/commit-rule-state}"
+    [[ -f "$old_state_file" ]] && migration_src="$old_state_file"
+  fi
+  [[ -z "$migration_src" ]] && return 0
+  local migr_tmp="${per_toplevel}.tmp.$$"
+  if cp "$migration_src" "$migr_tmp" && mv "$migr_tmp" "$per_toplevel"; then
+    mv "$migration_src" "${migration_src}.migrated" 2>/dev/null || true
+  fi
+}
+
+# allow-comment: derive the per-session state file path from the per-toplevel
+# allow-comment: path and a session id. When the session id cannot be
+# allow-comment: hashed, returns the per-toplevel path so the dispatcher
+# allow-comment: shares state across all unidentified sessions (the
+# allow-comment: shell-driven git-native hook case). On first creation of a
+# allow-comment: per-session file, inherits the rp pointer from per-toplevel
+# allow-comment: so the new session continues at the next slot in the cycle,
+# allow-comment: and opportunistically prunes per-session files older than
+# allow-comment: seven days so the directory scan stays bounded.
+_dd_state_file_session_fork() {
+  local per_toplevel="$1" input="$2"
+  [[ -n "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]] && { printf '%s' "$per_toplevel"; return 0; }
+  [[ -z "$per_toplevel" ]] && { printf ''; return 0; }
+  local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
+  [[ "$per_toplevel" = "$global_state" ]] && { printf '%s' "$per_toplevel"; return 0; }
+
+  local session_id session_key
+  session_id=$(dd_session_id "$input")
+  [[ -z "$session_id" ]] && { printf '%s' "$per_toplevel"; return 0; }
+  session_key=$(_dd_short_hash "$session_id")
+  [[ -z "$session_key" ]] && { printf '%s' "$per_toplevel"; return 0; }
+
+  local state_file="${per_toplevel}-${session_key}"
+  if [[ ! -f "$state_file" ]]; then
+    if [[ -f "$per_toplevel" ]]; then
+      _dd_load_state "$per_toplevel"
+      _dd_write_state "$state_file" -1 -1 "$DD_LOADED_RP" ""
     fi
-    if [[ -n "$session_key" && "$per_toplevel" != "$global_state" ]]; then
-      state_file="${per_toplevel}-${session_key}"
-      if [[ ! -f "$state_file" ]]; then
-        if [[ -f "$per_toplevel" ]]; then
-          _dd_load_state "$per_toplevel"
-          _dd_write_state "$state_file" -1 -1 "$DD_LOADED_RP" ""
-        fi
-        find "$(dirname "$per_toplevel")" \
-          -maxdepth 1 -type f \
-          -name "$(basename "$per_toplevel")-*" \
-          -mtime +7 \
-          -delete 2>/dev/null || true
-      fi
-    fi
+    find "$(dirname "$per_toplevel")" \
+      -maxdepth 1 -type f \
+      -name "$(basename "$per_toplevel")-*" \
+      -mtime +7 \
+      -delete 2>/dev/null || true
   fi
   printf '%s' "$state_file"
+}
+
+# allow-comment: orchestrator: compute the per-toplevel path, ensure the
+# allow-comment: directory exists, run a one-shot migration if applicable,
+# allow-comment: then fork to per-session if a session id is available.
+# allow-comment: Returns the resolved state file path.
+_dd_resolve_commit_subject_state_file() {
+  local input="$1"
+  local per_toplevel
+  per_toplevel=$(_dd_state_file_per_toplevel)
+  mkdir -p "$(dirname "$per_toplevel")" 2>/dev/null || true
+  _dd_state_file_migrate "$per_toplevel"
+  _dd_state_file_session_fork "$per_toplevel" "$input"
 }
 
 guard_commit_subject() {
