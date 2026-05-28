@@ -81,15 +81,17 @@ guard_push_body_gate() {
     if [[ "$shortstat" =~ ([0-9]+)[[:space:]]+insertion ]]; then
       insertion_count="${BASH_REMATCH[1]}"
     fi
+    # allow-comment: trivial-ok travels as an inline env-var on the validator
+    # allow-comment: call rather than an exported global; no per-iteration
+    # allow-comment: cleanup needed because the scope ends with the $() subshell.
+    local trivial_ok=0
     if [[ "$file_count" -le 1 && "$insertion_count" -le 5 ]]; then
-      export GITGIT_TRIVIAL_OK=1
-    else
-      export GITGIT_TRIVIAL_OK=0
+      trivial_ok=1
     fi
 
     tmpfile=$(mktemp /tmp/gitgit-push-body-XXXXXX)
     printf '%s' "$message" > "$tmpfile"
-    output=$(GITGIT_VALIDATE_CONTEXT="$sha" validate_body "$tmpfile" 2>&1)
+    output=$(GITGIT_VALIDATE_CONTEXT="$sha" GITGIT_TRIVIAL_OK="$trivial_ok" validate_body "$tmpfile" 2>&1)
     rc=$?
     rm -f "$tmpfile"
 
@@ -100,8 +102,6 @@ guard_push_body_gate() {
       violations+=("${short_sha} \"${subject}\": ${line}")
     fi
   done <<< "$commits"
-
-  unset GITGIT_TRIVIAL_OK
 
   [[ ${#violations[@]} -eq 0 ]] && return 0
 

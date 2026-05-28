@@ -41,10 +41,13 @@ guard_commit_body() {
     insertion_count="${BASH_REMATCH[1]}"
   fi
 
+  # allow-comment: trivial-ok travels as an inline env-var on the validator
+  # allow-comment: call rather than an exported global; the scope ends with
+  # allow-comment: the subshell of the $() capture so no leakage into sibling
+  # allow-comment: guards or later loop iterations.
+  local trivial_ok=0
   if [[ "$file_count" -le 1 && "$insertion_count" -le 5 ]]; then
-    export GITGIT_TRIVIAL_OK=1
-  else
-    export GITGIT_TRIVIAL_OK=0
+    trivial_ok=1
   fi
 
   local tmpfile
@@ -52,7 +55,7 @@ guard_commit_body() {
   printf '%s' "$message" > "$tmpfile"
 
   local violation_output exit_code
-  violation_output=$(GITGIT_VALIDATE_CONTEXT="$validate_ctx" validate_body "$tmpfile" 2>&1)
+  violation_output=$(GITGIT_VALIDATE_CONTEXT="$validate_ctx" GITGIT_TRIVIAL_OK="$trivial_ok" validate_body "$tmpfile" 2>&1)
   exit_code=$?
 
   rm -f "$tmpfile"
