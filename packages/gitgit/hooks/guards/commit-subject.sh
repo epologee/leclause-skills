@@ -69,6 +69,20 @@ _dd_load_state() {
     DD_LOADED_RP=$(_dd_read_state_line "$file" 3 0)
     DD_LOADED_ACK_SHA=$(sed -n '4p' "$file" 2>/dev/null | tr -cd '0-9a-f')
   fi
+  # allow-comment: clamp the loaded values into valid ranges before returning
+  # allow-comment: so every caller reads pre-validated state. Used to be
+  # allow-comment: duplicated verbatim in guard_commit_subject and
+  # allow-comment: guard_commit_subject_posttool; folded in here to keep the
+  # allow-comment: invariant in one place.
+  [[ "$DD_LOADED_PV" -ne -1 && "$DD_LOADED_PV" -ne 0 && "$DD_LOADED_PV" -ne 1 ]] && DD_LOADED_PV=-1
+  if [[ "$DD_LOADED_PR" -ne -1 ]]; then
+    local _dd_in_rot=0 _dd_slot
+    for _dd_slot in "${_DD_ROTATION_SLOTS[@]}"; do
+      [[ "$_dd_slot" -eq "$DD_LOADED_PR" ]] && { _dd_in_rot=1; break; }
+    done
+    [[ "$_dd_in_rot" -eq 0 ]] && DD_LOADED_PR=-1
+  fi
+  [[ "$DD_LOADED_RP" -lt 0 || "$DD_LOADED_RP" -ge "${#_DD_ROTATION_SLOTS[@]}" ]] && DD_LOADED_RP=0
 }
 
 _dd_write_state() {
@@ -260,16 +274,6 @@ guard_commit_subject() {
   _dd_load_state "$state_file"
   local pv="$DD_LOADED_PV" pr="$DD_LOADED_PR" rp="$DD_LOADED_RP"
   local ack_pending_sha="$DD_LOADED_ACK_SHA"
-  # Clamp to valid ranges.
-  [[ "$pv" -ne -1 && "$pv" -ne 0 && "$pv" -ne 1 ]] && pv=-1
-  if [[ "$pr" -ne -1 ]]; then
-    local in_rot=0 slot
-    for slot in "${_DD_ROTATION_SLOTS[@]}"; do
-      [[ "$slot" -eq "$pr" ]] && { in_rot=1; break; }
-    done
-    [[ "$in_rot" -eq 0 ]] && pr=-1
-  fi
-  [[ "$rp" -lt 0 || "$rp" -ge "${#_DD_ROTATION_SLOTS[@]}" ]] && rp=0
 
   # Resolve any pending ack from a previous PreToolUse pass: if HEAD has
   # advanced since the ack was matched, the commit actually landed and the
@@ -387,16 +391,6 @@ guard_commit_subject_posttool() {
   _dd_load_state "$state_file"
   local pv="$DD_LOADED_PV" pr="$DD_LOADED_PR" rp="$DD_LOADED_RP"
   local ack_pending_sha="$DD_LOADED_ACK_SHA"
-
-  [[ "$pv" -ne -1 && "$pv" -ne 0 && "$pv" -ne 1 ]] && pv=-1
-  if [[ "$pr" -ne -1 ]]; then
-    local in_rot=0 slot
-    for slot in "${_DD_ROTATION_SLOTS[@]}"; do
-      [[ "$slot" -eq "$pr" ]] && { in_rot=1; break; }
-    done
-    [[ "$in_rot" -eq 0 ]] && pr=-1
-  fi
-  [[ "$rp" -lt 0 || "$rp" -ge "${#_DD_ROTATION_SLOTS[@]}" ]] && rp=0
 
   [[ -z "$ack_pending_sha" ]] && return 0
 
