@@ -27,4 +27,5 @@ exec bats \
   packages/gitgit/test/session-toggle/*.bats \
   packages/gitgit/test/repo-deny/*.bats \
   packages/gitgit/test/push-policy/*.bats \
+  packages/gitgit/test/cd-target/*.bats \
   "$@"

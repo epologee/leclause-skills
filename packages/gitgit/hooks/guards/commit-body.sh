@@ -90,8 +90,15 @@ guard_commit_body() {
 
   local opt_out_list="docs-only, config-only, migration-only, spec-only, chore-deps, revert, merge, wip"
 
+  local stage_hint=""
+  if dd_stages_before_commit "$command" \
+     && printf '%s' "$violation_output" | grep -qE 'tests-path-not-found|red-then-green-path-not-in-staged'; then
+    stage_hint=$(printf 'This command stages with git add/git stage and commits in one call. The gate runs before the command, so those files are not in the index yet, which is why a Tests or Red-then-green path reads as missing. Stage in a separate call first, then rerun the commit.\n\n')
+  fi
+
   local deny_msg
-  deny_msg=$(printf '%s\n\nRewrite the commit message and rerun the same git commit call; the commit object has not been created yet. Expected body format:\n\n%s\n\nOpt-out tokens for Slice: %s\n\nEscape: git commit --no-verify (audit-logged via post-commit native hook).' \
+  deny_msg=$(printf '%s%s\n\nRewrite the commit message and rerun the same git commit call; the commit object has not been created yet. Expected body format:\n\n%s\n\nOpt-out tokens for Slice: %s\n\nEscape: git commit --no-verify (audit-logged via post-commit native hook).' \
+    "$stage_hint" \
     "$violation_output" \
     "$example" \
     "$opt_out_list")
