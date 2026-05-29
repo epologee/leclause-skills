@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Run the gitgit BATS test suites (validate-body + shadow-mode + block-mode +
-# migrated-hooks + install-hooks + wip-gate + template-fill + cross-layer).
+# migrated-hooks + install-hooks + wip-gate + template-fill + cross-layer +
+# session-toggle + repo-deny + push-policy).
 # Must be executed from the repo root (leclause-skills/).
 
 set -euo pipefail
@@ -25,4 +26,5 @@ exec bats \
   packages/gitgit/test/cross-layer/*.bats \
   packages/gitgit/test/session-toggle/*.bats \
   packages/gitgit/test/repo-deny/*.bats \
+  packages/gitgit/test/push-policy/*.bats \
   "$@"

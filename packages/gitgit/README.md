@@ -34,6 +34,7 @@ Reference for the schema, examples, escape-hatches, and troubleshooting:
 | commit-snipe | `/gitgit:commit-snipe` | yes (on the word "snipe") |
 | rebase-latest-default | `/gitgit:rebase-latest-default` | yes |
 | merge-to-default | `/gitgit:merge-to-default` | yes |
+| push-policy | `/gitgit:push-policy` | |
 | commit-discipline | `/gitgit:commit-discipline` | |
 | install-hooks | `/gitgit:install-hooks` | |
 | run-spec | `/gitgit:run-spec` | |
@@ -58,6 +59,14 @@ Reference for the schema, examples, escape-hatches, and troubleshooting:
   the local source branch after the merge is confirmed, and no-ops with a
   TUI warning when invoked on the default branch itself. Push remains an
   explicit user action.
+- **push-policy** decides whether and when a push fits the current repo. It
+  ships a resolver (`skills/push-policy/git-repo-policy`) that reads per-repo
+  facts (collaboration, visibility, default-branch protection, push access)
+  and derives one of five modes (`local-only`, `solo-trunk`, `team-trunk`,
+  `pr-flow`, `external`), each with its own push behavior. Per-repo overrides
+  live under git-local `codingAgent.git.*`. `rebase-latest-default` and
+  `merge-to-default` consult it; the push hooks gate content and are
+  orthogonal to this context decision.
 - **commit-discipline** is the canonical reference for the body schema,
   error-codes, opt-out enum, and escape-hatches.
 - **install-hooks** copies the git-native `commit-msg`, `prepare-commit-msg`,
