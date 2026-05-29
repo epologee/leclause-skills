@@ -51,7 +51,7 @@ Verified: operator-confirmed')")
 
   run_dispatch "$cmd"
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"missing-tests"* ]]
 }
 
@@ -69,7 +69,7 @@ Verified: operator-confirmed')")
 
   run_dispatch "$cmd"
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   # The synthesized example should contain the spec path from staged diff.
   [[ "$output" == *"session_spec.rb"* ]]
 }
@@ -88,7 +88,7 @@ Verified: operator-confirmed')")
 
   run_dispatch "$cmd"
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"config-only"* ]]
   [[ "$output" == *"migration-only"* ]]
 }
@@ -113,7 +113,7 @@ Verified: operator-confirmed')")
 
   run_dispatch "$cmd"
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"missing-slice"* ]]
 }
 
@@ -132,7 +132,7 @@ Verified: operator-confirmed')")
 
   run_dispatch "$cmd"
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"wip"* ]]
   [[ "$output" == *"chore-deps"* ]]
 }
@@ -154,7 +154,7 @@ Verified: operator-confirmed')")
 
   run_dispatch "$cmd"
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"missing-red-then-green"* ]]
 }
 
@@ -171,7 +171,7 @@ Verified: operator-confirmed')")
 
   run_dispatch "$cmd"
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"docs-only"* ]]
   [[ "$output" == *"revert"* ]]
 }
@@ -197,7 +197,7 @@ Verified: operator-confirmed')")
 
   run_dispatch "$cmd"
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   # The violation code "missing-tests" must be present in the deny message,
   # not just in a synthesized example. This only works if stderr is captured.
   [[ "$output" == *"missing-tests"* ]]

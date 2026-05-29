@@ -22,7 +22,7 @@ load helpers
 
   [ "$status" -eq 2 ]
   [[ "$output" == *"ack-rule"* ]]
-  [[ "$output" != *"missing-body"* ]]
+  [[ "$output" == *"missing-body"* ]]
 }
 
 @test "subject ack alone surfaces only the subject deny" {
@@ -107,7 +107,7 @@ EOF
   local cmd='git commit -m "Use policy on the read path" # ack-rule4:essentie'
   run bash "$DISPATCH" <<< "$(pretool_bash_json "$cmd")"
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"missing-body"* ]]
   [[ "$output" != *"reminder"* ]]
 }

@@ -32,7 +32,7 @@ load helpers
 
   run_dispatch 'git commit -m "Expand helper logic" # ack-rule4:essentie'
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
 }
 
 @test "2-file 3-insertion commit without body is denied (over file-count threshold)" {
@@ -42,5 +42,5 @@ load helpers
 
   run_dispatch 'git commit -m "Bump two files" # ack-rule4:essentie'
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
 }

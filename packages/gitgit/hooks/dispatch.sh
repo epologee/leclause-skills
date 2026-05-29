@@ -46,10 +46,23 @@ case "$EVENT" in
     source "$DIR/guards/commit-format.sh"
     source "$DIR/guards/commit-body.sh"
     source "$DIR/guards/commit-trailers.sh"
-    guard_commit_subject "$INPUT"
-    guard_commit_format "$INPUT"
-    guard_commit_body "$INPUT"
-    guard_commit_trailers "$INPUT"
+    # allow-comment: run the commit-message guards via _dd_run_collect so a
+    # allow-comment: deny from one guard does not short-circuit the others;
+    # allow-comment: all four pass against the same commit message and the
+    # allow-comment: operator sees subject + format + body issues in one
+    # allow-comment: aggregated deny block (eliminates per-violation amend
+    # allow-comment: cycles that the old short-circuit imposed).
+    DD_DENY_MESSAGES=()
+    _dd_run_collect guard_commit_subject "$INPUT"
+    _dd_run_collect guard_commit_format "$INPUT"
+    _dd_run_collect guard_commit_body "$INPUT"
+    _dd_run_collect guard_commit_trailers "$INPUT"
+    if [ "${#DD_DENY_MESSAGES[@]}" -gt 0 ]; then
+      for _dd_deny_msg in "${DD_DENY_MESSAGES[@]}"; do
+        printf '%s\n' "$_dd_deny_msg" >&2
+      done
+      exit 2
+    fi
     ;;
 
   PostToolUse)

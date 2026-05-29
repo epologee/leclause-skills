@@ -18,7 +18,7 @@ load helpers
     'git commit -m "bare subject no body" # ack-rule4:essentie' \
     "$sid"
 
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"[gitgit/commit-body]"* ]]
 }
 

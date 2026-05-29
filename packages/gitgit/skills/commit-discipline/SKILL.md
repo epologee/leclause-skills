@@ -94,8 +94,15 @@ regex in `commit-subject.sh`.
   spaces) are rejected by `commit-format` as bundled changes. Rewrite into a
   cohesive single verb, split into two commits, or add `# allow-conjunction:
   <reason>` inside the body when the joined form is genuinely atomic.
-- **Body lines over 72 chars.** Inside the heredoc, wrap manually; the
-  validator measures actual line length, not paragraph length.
+- **Body lines over 72 chars.** Inside the heredoc, wrap prose manually;
+  the validator measures actual line length. Trailer lines (`Key: Value`)
+  are exempt from the 72-char ceiling.
+- **Free-text Slice under 10 chars.** A token like `Slice: fe` is rejected
+  with `slice-too-short`; write at least `frontend layer` or similar.
+- **Vague `Verified: n/a` rationale.** The rationale must contain one of the
+  closed-enum tokens listed in the "Required trailers" section. A phrase like
+  "not applicable" matches none of them and is rejected with
+  `verified-rationale-vague`.
 - **Manually exporting `GITGIT_TRIVIAL_OK=1`.** The PreToolUse guard sets
   this automatically when the staged diff has at most 1 file and at most 5
   insertions; the git-native commit-msg hook re-derives it from the staged
@@ -155,9 +162,12 @@ Before invoking `git commit`, verify:
       the reminder fire)
 - [ ] No `-F`, no embedded `\n` literals, no quoted multi-line `-m`
 
-If the gate still denies, the deny output names the specific check
-(`missing-body`, `body-line-too-long`, `missing-slice`, etc.); fix that one
-thing and re-submit, do not rewrite the whole message.
+If the gate still denies, the deny output lists ALL schema misses for the
+commit in one block (batched reporting); fix every listed check and
+re-submit in one call, do not iterate one error at a time. Hard violations
+(format, body) block at PreToolUse so the commit object is never created;
+rerun the same `git commit` call after fixing (no `--amend` needed).
+Soft nudges (subject 51-72 chars) are non-blocking and appear as context.
 
 ## The schema
 
@@ -200,11 +210,14 @@ thing and re-submit, do not rewrite the whole message.
 **`Slice` rules:** the value is either one of the eight opt-out tokens (see
 the next section), or free-form text describing which layers the commit
 touches (e.g. `handler + service + spec`, `frontend + backend + migration`).
+Free-form Slice values must be at least 10 characters; shorter values are
+rejected with `slice-too-short`.
 
 **`Tests` rules:** every path in the list must exist in the HEAD tree
 (`git ls-tree -r HEAD --name-only`) or in the staged diff
 (`git diff --cached --name-only`). Supported extensions:
-`.rb`, `.py`, `.js`, `.ts`, `.go`, `.sh`, `.bash`, `.feature`, `.tsx`, `.jsx`.
+`.rb`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.go`, `.sh`, `.bash`, `.bats`,
+`.feature`, `.swift`.
 Anchor suffixes (`#method_name`) are stripped for the file existence check.
 
 **`Red-then-green` rules:** the trailer accepts three forms; bare `yes`
@@ -235,6 +248,16 @@ characters; bare `n/a` without rationale is rejected. The trailer is only
 required when the heuristic below detects UI touches in the
 staged diff; backend-only commits do not see the rule and need not
 include `Visual`.
+
+**`Verified n/a` closed enum:** the `n/a (reason)` form is only accepted when
+the rationale contains at least one of these category tokens (case-insensitive):
+`extract-only`, `accessibility-only`, `accessibility metadata`, `debug-only`,
+`spec-only`, `test-only`, `copy-only`, `copy change`, `metadata-only`,
+`no behaviour change`, `no behavior change`, `no visual change`, `no ui change`,
+`no visual impact`, `no ui impact`, `byte-identical`, `render unchanged`,
+`pixel-identical`, `backend rewrite`, `backend only`, `no ui touched`,
+`sound-only`, `audio-only`, `log-only`, `telemetry-only`. Rationale that
+matches none of these tokens is rejected with `verified-rationale-vague`.
 
 **`Verified` rules:** the trailer is the self-assessment "how was the new behaviour verified". The closed answer set covers the three legitimate anchors plus two opt-outs.
 
@@ -301,7 +324,7 @@ Error codes:
 | `missing-visual` | UI-touch detected but trailer is absent, or trailer is bare `n/a`, or `n/a (reason)` with too short a rationale |
 | `visual-path-not-found` | Trailer is not an `n/a` form and the given path does not exist in the worktree |
 | `visual-rationale-defers` | The `n/a (rationale)` text uses deferral language (`later`, `follow-up`, `next iteration`, `to be captured`, `will capture`, `coming next`, `post-merge`, `saved for later`) that promises a screenshot at a future event. The trailer cannot validate that promise; either supply `Visual: <path>` now or rewrite the rationale to describe why a screenshot has no meaning for this change (extract-only refactor, accessibility metadata, debug-only surface, copy-only). |
-| `visual-rationale-vague` | The `n/a (rationale)` text does not name a recognized non-applicable category. The closed enum is: `extract-only`, `accessibility-only`, `accessibility metadata`, `debug-only`, `spec-only`, `test-only`, `copy-only`, `copy change`, `metadata-only`, `no behaviour change`, `no visual change`, `no ui change`, `byte-identical`, `render unchanged`, `pixel-identical`, `backend rewrite`, `backend only`, `no ui touched`, `sound-only`, `audio-only`, `log-only`, `telemetry-only`. The rationale must contain at least one of these tokens (case-insensitive) so the claim "no screenshot has meaning here" is classified rather than narrated. |
+| `visual-rationale-vague` | The `n/a (rationale)` text does not name a recognized non-applicable category. The closed enum is: `extract-only`, `accessibility-only`, `accessibility metadata`, `debug-only`, `spec-only`, `test-only`, `copy-only`, `copy change`, `metadata-only`, `no behaviour change`, `no visual change`, `no ui change`, `no visual impact`, `no ui impact`, `byte-identical`, `render unchanged`, `pixel-identical`, `backend rewrite`, `backend only`, `no ui touched`, `sound-only`, `audio-only`, `log-only`, `telemetry-only`. The rationale must contain at least one of these tokens (case-insensitive) so the claim "no screenshot has meaning here" is classified rather than narrated. |
 | `red-then-green-path-not-in-staged` | Trailer names a spec path that is not in `git diff --cached --name-only`. Either name a spec file this commit actually touches, or fall back to `n/a (reason)`. |
 | `red-then-green-test-not-found` | Trailer is `<path>:<line> # <test-name>` but the staged blob has no matching `it`, `describe`, `context`, `specify`, `@test`, `@Test`, `Scenario:`, `func name(`, or `def name(` declaration. Name the test as it appears in the file. |
 | `red-then-green-line-out-of-range` | Trailer is `<path>:<line> # <test-name>` but the staged file has fewer lines than `<line>`. Name a line that exists in the file as it stands in this commit. |
@@ -394,7 +417,11 @@ sha at the moment the ack matches, and the next dispatcher entry
 advances the rotation slot only when HEAD has actually moved
 (commit landed). When the commit fails at commit-msg, pre-commit, or
 never runs, the slot stays so the operator acks the same rule again
-on the next attempt instead of burning a fresh rotation slot. The
+on the next attempt instead of burning a fresh rotation slot. A
+`git commit --amend` of the just-acked commit is detected via parent
+comparison (the new HEAD and the previously-acked HEAD share the same
+parent); on a detected amend the slot does NOT advance, so a
+gate-mandated message rewrite does not cost an extra ack cycle. The
 canonical mnemonic table that the hook validates against is in
 `packages/gitgit/hooks/lib/rotation-rules.sh`.
 

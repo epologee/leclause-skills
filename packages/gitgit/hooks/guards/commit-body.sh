@@ -1,5 +1,14 @@
 #!/bin/bash
-# allow-comment: PreToolUse:Bash guard. Validates the commit message against the body schema and emits dd_emit_pre_context (additionalContext, non-blocking) when the body falls short. Commit lands; Claude reads the nudge and amends. amend commits validate against HEAD (the to-be-rewritten state); normal commits validate against the staged area.
+# allow-comment: PreToolUse:Bash guard. Validates the commit message against
+# allow-comment: the body schema and BLOCKS the commit on any hard violation
+# allow-comment: via dd_emit_deny (exit 2). Previous design emitted a
+# allow-comment: non-blocking nudge and let push-body-gate block at push time;
+# allow-comment: that turned every gate violation into an amend cycle. Blocking
+# allow-comment: at PreToolUse means the operator fixes the body before the
+# allow-comment: commit object is ever created. amend commits validate against
+# allow-comment: HEAD (the to-be-rewritten state); normal commits validate
+# allow-comment: against the staged area. The --no-verify escape still
+# allow-comment: bypasses (audit-logged via post-commit native hook).
 
 guard_commit_body() {
   local input="$1"
@@ -32,10 +41,13 @@ guard_commit_body() {
     insertion_count="${BASH_REMATCH[1]}"
   fi
 
+  # allow-comment: trivial-ok travels as an inline env-var on the validator
+  # allow-comment: call rather than an exported global; the scope ends with
+  # allow-comment: the subshell of the $() capture so no leakage into sibling
+  # allow-comment: guards or later loop iterations.
+  local trivial_ok=0
   if [[ "$file_count" -le 1 && "$insertion_count" -le 5 ]]; then
-    export GITGIT_TRIVIAL_OK=1
-  else
-    export GITGIT_TRIVIAL_OK=0
+    trivial_ok=1
   fi
 
   local tmpfile
@@ -43,7 +55,7 @@ guard_commit_body() {
   printf '%s' "$message" > "$tmpfile"
 
   local violation_output exit_code
-  violation_output=$(GITGIT_VALIDATE_CONTEXT="$validate_ctx" validate_body "$tmpfile" 2>&1)
+  violation_output=$(GITGIT_VALIDATE_CONTEXT="$validate_ctx" GITGIT_TRIVIAL_OK="$trivial_ok" validate_body "$tmpfile" 2>&1)
   exit_code=$?
 
   rm -f "$tmpfile"
@@ -78,11 +90,11 @@ guard_commit_body() {
 
   local opt_out_list="docs-only, config-only, migration-only, spec-only, chore-deps, revert, merge, wip"
 
-  local nudge
-  nudge=$(printf '%s\n\nThe commit will land regardless; amend afterwards with git commit --amend -F <new-message-file>. push-body-gate will block the push if the body is still non-conformant at push time.\n\nExpected body format:\n\n%s\n\nOpt-out tokens for Slice: %s' \
-    "$violation_line" \
+  local deny_msg
+  deny_msg=$(printf '%s\n\nRewrite the commit message and rerun the same git commit call; the commit object has not been created yet. Expected body format:\n\n%s\n\nOpt-out tokens for Slice: %s\n\nEscape: git commit --no-verify (audit-logged via post-commit native hook).' \
+    "$violation_output" \
     "$example" \
     "$opt_out_list")
 
-  dd_emit_pre_context "commit-body" "$nudge"
+  dd_emit_deny "commit-body" "$deny_msg"
 }

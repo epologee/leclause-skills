@@ -69,6 +69,20 @@ _dd_load_state() {
     DD_LOADED_RP=$(_dd_read_state_line "$file" 3 0)
     DD_LOADED_ACK_SHA=$(sed -n '4p' "$file" 2>/dev/null | tr -cd '0-9a-f')
   fi
+  # allow-comment: clamp the loaded values into valid ranges before returning
+  # allow-comment: so every caller reads pre-validated state. Used to be
+  # allow-comment: duplicated verbatim in guard_commit_subject and
+  # allow-comment: guard_commit_subject_posttool; folded in here to keep the
+  # allow-comment: invariant in one place.
+  [[ "$DD_LOADED_PV" -ne -1 && "$DD_LOADED_PV" -ne 0 && "$DD_LOADED_PV" -ne 1 ]] && DD_LOADED_PV=-1
+  if [[ "$DD_LOADED_PR" -ne -1 ]]; then
+    local _dd_in_rot=0 _dd_slot
+    for _dd_slot in "${_DD_ROTATION_SLOTS[@]}"; do
+      [[ "$_dd_slot" -eq "$DD_LOADED_PR" ]] && { _dd_in_rot=1; break; }
+    done
+    [[ "$_dd_in_rot" -eq 0 ]] && DD_LOADED_PR=-1
+  fi
+  [[ "$DD_LOADED_RP" -lt 0 || "$DD_LOADED_RP" -ge "${#_DD_ROTATION_SLOTS[@]}" ]] && DD_LOADED_RP=0
 }
 
 _dd_write_state() {
@@ -97,6 +111,24 @@ _dd_essence_for_rule() {
   fi
 }
 
+# allow-comment: parent-of helper for amend detection. git rev-parse with a
+# allow-comment: trailing ^ fails AND echoes the input to stdout when the
+# allow-comment: argument cannot be resolved (root commit, unknown sha), so
+# allow-comment: piping through tr would falsely fill the parent with bytes
+# allow-comment: from the original sha. Use the exit code as the truth signal:
+# allow-comment: on success print the resolved parent sha, on failure print
+# allow-comment: nothing. Empty string is the correct sentinel for "no
+# allow-comment: parent" so equal-comparison can detect root-amend (both
+# allow-comment: empty) without special-casing.
+_dd_parent_sha() {
+  local sha="$1"
+  [[ -z "$sha" ]] && return 0
+  local out
+  if out=$(git rev-parse --verify --quiet "${sha}^" 2>/dev/null); then
+    printf '%s' "$out"
+  fi
+}
+
 # Writes the new state and then exits the dispatcher with code 2 via
 # dd_emit_deny. Never returns; any code following a call to this
 # function in the same branch is unreachable.
@@ -107,70 +139,118 @@ _dd_deny_and_exit() {
   dd_emit_deny commit-subject "Rule ${num}/15: ${msg}"
 }
 
-_dd_resolve_commit_subject_state_file() {
-  local input="$1"
-  local state_file per_toplevel=""
-  local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
+# allow-comment: 8-char hex hash with portable-shasum fallback. Tries
+# allow-comment: shasum, then md5sum, then macOS md5 -q; echoes nothing on
+# allow-comment: total failure so callers can fall back to a default path.
+# allow-comment: Used twice (toplevel hash, session-id hash) inside the
+# allow-comment: state-file resolution.
+_dd_short_hash() {
+  local input="$1" out=""
+  out=$(printf '%s' "$input" | shasum 2>/dev/null | cut -c1-8)
+  [[ -z "$out" ]] && out=$(printf '%s' "$input" | md5sum 2>/dev/null | cut -c1-8)
+  [[ -z "$out" ]] && out=$(printf '%s' "$input" | md5 -q 2>/dev/null | cut -c1-8)
+  printf '%s' "$out"
+}
+
+# allow-comment: pure path math, no I/O beyond the mkdir -p that gives the
+# allow-comment: dirname a safe home. Returns the per-toplevel state file
+# allow-comment: path for this repo, or the global default when no repo is
+# allow-comment: detected. Override via GITGIT_COMMIT_RULE_STATE_FILE.
+_dd_state_file_per_toplevel() {
   if [[ -n "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]]; then
-    state_file="$GITGIT_COMMIT_RULE_STATE_FILE"
-  else
-    local toplevel toplevel_hash
-    toplevel=$(git rev-parse --show-toplevel 2>/dev/null)
-    if [[ -n "$toplevel" ]]; then
-      toplevel_hash=$(printf '%s' "$toplevel" | shasum 2>/dev/null | cut -c1-8)
-      [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | md5sum 2>/dev/null | cut -c1-8)
-      [[ -z "$toplevel_hash" ]] && toplevel_hash=$(printf '%s' "$toplevel" | md5 -q 2>/dev/null | cut -c1-8)
-      if [[ -n "$toplevel_hash" ]]; then
-        per_toplevel="$HOME/.claude/var/gitgit-commit-rule-state-${toplevel_hash}"
-      else
-        per_toplevel="$global_state"
-      fi
-    else
-      per_toplevel="$global_state"
-    fi
-    state_file="$per_toplevel"
+    printf '%s' "$GITGIT_COMMIT_RULE_STATE_FILE"
+    return 0
   fi
-  mkdir -p "$(dirname "$state_file")" 2>/dev/null || true
-  if [[ -n "$per_toplevel" && ! -f "$per_toplevel" ]]; then
-    local migration_src=""
-    if [[ "$per_toplevel" != "$global_state" && -f "$global_state" ]]; then
-      migration_src="$global_state"
-    fi
-    if [[ -z "$migration_src" ]]; then
-      local old_state_file="${CLAUDE_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/commit-rule-state}"
-      [[ -f "$old_state_file" ]] && migration_src="$old_state_file"
-    fi
-    if [[ -n "$migration_src" ]]; then
-      local migr_tmp="${per_toplevel}.tmp.$$"
-      if cp "$migration_src" "$migr_tmp" && mv "$migr_tmp" "$per_toplevel"; then
-        mv "$migration_src" "${migration_src}.migrated" 2>/dev/null || true
-      fi
-    fi
+  local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
+  local toplevel
+  toplevel=$(git rev-parse --show-toplevel 2>/dev/null)
+  if [[ -z "$toplevel" ]]; then
+    printf '%s' "$global_state"
+    return 0
   fi
-  if [[ -z "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]] && [[ -n "$per_toplevel" ]]; then
-    local session_id session_key
-    session_id=$(dd_session_id "$input")
-    if [[ -n "$session_id" ]]; then
-      session_key=$(printf '%s' "$session_id" | shasum 2>/dev/null | cut -c1-8)
-      [[ -z "$session_key" ]] && session_key=$(printf '%s' "$session_id" | md5sum 2>/dev/null | cut -c1-8)
-      [[ -z "$session_key" ]] && session_key=$(printf '%s' "$session_id" | md5 -q 2>/dev/null | cut -c1-8)
+  local toplevel_hash
+  toplevel_hash=$(_dd_short_hash "$toplevel")
+  if [[ -z "$toplevel_hash" ]]; then
+    printf '%s' "$global_state"
+    return 0
+  fi
+  printf '%s' "$HOME/.claude/var/gitgit-commit-rule-state-${toplevel_hash}"
+}
+
+# allow-comment: one-shot migration from the legacy global state file (or
+# allow-comment: the even-older dont-do-that location) into the per-toplevel
+# allow-comment: file. No-op when per_toplevel already exists or no migration
+# allow-comment: source is available. The source is renamed to *.migrated
+# allow-comment: after a successful copy so subsequent repos do not also
+# allow-comment: inherit from it.
+_dd_state_file_migrate() {
+  local per_toplevel="$1"
+  [[ -z "$per_toplevel" ]] && return 0
+  [[ -f "$per_toplevel" ]] && return 0
+  local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
+  local migration_src=""
+  if [[ "$per_toplevel" != "$global_state" && -f "$global_state" ]]; then
+    migration_src="$global_state"
+  fi
+  if [[ -z "$migration_src" ]]; then
+    local old_state_file="${CLAUDE_COMMIT_RULE_STATE_FILE:-$HOME/.claude/var/commit-rule-state}"
+    [[ -f "$old_state_file" ]] && migration_src="$old_state_file"
+  fi
+  [[ -z "$migration_src" ]] && return 0
+  local migr_tmp="${per_toplevel}.tmp.$$"
+  if cp "$migration_src" "$migr_tmp" && mv "$migr_tmp" "$per_toplevel"; then
+    mv "$migration_src" "${migration_src}.migrated" 2>/dev/null || true
+  fi
+}
+
+# allow-comment: derive the per-session state file path from the per-toplevel
+# allow-comment: path and a session id. When the session id cannot be
+# allow-comment: hashed, returns the per-toplevel path so the dispatcher
+# allow-comment: shares state across all unidentified sessions (the
+# allow-comment: shell-driven git-native hook case). On first creation of a
+# allow-comment: per-session file, inherits the rp pointer from per-toplevel
+# allow-comment: so the new session continues at the next slot in the cycle,
+# allow-comment: and opportunistically prunes per-session files older than
+# allow-comment: seven days so the directory scan stays bounded.
+_dd_state_file_session_fork() {
+  local per_toplevel="$1" input="$2"
+  [[ -n "${GITGIT_COMMIT_RULE_STATE_FILE:-}" ]] && { printf '%s' "$per_toplevel"; return 0; }
+  [[ -z "$per_toplevel" ]] && { printf ''; return 0; }
+  local global_state="$HOME/.claude/var/gitgit-commit-rule-state"
+  [[ "$per_toplevel" = "$global_state" ]] && { printf '%s' "$per_toplevel"; return 0; }
+
+  local session_id session_key
+  session_id=$(dd_session_id "$input")
+  [[ -z "$session_id" ]] && { printf '%s' "$per_toplevel"; return 0; }
+  session_key=$(_dd_short_hash "$session_id")
+  [[ -z "$session_key" ]] && { printf '%s' "$per_toplevel"; return 0; }
+
+  local state_file="${per_toplevel}-${session_key}"
+  if [[ ! -f "$state_file" ]]; then
+    if [[ -f "$per_toplevel" ]]; then
+      _dd_load_state "$per_toplevel"
+      _dd_write_state "$state_file" -1 -1 "$DD_LOADED_RP" ""
     fi
-    if [[ -n "$session_key" && "$per_toplevel" != "$global_state" ]]; then
-      state_file="${per_toplevel}-${session_key}"
-      if [[ ! -f "$state_file" ]]; then
-        if [[ -f "$per_toplevel" ]]; then
-          _dd_load_state "$per_toplevel"
-          _dd_write_state "$state_file" -1 -1 "$DD_LOADED_RP" ""
-        fi
-        find "$(dirname "$per_toplevel")" \
-          -maxdepth 1 -type f \
-          -name "$(basename "$per_toplevel")-*" \
-          -mtime +7 \
-          -delete 2>/dev/null || true
-      fi
-    fi
+    find "$(dirname "$per_toplevel")" \
+      -maxdepth 1 -type f \
+      -name "$(basename "$per_toplevel")-*" \
+      -mtime +7 \
+      -delete 2>/dev/null || true
   fi
   printf '%s' "$state_file"
+}
+
+# allow-comment: orchestrator: compute the per-toplevel path, ensure the
+# allow-comment: directory exists, run a one-shot migration if applicable,
+# allow-comment: then fork to per-session if a session id is available.
+# allow-comment: Returns the resolved state file path.
+_dd_resolve_commit_subject_state_file() {
+  local input="$1"
+  local per_toplevel
+  per_toplevel=$(_dd_state_file_per_toplevel)
+  mkdir -p "$(dirname "$per_toplevel")" 2>/dev/null || true
+  _dd_state_file_migrate "$per_toplevel"
+  _dd_state_file_session_fork "$per_toplevel" "$input"
 }
 
 guard_commit_subject() {
@@ -242,16 +322,6 @@ guard_commit_subject() {
   _dd_load_state "$state_file"
   local pv="$DD_LOADED_PV" pr="$DD_LOADED_PR" rp="$DD_LOADED_RP"
   local ack_pending_sha="$DD_LOADED_ACK_SHA"
-  # Clamp to valid ranges.
-  [[ "$pv" -ne -1 && "$pv" -ne 0 && "$pv" -ne 1 ]] && pv=-1
-  if [[ "$pr" -ne -1 ]]; then
-    local in_rot=0 slot
-    for slot in "${_DD_ROTATION_SLOTS[@]}"; do
-      [[ "$slot" -eq "$pr" ]] && { in_rot=1; break; }
-    done
-    [[ "$in_rot" -eq 0 ]] && pr=-1
-  fi
-  [[ "$rp" -lt 0 || "$rp" -ge "${#_DD_ROTATION_SLOTS[@]}" ]] && rp=0
 
   # Resolve any pending ack from a previous PreToolUse pass: if HEAD has
   # advanced since the ack was matched, the commit actually landed and the
@@ -271,7 +341,16 @@ guard_commit_subject() {
       # rotation slot on a state we cannot prove succeeded.
       :
     elif [[ "$current_sha" != "$ack_pending_sha" ]]; then
-      rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
+      # allow-comment: amend detection via parent comparison; equal parents
+      # allow-comment: (including both empty for root-amend) keep the slot.
+      # allow-comment: Known false-positive: a cherry-pick whose parent
+      # allow-comment: matches ack_pending_sha's parent is misread as amend.
+      local new_parent old_parent
+      new_parent=$(_dd_parent_sha "$current_sha")
+      old_parent=$(_dd_parent_sha "$ack_pending_sha")
+      if [[ "$new_parent" != "$old_parent" ]]; then
+        rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
+      fi
     fi
     ack_pending_sha=""
     _dd_write_state "$state_file" "$pv" "$pr" "$rp" ""
@@ -359,22 +438,22 @@ guard_commit_subject_posttool() {
   local pv="$DD_LOADED_PV" pr="$DD_LOADED_PR" rp="$DD_LOADED_RP"
   local ack_pending_sha="$DD_LOADED_ACK_SHA"
 
-  [[ "$pv" -ne -1 && "$pv" -ne 0 && "$pv" -ne 1 ]] && pv=-1
-  if [[ "$pr" -ne -1 ]]; then
-    local in_rot=0 slot
-    for slot in "${_DD_ROTATION_SLOTS[@]}"; do
-      [[ "$slot" -eq "$pr" ]] && { in_rot=1; break; }
-    done
-    [[ "$in_rot" -eq 0 ]] && pr=-1
-  fi
-  [[ "$rp" -lt 0 || "$rp" -ge "${#_DD_ROTATION_SLOTS[@]}" ]] && rp=0
-
   [[ -z "$ack_pending_sha" ]] && return 0
 
   local current_sha
   current_sha=$(git rev-parse HEAD 2>/dev/null | tr -cd '0-9a-f')
   [[ -z "$current_sha" ]] && return 0
   [[ "$current_sha" = "$ack_pending_sha" ]] && return 0
+
+  # allow-comment: amend detection (mirrors the PreToolUse-entry logic).
+  # allow-comment: Equal parents (including both empty for root-amend) means
+  # allow-comment: the commit object is a rewrite of the just-acked one.
+  local new_parent old_parent
+  new_parent=$(_dd_parent_sha "$current_sha")
+  old_parent=$(_dd_parent_sha "$ack_pending_sha")
+  if [[ "$new_parent" = "$old_parent" ]]; then
+    return 0
+  fi
 
   rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
   local next_slot="${_DD_ROTATION_SLOTS[$rp]}"

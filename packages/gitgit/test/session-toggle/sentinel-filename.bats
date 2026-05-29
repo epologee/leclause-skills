@@ -43,7 +43,7 @@ load helpers
   run_dispatch_with_session \
     'git commit -m "bare subject no body" # ack-rule4:essentie' \
     "$sid_b"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"[gitgit/commit-body]"* ]]
 }
 
@@ -68,6 +68,6 @@ load helpers
   run_dispatch_with_session \
     'git commit -m "bare subject no body" # ack-rule4:essentie' \
     "$sid"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"[gitgit/commit-body]"* ]]
 }
