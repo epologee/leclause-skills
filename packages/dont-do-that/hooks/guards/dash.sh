@@ -34,5 +34,5 @@ guard_dash() {
   ' <<< "$content")
 
   [ -z "$violation" ] && return 0
-  dd_emit_context dash "Em/en-dash in ${source}:${violation}. Rewrite using a comma, period, or parentheses."
+  dd_emit_context dash "Em/en-dash in ${source}:${violation}. Em-dashes read as machine-authored; in legal, formal, or customer-facing copy (terms, contracts, client messages) that is a tell to remove entirely. Rewrite using a comma, colon, period, or parentheses."
 }
