@@ -318,7 +318,7 @@ That path is the **plugin root in the cache**, not the repo root. It contains `.
 
 The `packages/<plugin>/` prefix only exists in the source repo, not in the cache. The `ls -1dt ... | head -1` trick against `~/.claude/plugins/cache/<marketplace>/<plugin>/` points to the same path but relies on mtime ordering and is therefore not stable; the `jq` lookup works deterministically.
 
-## `/reload-plugins`: re-reads the installed set, does not update it
+## `/reload-plugins` and `/reload-skills`: re-read the installed set, do not update it
 
 `/reload-plugins` is a TUI slash command that re-loads the currently-installed plugin set into the running session without a full restart. Its output looks like:
 
@@ -336,6 +336,14 @@ Empirically tested in Claude Code 2.1.156, with the leclause marketplace registe
 - The active `installPath` still served the old code: `grep wip_gate_commit_is_ours "$installPath/hooks/lib/wip-gate.sh"` found nothing, even though the working-tree file had it.
 
 Conclusion: editing a directory-backed marketplace's working tree and running `/reload-plugins` does NOT make the edit live; the reload re-loads the same stale cache snapshot. To pick up working-tree edits you must first `claude plugins update <plugin>@<marketplace>`, which copies the current working tree into a fresh cache version and rewrites `installPath`; only then does `/reload-plugins` (or a restart) load the new code. `/reload-plugins` usefully replaces the restart in the second half of that loop, never the update in the first half. The update snapshots the working tree as-is, including any uncommitted changes, so land or stash unrelated work first if you want a clean snapshot.
+
+`/reload-skills` is the skill-catalog counterpart and behaves the same way against the same cache snapshots. Its output looks like:
+
+```
+Reloaded skills: 148 skills available (no changes)
+```
+
+It re-reads the full skill catalog (every plugin's `skills/` plus user-level skills) and reports the count, with a `(no changes)` suffix when the reloaded set is byte-identical to what was already loaded. It is complementary to `/reload-plugins`: the plugin reload re-binds plugins, agents, hooks, and MCP/LSP servers but reported `0 skills`, while the skill reload owns the `148 skills`. The same empirical run confirmed it does not pull working-tree edits either: after `/reload-skills`, how-plugins-work stayed at version 1.0.25 with the identical `installPath`, and the new section marker was still absent from the active cache SKILL.md while present in the working tree. So `(no changes)` here means "the installed cache snapshot is unchanged", not "your working-tree edits were checked and skipped". Reload never looks at the working tree. The update-then-reload loop above is the same for skills.
 
 ## Troubleshooting: "Unknown command: /xyz"
 
