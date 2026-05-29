@@ -318,13 +318,32 @@ That path is the **plugin root in the cache**, not the repo root. It contains `.
 
 The `packages/<plugin>/` prefix only exists in the source repo, not in the cache. The `ls -1dt ... | head -1` trick against `~/.claude/plugins/cache/<marketplace>/<plugin>/` points to the same path but relies on mtime ordering and is therefore not stable; the `jq` lookup works deterministically.
 
+## `/reload-plugins`: re-reads the installed set, does not update it
+
+`/reload-plugins` is a TUI slash command that re-loads the currently-installed plugin set into the running session without a full restart. Its output looks like:
+
+```
+Reloaded: 32 plugins · 0 skills · 7 agents · 8 hooks · 0 plugin MCP servers · 0 plugin LSP servers
+```
+
+What it does: re-reads `installed_plugins.json` and re-binds every plugin, agent, hook, skill, and MCP/LSP server from each plugin's active `installPath` (the cache snapshot). It is the in-session alternative to the session restart that the troubleshooting steps below otherwise flag with 🚦.
+
+What it does NOT do: it is not `claude plugins install` / `update`. It does not bump a cache version, does not rewrite `installPath` or `lastUpdated`, and does not re-resolve a `directory`-source marketplace against your working tree.
+
+Empirically tested in Claude Code 2.1.156, with the leclause marketplace registered as a `directory` source pointing at the working copy. The working tree carried a new `wip_gate_commit_is_ours` function in `gitgit`'s `hooks/lib/wip-gate.sh`, committed on local `main`, while the active install was `cache/leclause/gitgit/1.0.135`. After `/reload-plugins`:
+
+- gitgit stayed at version 1.0.135, identical `installPath` and `lastUpdated`; no new cache directory appeared.
+- The active `installPath` still served the old code: `grep wip_gate_commit_is_ours "$installPath/hooks/lib/wip-gate.sh"` found nothing, even though the working-tree file had it.
+
+Conclusion: editing a directory-backed marketplace's working tree and running `/reload-plugins` does NOT make the edit live; the reload re-loads the same stale cache snapshot. To pick up working-tree edits you must first `claude plugins update <plugin>@<marketplace>`, which copies the current working tree into a fresh cache version and rewrites `installPath`; only then does `/reload-plugins` (or a restart) load the new code. `/reload-plugins` usefully replaces the restart in the second half of that loop, never the update in the first half. The update snapshots the working tree as-is, including any uncommitted changes, so land or stash unrelated work first if you want a clean snapshot.
+
 ## Troubleshooting: "Unknown command: /xyz"
 
 Observed symptom: user types `/rover` (or `/autonomous:rover`) and Claude Code replies `Unknown command`. Diagnose and fix. Do not narrate steps for the user to execute; Claude has shell access and can run the same commands. Dictating install commands is condescending when Claude can just install.
 
 **Step 0 (mandatory, no exceptions).** Run `claude plugins list` yourself before forming any hypothesis. This command is the single source of truth. If the plugin is absent, every theory about prefixing, namespacing, or skill resolution is noise.
 
-1. **Plugin not listed.** Run `claude plugins install <plugin>@<marketplace>`. The Claude process inherits the CLI so this just works. The only thing that is not Claude's to do is the session restart that picks up new plugins: flag that with 🚦 and wait for user go.
+1. **Plugin not listed.** Run `claude plugins install <plugin>@<marketplace>`. The Claude process inherits the CLI so this just works. The only thing that is not Claude's to do is loading the freshly-installed plugin: the user runs `/reload-plugins` (in-session, no restart) or restarts the session. Flag that with 🚦 and wait for user go.
 
 2. **Plugin listed but disabled.** Patch `~/.claude/settings.json` `enabledPlugins` to `"<plugin>@<marketplace>": true`. This is a user-level file; ask first before editing.
 
@@ -334,7 +353,7 @@ Observed symptom: user types `/rover` (or `/autonomous:rover`) and Claude Code r
 
 5. **Skill name collision across enabled plugins.** Bare `/<skill>` only resolves when unique. Use `/<plugin>:<skill>` via autocomplete.
 
-6. **Stale cache path.** Cached versions live under `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`. A long-running session may point at an older cached skill set. Flag 🚦 for a restart.
+6. **Stale cache path.** Cached versions live under `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`. A long-running session may point at an older cached skill set. Flag 🚦 for a restart, or `/reload-plugins` to re-bind the installed set in-session (note: reload re-reads the same `installPath`; it does not pick up working-tree edits without a prior `claude plugins update`, see the `/reload-plugins` section).
 
 Never advise the user to prefix or de-prefix a slash command without having run step 0. "Namespacing is required" is a guess when the actual failure is almost always install state, enable state, or a stale session. And never dictate `claude plugins install ...` at the user; run it.
 

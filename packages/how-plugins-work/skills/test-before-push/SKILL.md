@@ -54,7 +54,7 @@ That version must match the `version` in `packages/<plugin>/.claude-plugin/plugi
 
 Open a new Claude Code session in any directory (does not need to be this repo). The plugin is globally available via the user-scope install. Type the slash command of the plugin (for example `/gurus:software` for the gurus plugin) and test the behavior.
 
-The current session where you ran this already has the old version loaded in memory. You will only see an update after restarting this session. For the test, go to a fresh session.
+The current session where you ran this already has the old version loaded in memory. Pick it up either by restarting the session or by running `/reload-plugins` (re-reads the freshly-updated `installPath` in-session, no restart). The `/reload-plugins` command only helps after the `claude plugins update` above has bumped the cache version; reload alone never pulls working-tree edits. Testing in a separate fresh session still isolates you from any state this session is holding.
 
 ## The revert (step 2, after testing)
 
