@@ -25,10 +25,19 @@ guard_push_body_gate() {
   commits=$(git rev-list "$range" 2>/dev/null || true)
   [[ -z "$commits" ]] && return 0
 
+  local me
+  me=$(git config user.email 2>/dev/null || true)
+
   local violations=()
   local sha message subject tmpfile output rc shortstat file_count insertion_count
   while IFS= read -r sha; do
     [[ -z "$sha" ]] && continue
+
+    # allow-comment: personal discipline only judges commits that are ours
+    # allow-comment: (authored or rebase-co-authored); purely-carried teammate
+    # allow-comment: commits swept in by a rebase are never demanded a body.
+    wip_gate_commit_is_ours "$sha" "$me" || continue
+
     message=$(git log -1 --pretty=format:%B "$sha" 2>/dev/null || true)
     [[ -z "$message" ]] && continue
 

@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.154]
+
+### Fixed
+
+- **Rebased branches stop false-failing the push gates on a team repo.** A bare push scopes to `origin/<default>..HEAD` and judges only commits you authored or rebase-co-authored, so already-merged teammate commits a rebase swept in are never demanded a body or blocked.
+
 ## [v1.0.133]
 
 ### Fixed
