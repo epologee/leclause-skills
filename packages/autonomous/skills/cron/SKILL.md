@@ -81,11 +81,13 @@ The `jq` lookup returns the version Claude Code is currently loading, which matc
 
 ## When to change the cron
 
-**Nothing to do (STANDBY idle tick):**
-1. **Check operator presence first.** Backoff exists for unattended scenarios (the operator is AFK, the loop runs overnight, the session is paused mid-deploy waiting on CI). When the operator is actively responding in the same session, bumping `watch_checks` is the wrong response: it pretends the operator is absent when in fact a turnaround is seconds away, and it conflates "no work to do this tick" with "loop is being abandoned". Operator-present signal: the most recent non-cron message in the conversation is operator free-form text from the last few minutes (anything that does NOT match the cron template prompt starting with "First run /model sonnet to downgrade"). If that signal fires, this tick is a no-op: log a one-line "operator-active tick, no backoff" entry with the timestamp, leave `watch_checks` untouched, leave the cron unchanged, and end the turn.
-2. Operator absent or genuinely idle: increment `watch_checks` in the loop file.
-3. If the new value crosses a backoff threshold, `CronDelete` old job, `CronCreate` with new interval, update `cron_job_id`.
-4. Log a one-line tick with timestamp (`date +%H:%M`) including the new `watch_checks` value and the current interval. Silent ticks hide whether the cron is actually running.
+**Nothing for the cron to do this tick:**
+
+1. **Can the cron act?** The cron's only job is to drive the loop forward when nothing else does. If the next move requires a signal the cron cannot synthesize (an operator message, a bg task's completion, a scheduled trigger from another source) AND that signal has its own arrival channel that re-enters the loop on its own (the conversation re-entry on the operator's next message, a harness task-notification when a `run_in_background` command exits, `/autonomous:wake`), the cron adds no safety the arrival channel does not already provide. Pause it: invoke `cron` to `CronDelete` the current id, set `cron_job_id: paused` in the loop file, log `[HH:MM] cron paused: <wait source>; <re-arm channel> resumes`. The arrival event re-arms the cron via the standard interjection path (CronCreate at `* * * * *`, `watch_checks: 0`).
+2. **Cron can act but the loop is STANDBY-idle.** No arrival channel exists for the next move; the cron polling for new state IS the only detection mechanism. Bump `watch_checks` per the backoff table, log the tick with the new value and interval. Backoff exists for this case.
+3. **Cron can act and the loop is in an active phase.** Continue per the rover skill's phase instructions; do not pause or back off.
+
+This consolidates the previous "operator-present no-op" and "DRIVE-blocked OTP wait" rules into one principle. An active operator who is going to send the next signal is the case where the cron should pause (case 1), not where it should ceremonially log a no-op. A truly unattended loop with no external arrival channel falls under case 2 and backs off normally.
 
 **New input or phase becomes active:**
 1. Reset `watch_checks: 0`
