@@ -291,6 +291,14 @@ dd_is_git_push_command() {
   [[ "$stripped" =~ (^|[[:space:];\&|])git[[:space:]]+([A-Za-z0-9_=.-]+[[:space:]]+)*push([[:space:]]|$) ]]
 }
 
+# allow-comment: dd_stages_before_commit is true when a git add/stage runs in the same compound command as the commit. The PreToolUse gate fires before the command, so that staging has not run yet and its files are absent from the index the validator reads; the caller uses this to explain a path-not-found deny instead of leaving it bare. The message body is stripped first so an "add" inside the commit text does not count.
+dd_stages_before_commit() {
+  local command="$1"
+  local stripped
+  stripped=$(dd_strip_commit_message "$command")
+  [[ "$stripped" =~ (^|[^A-Za-z0-9_/.-])git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?(add|stage)([[:space:]]|$) ]]
+}
+
 dd_strip_commit_message() {
   local command="$1"
   local stripped
