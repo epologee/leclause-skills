@@ -46,6 +46,42 @@ export GIT_SHIM_REV_LIST_DEFAULT=""         # rev-list output for any range
 # Per-range overrides: GIT_SHIM_REV_LIST__<range-key> maps "upstream..local"
 # (with non-alnum chars replaced by _) to a newline-separated SHA list.
 
+# allow-comment: default-branch + authorship knobs feeding range scoping and
+# allow-comment: the ours-by-author filter. ORIGIN_HEAD answers symbolic-ref
+# allow-comment: refs/remotes/origin/HEAD (empty = unset). USER_EMAIL is the
+# allow-comment: pusher; author/committer default to the pusher so existing wip
+# allow-comment: fixtures stay "ours", and per-sha overrides via
+# allow-comment: wip_shim_set_author / _committer flip a commit to a teammate.
+export GIT_SHIM_ORIGIN_HEAD=""
+export GIT_SHIM_USER_EMAIL="dev@example.com"
+export GIT_SHIM_DEFAULT_AUTHOR_EMAIL=""
+export GIT_SHIM_DEFAULT_COMMITTER_EMAIL=""
+
+# allow-comment: per-commit `git show` deltas feed push-body-gate's trivial-ok
+# allow-comment: heuristic; defaults are non-trivial so a subject-only commit is
+# allow-comment: flagged unless a test overrides per-sha via wip_shim_set_show.
+export GIT_SHIM_SHOW_SHORTSTAT=" 3 files changed, 30 insertions(+)"
+export GIT_SHIM_SHOW_NAMES=$'a.rb\nb.rb\nc.rb'
+
+wip_shim_set_author() {
+  local key
+  key=$(printf '%s' "$1" | sed 's/[^A-Za-z0-9]/_/g')
+  eval "export GIT_SHIM_AUTHOR__${key}=\"\$2\""
+}
+
+wip_shim_set_committer() {
+  local key
+  key=$(printf '%s' "$1" | sed 's/[^A-Za-z0-9]/_/g')
+  eval "export GIT_SHIM_COMMITTER__${key}=\"\$2\""
+}
+
+wip_shim_set_show() {
+  local key
+  key=$(printf '%s' "$1" | sed 's/[^A-Za-z0-9]/_/g')
+  eval "export GIT_SHIM_SHOW_SHORTSTAT__${key}=\"\$2\""
+  eval "export GIT_SHIM_SHOW_NAMES__${key}=\"\$3\""
+}
+
 # wip_shim_set_revlist <range> <sha-list-newline-separated>
 wip_shim_set_revlist() {
   local range="$1"
@@ -118,6 +154,33 @@ if [[ "${args[0]}" = "rev-parse" ]]; then
   fi
 fi
 
+if [[ "${args[0]}" = "symbolic-ref" ]]; then
+  if [[ "${args[*]}" =~ refs/remotes/origin/HEAD ]]; then
+    if [[ -n "$GIT_SHIM_ORIGIN_HEAD" ]]; then
+      printf '%s\n' "$GIT_SHIM_ORIGIN_HEAD"
+      exit 0
+    fi
+    exit 1
+  fi
+  exit 1
+fi
+
+if [[ "${args[0]}" = "show" ]]; then
+  sha="${args[*]: -1}"
+  key=$(printf '%s' "$sha" | sed 's/[^A-Za-z0-9]/_/g')
+  if [[ "${args[*]}" =~ "--shortstat" ]]; then
+    var="GIT_SHIM_SHOW_SHORTSTAT__${key}"
+    printf '%s\n' "${!var:-$GIT_SHIM_SHOW_SHORTSTAT}"
+    exit 0
+  fi
+  if [[ "${args[*]}" =~ "--name-only" ]]; then
+    var="GIT_SHIM_SHOW_NAMES__${key}"
+    printf '%s\n' "${!var:-$GIT_SHIM_SHOW_NAMES}"
+    exit 0
+  fi
+  exit 0
+fi
+
 if [[ "${args[0]}" = "rev-list" ]]; then
   range="${args[1]}"
   key=$(printf '%s' "$range" | sed 's/[^A-Za-z0-9]/_/g')
@@ -155,7 +218,17 @@ if [[ "${args[0]}" = "log" ]]; then
     exit 0
   fi
   if [[ "${args[*]}" =~ "%ae" ]]; then
-    printf 'someone@example.com\n'
+    sha="${args[*]: -1}"
+    key=$(printf '%s' "$sha" | sed 's/[^A-Za-z0-9]/_/g')
+    var="GIT_SHIM_AUTHOR__${key}"
+    printf '%s\n' "${!var:-${GIT_SHIM_DEFAULT_AUTHOR_EMAIL:-$GIT_SHIM_USER_EMAIL}}"
+    exit 0
+  fi
+  if [[ "${args[*]}" =~ "%ce" ]]; then
+    sha="${args[*]: -1}"
+    key=$(printf '%s' "$sha" | sed 's/[^A-Za-z0-9]/_/g')
+    var="GIT_SHIM_COMMITTER__${key}"
+    printf '%s\n' "${!var:-${GIT_SHIM_DEFAULT_COMMITTER_EMAIL:-$GIT_SHIM_USER_EMAIL}}"
     exit 0
   fi
 fi
@@ -174,6 +247,10 @@ if [[ "${args[0]}" = "interpret-trailers" && "${args[1]}" = "--parse" ]]; then
   exit 0
 fi
 
+if [[ "${args[0]}" = "config" && "${args[*]}" =~ "user.email" ]]; then
+  printf '%s\n' "$GIT_SHIM_USER_EMAIL"
+  exit 0
+fi
 if [[ "${args[0]}" = "config" && "${args[*]}" =~ "remote.origin.url" ]]; then
   printf '%s\n' "$GIT_SHIM_ORIGIN_URL"
   exit 0

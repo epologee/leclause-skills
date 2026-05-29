@@ -54,6 +54,59 @@ wip_gate_parse_range() {
   printf '%s..%s' "$upstream" "$local_ref"
 }
 
+# allow-comment: wip_gate_resolve_default_ref echoes the remote default branch
+# allow-comment: ref (e.g. origin/master) used to scope a bare push. Resolution
+# allow-comment: order: origin/HEAD symbolic-ref, then origin/main, origin/master,
+# allow-comment: then local main/master. Returns non-zero when none resolve so the
+# allow-comment: caller can fall back to the tracked upstream.
+wip_gate_resolve_default_ref() {
+  local sym
+  sym=$(git symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null || true)
+  if [[ -n "$sym" ]]; then
+    printf '%s' "${sym#refs/remotes/}"
+    return 0
+  fi
+
+  local ref
+  for ref in origin/main origin/master main master; do
+    if git rev-parse --verify --quiet "$ref" >/dev/null 2>&1; then
+      printf '%s' "$ref"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+# allow-comment: wip_gate_commit_is_ours <sha> [identity-email] returns 0 when the
+# allow-comment: commit is the pusher's to be held to the personal discipline:
+# allow-comment: authored by the current git identity, committed by it (a rebase
+# allow-comment: that rewrote a teammate commit), or carrying a Co-authored-by
+# allow-comment: trailer naming it. A purely-carried teammate commit (none of the
+# allow-comment: three) returns 1 and is skipped. With no identity configured the
+# allow-comment: function returns 0 so the gate still enforces (range scoping has
+# allow-comment: already excluded merged work).
+wip_gate_commit_is_ours() {
+  local sha="$1"
+  local me="${2:-}"
+  [[ -z "$me" ]] && me=$(git config user.email 2>/dev/null || true)
+  [[ -z "$me" ]] && return 0
+
+  local author committer
+  author=$(git log -1 --pretty=format:%ae "$sha" 2>/dev/null || true)
+  [[ "$author" = "$me" ]] && return 0
+  committer=$(git log -1 --pretty=format:%ce "$sha" 2>/dev/null || true)
+  [[ "$committer" = "$me" ]] && return 0
+
+  local body
+  body=$(git log -1 --pretty=format:%B "$sha" 2>/dev/null || true)
+  case "$body" in
+    *[Cc]o-[Aa]uthored-[Bb]y:*"<$me>"*) return 0 ;;
+  esac
+
+  return 1
+}
+
 # allow-comment: shared push-arg tokenizer + range resolver, consolidated
 # allow-comment: from duplicate blocks in push-wip-gate.sh and push-body-
 # allow-comment: gate.sh so a new push shape lands in one place.
@@ -61,9 +114,11 @@ wip_gate_parse_range() {
 # allow-comment: prefix up to " push ", tokenizes the remaining args
 # allow-comment: (skipping flags and stopping at shell separators or
 # allow-comment: redirections), pairs remote/refspec positionals, and
-# allow-comment: resolves the rev-list range via wip_gate_parse_range,
-# allow-comment: falling back to the tracked upstream when no positional
-# allow-comment: pair is present.
+# allow-comment: resolves the rev-list range via wip_gate_parse_range. With no
+# allow-comment: explicit refspec it scopes to origin/<default>..HEAD (the work
+# allow-comment: not yet on the default branch) so a rebased branch does not drag
+# allow-comment: every catching-up commit in, falling back to the tracked upstream
+# allow-comment: only when no default branch resolves.
 wip_gate_resolve_push_range() {
   local command="$1"
 
@@ -102,9 +157,16 @@ wip_gate_resolve_push_range() {
     local upstream="$remote/$remote_branch"
     wip_gate_parse_range "$upstream" "$local_ref"
   else
-    local upstream
-    upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
-    wip_gate_parse_range "$upstream" "HEAD"
+    local default_ref
+    default_ref=$(wip_gate_resolve_default_ref)
+    if [[ -n "$default_ref" ]] \
+       && git rev-parse --verify --quiet "$default_ref" >/dev/null 2>&1; then
+      printf '%s..%s' "$default_ref" "HEAD"
+    else
+      local upstream
+      upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
+      wip_gate_parse_range "$upstream" "HEAD"
+    fi
   fi
 }
 
@@ -116,8 +178,12 @@ wip_gate_find_wip_commits() {
   commits=$(git rev-list "$range" 2>/dev/null || true)
   [[ -z "$commits" ]] && return 0
 
+  local me
+  me=$(git config user.email 2>/dev/null || true)
+
   while IFS= read -r sha; do
     [[ -z "$sha" ]] && continue
+    wip_gate_commit_is_ours "$sha" "$me" || continue
     body=$(git log -1 --pretty=format:%B "$sha" 2>/dev/null || true)
     [[ -z "$body" ]] && continue
 
