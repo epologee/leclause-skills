@@ -68,6 +68,11 @@ dd_cd_to_bash_target() {
     target="${target#\"}"; target="${target%\"}"
     target="${target#\'}"; target="${target%\'}"
     target="${target/#\~/$HOME}"
+  elif [[ "$command" =~ git[[:space:]]+-C[[:space:]]+(\"[^\"]+\"|\'[^\']+\'|[^[:space:]\&]+) ]]; then
+    target="${BASH_REMATCH[1]}"
+    target="${target#\"}"; target="${target%\"}"
+    target="${target#\'}"; target="${target%\'}"
+    target="${target/#\~/$HOME}"
   fi
 
   if [ -n "$target" ] && [ -d "$target" ]; then
