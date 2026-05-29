@@ -350,6 +350,8 @@ guard_commit_subject() {
       old_parent=$(_dd_parent_sha "$ack_pending_sha")
       if [[ "$new_parent" != "$old_parent" ]]; then
         rp=$(( (rp + 1) % ${#_DD_ROTATION_SLOTS[@]} ))
+        # allow-comment: the acked commit landed and consumed its slot; drop the pending slot so the next commit gets a fresh phase-1 reminder for the advanced rule. The HEAD-unchanged path below keeps pr so a commit that never landed re-uses the ack on retry instead of re-serving.
+        pr=-1
       fi
     fi
     ack_pending_sha=""
@@ -414,7 +416,8 @@ guard_commit_subject() {
     head_sha=$(git rev-parse HEAD 2>/dev/null | tr -cd '0-9a-f')
     # allow-comment: workaround for empty-repo Catch-22 (first commit on `git init`)
     [[ -z "$head_sha" ]] && head_sha="0"
-    _dd_write_state "$state_file" -1 -1 "$rp" "$head_sha"
+    # allow-comment: keep pr at the acked slot (not -1) so a commit that passes the ack but never lands (HEAD unchanged) re-uses the ack on retry via the pending-resolution above, instead of dropping to a fresh phase-1 reminder. On a landed commit the posttool hook (or the resolution's parents-differ branch) advances rp and clears pr.
+    _dd_write_state "$state_file" -1 "$pr" "$rp" "$head_sha"
     return 0
   fi
   local pr_essence pr_row_pointer
