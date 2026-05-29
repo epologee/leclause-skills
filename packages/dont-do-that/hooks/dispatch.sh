@@ -73,12 +73,14 @@ case "$EVENT" in
       source "$DIR/guards/verify.sh"
       source "$DIR/guards/duh.sh"
       source "$DIR/guards/compliance.sh"
+      source "$DIR/guards/jargon.sh"
       guard_cache "$INPUT"
       guard_estimate "$INPUT"
       guard_premature "$INPUT"
       guard_verify "$INPUT"
       guard_duh "$INPUT"
       guard_compliance "$INPUT"
+      guard_jargon "$INPUT"
     fi
     ;;
 esac

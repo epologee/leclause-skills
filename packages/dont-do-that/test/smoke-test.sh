@@ -203,6 +203,27 @@ expect_pass "compliance: WIP hatch" \
 expect_pass "compliance: no question mark" \
   "$(stop_payload "Ik heb de configuratie aangepast en alle testen blijven groen. 🏁")"
 
+expect_block_mnemonic "jargon: push-go coinage" jargon \
+  "$(stop_payload "De twee commits staan lokaal en wachten op je push-go. 🏁")"
+
+expect_block_mnemonic "jargon: ship-go coinage" jargon \
+  "$(stop_payload "Alles is groen en de feature staat klaar voor je ship-go. 🏁")"
+
+expect_block_mnemonic "jargon: raw user-go in chat" jargon \
+  "$(stop_payload "De merge wacht op je user-go voordat ik verderga. 🏁")"
+
+expect_pass "jargon: backticked mention is fine" \
+  "$(stop_payload "De term \`push-go\` is verboden; zeg gewoon dat je op mijn go wacht. 🏁")"
+
+expect_pass "jargon: plain phrasing passes" \
+  "$(stop_payload "De commits staan lokaal en wachten op jouw go om te pushen. 🏁")"
+
+expect_pass "jargon: get-go idiom is not a coinage" \
+  "$(stop_payload "Dit gedrag zat er vanaf de get-go al in en is geen regressie van deze wijziging. 🏁")"
+
+expect_pass "jargon: WIP hatch" \
+  "$(stop_payload "Klaar voor je push-go. 🚧")"
+
 # --- cache-excuse ---
 
 expect_block "cache: browser cache blame" \
