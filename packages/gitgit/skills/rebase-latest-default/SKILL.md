@@ -6,7 +6,7 @@ description: >
   Determines whether local main/master or origin/main is further ahead
   and rebases on the best target. Resolves simple merge conflicts
   automatically.
-allowed-tools: Bash(git rev-parse:*), Bash(git ls-remote:*), Bash(git rebase:*), Bash(git rev-list:*), Bash(git add:*), Bash(git diff:*), Bash(git status:*), Bash(git symbolic-ref:*), Bash(git remote:*), Bash(git log:*)
+allowed-tools: Bash(git rev-parse:*), Bash(git ls-remote:*), Bash(git rebase:*), Bash(git rev-list:*), Bash(git add:*), Bash(git diff:*), Bash(git status:*), Bash(git symbolic-ref:*), Bash(git remote:*), Bash(git log:*), Bash(git push:*), Bash(git config:*)
 optional: true
 scope: global
 ---
@@ -127,4 +127,25 @@ When a rebase stops on conflicts:
 
 ## Step 5: After Rebase
 
-Report the result: how many commits ahead of `$TARGET`, and whether conflicts were resolved (and if so, which files). No proactive suggestions beyond that. The user will push or take further action when ready.
+Report the result: how many commits ahead of `$TARGET`, and whether conflicts were resolved (and if so, which files). Then proceed to Step 6 for the push decision.
+
+## Step 6: Forced-continuation push (resolver-gated)
+
+A rebase rewrites the branch's commits, so a branch that already has an upstream now needs a `--force-with-lease` push to match. Under the push-policy that push is the COMPLETION of this rebase, not a new decision, so it does not need a fresh go. The current branch is a feature branch here (Step 2 already stopped if you were on the default), so this never force-pushes the default.
+
+Consult the resolver, reading `push_access` from its output:
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/skills/push-policy/git-repo-policy
+```
+
+Force-with-lease push only when BOTH hold:
+
+- the branch has an upstream (`git rev-parse --abbrev-ref --symbolic-full-name @{u}` resolves), and
+- `push_access` is not `external`.
+
+```bash
+git push --force-with-lease
+```
+
+The push hooks still gate the CONTENT of that push (no wip commits, valid bodies); the force flag does not bypass them. Otherwise (no upstream, or external access) leave the push to the operator and report that the branch is rebased and ready. See `/gitgit:push-policy` for the mode behavior.

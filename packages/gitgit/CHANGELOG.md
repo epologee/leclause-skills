@@ -17,6 +17,16 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.157]
+
+### Added
+
+- **`/gitgit:push-policy` decides whether and when a push fits the current repo.** A resolver derives one of five push modes from per-repo facts (collaboration, visibility, protection, access), overridable via git-local `codingAgent.git.*`.
+
+### Changed
+
+- **`/gitgit:rebase-latest-default` now finishes by force-pushing a rebased upstream branch when you have write access.** The `--force-with-lease` is the completion of the rebase, gated by the push-policy; it never touches a protected default.
+
 ## [v1.0.154]
 
 ### Fixed
