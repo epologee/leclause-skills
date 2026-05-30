@@ -78,11 +78,26 @@ When in doubt: confer. Never silently throw work away.
 # Repo root (always use as the basis for worktree paths)
 REPO_ROOT=$(git worktree list | head -1 | awk '{print $1}')
 
-# Default branch
+# Default branch name
 DEFAULT=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's|refs/remotes/origin/||')
 ```
 
 Fallback for default branch: check which of `main` or `master` exists.
+
+### Freshest base ref
+
+A new worktree must branch off the most up-to-date default branch, not whichever ref happens to be stale. The local `$DEFAULT` and the `origin/$DEFAULT` tracking ref drift apart constantly: the main worktree commits locally without pushing, or a teammate pushes while your tracking ref lags. Branching blindly off `origin/$DEFAULT` then forks the worktree off an ancient commit. Resolve `$BASE` to whichever ref is ahead. This compares the refs you already have, no fetch, which is exactly what fixes the stale-tracking-ref case:
+
+```bash
+git rev-parse --verify --quiet refs/heads/$DEFAULT
+git rev-parse --verify --quiet refs/remotes/origin/$DEFAULT
+```
+
+- **Both exist:** compare with `git rev-list --left-right --count refs/heads/$DEFAULT...refs/remotes/origin/$DEFAULT`. Left = local-only commits, right = origin-only. Set `$BASE` to `origin/$DEFAULT` only when origin is strictly ahead (left = 0, right > 0); otherwise to local `$DEFAULT` (covers local-ahead, equal, and diverged). Report which one won and why.
+- **Only one exists:** use that ref.
+- **Neither exists:** stop and ask.
+
+To branch off a remote that is fresher than your tracking ref, run `git fetch origin` first, then resolve. The same resolution drives `/gitgit:rebase-latest-default`; keep the two in step when you touch one.
 
 ## Directory convention
 
@@ -112,7 +127,7 @@ The calculated port is included in the start prompt (see step 2) so the worktree
 
 Create a new worktree with a branch and place a start command for the Claude session on the clipboard.
 
-**Input**: branch name (optional), start prompt (optional), base ref (optional, default `origin/$DEFAULT`).
+**Input**: branch name (optional), start prompt (optional), base ref (optional, default `$BASE`: the freshest default branch, see "Freshest base ref").
 
 When no branch name is provided, derive one from context:
 - GitHub issue URL in the conversation, use the issue title as a basis
@@ -142,10 +157,10 @@ If it fails: stop immediately, do not create a worktree, do not leave half-done 
 # Self-ignoring gitignore (only on first worktree)
 [ -f $REPO_ROOT/worktrees/.gitignore ] || echo '*' > $REPO_ROOT/worktrees/.gitignore
 
-git worktree add $REPO_ROOT/worktrees/<dir> -b <branch> origin/$DEFAULT
+git worktree add $REPO_ROOT/worktrees/<dir> -b <branch> $BASE
 ```
 
-Always use the absolute path via `$REPO_ROOT`, regardless of the current CWD. Directory name = branch name. Slashes in branch names become dashes in the directory (e.g. `feature/foo` becomes `worktrees/feature-foo`).
+`$BASE` is the freshest default branch resolved in "Freshest base ref", not a hardcoded `origin/$DEFAULT`. Always use the absolute path via `$REPO_ROOT`, regardless of the current CWD. Directory name = branch name. Slashes in branch names become dashes in the directory (e.g. `feature/foo` becomes `worktrees/feature-foo`).
 
 ### Step 1b: Copy project files
 
