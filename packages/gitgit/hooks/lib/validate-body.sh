@@ -258,6 +258,18 @@ validate_body() {
   # allow-comment: returns 1 if any landed.
   local _vb_errors=()
   _vb_err() { _vb_errors+=("$1"); }
+  # allow-comment: path-existence checks (Tests/Red-then-green/Visual/Verified
+  # allow-comment: paths resolving against the live tree or the filesystem) only
+  # allow-comment: hold at commit time, where the context is the staged area or
+  # allow-comment: HEAD (an --amend). The push-body-gate re-walks historical
+  # allow-comment: commits with context=<sha>, where a /tmp screenshot is long
+  # allow-comment: gone and a moved spec is a false positive; skip them there.
+  # allow-comment: Structural checks (subject, WHY, trailer presence, path
+  # allow-comment: format, n/a rationale) still run in every context.
+  local at_commit_time=0
+  case "${GITGIT_VALIDATE_CONTEXT:-staged}" in
+    staged|HEAD|head) at_commit_time=1 ;;
+  esac
   # allow-comment: hash literal used in printf format args. The comment-detect
   # allow-comment: hook tokenizer false-positives on a bare # in nested quotes,
   # allow-comment: so the literal is passed via %s instead of inlined.
@@ -386,7 +398,7 @@ validate_body() {
         _vb_err 'missing-tests: Tests trailer contains no valid path (expected e.g. spec/foo_spec.rb)'
       fi
 
-      if [[ "$tests_ok" -eq 0 ]]; then
+      if [[ "$at_commit_time" -eq 1 && "$tests_ok" -eq 0 ]]; then
         _vb_err 'tests-path-not-found: no Tests path exists in HEAD tree or staged diff'
       fi
     fi
@@ -422,14 +434,19 @@ validate_body() {
         # rather than a clearer format error. Strip trailing whitespace so
         # the staged-diff lookup uses the canonical name.
         rtg_path=$(printf '%s' "$rtg_path" | sed 's/[[:space:]]*$//')
-        local rtg_staged
-        rtg_staged=$(_vb_delta_files)
-        # allow-comment: gate the deeper line/name checks on the path-staged
-        # allow-comment: lookup so a missing path does not double-fail.
+        # allow-comment: path-in-staged is a commit-time check (the spec must be
+        # allow-comment: in the change under review). On push re-validation the
+        # allow-comment: spec may live in a sibling commit's delta, so skip it
+        # allow-comment: and leave path-ok true; the suffix format check below
+        # allow-comment: still runs in every context.
         local rtg_path_ok=1
-        if ! grep -qF "$rtg_path" <<< "$rtg_staged" 2>/dev/null; then
-          _vb_err "$(printf 'red-then-green-path-not-in-staged: Red-then-green path "%s" is not in the staged diff. Name a spec file that this commit actually touches, so the red-then-green claim is anchored to the change under review.' "$rtg_path")"
-          rtg_path_ok=0
+        if [[ "$at_commit_time" -eq 1 ]]; then
+          local rtg_staged
+          rtg_staged=$(_vb_delta_files)
+          if ! grep -qF "$rtg_path" <<< "$rtg_staged" 2>/dev/null; then
+            _vb_err "$(printf 'red-then-green-path-not-in-staged: Red-then-green path "%s" is not in the staged diff. Name a spec file that this commit actually touches, so the red-then-green claim is anchored to the change under review.' "$rtg_path")"
+            rtg_path_ok=0
+          fi
         fi
         if [[ -n "$rtg_suffix" ]] && [[ "$rtg_path_ok" -eq 1 ]]; then
           # Combined form only: <line> # <test-name>. The bare line-only and
@@ -445,7 +462,10 @@ validate_body() {
           local rtg_combined_re='^([1-9][0-9]*)[[:space:]]+#[[:space:]]+(.+)$'
           if ! [[ "$rtg_suffix" =~ $rtg_combined_re ]]; then
             _vb_err "$(printf 'missing-red-then-green: suffix must be "<line> %s <test-name>" (RSpec/Cucumber convention, keeps path:line clickable in iTerm2/VSCode/Ghostty). Bare "<line>" or bare "<test-name>" forms are no longer accepted; got: "%s"' "$_vb_hash" "$rtg_suffix")"
-          else
+          elif [[ "$at_commit_time" -eq 1 ]]; then
+            # allow-comment: line-out-of-range and test-not-found read the spec
+            # allow-comment: blob; on push re-validation the blob may be absent
+            # allow-comment: or shifted, so they run at commit time only.
             local rtg_line="${BASH_REMATCH[1]}"
             local rtg_name="${BASH_REMATCH[2]}"
 
@@ -570,7 +590,7 @@ validate_body() {
       if [[ -n "$repo_root" && "$resolved" != /* ]]; then
         resolved="$repo_root/$resolved"
       fi
-      if [[ ! -f "$resolved" ]]; then
+      if [[ "$at_commit_time" -eq 1 && ! -f "$resolved" ]]; then
         _vb_err "$(printf 'visual-path-not-found: Visual path "%s" was not found on disk (relative to repo root). Add the file or use Visual: n/a (rationale).' "$visual_value")"
       fi
     fi
@@ -640,7 +660,7 @@ validate_body() {
       if [[ -n "$v_repo_root" && "$v_resolved" != /* ]]; then
         v_resolved="$v_repo_root/$v_resolved"
       fi
-      if [[ ! -f "$v_resolved" ]]; then
+      if [[ "$at_commit_time" -eq 1 && ! -f "$v_resolved" ]]; then
         _vb_err "$(printf 'verified-path-not-found: Verified path "%s" was not found on disk (relative to repo root). Add the artefact or use a different Verified form.' "$verified_value")"
       fi
     else

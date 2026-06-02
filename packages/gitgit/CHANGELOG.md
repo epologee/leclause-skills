@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.161]
+
+### Fixed
+
+- **The push gate no longer fails on commits whose `Visual:`/`Verified:` path was deleted or whose `Tests:`/`Red-then-green:` spec moved after the commit.** Those path checks now run at commit time; trailer presence and format are still enforced at push.
+
 ## [v1.0.157]
 
 ### Added
