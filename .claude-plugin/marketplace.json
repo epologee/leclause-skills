@@ -111,6 +111,11 @@
       "name": "leclause",
       "description": "Marketplace-wide utilities for the leclause-skills marketplace. Currently ships /leclause:whats-new, a one-stop reader for the post-update CHANGELOG section of any installed leclause plugin.",
       "source": "./packages/leclause"
+    },
+    {
+      "name": "groceries",
+      "description": "Grocery automation skills bundled around the groceries Ruby CLI: order-from-anylist runs the LLM-assisted triage of an AnyList list into the Picnic mandje via the local wrapper. Future flows (e.g. recipe-planner) live here too.",
+      "source": "./packages/groceries"
     }
   ]
 }
