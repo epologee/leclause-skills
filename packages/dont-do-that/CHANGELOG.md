@@ -17,6 +17,12 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous.
 
+## [v1.0.81]
+
+### Fixed
+
+- **`no-code-comments` no longer flags `#` lines inside Ruby/shell heredocs.** A Markdown heading or embedded shell comment in a `<<~HTML` / `<<-EOS` / `<<'TAG'` body is content, not a code comment, and now passes; real comments after the heredoc closes are still caught.
+
 ## [v1.0.71]
 
 ### Changed

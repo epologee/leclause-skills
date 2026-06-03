@@ -20,11 +20,21 @@
 # MODE=hash recognises:
 #   line block:   # ...
 #   string types: "..." '...' """...""" '''...'''
+#   heredocs:     <<~TAG / <<-TAG / <<TAG / <<"TAG" / <<'TAG' (Ruby, shell)
 #   A `#` only opens a comment when it sits at the start of a line or is
 #   preceded by whitespace. `Recipes#create` (Ruby method notation) and
 #   `$foo#bar` (bash parameter expansion in the wild) therefore do not fire,
 #   even when an Edit snippet begins mid-string and the state machine has no
 #   way to know we started inside one.
+#   Heredoc bodies are shielded exactly like strings: a `#` at the start of
+#   a heredoc body line (a Markdown heading, a shell comment in an embedded
+#   script, a `# frozen` lookalike in templated Ruby) is content, not a
+#   comment. An opener (`x = <<~HTML`) queues its terminator; every following
+#   line is body until a line matching the terminator closes it. Multiple
+#   heredocs on one line (`foo(<<~A, <<~B)`) queue in order. The squiggly
+#   (`<<~`) and dash (`<<-`) forms allow an indented terminator; the bare
+#   `<<` form requires the tag to start uppercase or `_`, or be quoted, so
+#   left-shift (`arr << thing`) is not mistaken for a heredoc.
 #
 # Strings shield their contents from comment detection. Block comments stay
 # open across newlines; the emitted body is the joined content with newlines
@@ -38,6 +48,12 @@ BEGIN {
   state = "NORMAL"
   block_start_line = 0
   block_buf = ""
+  hd_lo = 0
+  hd_hi = -1
+}
+
+function hd_pending() {
+  return hd_hi >= hd_lo
 }
 
 {
@@ -52,7 +68,20 @@ END {
   }
 }
 
-function process_line(src,    n, i, ch, nx, nx2, buf) {
+function process_line(src,    n, i, ch, nx, nx2, buf, trimmed, term, rest, c2, c3, quote, ident, after, ok, squig) {
+  if (state == "NORMAL" && hd_pending()) {
+    term = hd_term[hd_lo]
+    trimmed = src
+    sub(/[[:space:]]+$/, "", trimmed)
+    if (hd_squiggly[hd_lo]) sub(/^[[:space:]]+/, "", trimmed)
+    if (trimmed == term) {
+      delete hd_term[hd_lo]
+      delete hd_squiggly[hd_lo]
+      hd_lo++
+    }
+    return
+  }
+
   n = length(src)
   i = 1
   while (i <= n) {
@@ -152,6 +181,37 @@ function process_line(src,    n, i, ch, nx, nx2, buf) {
       }
       if (ch == "\"") { state = "STRING_DQ"; i++; continue }
       if (ch == "'")  { state = "STRING_SQ"; i++; continue }
+      if (ch == "<" && nx == "<") {
+        rest = substr(src, i + 2)
+        squig = 0
+        if (substr(rest, 1, 1) == "~" || substr(rest, 1, 1) == "-") {
+          squig = 1
+          rest = substr(rest, 2)
+        }
+        quote = ""
+        c3 = substr(rest, 1, 1)
+        if (c3 == "\"" || c3 == "'" || c3 == "`") {
+          quote = c3
+          rest = substr(rest, 2)
+        }
+        if (match(rest, /^[A-Za-z_][A-Za-z0-9_]*/)) {
+          ident = substr(rest, 1, RLENGTH)
+          after = substr(rest, RLENGTH + 1, 1)
+          ok = 0
+          if (squig) ok = 1
+          else if (quote != "") ok = 1
+          else if (ident ~ /^[A-Z_]/) ok = 1
+          if (ok && (quote == "" || after == quote)) {
+            hd_hi++
+            hd_term[hd_hi] = ident
+            hd_squiggly[hd_hi] = squig
+            i += 2 + squig + (quote != "" ? 2 : 0) + RLENGTH
+            continue
+          }
+        }
+        i += 2
+        continue
+      }
       i++
       continue
     }

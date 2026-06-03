@@ -556,6 +556,20 @@ expect_allow "no-code-comments: Edit adds allow-comment escape in .py" \
 expect_allow "no-code-comments: Edit adds frozen_string_literal pragma in .rb" \
   "$(pretool_edit "/tmp/x.rb" "x = 1" $'# frozen_string_literal: true\nx = 1\ny = 2')"
 
+expect_allow "no-code-comments: Edit adds markdown heading inside <<~HTML heredoc in .rb" \
+  "$(pretool_edit "/tmp/x.rb" "render html: 1" $'render html: <<~HTML\n  # Account update\n  **bold** intro\nHTML')"
+
+expect_allow "no-code-comments: Edit adds shell comment inside <<-EOS heredoc in .rb" \
+  "$(pretool_edit "/tmp/x.rb" "x = 1" $'x = <<-EOS\n  # not a comment\n  EOS')"
+
+expect_deny "no-code-comments: Edit adds real # comment after heredoc closes in .rb" \
+  "$(pretool_edit "/tmp/x.rb" "x = 1" $'a = <<~SQL\n  select 1\nSQL\n# real comment')" \
+  "no-code-comments"
+
+expect_deny "no-code-comments: Edit adds # comment after left-shift (not a heredoc) in .rb" \
+  "$(pretool_edit "/tmp/x.rb" "x = 1" $'arr << thing\n# real comment')" \
+  "no-code-comments"
+
 expect_allow "no-code-comments: Edit adds @ts-ignore pragma in .ts" \
   "$(pretool_edit "/tmp/x.ts" "let x = any;" $'// @ts-ignore\nlet x = any;')"
 
