@@ -116,6 +116,11 @@
       "name": "groceries",
       "description": "Grocery automation skills bundled around the groceries Ruby CLI: order-from-anylist runs the LLM-assisted triage of an AnyList list into the Picnic mandje via the local wrapper. Future flows (e.g. recipe-planner) live here too.",
       "source": "./packages/groceries"
+    },
+    {
+      "name": "anger-management",
+      "description": "Vent at your agent session and capture the moment as a friction paper-cut. Each venting command (/fuck, /shit, /crap, /wtf, /bullshit, /damn) appends one cheap line to a deterministic log instead of demanding a constructive fix right now; /anger-management reads the log back, surfaces recurring patterns, and hands them to self-improvement. The vocabulary is deliberately gender-neutral and non-discriminatory.",
+      "source": "./packages/anger-management"
     }
   ]
 }
