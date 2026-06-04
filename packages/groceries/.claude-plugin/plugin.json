@@ -1,7 +1,7 @@
 {
   "name": "groceries",
   "description": "Grocery automation skills bundled around the groceries Ruby CLI: order-from-anylist runs the LLM-assisted triage of an AnyList list into the Picnic mandje via the local wrapper. Future flows (e.g. recipe-planner) live here too.",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": {
     "name": "epologee"
   }

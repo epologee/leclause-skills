@@ -1,7 +1,8 @@
 ---
 name: saysay
 user-invocable: true
-description: Speech mode: Claude speaks every response aloud via macOS say. /saysay off to exit.
+description: >-
+  Speech mode: Claude speaks every response aloud via macOS say. /saysay off to exit.
 allowed-tools:
   - Bash(saysay *)
   - Bash(*| saysay*)

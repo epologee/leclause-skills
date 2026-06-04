@@ -1,7 +1,8 @@
 ---
 name: sanitize
 user-invocable: true
-description: Use when sanitizing a Claude Code skill: strip PII (home paths, names, internal URLs, credentials, etc.) and flag security issues. Operates on a source skill directory. The single step that makes a skill "safe to leave this machine."
+description: >-
+  Use when sanitizing a Claude Code skill: strip PII (home paths, names, internal URLs, credentials, etc.) and flag security issues. Operates on a source skill directory. The single step that makes a skill "safe to leave this machine."
 argument-hint: "<skill-name-or-path>"
 allowed-tools:
   - Bash(ls *)

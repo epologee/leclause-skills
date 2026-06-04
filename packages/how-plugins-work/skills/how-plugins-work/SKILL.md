@@ -109,6 +109,23 @@ What the model sees in the skill list and uses to decide auto-invocation. Two an
 
 Lean reference: `dont-do-that:just-a-question` describes what the skill enforces in two short sentences and parks the rest in the body.
 
+### Frontmatter must be strict YAML
+
+Claude Code's frontmatter parser is lenient: a plain scalar `description:` that contains `: ` (colon-space), starts with a quote, or holds other YAML-special punctuation still loads, because the parser just grabs the rest of the line. Strict YAML parsers (Ruby's psych, and the Codex `.codex-plugin` toolchain that reads the same SKILL.md) reject it with `mapping values are not allowed in this context`. The two readers then disagree on a file that looked fine in Claude Code.
+
+Keep every frontmatter value valid under a strict parser so the file means the same thing in every consumer. When a `description` contains `: `, a leading quote, or a leading `#` / `|` / `>` / `@`, use a folded block scalar instead of an inline plain scalar:
+
+```yaml
+description: >-
+  Speech mode: Claude speaks every response aloud via macOS say. /saysay off to exit.
+```
+
+`>-` folds the indented lines into one space-joined string and strips the trailing newline, so the parsed value is byte-identical to the intended one-liner, colons and quotes preserved. A plain one-line scalar stays fine when the text carries no YAML-special punctuation; reach for `>-` only when it does. Verify with a strict parser before shipping:
+
+```bash
+ruby -ryaml -e 'YAML.safe_load(File.read(ARGV[0]).split(/^---\s*$/)[1])' SKILL.md
+```
+
 ## Model selection
 
 A skill **cannot** change the session model. The model the user chose at session start (or via `/model`) runs through all turns, including turns fired by cron. A skill that outputs `/model <name>` as text behaves like a fake user input, is unreliable, and persists after the skill run, corrupting the user session.
