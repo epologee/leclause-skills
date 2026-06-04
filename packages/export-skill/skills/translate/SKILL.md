@@ -1,7 +1,8 @@
 ---
 name: translate
 user-invocable: true
-description: Use when translating a Claude Code skill between Dutch and English. Operates on a source skill directory in `~/.claude/skills/` or on an already-exported path. Applies translate rules consistently: body text yes, frontmatter and code no.
+description: >-
+  Use when translating a Claude Code skill between Dutch and English. Operates on a source skill directory in `~/.claude/skills/` or on an already-exported path. Applies translate rules consistently: body text yes, frontmatter and code no.
 argument-hint: "<skill-name-or-path> <en|nl>"
 allowed-tools:
   - Bash(ls *)
