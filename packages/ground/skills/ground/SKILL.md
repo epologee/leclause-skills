@@ -99,6 +99,12 @@ When the user types `/ground` or expresses doubt, the working hypothesis is: **t
 
 **When verification is impossible.** If local and external sources are exhausted without an answer: honestly say "I cannot verify this with the available tools. My claim was based on training data and I cannot confirm whether it is current." No pretending, no hedging.
 
+## Proactive trigger: claims of necessity that justify complexity
+
+Ground does not only fire after the user doubts you. It fires the moment you are about to assert that an existing or proposed design is technically *necessary* ("X needs its own route / layer / abstraction / iframe / service because Y"). A necessity claim is the most expensive kind of confident error: it does not just state a fact, it freezes complexity in place by making it look unavoidable. Before you write "this has to be separate because...", run IDENTIFY + SEARCH on the "because" the same way you would for any verifiable claim. Most of the time the honest answer is "this is a choice, possibly a convenient one, not a necessity" and the complexity was never load-bearing.
+
+When the user pushes back on such a claim ("dat is onzin", "waarom dan wel"), that is a ground trigger, not a debate invitation. Do not produce a second rationalization to defend the first. Ground immediately: re-read the artefact in front of you (the user often pastes the very screenshot that refutes you), find the evidence, and concede or correct. A second defense after a single push-back is the confabulation compounding itself.
+
 ## Red Flags
 
 | Thought | Reality |
@@ -110,3 +116,6 @@ When the user types `/ground` or expresses doubt, the working hypothesis is: **t
 | "The user misunderstands my answer" | No. Find evidence first before concluding that. |
 | "Quick check in my training data" | That IS your training data. Use tools. |
 | "It's just a minor detail" | Minor details drive major decisions. |
+| "This needs its own route/layer/abstraction because..." | A necessity claim that justifies complexity. Ground the "because" before asserting it; usually it is a choice, not a necessity. |
+| "Let me explain why the existing design is correct" | Defending complexity with an unverified rationale. The user is questioning whether it should exist, not asking for a justification. Ground first. |
+| "The user pushed back, let me clarify my reasoning" | A second rationalization after one push-back is the confabulation compounding. Re-read the artefact, find evidence, concede or correct. |
