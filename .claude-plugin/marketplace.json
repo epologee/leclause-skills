@@ -53,6 +53,11 @@
       "source": "./packages/inspire"
     },
     {
+      "name": "intervision",
+      "description": "Bring another vendor's coding agent in as a peer to review work just done or just discussed. The /intervision:second-opinion skill hands the diff or the design to Codex via `codex exec`, surfaces its independent read, and goes back and forth. Intervision is peer consultation among equals, not supervision from above.",
+      "source": "./packages/intervision"
+    },
+    {
       "name": "recap",
       "description": "Structured status overview of the current session: what we are doing, where we are, what is next. Useful when returning to a session after idle time, after compaction, or after a long stretch of repetitive background output.",
       "source": "./packages/recap"
