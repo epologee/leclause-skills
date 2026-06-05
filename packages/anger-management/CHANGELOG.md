@@ -17,9 +17,9 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
 
-## [v1.0.1]
+## [v1.0.2]
 
 ### Added
 
-- New plugin. Vent at a grating session with `/fuck`, `/shit`, `/crap`, `/wtf`, `/bullshit`, or `/damn`; each logs one cheap friction line to `~/.claude/var/leclause/anger-management/friction.jsonl` and moves on, no fix demanded in the moment.
-- `/anger-management` reads the log back, ranks recurring frictions, and offers to route the worst to `/self-improvement`.
+- New plugin. Curse at the agent with `/fuck`, `/shit`, `/crap`, `/wtf`, `/bullshit`, or `/damn` to capture one cheap friction line to a global log and move on, no fix demanded in the moment.
+- `/anger-management:repair` is the cooled-down fix pass: a go/no-go verdict (nothing / not-enough-signal / fix) that routes a real recurring problem to `/self-improvement`, or changes nothing when the pattern is unclear. `/anger-management` stays a quick read-back of the pile.

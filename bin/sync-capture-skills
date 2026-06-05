@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 // Operator-only maintenance script. Single source of truth for the anger-management
-// plugin's seven venting skills is packages/anger-management/vent-skill.template.md
+// plugin's six capture (curse) skills is packages/anger-management/capture-skill.template.md
 // plus the WORDS list below. Each word skill is a mechanical reflection of the
 // template with __WORD__ substituted, so a change to the capture protocol lands
-// in one place instead of seven. Same shape as bin/sync-check-broadcast.
+// in one place instead of six. Same shape as bin/sync-check-broadcast.
 //
 // Usage:
-//   bin/sync-vent-skills            # report drift (exit 1 on drift)
-//   bin/sync-vent-skills --write    # render the template into every word skill
+//   bin/sync-capture-skills            # report drift (exit 1 on drift)
+//   bin/sync-capture-skills --write    # render the template into every word skill
 //
 // Exit: 0 = in sync (or written), 1 = drift detected (report mode)
 //
-// Editing a vent skill: change vent-skill.template.md (or the WORDS list) and
+// Editing a capture skill: change capture-skill.template.md (or the WORDS list) and
 // run --write. Do not hand-edit the generated skills/<word>/SKILL.md files; run
 // --check before committing if you are unsure they are in sync.
 
@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 const WORDS = ['fuck', 'shit', 'crap', 'wtf', 'bullshit', 'damn'];
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const template = join(repoRoot, 'packages', 'anger-management', 'vent-skill.template.md');
+const template = join(repoRoot, 'packages', 'anger-management', 'capture-skill.template.md');
 const skillsDir = join(repoRoot, 'packages', 'anger-management', 'skills');
 
 if (!existsSync(template)) {
@@ -49,18 +49,18 @@ for (const word of WORDS) {
 }
 
 if (drift.length === 0) {
-  console.log(`All ${WORDS.length} vent skills match the template.`);
+  console.log(`All ${WORDS.length} capture skills match the template.`);
   process.exit(0);
 }
 
 if (write) {
-  console.log(`Rendered template into ${drift.length} vent skill(s):`);
+  console.log(`Rendered template into ${drift.length} capture skill(s):`);
   for (const d of drift) console.log(`  - ${d.word}`);
   process.exit(0);
 }
 
-console.error(`vent-skill drift in ${drift.length} skill(s):`);
+console.error(`capture-skill drift in ${drift.length} skill(s):`);
 for (const d of drift) console.error(`  - ${d.target}`);
 console.error('');
-console.error('Run: bin/sync-vent-skills --write');
+console.error('Run: bin/sync-capture-skills --write');
 process.exit(1);

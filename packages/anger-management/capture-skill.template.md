@@ -1,13 +1,13 @@
 ---
-name: damn
+name: __WORD__
 user-invocable: true
-description: Invoked as /damn. Captures a one-line friction note for a later repair pass; runs only when the operator explicitly types this command, never auto-activated.
+description: Invoked as /__WORD__. Captures a one-line friction note for a later repair pass; runs only when the operator explicitly types this command, never auto-activated.
 effort: low
 ---
 
-# /damn
+# /__WORD__
 
-The operator just cursed "damn" at the session. This is a capture, not a request
+The operator just cursed "__WORD__" at the session. This is a capture, not a request
 to fix anything now: log it cheap and get back to work. The constructive pass happens
 later via `/anger-management:repair`.
 
@@ -17,13 +17,13 @@ later via `/anger-management:repair`.
    shell touching the text, even if it echoes something hostile):
 
    ```bash
-   node "${CLAUDE_PLUGIN_ROOT}/bin/anger-log" damn <<'CAPTURE_NOTE'
+   node "${CLAUDE_PLUGIN_ROOT}/bin/anger-log" __WORD__ <<'CAPTURE_NOTE'
    <pointer>
    CAPTURE_NOTE
    ```
 
    No clear cause? Log the word alone, do not invent one:
-   `node "${CLAUDE_PLUGIN_ROOT}/bin/anger-log" damn </dev/null`
+   `node "${CLAUDE_PLUGIN_ROOT}/bin/anger-log" __WORD__ </dev/null`
 
 2. Arm the cooled-down repair so the operator never has to remember it:
 

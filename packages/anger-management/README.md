@@ -1,55 +1,87 @@
 # anger-management
 
-A swear jar that pays you back in workflow improvements.
+Curse at your coding agent now, fix the actual problem later.
 
-When a session grates and you have no appetite to be constructive about it
-right then, vent. Each venting command logs the moment as a tiny friction
-paper-cut instead of demanding an immediate fix. Later, `/anger-management` reads the
-pile back, finds the patterns, and hands the worst offenders to
-self-improvement.
+When the agent does something that sets you off, you do not want a lecture and you do
+not want to drop everything to fix it. So you curse: `/fuck`, `/shit`, `/crap`, `/wtf`,
+`/bullshit`, `/damn`. Each one captures a single cheap line about what happened and
+gets out of your way. Later, cooled off, `/anger-management:repair` looks at the pile,
+decides whether there is one concrete recurring thing worth fixing, and if so routes it
+to `/self-improvement`. If there is nothing clear, it changes nothing. That restraint
+is the point.
 
-This is the deliberately low-effort front door to friction reduction: the
-beerput of self-improvement. The capture costs you one word; the constructive
-work happens on your terms, in aggregate, never in the heat of the moment.
+## The idea, in one breath
 
-## Why it works this way
+Two things at once, 80% serious and 20% dry: it makes working with the agent better,
+and it gives you somewhere to put the heat without pretending the heat fixes anything.
 
-The split between cheap in-the-moment capture and a later prioritisation pass
-is how teams already run this. Stripe wired "bad day" buttons into every
-engineering tool so frustration could be logged frictionlessly, then a
-separate team mined the pile for low-hanging fruit. Friction logging and
-paper-cut collectors follow the same shape. Repeated vents against the same
-project or theme are the rage-tap signal: a real friction point, not a one-off
-bad moment. This plugin is that pattern, scaled down to a single agent
-session.
+The split between a cheap in-the-moment capture and a later, separate fix pass is how
+teams already do it (Stripe wired "bad day" buttons into their tooling, then a separate
+team mined the pile). It is also what the research says: letting it out
+does not discharge anger, it rehearses it (Bushman 2002), so the curse stays a
+two-second capture you walk away from, never a rant you marinate in.
 
 ## Commands
 
 | Command | What it does |
 |---------|--------------|
-| `/fuck`, `/shit`, `/crap`, `/wtf`, `/bullshit`, `/damn` | Vent. Logs one cheap line and moves on. No apology, no analysis, no scope change. |
-| `/anger-management` | Read the log back, surface recurring frictions, offer to route the worst to `/self-improvement`. |
+| `/fuck` `/shit` `/crap` `/wtf` `/bullshit` `/damn` | Capture one cheap friction line and move on. No apology, no fix, no scope change. |
+| `/anger-management` | Quick read-back of the pile and its recurring clusters. |
+| `/anger-management:repair` | The cooled-down fix pass: judge go/no-go, and route a real recurring problem to `/self-improvement`. |
 
-The vocabulary is deliberately gender-neutral and non-discriminatory:
-scatological and generic-sexual words, nothing that punches at a group.
+The vocabulary avoids slurs and identity-targeted abuse.
 
-## The log
+## How it works
 
-Append-only JSONL at a deterministic, marketplace-shared location:
+1. **Capture (instant, global).** A curse appends one line to a single pile shared
+   across every session and repo: `~/.claude/var/leclause/anger-management/friction.jsonl`
+   (`ts, word, cwd, git, note`). The note is fed on stdin via a quoted heredoc, so it is
+   never interpreted by the shell even if it echoes something hostile.
+2. **Cool down (you do not have to remember).** A capture arms a single background
+   investigation: 22 minutes 22 seconds later (a wink, and long enough for the heat to
+   pass) a separate headless `claude` agent reads the open captures, the repair history,
+   and the recent transcripts, and writes a diagnosis. If you are still in that session, a
+   check-in cron may surface it between turns; otherwise it shows up at your next
+   `/anger-management:repair`. Either way, ignoring it just leaves the captures open.
+3. **Repair (on your terms).** `/anger-management:repair` opens with a blunt verdict:
+   *nothing* (change nothing, and that is fine), *not-enough-signal* (leave it open to
+   accumulate), or *fix* (one concrete recurring thing plus the specific change). A real
+   fix gets routed to `/self-improvement`. Crucially, the fix is often a *revert or
+   loosen* of a past rule that overcorrected, not another rule piled on.
 
-```
-~/.claude/var/leclause/anger-management/friction.jsonl
-```
+Because the pile is global and every repair reads the whole open set, deferring makes
+the diagnosis better: curse in one session, again two hours later in another, and they
+land in the same pile and get weighed together.
 
-Each line: `{ "ts", "word", "cwd", "git", "note" }`. The note is a pointer of
-at most a dozen words to whatever caused the friction, drawn from the
-conversation. The log is yours; clear it by hand if you want a fresh start.
+## Why "repair" never just edits CLAUDE.md on a hunch
 
-## How a vent is handled
+You mostly curse when a behaviour comes back *despite* earlier self-improvements. So a
+curse is also a signal that a previous fix added noise or swung too far. If the verdict
+is not clearly actionable and we change config anyway, that is noise-reflex busywork
+that fools everyone. So the default is to change nothing unless the pattern is concrete.
 
-1. The agent distils what grated into a short pointer and feeds it to
-   `bin/anger-log <word>` on stdin (via a quoted heredoc, so the pointer is
-   never interpreted by the shell even if it echoes hostile content).
-2. The command's own `logged <word>: ...` line is the acknowledgement. The agent
-   adds at most one terse line, then resumes. It does not launch self-improvement,
-   apologise, or change scope. That is the whole point.
+## The thinking behind it (research spine)
+
+- **The delayed pass separates fixable workflow friction from the extra noise of the
+  moment.** The background for that split, stated as a fact about brains and never as a
+  verdict about you: emotions are built, not piped in raw (Anil Seth's "controlled
+  hallucination"; Lisa Feldman Barrett's constructed emotion).
+- **Signal anger vs pattern anger.** Some anger is real, present, and points at a fixable
+  thing (act on it). Some is an old pattern re-igniting, out of proportion to the trigger
+  (sit with it). Repair's whole job is to separate the two: honour the signal by fixing
+  the recurring problem, and leave the pattern to you. (Roughly the Emotion-Focused
+  Therapy distinction between adaptive and maladaptive anger; it rhymes with, but is not
+  the same as, the Japanese okoru/ikari split of immediate vs deep anger.)
+- **Catharsis is a myth** (Bushman 2002): blowing off steam amplifies anger, so capture
+  stays cheap and repair de-escalates instead of inviting more heat.
+- **It "gets you" by mirroring, not profiling.** It only ever reflects your own logged
+  lines back ("you hit this three times"); it builds no profile of you. State is stored
+  locally; the optional background investigation uses the configured runner, so that
+  step does send your captures and the relevant transcripts to that model.
+
+## Files
+
+- `bin/anger-log` captures a line. `bin/anger-arm` single-flight launches the background
+  investigation. `bin/anger-resolve` records a routed fix so its captures close.
+- The six curse skills are generated from `capture-skill.template.md` by
+  `bin/sync-capture-skills` (repo root); edit the template, not the six files.
