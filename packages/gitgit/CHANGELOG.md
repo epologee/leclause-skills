@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.163]
+
+### Fixed
+
+- **`rebase-latest-default` now reruns CI on the rebased tip of a published branch.** When a branch has an open PR but no local tracking, the gate keys on the remote and force-pushes with a lease, instead of leaving CI on the pre-rebase commits.
+
 ## [v1.0.161]
 
 ### Fixed
