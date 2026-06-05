@@ -1,7 +1,7 @@
 ---
-name: confer
+name: lifeline
 user-invocable: true
-description: Use when you want a peer second opinion on work just done or just discussed from another vendor's coding agent. Triggers on /intervision:confer, "let Codex check this", "second opinion from Codex", "confer with the other agent", "what does Codex think of this", "let Codex look at this". Hands the diff or the design to Codex via `codex exec`, surfaces its independent read, and confers back and forth.
+description: Use when you want a peer second opinion on work just done or just discussed from another vendor's coding agent. Triggers on /intervision:lifeline, "let Codex check this", "second opinion from Codex", "phone a friend on this", "what does Codex think of this", "let Codex look at this". Hands the diff or the design to Codex via `codex exec`, surfaces its independent read, and goes back and forth.
 effort: medium
 ---
 
@@ -25,25 +25,25 @@ run does not mark the version as seen. `/leclause:whats-new intervision`
 re-shows the section on demand without touching the sentinel.
 </post-update-broadcast>
 
-# Confer
+# Lifeline
 
-Intervision is peer consultation: equals looking at each other's work, not a supervisor looking down. Etymology says it plainly, `inter-` (between, among, together) against `super-` (from above). This skill brings a second coding agent in as that peer. You hand it the work just done or just discussed, it looks with fresh eyes and a different training, and the two of you confer.
+Intervision is peer consultation: equals looking at each other's work, not a supervisor looking down. Etymology says it plainly, `inter-` (between, among, together) against `super-` (from above). This skill is the lifeline you reach for: it brings a second coding agent in as that peer. You hand it the work just done or just discussed, it looks with fresh eyes and a different training, and the two of you talk it through.
 
 The peer here is Codex, reached through its `codex exec` command. It runs from the same repository, on its own login, with its own model behind it. That independence is the whole point; a peer trained the same way as you would only echo you.
 
 ## The peer has to be there
 
-Before conferring, confirm the peer exists:
+Before calling the lifeline, confirm the peer exists:
 
 ```bash
-command -v codex >/dev/null 2>&1 || { echo "codex CLI not found; intervision needs a peer to confer with. Install and log in to Codex first."; }
+command -v codex >/dev/null 2>&1 || { echo "codex CLI not found; intervision needs a peer to call. Install and log in to Codex first."; }
 ```
 
-If `codex` is missing, or `codex login status` shows you are not logged in, say so plainly and stop. There is no peer to confer with, and pretending otherwise wastes the operator's time. This is the one hard precondition.
+If `codex` is missing, or `codex login status` shows you are not logged in, say so plainly and stop. There is no peer to call, and pretending otherwise wastes the operator's time. This is the one hard precondition.
 
-## Three ways to confer
+## Three ways to use the lifeline
 
-Pick by what just happened. All three run through `codex exec`, and they combine: review a diff first, then confer back on whatever the review leaves open.
+Pick by what just happened. All three run through `codex exec`, and they combine: review a diff first, then go back and forth on whatever the review leaves open.
 
 **1. Check work just done, when there is a diff.** Codex's review path reads the repository's changes directly, so point it at the change set that matches "what we just did":
 
@@ -62,7 +62,7 @@ Peer review this plan before we build it.
 PROMPT
 ```
 
-**3. Confer back and forth.** A single answer is consultation; intervision is a conversation. Resume the same session to push on a point, defend your reasoning, or ask the peer to reconsider, again through a quoted heredoc:
+**3. Go back and forth.** A single answer is consultation; intervision is a conversation. Resume the same session to push on a point, defend your reasoning, or ask the peer to reconsider, again through a quoted heredoc:
 
 ```bash
 codex exec resume --last - <<'PROMPT'
@@ -72,13 +72,13 @@ PROMPT
 
 Keep resuming until each disagreement is either resolved or sharpened into a question the operator should decide. If two rounds pass with no movement, stop and surface the disagreement to the operator with both positions rather than looping.
 
-## How to confer well
+## How to do it well
 
 The round-trip only earns its cost if the handoff is honest.
 
 - **Give the peer the real work, not a summary you are proud of.** Point it at the actual diff, or paste the actual design with the shaky parts left in. A flattering summary buys a flattering review.
 - **Read for the disagreement, not the agreement.** The peer agreeing is cheap and tells you little. The signal is where its independent read diverges from yours.
-- **Stay a peer, not a deferrer.** A second agent is not an authority. When the peer is wrong, say so and confer back. When it is right, concede plainly. Equals, in both directions.
+- **Stay a peer, not a deferrer.** A second agent is not an authority. When the peer is wrong, say so and push back. When it is right, concede plainly. Equals, in both directions.
 - **Keep the peer reviewing, not editing.** `codex exec review` is used here to read a change set and report on it, and `-s read-only` keeps the design path from touching the tree. Let the peer propose; you and the operator decide what lands. Only widen the sandbox when the operator asks for it on purpose.
 - **Never expand the handoff through the shell.** A pasted design or follow-up is arbitrary text and may contain `$(...)`, backticks, or quotes. Feed it on stdin through a quoted heredoc (`<<'PROMPT' ... PROMPT`) into `codex exec ... -`, never as a double-quoted argument, so the shell passes it to the peer verbatim instead of executing part of it.
 

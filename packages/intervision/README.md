@@ -4,14 +4,14 @@ Peer consultation for coding agents. Intervision is the practice of equals
 reviewing each other's work, the opposite of supervision from above. This
 plugin brings a second coding agent (Codex) in as that peer: you hand it the
 work just done or just discussed, it looks with a different model and a fresh
-read, and the two of you confer. The signal is the gap between two independent
-agents, the spots where you and the peer disagree.
+read, and the two of you talk it through. The signal is the gap between two
+independent agents, the spots where you and the peer disagree.
 
 ## Commands
 
-### `/intervision:confer`
+### `/intervision:lifeline`
 
-Hands the recent work to Codex through `codex exec` and confers about it. Three
+Hands the recent work to Codex through `codex exec` and talks it through. Three
 shapes, picked by what just happened:
 
 - **Work just done (a diff):** Codex reviews the actual change set as a peer.
