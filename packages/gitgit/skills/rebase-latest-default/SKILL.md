@@ -131,7 +131,7 @@ Report the result: how many commits ahead of `$TARGET`, and whether conflicts we
 
 ## Step 6: Forced-continuation push (resolver-gated)
 
-A rebase rewrites the branch's commits, so a branch that already has an upstream now needs a `--force-with-lease` push to match. Under the push-policy that push is the COMPLETION of this rebase, not a new decision, so it does not need a fresh go. The current branch is a feature branch here (Step 2 already stopped if you were on the default), so this never force-pushes the default.
+A rebase rewrites the branch's commits, so the published branch now points at pre-rebase commits and its open PR keeps running CI against the OLD tip. **The whole point of this skill is that CI re-runs on the rebased version**, so pushing the rebased tip is the COMPLETION of this rebase, not a new decision: it does not need a fresh go. The current branch is a feature branch here (Step 2 already stopped if you were on the default), so this never force-pushes the default. Deferring the push to the operator leaves CI stuck on the pre-rebase commits and defeats the skill.
 
 Consult the resolver, reading `push_access` from its output:
 
@@ -139,13 +139,27 @@ Consult the resolver, reading `push_access` from its output:
 ${CLAUDE_PLUGIN_ROOT}/skills/push-policy/git-repo-policy
 ```
 
-Force-with-lease push only when BOTH hold:
-
-- the branch has an upstream (`git rev-parse --abbrev-ref --symbolic-full-name @{u}` resolves), and
-- `push_access` is not `external`.
+**The gate is whether the branch is PUBLISHED, not whether an upstream is configured.** A branch can have a live remote counterpart (and an open PR) while its local tracking is unset; `@{u}` then fails even though the branch is fully published. Detect publication by the remote branch, and read the current branch name first:
 
 ```bash
-git push --force-with-lease
+git rev-parse --abbrev-ref HEAD
+```
+```bash
+git rev-parse --verify refs/remotes/origin/$BRANCH 2>/dev/null
 ```
 
-The push hooks still gate the CONTENT of that push (no wip commits, valid bodies); the force flag does not bypass them. Otherwise (no upstream, or external access) leave the push to the operator and report that the branch is rebased and ready. See `/gitgit:push-policy` for the mode behavior.
+Decide:
+
+- **Remote branch exists AND `push_access` is not `external`:** force-with-lease push the rebased tip so CI re-runs. `--force-with-lease` is safe by construction here: it compares against the remote-tracking ref and refuses if the remote moved beyond what you last fetched, so it cannot clobber a teammate's push.
+  - Upstream configured (`@{u}` resolves): `git push --force-with-lease`
+  - Upstream NOT configured: push explicitly against the published branch and repair tracking, do NOT defer:
+    ```bash
+    git push --force-with-lease=$BRANCH:$(git rev-parse refs/remotes/origin/$BRANCH) origin HEAD:$BRANCH
+    ```
+    ```bash
+    git branch --set-upstream-to=origin/$BRANCH
+    ```
+- **No remote branch at all (branch is local-only, never pushed):** this would be a FIRST publication, a genuine operator gate. Leave it to the operator and report the branch is rebased and ready.
+- **`push_access` is `external`:** no write rights. Leave the push to the operator.
+
+The push hooks still gate the CONTENT of that push (no wip commits, valid bodies); the force flag does not bypass them. See `/gitgit:push-policy` for the mode behavior.
