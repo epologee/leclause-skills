@@ -9,7 +9,7 @@ independent agents, the spots where you and the peer disagree.
 
 ## Commands
 
-### `/intervision:lifeline`
+### `/intervision:second-opinion`
 
 Hands the recent work to Codex through `codex exec` and talks it through. Three
 shapes, picked by what just happened:

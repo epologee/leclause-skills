@@ -1,7 +1,7 @@
 ---
-name: lifeline
+name: second-opinion
 user-invocable: true
-description: Use when you want a peer second opinion on work just done or just discussed from another vendor's coding agent. Triggers on /intervision:lifeline, "let Codex check this", "second opinion from Codex", "phone a friend on this", "what does Codex think of this", "let Codex look at this". Hands the diff or the design to Codex via `codex exec`, surfaces its independent read, and goes back and forth.
+description: Use when you want a peer second opinion on work just done or just discussed from another vendor's coding agent. Triggers on /intervision:second-opinion, "let Codex check this", "second opinion from Codex", "what does Codex think of this", "let Codex look at this", "get another model's read". Hands the diff or the design to Codex via `codex exec`, surfaces its independent read, and goes back and forth.
 effort: medium
 ---
 
@@ -25,23 +25,23 @@ run does not mark the version as seen. `/leclause:whats-new intervision`
 re-shows the section on demand without touching the sentinel.
 </post-update-broadcast>
 
-# Lifeline
+# Second opinion
 
-Intervision is peer consultation: equals looking at each other's work, not a supervisor looking down. Etymology says it plainly, `inter-` (between, among, together) against `super-` (from above). This skill is the lifeline you reach for: it brings a second coding agent in as that peer. You hand it the work just done or just discussed, it looks with fresh eyes and a different training, and the two of you talk it through.
+Intervision is peer consultation: equals looking at each other's work, not a supervisor looking down. Etymology says it plainly, `inter-` (between, among, together) against `super-` (from above). This skill brings a second coding agent in as that peer for an independent read. You hand it the work just done or just discussed, it looks with fresh eyes and a different training, and the two of you talk it through.
 
 The peer here is Codex, reached through its `codex exec` command. It runs from the same repository, on its own login, with its own model behind it. That independence is the whole point; a peer trained the same way as you would only echo you.
 
 ## The peer has to be there
 
-Before calling the lifeline, confirm the peer exists:
+Before asking, confirm the peer exists:
 
 ```bash
-command -v codex >/dev/null 2>&1 || { echo "codex CLI not found; intervision needs a peer to call. Install and log in to Codex first."; }
+command -v codex >/dev/null 2>&1 || { echo "codex CLI not found; intervision needs a peer to ask. Install and log in to Codex first."; }
 ```
 
-If `codex` is missing, or `codex login status` shows you are not logged in, say so plainly and stop. There is no peer to call, and pretending otherwise wastes the operator's time. This is the one hard precondition.
+If `codex` is missing, or `codex login status` shows you are not logged in, say so plainly and stop. There is no peer to ask, and pretending otherwise wastes the operator's time. This is the one hard precondition.
 
-## Three ways to use the lifeline
+## Three ways to get the second opinion
 
 Pick by what just happened. All three run through `codex exec`, and they combine: review a diff first, then go back and forth on whatever the review leaves open.
 

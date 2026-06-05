@@ -1,5 +1,5 @@
 {
   "name": "intervision",
-  "description": "Bring another vendor's coding agent in as a peer to review work just done or just discussed. The /intervision:lifeline skill hands the diff or the design to Codex via `codex exec`, surfaces its independent read, and goes back and forth. Intervision is peer consultation among equals, not supervision from above.",
-  "version": "1.0.4"
+  "description": "Bring another vendor's coding agent in as a peer to review work just done or just discussed. The /intervision:second-opinion skill hands the diff or the design to Codex via `codex exec`, surfaces its independent read, and goes back and forth. Intervision is peer consultation among equals, not supervision from above.",
+  "version": "1.0.5"
 }

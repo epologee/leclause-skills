@@ -17,10 +17,10 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
 
-## [v1.0.4]
+## [v1.0.5]
 
 ### Added
 
-- New plugin. `/intervision:lifeline` brings Codex in as a peer to review work
-  just done or just discussed via `codex exec`, surfaces its independent read,
-  and goes back and forth. Needs the `codex` CLI installed and logged in.
+- New plugin. `/intervision:second-opinion` brings Codex in as a peer to review
+  work just done or just discussed via `codex exec`, surfaces its independent
+  read, and goes back and forth. Needs the `codex` CLI installed and logged in.
