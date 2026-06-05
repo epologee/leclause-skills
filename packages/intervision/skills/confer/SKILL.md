@@ -27,7 +27,7 @@ re-shows the section on demand without touching the sentinel.
 
 # Confer
 
-Intervision is peer consultation: equals looking at each other's work, not a supervisor looking down. Etymology says it plainly, `inter-` (between, among, together) against `super-` (from above). This skill brings a second coding agent in as that peer. You hand it the work just done or just discussed, it looks with fresh eyes and a different training, and the two of you confer. The value lives in the gap between two independent agents: where you and the peer disagree is exactly where the operator should look.
+Intervision is peer consultation: equals looking at each other's work, not a supervisor looking down. Etymology says it plainly, `inter-` (between, among, together) against `super-` (from above). This skill brings a second coding agent in as that peer. You hand it the work just done or just discussed, it looks with fresh eyes and a different training, and the two of you confer.
 
 The peer here is Codex, reached through its `codex exec` command. It runs from the same repository, on its own login, with its own model behind it. That independence is the whole point; a peer trained the same way as you would only echo you.
 
