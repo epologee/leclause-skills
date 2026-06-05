@@ -14,12 +14,13 @@ agents, the spots where you and the peer disagree.
 Hands the recent work to Codex through `codex exec` and confers about it. Three
 shapes, picked by what just happened:
 
-- **Work just done (a diff):** `codex exec review --uncommitted` (or `--base`,
-  or `--commit`) so Codex reviews the actual change set as a peer.
-- **A design just discussed (no code yet):** a read-only one-shot
-  `codex exec -s read-only "<the plan and the open question>"`.
-- **Back and forth:** `codex exec resume --last "<follow-up>"` to push on a
-  point, defend yours, or ask the peer to reconsider.
+- **Work just done (a diff):** Codex reviews the actual change set as a peer.
+- **A design just discussed (no code yet):** Codex reflects on the plan
+  read-only, without touching the tree.
+- **Back and forth:** continue the same Codex session to push a point, defend
+  yours, or ask the peer to reconsider.
+
+The exact `codex exec` invocations live in the skill.
 
 Codex's findings come home through three honest fates: fix, skip on cost versus
 value, or reject as hollow. The exchange and any remaining disagreement are
@@ -27,8 +28,9 @@ surfaced to you.
 
 ## Requirements
 
-The `codex` CLI must be installed and logged in. The skill preflights for it
-and stops with a plain message when no peer is available.
+The `codex` CLI must be installed and logged in; reviews run against your own
+Codex account and quota, so a large diff is a real billed call. The skill
+preflights for the CLI and stops with a plain message when no peer is available.
 
 ## Installation
 

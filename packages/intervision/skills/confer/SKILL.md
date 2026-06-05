@@ -1,7 +1,7 @@
 ---
 name: confer
 user-invocable: true
-description: Use when you want a peer second opinion on work just done or just discussed from another vendor's coding agent. Triggers on /intervision:confer, "let Codex check this", "second opinion from Codex", "confer with the other agent", "wat vindt codex hiervan", "laat codex meekijken". Hands the diff or the design to Codex via `codex exec`, surfaces its independent read, and confers back and forth.
+description: Use when you want a peer second opinion on work just done or just discussed from another vendor's coding agent. Triggers on /intervision:confer, "let Codex check this", "second opinion from Codex", "confer with the other agent", "what does Codex think of this", "let Codex look at this". Hands the diff or the design to Codex via `codex exec`, surfaces its independent read, and confers back and forth.
 effort: medium
 ---
 
@@ -43,7 +43,7 @@ If `codex` is missing, or `codex login status` shows you are not logged in, say 
 
 ## Three ways to confer
 
-Pick by what just happened. All three run through `codex exec`.
+Pick by what just happened. All three run through `codex exec`, and they combine: review a diff first, then confer back on whatever the review leaves open.
 
 **1. Check work just done, when there is a diff.** Codex's review path reads the repository's changes directly, so point it at the change set that matches "what we just did":
 
@@ -53,7 +53,7 @@ codex exec review --base main       # everything on this branch against main
 codex exec review --commit <sha>    # the changes in one commit
 ```
 
-**2. Weigh a design just discussed, when there is no code yet.** Give Codex the context on stdin and keep it read-only so it reflects rather than edits. Use a quoted heredoc so nothing in the pasted text is expanded by the shell:
+**2. Weigh a design just discussed, when there is no code yet.** Give Codex the context on stdin and keep it read-only so it reflects rather than edits. The `-s` flag rides on `codex exec` itself, not on the `review` subcommand. Use a quoted heredoc so nothing in the pasted text is expanded by the shell:
 
 ```bash
 codex exec -s read-only - <<'PROMPT'
@@ -70,7 +70,7 @@ You flagged X as a race. The lock at <file:line> already serialises that path. D
 PROMPT
 ```
 
-Keep resuming until each disagreement is either resolved or sharpened into a question the operator should decide.
+Keep resuming until each disagreement is either resolved or sharpened into a question the operator should decide. If two rounds pass with no movement, stop and surface the disagreement to the operator with both positions rather than looping.
 
 ## How to confer well
 
@@ -79,7 +79,7 @@ The round-trip only earns its cost if the handoff is honest.
 - **Give the peer the real work, not a summary you are proud of.** Point it at the actual diff, or paste the actual design with the shaky parts left in. A flattering summary buys a flattering review.
 - **Read for the disagreement, not the agreement.** The peer agreeing is cheap and tells you little. The signal is where its independent read diverges from yours.
 - **Stay a peer, not a deferrer.** A second agent is not an authority. When the peer is wrong, say so and confer back. When it is right, concede plainly. Equals, in both directions.
-- **Keep the peer read-only by default.** The `review` path and `-s read-only` let it look without touching the tree. Let it propose; you and the operator decide what lands. Only widen the sandbox when the operator asks for it on purpose.
+- **Keep the peer reviewing, not editing.** `codex exec review` is used here to read a change set and report on it, and `-s read-only` keeps the design path from touching the tree. Let the peer propose; you and the operator decide what lands. Only widen the sandbox when the operator asks for it on purpose.
 - **Never expand the handoff through the shell.** A pasted design or follow-up is arbitrary text and may contain `$(...)`, backticks, or quotes. Feed it on stdin through a quoted heredoc (`<<'PROMPT' ... PROMPT`) into `codex exec ... -`, never as a double-quoted argument, so the shell passes it to the peer verbatim instead of executing part of it.
 
 ## Bringing findings home
