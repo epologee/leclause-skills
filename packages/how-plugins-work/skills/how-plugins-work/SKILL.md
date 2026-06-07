@@ -1,7 +1,7 @@
 ---
 name: how-plugins-work
 user-invocable: true
-description: Use when diagnosing "Unknown command", slash-command autocomplete misses, or any confusion about how plugin and skill names resolve in Claude Code. Living document explaining plugin naming, skill resolution, and the plugin:skill invocation pattern, based on empirical testing.
+description: Use when diagnosing "Unknown command", slash-command autocomplete misses, cross-agent skill or plugin marketplace sync, or any confusion about how plugin and skill names resolve in Claude Code. Living document explaining plugin naming, skill resolution, multi-agent adapter boundaries, and the plugin:skill invocation pattern, based on empirical testing.
 ---
 
 <post-update-broadcast>
@@ -125,6 +125,54 @@ description: >-
 ```bash
 ruby -ryaml -e 'YAML.safe_load(File.read(ARGV[0]).split(/^---\s*$/)[1])' SKILL.md
 ```
+
+## Cross-agent skill and plugin sync
+
+Agent Skills are the portable layer. Keep `skills/<skill>/SKILL.md` as the shared source whenever the workflow can mean the same thing across Claude Code, Codex, and other skills-aware clients. Do not copy the skill body into an agent-specific tree just because a second client needs different installation metadata.
+
+Plugin and marketplace manifests are adapter layers. Claude Code and Codex both load `skills/`, but they do not use the same manifest and marketplace files:
+
+| Layer | Shared source | Claude Code adapter | Codex adapter |
+|-------|---------------|---------------------|---------------|
+| Skill body | `skills/<skill>/SKILL.md` | loaded from the plugin root | loaded from the plugin root |
+| Plugin manifest | package identity and component paths | `.claude-plugin/plugin.json` | `.codex-plugin/plugin.json` |
+| Marketplace index | curated plugin list | `.claude-plugin/marketplace.json` | `.agents/plugins/marketplace.json` |
+| Runtime cache | none; cache is output | `~/.claude/plugins/cache/...` | `~/.codex/plugins/cache/...` |
+
+### Source and target roles
+
+Every duplicated-looking file should have one explicit role:
+
+- **Source.** Hand-edited truth, usually the shared skill body or the primary marketplace manifest.
+- **Generated target.** Agent-specific manifest or catalog written from the source by a deterministic builder.
+- **Runtime cache.** Install output. Never edit it as source and never use it to prove the repo is current.
+- **Forked semantics.** A deliberate divergence because two agents cannot support the same behavior. Name the drift hypothesis so future maintainers know why the fork exists.
+
+If a file is a generated target, the repo should expose the usual three verbs:
+
+```bash
+<sync-tool> build
+<sync-tool> check
+<sync-tool> diff
+```
+
+`build` rewrites adapter files from the source, `check` exits non-zero on drift, and `diff` shows the exact generated change. This is the minimum contract that makes metadata duplication acceptable: a reviewer can tell whether the duplicate is another truth or a projection.
+
+### What belongs in shared SKILL.md
+
+Keep shared skill text in agent-neutral language when possible: "the active agent", "the shell-command tool", "the plugin root", "the installed cache". Use Claude-specific names only when the behavior is genuinely Claude-specific, such as `/reload-plugins`, `Skill("<plugin>:<skill>")`, `CLAUDE_PLUGIN_ROOT`, or Claude hook events.
+
+When a shared skill has a Claude-only block and still wants to be packaged for other clients, prefer one of these shapes:
+
+- A clearly labelled Claude-only section that other clients can ignore.
+- A generic instruction with runtime-specific examples underneath.
+- A generated sanitized adapter view, if a client rejects the frontmatter or body syntax outright.
+
+Do not remove Claude frontmatter or hook guidance merely to satisfy another client. If another client needs stricter metadata, generate the stricter view or manifest beside the Claude source.
+
+### Direction of dependency
+
+Public plugin documentation may define the generic sync contract. Private or project-specific generators may consume that contract and even assume this skill is installed. The reverse dependency is not allowed: a public plugin should not name a private synchronizer, private path, personal doctrine repo, or local machine convention.
 
 ## Model selection
 
