@@ -1,12 +1,12 @@
 # how-plugins-work
 
-Living document explaining how Claude Code plugin naming, skill resolution, and the `plugin:skill` invocation pattern actually behave in practice. Based on empirical testing, updated when behavior shifts.
+Living document explaining how Claude Code plugin naming, skill resolution, cross-agent skill sync, and the `plugin:skill` invocation pattern actually behave in practice. Based on empirical testing, updated when behavior shifts.
 
 ## Commands
 
 ### `/how-plugins-work`
 
-Loads the current understanding: how slash-command names map to plugins, how sub-skills resolve, when the `plugin:skill` form is required, and the gotchas around plugin caching.
+Loads the current understanding: how slash-command names map to plugins, how sub-skills resolve, when the `plugin:skill` form is required, how shared skills can be packaged for multiple agents, and the gotchas around plugin caching.
 
 ## Auto-trigger
 
@@ -16,6 +16,7 @@ Activates when diagnosing:
 - Slash-command autocomplete misses
 - Confusion between plugin name, skill name, and command name
 - Sub-skills that work in isolation but not when invoked from another skill
+- Cross-agent marketplace or manifest drift between shared skills and agent-specific adapters
 
 ## Why a living document
 
