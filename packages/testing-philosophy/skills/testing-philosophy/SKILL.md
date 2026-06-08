@@ -71,8 +71,8 @@ A spec written AFTER the implementation locks the spec to whatever the code happ
 
 When the project uses Gherkin-style scenarios: feature files describe behavior in domain language, not UI interactions. They are documentation that happens to be executable.
 
-**Declarative (good):** `When I create a todo "Buy groceries"` -> describes intent, survives UI redesigns.
-**Imperative (forbidden):** `When I fill in the "title" field with "Buy groceries" And I click the "Add" button` -> breaks on every UI change, reads like a test script rather than documentation.
+**Declarative (good):** `When I create a todo "Book a dentist appointment"` -> describes intent, survives UI redesigns.
+**Imperative (forbidden):** `When I fill in the "title" field with "Book a dentist appointment" And I click the "Add" button` -> breaks on every UI change, reads like a test script rather than documentation.
 
 The UI mechanics (which field, which button, hover for hidden elements) live in step definitions, not in feature files. When the UI changes, only step definitions change. The scenarios, and with them the behavior documentation, remain stable.
 
