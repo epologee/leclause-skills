@@ -53,7 +53,7 @@ codex exec review --base main       # everything on this branch against main
 codex exec review --commit <sha>    # the changes in one commit
 ```
 
-**2. Weigh a design just discussed, when there is no code yet.** Give Codex the context on stdin and keep it read-only so it reflects rather than edits. The `-s` flag rides on `codex exec` itself, not on the `review` subcommand. Use a quoted heredoc so nothing in the pasted text is expanded by the shell:
+**2. Weigh a design just discussed, when there is no code yet.** Give Codex the context on stdin and keep it read-only so it reflects rather than edits. The `-s` flag rides on `codex exec` itself, not on a subcommand: neither `review` nor `resume` accepts it (`resume` inherits the session's sandbox, and passing `-s` there fails with `error: unexpected argument '-s' found`). Use a quoted heredoc so nothing in the pasted text is expanded by the shell:
 
 ```bash
 codex exec -s read-only - <<'PROMPT'
@@ -62,7 +62,7 @@ Peer review this plan before we build it.
 PROMPT
 ```
 
-**3. Go back and forth.** A single answer is consultation; intervision is a conversation. Resume the same session to push on a point, defend your reasoning, or ask the peer to reconsider, again through a quoted heredoc:
+**3. Go back and forth.** A single answer is consultation; intervision is a conversation. Resume the same session to push on a point, defend your reasoning, or ask the peer to reconsider, again through a quoted heredoc. Do not add `-s` here; `resume` inherits the read-only sandbox from the session and rejects the flag:
 
 ```bash
 codex exec resume --last - <<'PROMPT'
