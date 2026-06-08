@@ -17,6 +17,12 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous.
 
+## [v1.0.83]
+
+### Added
+
+- **New `prefer` Stop guard.** Hand back a bare option menu and it asks you to commit to a reasoned pick; mark your lean with 🅰️/🅱️ or 1️⃣/2️⃣ to pass, or escape with 🧭 (operator's call) / 🚧 (WIP).
+
 ## [v1.0.81]
 
 ### Fixed

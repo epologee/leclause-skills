@@ -203,6 +203,48 @@ expect_pass "compliance: WIP hatch" \
 expect_pass "compliance: no question mark" \
   "$(stop_payload "Ik heb de configuratie aangepast en alle testen blijven groen. 🏁")"
 
+expect_block_mnemonic "prefer: lettered menu, no marker" prefer \
+  "$(stop_payload "Er zijn twee wegen: (a) de helper inline zetten, (b) een module extraheren. Welke wil je?")"
+
+expect_block_mnemonic "prefer: numbered menu with choice word" prefer \
+  "$(stop_payload "Two approaches:"$'\n'"1. Inline the helper"$'\n'"2. Extract a module"$'\n'"Which do you prefer?")"
+
+expect_block_mnemonic "prefer: Optie N menu" prefer \
+  "$(stop_payload "Optie 1 hergebruikt de bestaande helper, optie 2 bouwt een nieuwe. Wat heeft je voorkeur?")"
+
+expect_block_mnemonic "prefer: comparison table header" prefer \
+  "$(stop_payload "| Aspect | Approach A | Approach B |"$'\n'"|---|---|---|"$'\n'"| speed | fast | slow |"$'\n'"Welke wil je?")"
+
+expect_block_mnemonic "prefer: non-question menu beats premature catch-all" prefer \
+  "$(stop_payload "Er zijn twee opties: (a) de helper inline zetten, (b) een module extraheren. Geen voorkeur van mij, jouw keuze.")"
+
+expect_pass "prefer: squared-letter marker silences" \
+  "$(stop_payload "Twee wegen: (a) inline, (b) extract. Ik leun naar 🅰️ want simpeler en sneller te testen. 🏁")"
+
+expect_pass "prefer: number-keycap marker silences" \
+  "$(stop_payload "Optie 1 of optie 2; ik ga voor 1️⃣ omdat het de bestaande helper hergebruikt. 🏁")"
+
+expect_pass "prefer: compass escape" \
+  "$(stop_payload "🧭 (a) inline of (b) extract, dit is jouw keuze. Welke wil je?")"
+
+expect_pass "prefer: WIP hatch" \
+  "$(stop_payload "(a) inline"$'\n'"(b) extract"$'\n'"Welke wil je? 🚧")"
+
+expect_pass "prefer: numbered steps are not a menu" \
+  "$(stop_payload "Ik ga verder: 1. de helper inline zetten, 2. de tests draaien, 3. committen. 🏁")"
+
+expect_pass "prefer: status table is not a menu" \
+  "$(stop_payload "| File | Status |"$'\n'"|---|---|"$'\n'"| variant.go | done |"$'\n'"| b.go | pending |"$'\n'"Alles groen. 🏁")"
+
+expect_pass "prefer: lettered prose without choice signal" \
+  "$(stop_payload "De functie neemt (a) een input en (b) een output, en geeft het resultaat terug. Helpt dat?")"
+
+expect_pass "prefer: numbered report with relative 'which'" \
+  "$(stop_payload "Ik checkte twee bestanden:"$'\n'"1. foo.sh which has the bug"$'\n'"2. bar.sh which is fine"$'\n'"Beide gefixt. 🏁")"
+
+expect_pass "prefer: numbered list with 'liever' is not a menu" \
+  "$(stop_payload "Twee dingen gedaan:"$'\n'"1. de helper hernoemd"$'\n'"2. de test toegevoegd, liever vroeg dan laat"$'\n'"Klaar. 🏁")"
+
 expect_block_mnemonic "jargon: push-go coinage" jargon \
   "$(stop_payload "De twee commits staan lokaal en wachten op je push-go. 🏁")"
 
