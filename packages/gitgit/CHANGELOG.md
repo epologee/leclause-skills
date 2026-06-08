@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 Version numbers may therefore be non-contiguous (an internal refactor bumps
 the version without producing an entry here).
 
+## [v1.0.164]
+
+### Added
+
+- **Mark a rebase-carried commit `Discipline: skip due to rebase` and the push body-gate treats it as already-shipped instead of re-litigating its body.** `/gitgit:rebase-latest-default` marks these for you.
+
 ## [v1.0.163]
 
 ### Fixed

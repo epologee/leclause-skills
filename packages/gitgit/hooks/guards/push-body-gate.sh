@@ -82,7 +82,7 @@ guard_push_body_gate() {
   for v in "${violations[@]}"; do
     msg+=$(printf -- '\n  %s' "$v")
   done
-  msg+=$(printf '\n\nAmend or interactive-rebase each commit to fix, then retry push. Use /gitgit:disable-discipline if you need to lift the discipline for this session.')
+  msg+=$(printf '\n\nAmend or interactive-rebase each commit to fix, then retry push. For commits whose bodies predate the discipline and were rewritten by a rebase, amend the trailer "Discipline: skip due to rebase" onto them instead of reworking the body; the gate treats those as already-shipped. Use /gitgit:disable-discipline if you need to lift the discipline for this session.')
 
   dd_emit_deny "push-body-gate" "$msg"
 }

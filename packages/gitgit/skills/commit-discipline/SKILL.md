@@ -619,7 +619,9 @@ Set GITGIT_ALLOW_WIP_PUSH=1 or add '# allow-wip-push' to bypass.
 The discipline is strict by default for every commit. There is no
 magic-comment opt-out (`# vsd-skip` is rejected) and no env-var ramp
 (the former `GITGIT_AUTONOMOUS=1` is gone; its strict rules apply to
-every commit). The only audit-logged noodknop is `git commit --no-verify`.
+every commit). The general audit-logged noodknop is `git commit --no-verify`;
+the only purpose-scoped opt-out is the `Discipline: skip due to rebase`
+trailer for commits a rebase carried along (see below).
 
 ### `--no-verify`
 
@@ -633,6 +635,24 @@ seconds. Concurrent commits in another shell can refresh the trace
 and mask a bypass in this shell. Long test runs (>30s between starting
 commit-msg and post-commit firing) can produce false positives.
 The audit log is best-effort, not authoritative.
+
+### `Discipline: skip due to rebase`
+
+A rebase replays and rewrites every commit it touches, including commits whose
+subject-only bodies were authored before this discipline existed. On the
+force-push afterwards the body-gate would re-litigate them even though they
+already shipped under their pre-rebase SHA. Amending the trailer
+`Discipline: skip due to rebase` (any `Discipline:` value beginning with `skip`)
+onto such a commit marks it as carried-along; the shared validator then exempts
+it from the schema, so every enforcement path (PreToolUse commit/push guards and
+the git-native `commit-msg`) honours it from one source. The skip is logged to
+`~/.claude/var/gitgit-skips.log`.
+
+This is a deliberate "discipline bankruptcy" admission, not a blanket bypass:
+stamp it only on commits a rebase carried along, not on fresh work you are
+authoring under the discipline. `/gitgit:rebase-latest-default` marks these for
+you; for a manual rebase, the push gate names the stragglers and you amend the
+trailer onto exactly those.
 
 ### `GITGIT_ALLOW_AI_COAUTHOR=1`
 

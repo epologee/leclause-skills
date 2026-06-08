@@ -43,6 +43,22 @@ validate_body_classify_skip() {
   return 1
 }
 
+# allow-comment: validate_body_has_rebase_skip <content> returns 0 when the body
+# allow-comment: carries a `Discipline:` trailer whose value begins with `skip`
+# allow-comment: (the rebase carry-along marker). A rebase rewrites every commit
+# allow-comment: it replays, so the stamper amends this trailer onto commits
+# allow-comment: whose subject-only bodies predate the discipline; the marker
+# allow-comment: then exempts them so a force-push does not re-litigate
+# allow-comment: already-shipped commits. Honoured inside validate_body so every
+# allow-comment: enforcement path inherits it from one source.
+validate_body_has_rebase_skip() {
+  local content="$1"
+  local trailers value
+  trailers=$(_vb_trailers "$content")
+  value=$(_vb_trailer_value "$trailers" "Discipline")
+  [[ "$value" == skip* ]]
+}
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -201,6 +217,15 @@ validate_body() {
   # "(cherry picked from commit <sha>)" line to the body, not just the subject.
   # When the body contains this phrase on its own line, skip validation.
   if printf '%s' "$content" | grep -qF '(cherry picked from commit '; then
+    return 0
+  fi
+
+  # allow-comment: rebase carry-along. A `Discipline: skip ...` trailer is the
+  # allow-comment: explicit opt-out for commits whose bodies predate the
+  # allow-comment: discipline and were rewritten by a rebase; skip the schema and
+  # allow-comment: log the bypass so it stays auditable.
+  if validate_body_has_rebase_skip "$content"; then
+    _vb_log_skip "discipline-skip" "rebase carry-along"
     return 0
   fi
 

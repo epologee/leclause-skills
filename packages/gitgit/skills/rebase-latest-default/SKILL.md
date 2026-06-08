@@ -129,6 +129,23 @@ When a rebase stops on conflicts:
 
 Report the result: how many commits ahead of `$TARGET`, and whether conflicts were resolved (and if so, which files). Then proceed to Step 6 for the push decision.
 
+## Step 5a: Mark carry-along commits that predate the discipline
+
+A rebase replays commits that may have been authored before the commit-body
+discipline existed; on the push the body-gate flags those subject-only commits.
+They are not new work to re-justify, and reworking their bodies is busywork over
+changes that already shipped under their pre-rebase SHA. Mark them as carried,
+do not rewrite them.
+
+For each rebased commit whose body does not meet the schema (a subject-only
+commit, or one the gate would flag), amend the trailer `Discipline: skip due to
+rebase` onto it so the body-gate treats it as already-shipped. The route is the
+local session's call: stamp during the rebase, or push first and let the gate
+name the stragglers, then amend the trailer onto exactly those. Commits you
+authored under the discipline keep their real body; the marker is only for the
+carry-along, not a blanket bypass. The trailer and its semantics are documented
+in `/gitgit:commit-discipline` under Escape hatches.
+
 ## Step 6: Forced-continuation push (resolver-gated)
 
 A rebase rewrites the branch's commits, so the published branch now points at pre-rebase commits and its open PR keeps running CI against the OLD tip. **The whole point of this skill is that CI re-runs on the rebased version**, so pushing the rebased tip is the COMPLETION of this rebase, not a new decision: it does not need a fresh go. The current branch is a feature branch here (Step 2 already stopped if you were on the default), so this never force-pushes the default. Deferring the push to the operator leaves CI stuck on the pre-rebase commits and defeats the skill.
