@@ -1,269 +1,30 @@
-# gitgit
+# gitgit (deprecated)
 
-Bundle of git-write skills plus a commit-discipline hook stack. The skills
-land the day-to-day git operations Claude Code needs (commit-all-the-things,
-snipe, rebase-latest-default, merge-to-default), and the hooks enforce a
-structured commit body schema across both Claude-driven commits
-(PreToolUse:Bash) and direct CLI commits (git-native hooks installed per repo).
+`gitgit` has moved to **`git-discipline@laicluse-agent-tools`**. This package
+is now a tombstone: it ships no skills, no guards, and no commit hooks. Its
+only remaining behaviour is a SessionStart notice that points here.
 
-## What
-
-`gitgit` does two things at once:
-
-1. **Day-to-day git skills.** Eight user-invocable skills that cover the
-   commit / rebase / merge flows the operator runs over and over.
-2. **Commit-discipline enforcement.** Two-layer hook architecture
-   (PreToolUse guards plus git-native hooks) that validates a structured
-   body schema: subject + WHY paragraph + Slice / Tests / Red-then-green
-   trailers parsed via `git interpret-trailers`, with eight opt-out enum
-   tokens. `Red-then-green` accepts three forms: `n/a (reason >= 10 chars)`,
-   `<path>` (a spec file in the staged diff), or `<path>:<line> # <test-name>`
-   (line is 1-based, name must match a test declaration in the staged
-   blob; the `# ` separator follows the RSpec / Cucumber convention and
-   keeps `path:line` clickable in iTerm2 / VSCode / Ghostty). Bare `yes`
-   is no longer accepted.
-
-Reference for the schema, examples, escape-hatches, and troubleshooting:
-`/gitgit:commit-discipline`.
-
-## Skills
-
-| Skill | Command | Auto |
-|-------|---------|:----:|
-| commit-all-the-things | `/gitgit:commit-all-the-things` | yes |
-| commit-snipe | `/gitgit:commit-snipe` | yes (on the word "snipe") |
-| rebase-latest-default | `/gitgit:rebase-latest-default` | yes |
-| merge-to-default | `/gitgit:merge-to-default` | yes |
-| push-policy | `/gitgit:push-policy` | |
-| commit-discipline | `/gitgit:commit-discipline` | |
-| install-hooks | `/gitgit:install-hooks` | |
-| run-spec | `/gitgit:run-spec` | |
-| disable-session | `/gitgit:disable-discipline` | |
-| enable-session | `/gitgit:enable-discipline` | |
-| session-status | `/gitgit:discipline-status` | |
-| disable-git | `/gitgit:disable-git [reason]` | |
-| enable-git | `/gitgit:enable-git` | |
-
-- **commit-all-the-things** inspects `git status` plus `git diff`, groups
-  changes by intent (feature, fix, refactor, docs, config), and creates
-  one commit per group. Dutch trigger phrases also fire it: "commit
-  alles", "ruim de working tree op".
-- **commit-snipe** stages only the files (or hunks) that belong to the
-  current conversation's work and leaves the rest untouched. Auto-fires
-  on the word "snipe".
-- **rebase-latest-default** rebases the current branch on the freshest
-  default branch (local or `origin/<default>`), resolves trivial conflicts
-  where safe, and stops on non-trivial conflicts.
-- **merge-to-default** lands the current branch on the project's default
-  with a github-style `--no-ff` merge commit, rebases on conflict, deletes
-  the local source branch after the merge is confirmed, and no-ops with a
-  TUI warning when invoked on the default branch itself. Push remains an
-  explicit user action.
-- **push-policy** decides whether and when a push fits the current repo. It
-  ships a resolver (`skills/push-policy/git-repo-policy`) that reads per-repo
-  facts (collaboration, visibility, default-branch protection, push access)
-  and derives one of five modes (`local-only`, `solo-trunk`, `team-trunk`,
-  `pr-flow`, `external`), each with its own push behavior. Per-repo overrides
-  live under git-local `codingAgent.git.*`. `rebase-latest-default` and
-  `merge-to-default` consult it; the push hooks gate content and are
-  orthogonal to this context decision.
-- **commit-discipline** is the canonical reference for the body schema,
-  error-codes, opt-out enum, and escape-hatches.
-- **install-hooks** copies the git-native `commit-msg`, `prepare-commit-msg`,
-  `post-commit`, and `pre-push` hooks into the current repo so commits
-  made outside Claude Code still get validated. `--force` overwrites
-  existing hooks (a backup is taken automatically); `--dry-run` previews.
-- **run-spec** runs a single test/spec file through the project's
-  auto-detected runner (RSpec, Jest, Vitest, Go test, pytest) and prints
-  a PASS/FAIL summary. No cache side-effects.
-- **disable-session** writes a sentinel file at `~/.claude/var/gitgit-disabled-<session_id>`
-  that tells the dispatcher to skip all guards for the current session. Other
-  sessions are not affected. Only fire on explicit operator invocation.
-- **enable-session** removes the session sentinel (and the global fallback
-  sentinel if present), restoring guards for the current session.
-- **session-status** reports the current session_id, which sentinels exist,
-  whether guards are active or disabled, the active plugin version, and the
-  list of guard scripts in the install.
-- **disable-git** writes `.git/gitgit-deny` (per-repo, never committed) and
-  locks git for Claude. While the sentinel exists, only read-only inspection
-  is allowed (status, log, diff, show, blame, rev-parse, branch / tag in
-  list form, remote -v, config --get, `bisect view`, `worktree list`,
-  `submodule status`, `stash list/show`, `notes list/show`); every mutation
-  (commit, checkout, switch, restore, reset, merge, rebase, cherry-pick,
-  revert, push, pull, fetch, add, rm, mv, stash, clean, branch -d, tag
-  v0.1, ...) is denied. Optional argument becomes the reason printed in the
-  deny message. With `/gitgit:install-hooks` active, the `commit-msg` and
-  `pre-push` git-native hooks honour the same sentinel, so direct shell
-  `git commit` and `git push` are also blocked. Other shell mutations
-  (`git reset`, `git checkout`, ...) are not covered CLI-time because
-  gitgit installs no hooks for them; Claude is fully locked at PreToolUse
-  time regardless.
-- **enable-git** removes `.git/gitgit-deny`, lifting the lock.
-
-## Hooks
-
-PreToolUse:Bash dispatcher chain (`hooks/dispatch.sh`):
-
-| Guard | Triggers on | Blocks |
-|-------|-------------|--------|
-| `git-dash-c.sh` | any `git -C <dir>` command | `git -C` (keeps Claude Code's prefix-based permissions clean) |
-| `repo-deny.sh` | any `git <mutation>` while `.git/gitgit-deny` exists | every git command outside the read-only allow-list |
-| `commit-format.sh` | `git commit` | editor-mode commits without `-m` |
-| `commit-subject.sh` | `git commit -m` | subjects past 50/72, lowercase first, trailing period |
-| `commit-body.sh` | `git commit -m` | bodies that fail `validate-body.sh` |
-| `commit-trailers.sh` | `git commit -m` | `Co-Authored-By:` with `@anthropic.com` email |
-| `push-wip-gate.sh` | `git push` | push range containing a `Slice: wip` commit |
-
-Git-native hooks (installed per-repo via `/gitgit:install-hooks`,
-sourced from `skills/commit-discipline/git-hooks/`):
-
-| Hook | Purpose |
-|------|---------|
-| `commit-msg` | runs `validate-body.sh` on every non-Claude commit |
-| `prepare-commit-msg` | pre-fills the editor with a layer-classified template |
-| `post-commit` | logs `--no-verify` usage to `~/.claude/var/gitgit-no-verify.log` |
-| `pre-push` | re-runs the wip-gate on the push range |
-
-Both layers source the same `hooks/lib/validate-body.sh`, so behavior never
-diverges between Claude-driven and CLI-driven commits.
-
-## Install
+## Migrate
 
 ```bash
-claude plugins install gitgit@leclause
+claude plugins marketplace add epologee/laicluse-agent-tools
+claude plugins install git-discipline@laicluse-agent-tools
+claude plugins uninstall gitgit@leclause
 ```
 
-The PreToolUse:Bash hooks register automatically. To also catch commits
-made outside Claude Code (CLI, IDE, another tool), install the git-native
-hooks into each repo:
+`git-discipline@laicluse-agent-tools` carries the same thirteen skills under
+the same names (`commit-all-the-things`, `commit-snipe`, `commit-discipline`,
+`rebase-latest-default`, `merge-to-default`, `push-policy`, `install-hooks`,
+`run-spec`, `disable-discipline`, `enable-discipline`, `discipline-status`,
+`disable-git`, `enable-git`) plus the commit/push hook stack. The slash-command
+prefix changes from `/gitgit:` to `/git-discipline:`.
 
-```bash
-/gitgit:install-hooks
-```
+## Why a tombstone instead of a hard delete
 
-Use `--dry-run` to preview, `--force` to overwrite existing hooks. Re-run
-after each `claude plugins update gitgit@leclause` so the installed hooks
-point at the current plugin version.
-
-### Migration from the standalone plugins
-
-`commit-all-the-things@leclause` and `rebase-latest-default@leclause` used
-to ship as separate plugins. Both standalone entries have been removed from
-the marketplace; uninstall the leftover copies so the slash commands route
-to the bundled versions:
-
-```bash
-/plugin uninstall commit-all-the-things@leclause
-/plugin uninstall rebase-latest-default@leclause
-```
-
-## Example commit message
-
-```
-Drop invalid meter reading on transaction events
-
-When StartTransaction or StopTransaction messages arrive with a
-meter reading that fails domain validation, we previously rejected
-the entire event, which masked session starts and stops in analytics.
-This change keeps the transaction event but discards just the bad
-reading, restoring the visibility we lost.
-
-Tests: spec/services/session_spec.rb#start_event_with_bad_reading,
-       spec/services/session_spec.rb#stop_event_with_bad_reading
-Slice: handler + service + spec
-Red-then-green: spec/services/session_spec.rb:42 # start_event drops invalid meter reading
-Verified: red-then-green
-Resolves: https://example.org/backlog/issues/1234
-```
-
-The `Slice` value can also be one of eight opt-out tokens: `docs-only`,
-`config-only`, `migration-only`, `spec-only`, `chore-deps`, `revert`,
-`merge`, `wip`.
-Opt-out commits drop the `Tests:` requirement; the documentation /
-config / chore-deps tokens additionally drop the `Red-then-green:`
-requirement.
-
-## Bypass
-
-Escape-hatches, each logged for later auditing:
-
-- `git commit --no-verify` (logged to `~/.claude/var/gitgit-no-verify.log`
-  via the `post-commit` hook)
-- `GITGIT_ALLOW_AI_COAUTHOR=1` to allow a single `@anthropic.com`
-  `Co-Authored-By:` trailer
-- `GITGIT_ALLOW_CONJUNCTION=1` or the magic-comment `# allow-conjunction:
-  <reason>` in the body to permit a subject that contains ` and `, ` + `,
-  or ` & ` when the joined form is genuinely atomic
-- `GITGIT_ALLOW_WIP_PUSH=1` or the magic-comment `# allow-wip-push` to
-  push a range that contains `Slice: wip` commits (logged to
-  `~/.claude/var/gitgit-wip-pushes.log`). Note: `# allow-wip-push` only
-  works when Claude issues the push (the PreToolUse:Bash guard reads the
-  bash command string). For terminal-issued `git push`, only
-  `GITGIT_ALLOW_WIP_PUSH=1` works.
-- `GITGIT_TRIVIAL_OK=1` to skip body-validation for a single trivial commit
-  (set automatically by the PreToolUse guard for diffs of <= 1 file and
-  <= 5 insertions)
-
-See `/gitgit:commit-discipline` for the full schema, opt-out matrix, and
-troubleshooting guide.
-
-## Test suite
-
-```bash
-bash packages/gitgit/test/run-bats              # 200+ BATS cases
-bash packages/gitgit/test/smoke/smoke-test.sh   # 22-case end-to-end smoke
-```
-
-The BATS suite is split per concern:
-
-- `validate-body/` covers the body schema rules from sections 5.5 and 6.6
-  of the plan.
-- `block-mode/`, `shadow-mode/`, `wip-gate/`, `template-fill/` cover the
-  guard glue per slice.
-- `install-hooks/` covers the per-repo install scenarios (empty repo,
-  existing hooks, `core.hooksPath`, worktree).
-- `migrated-hooks/`, `migration/` cover the `dont-do-that` to `gitgit`
-  migration parity.
-
-The smoke suite spins up disposable git repos and exercises the full hook
-chain end-to-end.
-
-## Audit
-
-After a mission run, verify that no body-less commits slipped through.
-The script ships inside the plugin at `bin/audit-no-body-commits`; resolve
-its path from the active install so it survives plugin updates:
-
-```bash
-GITGIT=$(jq -r '.plugins["gitgit@leclause"][0].installPath' \
-  ~/.claude/plugins/installed_plugins.json)
-python3 "$GITGIT/bin/audit-no-body-commits"
-python3 "$GITGIT/bin/audit-no-body-commits" --branch main --since 2026-04-01
-python3 "$GITGIT/bin/audit-no-body-commits" --exclude-trivial
-```
-
-Lists every commit on the branch with a single-line message (or below the
-trivial threshold), useful for verifying that slice 4 block-mode actually
-held during a mission.
-
-## Post-update broadcasts
-
-After a `claude plugins update gitgit@leclause`, the next gitgit slash
-command shows the latest `CHANGELOG.md` section once. The broadcast block
-lives in `skills/commit-all-the-things/SKILL.md` and calls
-`bin/check-broadcast`, which compares the active plugin version against
-`~/.claude/var/leclause/gitgit-broadcast-seen` and writes the file only
-when a CHANGELOG section was actually shown. The shared
-`/leclause:whats-new gitgit` reader (from the `leclause` plugin) reprints
-on demand and never touches the sentinel.
-
-Authoring a release note is a single edit to `CHANGELOG.md`: add a new
-`## [vX.Y.Z]` section above the previous one. The helper always emits the
-top-most section in document order, so the section header version does
-not need to match the active plugin version exactly. This keeps patch
-bumps without notable changes silent without forcing a CHANGELOG entry.
-
-The pattern is documented in the marketplace README under "Post-update
-broadcasts" so other packages can adopt the same helper. Lift the script
-unchanged: it reads `name` and `version` from the host plugin's
-`.claude-plugin/plugin.json` and namespaces the sentinel by plugin name.
+Removing a plugin's entry from a marketplace does not uninstall it for users
+who already have it: the install stays orphaned in the cache and its hooks keep
+running. A tombstone strips the behaviour (killing any conflict with the
+successor) while keeping the marketplace entry alive so that the next
+`claude plugins update gitgit@leclause` delivers this notice and the exact
+uninstall command. See the `how-plugins-work` skill, section "Deprecating and
+removing a plugin", for the full pattern.

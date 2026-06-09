@@ -1,18 +1,11 @@
 {
+  "description": "Tombstone: a single SessionStart notice that gitgit has moved to git-discipline@laicluse-agent-tools. No commit guards remain.",
   "hooks": {
-    "PreToolUse": [
+    "SessionStart": [
       {
-        "matcher": "Bash",
+        "matcher": "startup|resume",
         "hooks": [
-          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/dispatch.sh" }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/dispatch.sh" }
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/deprecated-notice.sh" }
         ]
       }
     ]
