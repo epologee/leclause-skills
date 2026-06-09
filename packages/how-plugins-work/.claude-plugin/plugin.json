@@ -1,5 +1,5 @@
 {
   "name": "how-plugins-work",
-  "description": "Explains how Claude Code plugin naming, skill resolution, cross-agent skill sync, and the plugin:skill invocation pattern work in practice. Ships a test-before-push sub-skill that encodes the canonical local-marketplace procedure for testing plugin changes in a fresh session without pushing first.",
+  "description": "DEPRECATED. how-plugins-work has moved to how-plugins-work@laicluse-agent-tools. Install how-plugins-work@laicluse-agent-tools, then run `claude plugins uninstall how-plugins-work@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
   "version": "1.0.32"
 }
