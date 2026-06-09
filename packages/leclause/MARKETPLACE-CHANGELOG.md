@@ -23,6 +23,7 @@ nothing observable are intentionally silent.
 
 - **`how-plugins-work` keeps its plugin name.** Install `how-plugins-work@laicluse-agent-tools`, then uninstall `how-plugins-work@leclause` when the new copy works for you.
 - **`gitgit` moves as `git-discipline`.** Install `git-discipline@laicluse-agent-tools`, then uninstall `gitgit@leclause` when the replacement covers your workflow.
+- **`self-improvement` moves without renaming.** Install `self-improvement@laicluse-agent-tools`, then uninstall `self-improvement@leclause` once the new copy is active.
 - **Plugins not listed here remain in `@leclause` for now.** Migrate one plugin at a time; remove the whole marketplace only after nothing you use still comes from it.
 
 ## [2026-05-07]

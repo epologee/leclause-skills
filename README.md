@@ -21,6 +21,7 @@ Then install replacements one plugin at a time:
 ```bash
 claude plugins install how-plugins-work@laicluse-agent-tools
 claude plugins install git-discipline@laicluse-agent-tools
+claude plugins install self-improvement@laicluse-agent-tools
 ```
 
 Keep `@leclause` installed until every plugin you use has either been replaced
@@ -34,6 +35,7 @@ Current replacements:
 |------------|------------|
 | `how-plugins-work@leclause` | `how-plugins-work@laicluse-agent-tools` |
 | `gitgit@leclause` | `git-discipline@laicluse-agent-tools` |
+| `self-improvement@leclause` | `self-improvement@laicluse-agent-tools` |
 
 Plugins not listed above remain in `@leclause` for now.
 
@@ -72,7 +74,6 @@ The `@leclause` suffix in the second command is the marketplace alias that the f
 | **rename-suggestion** | `/rename-suggestion` | | | | Suggest a descriptive session name based on conversation context. Portable; the macOS-only `clipboard-copy` helper is invoked when present, and on other platforms the ghost-text suggestion still works without the clipboard step. |
 | **saysay** | `/saysay` | | | macOS | Claude speaks every response aloud. `/saysay off` to exit. |
 | **screen-recording** | `/screen-recording` | | | | Automated screen recordings and demo videos of browser-based features. |
-| **self-improvement** | `/self-improvement` | | | | Update CLAUDE.md and skills based on feedback. Detects duplication and extracts large sections into skills. |
 | **testing-philosophy** | ❌ | ✅ | | | Opinionated testing guide covering TDD workflow, end-to-end behaviour-test conventions (Cucumber/Gherkin and other framework choices), flaky test diagnosis, and test suite health. |
 | **whywhy** | `/whywhy [n]` | ✅ | | | Drill N layers deep into a question or goal (default 10), then analyze the chain for a better direction. |
 

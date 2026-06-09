@@ -83,11 +83,6 @@
       "source": "./packages/screen-recording"
     },
     {
-      "name": "self-improvement",
-      "description": "Update CLAUDE.md and skills based on user feedback. Detects duplication, determines optimal location for new instructions, and extracts large sections into standalone skills when CLAUDE.md gets too long.",
-      "source": "./packages/self-improvement"
-    },
-    {
       "name": "testing-philosophy",
       "description": "TDD principles, Cucumber/Gherkin conventions, flaky test handling, and test suite health. Red-Green-Refactor workflow.",
       "source": "./packages/testing-philosophy"
