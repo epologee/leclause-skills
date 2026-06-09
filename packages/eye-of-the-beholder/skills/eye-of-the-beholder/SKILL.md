@@ -232,6 +232,27 @@ This is especially a trap in dark mode. Absolute luminance values are small ther
 
 **Light and dark are two designs, not one.** If you fill a role (`surface-1`) correctly in light and then make dark mode "somewhere dark", you have two different semantic systems that happen to share a name. Every role must carry the same meaning in both modes: if `surface-1` is the most prominent reading surface in light, it must be that in dark too. Use `light-dark(light, dark)` in CSS custom properties so both values live side by side in the same rule and do not drift apart.
 
+## Credibility: the vibe-coded fingerprint
+
+Space, color, and time are three axes. There is a fourth that is not about any single property but about the design's *idiom*: does the whole read as a considered product, or as generic template / AI-generated output? The reflex is confirmatory ("it has an accent color and rounded corners, so it looks modern"); the observation is "would a designer with a point of view have made these exact moves, or are these the defaults a model reaches for?" The tells below are recognizable on sight. Treat them as defects, not taste: they are the marks of an interface that was generated rather than designed.
+
+23. **Scan for the seven vibe-coded tells.** On any screenshot, actively look for: (1) neon / high-saturation palettes with no hierarchy; (2) dark mode with decorative glow / aurora / radial bloom that serves no function; (3) emoji used as UI elements (nav, icons, bullets); (4) purple gradients applied broadly; (5) everything wrapped in bordered containers, cards nested inside cards; (6) multicolored side-tabs, thin colored vertical accent-borders ("leading ribbons") on content blocks; (7) meaningless status dots, colored circles that appear without corresponding state. Add an eighth seen everywhere: the outline pill-badge with a leading dot used as a status chip. Each is a genre marker, not a design choice. Source: The Fountain Institute, "7 signs a UI has been vibe coded" (https://www.thefountaininstitute.com/blog/signs-vibe-coded-ui).
+
+24. **The dot and the ribbon: does it encode anything?** The two most common dashboard tells are the colored status dot and the colored left accent-border. For each, ask the only question that matters: does this mark carry information that an adjacent label does not already carry? A green dot next to "connected" is redundant; the word already says it. A colored ribbon on a card that has no sibling card in another color is decoration pretending to be a category. If the mark is removed and nothing is lost, it was schmuck. Cut it.
+
+25. **The callout reflex.** Important or success content gets wrapped in a tinted rounded box with a colored border (the alert / callout). Ask whether the box is doing work that a heading, a hairline, and a single accent-colored word could not. Grouping is the job of whitespace and a 1px rule, not of a filled tint. A green success box and a red error box are the same reflex; the meaning belongs on the text, not in a container.
+
+### What credible products do instead
+
+The restraint idiom shared by Stripe, Linear, and Vercel, stated as moves you can apply:
+
+- **Group with typography and whitespace, not boxes.** A heading plus spacing reads as a section; a hairline (1px, low alpha) separates where a divider is genuinely needed. Reserve filled containers for functional surfaces (a scroll region, an input), never for emphasis.
+- **Color is an accent on text and numbers, and only for meaning.** Green means success, red means danger, the brand color means the primary action. Apply it to a word or a value, never as a filled container or a decorative dot. One dominant color, one accent, one neutral.
+- **Values get monospace / tabular figures.** A measured number ("5520 W"), an ID, or a timestamp reads as data when it is set in mono and aligns; it reads as decoration when it is bolded in the body face.
+- **"Verified / done / live" is a status word or a ✓ glyph in the accent color, set on the text**, not a green alert box. The proof is the word and the value carried by weight; the container adds nothing.
+
+When a redesign removes a box, a ribbon, a dot, or a pill and the meaning survives in the typography, the interface just moved from generated toward designed. That is the win condition for this axis.
+
 ## Animation: the same discipline, time as the axis
 
 Space and color are two axes. Time is a third. The same attitude works: not "I wrote `transition: transform 200ms`, so it animates smoothly" but "what do I see between frame 0 and frame 12?" The screenshot becomes a *series* of screenshots. The edge trace happens on each key frame. The rhythm is the timing curve. The "odd one out" is the one element that falls out of sync.
