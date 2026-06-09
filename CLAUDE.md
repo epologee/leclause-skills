@@ -15,6 +15,20 @@ notes that the upstream maintainer kept Dutch on purpose); do not
 translate those, but never introduce new ones. When in doubt, write
 English.
 
+## l'Aicluse migration in progress
+
+This repository remains the active public `@leclause` marketplace until the
+replacement marketplace has actionable migration instructions for external
+users. Do not remove, rename, or hollow out existing public plugins merely
+because a local l'Aicluse successor exists.
+
+The planned public successor is `laicluse-agent-tools` with marketplace alias
+`@laicluse-agent-tools`. During the transition, `how-plugins-work` and
+git-discipline may exist in both the old and new local repos. That temporary
+duplication is intentional migration staging, not a DRY cleanup target. Existing
+users should keep using `@leclause` until a plugin-specific migration stub tells
+them what to uninstall and what to install next.
+
 ## Authoring a new plugin
 
 Two rules that keep plugins portable across Mac, Linux, and Windows:
