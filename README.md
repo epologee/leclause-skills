@@ -4,6 +4,39 @@ A curated subset of the skills I built while developing applications in Ruby, Sw
 
 I typically prompt in Dutch but write English code, so these skills are a mix of both. The `export-skill` skill can translate if needed.
 
+## Maintenance mode: l'Aicluse migration
+
+This marketplace is entering maintenance mode. New multi-agent-compatible
+versions of selected tools are moving to `epologee/laicluse-agent-tools` under
+the marketplace alias `@laicluse-agent-tools`.
+
+Add the successor marketplace first:
+
+```bash
+claude plugins marketplace add epologee/laicluse-agent-tools
+```
+
+Then install replacements one plugin at a time:
+
+```bash
+claude plugins install how-plugins-work@laicluse-agent-tools
+claude plugins install git-discipline@laicluse-agent-tools
+```
+
+Keep `@leclause` installed until every plugin you use has either been replaced
+or deliberately removed. Do not run `claude plugins marketplace remove
+leclause` as the first migration step: removing the marketplace from its last
+scope also uninstalls the plugins that came from it.
+
+Current replacements:
+
+| Old plugin | New plugin |
+|------------|------------|
+| `how-plugins-work@leclause` | `how-plugins-work@laicluse-agent-tools` |
+| `gitgit@leclause` | `git-discipline@laicluse-agent-tools` |
+
+Plugins not listed above remain in `@leclause` for now.
+
 ## Install
 
 Same command on macOS, Linux, and Windows:

@@ -4,7 +4,7 @@
     "name": "Leclause"
   },
   "metadata": {
-    "description": "Skills marketplace for Claude Code and other AI agents"
+    "description": "Maintenance-mode Claude Code marketplace; selected tools are moving to epologee/laicluse-agent-tools"
   },
   "plugins": [
     {
@@ -114,7 +114,7 @@
     },
     {
       "name": "leclause",
-      "description": "Marketplace-wide utilities for the leclause-skills marketplace. Currently ships /leclause:whats-new, a one-stop reader for the post-update CHANGELOG section of any installed leclause plugin.",
+      "description": "Marketplace-wide utilities and migration notices for the leclause-skills marketplace. Currently ships /leclause:whats-new, a one-stop reader for the post-update CHANGELOG section of any installed leclause plugin.",
       "source": "./packages/leclause"
     },
     {

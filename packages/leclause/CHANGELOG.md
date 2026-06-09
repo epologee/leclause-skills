@@ -16,3 +16,10 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
+
+## [v1.0.9]
+
+### Changed
+
+- **`@leclause` is entering maintenance mode.** Add the successor with `claude plugins marketplace add epologee/laicluse-agent-tools`; migrate plugins one at a time.
+- **Do not remove the `leclause` marketplace first.** Removing a marketplace from its last scope also uninstalls every plugin installed from it.

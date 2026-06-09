@@ -12,6 +12,19 @@ the top. `/leclause:whats-new` (no argument) prints the most
 recent section. Patch-level marketplace tweaks that change
 nothing observable are intentionally silent.
 
+## [2026-06-09]
+
+### Changed
+
+- **`@leclause` is entering maintenance mode.** New multi-agent-compatible work moves to `epologee/laicluse-agent-tools` under the `@laicluse-agent-tools` marketplace alias.
+- **Install the successor marketplace before removing this one.** `claude plugins marketplace remove leclause` uninstalls remaining `@leclause` plugins when this is the last configured scope.
+
+### Migration
+
+- **`how-plugins-work` keeps its plugin name.** Install `how-plugins-work@laicluse-agent-tools`, then uninstall `how-plugins-work@leclause` when the new copy works for you.
+- **`gitgit` moves as `git-discipline`.** Install `git-discipline@laicluse-agent-tools`, then uninstall `gitgit@leclause` when the replacement covers your workflow.
+- **Plugins not listed here remain in `@leclause` for now.** Migrate one plugin at a time; remove the whole marketplace only after nothing you use still comes from it.
+
 ## [2026-05-07]
 
 ### Breaking
