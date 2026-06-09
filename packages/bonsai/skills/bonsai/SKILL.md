@@ -67,8 +67,10 @@ Bonsai puts the literal string `${CLAUDE_CLI:-claude}` in the clipboard command,
 
 Removing a worktree and pruning a branch are **two separate actions**:
 
-- **Remove worktree**: safe as long as there are no uncommitted changes. The branch keeps existing.
+- **Remove worktree**: only safe when the work is **demonstrably integrated** into the default branch AND there are no uncommitted changes. The branch keeps existing.
 - **Prune local branch**: only when the work is demonstrably integrated into the default branch.
+
+**Hard rule, no exceptions: NEVER remove a non-integrated worktree without explicit operator confirmation.** "Integrated" means the branch HEAD is an ancestor of `origin/$DEFAULT` (or a merged PR is confirmed). Clean working tree, fully pushed, and an *open* PR are NOT integration. They are reasons the work is recoverable, not reasons to remove it autonomously. An open PR especially means the work is still in flight. Removing such a worktree also kills any active Claude session running in it. Auto-removal is reserved for integrated worktrees only; everything else is operator territory.
 
 When in doubt: confer. Never silently throw work away.
 
@@ -326,7 +328,7 @@ Work:      ✓ Integrated (PR #1234 merged)
 ```
 
 Variants:
-- `○ Not integrated (PR #1234 open)`, "Remove worktree. Local branch stays."
+- `○ Not integrated (PR #1234 open)`, "Not integrated. Worktree stays unless you explicitly say to remove it." Never remove autonomously.
 - `✗ Uncommitted changes`, "Cannot clean up." Stop.
 
 #### Cleanup
@@ -363,9 +365,11 @@ Classification:
 
 - **Integrated + clean**, remove (automatic, no confirmation)
 - **Integrated + dirty or extra commits**, ask for confirmation
-- **Not integrated, open PR**, worktree may go, branch stays. Report PR.
+- **Not integrated, open PR**, KEEP. Never auto-remove. Report the PR and, only if you have a reason to, ask the operator whether the worktree may go (branch and PR stay regardless). Do not present removal as the default.
 - **Not integrated, no PR**, keep. Do not propose removal.
 - **Blockers**, skip, report
+
+Non-integrated worktrees are off-limits for automatic removal in every case (clean, pushed, open PR, all of it). Only the integrated-and-clean row removes without asking. This is the line that, when ignored, destroys in-flight work and active sessions.
 
 #### Show overview
 

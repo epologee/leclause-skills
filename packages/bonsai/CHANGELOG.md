@@ -16,3 +16,9 @@ Patch-level fixes that change nothing the user can observe are intentionally
 omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
+
+## [v1.0.7]
+
+### Changed
+
+- **`/bonsai prune` no longer auto-removes open-PR worktrees.** Non-integrated worktrees stay unless the operator explicitly confirms removal.
