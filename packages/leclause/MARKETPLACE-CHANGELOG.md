@@ -12,6 +12,12 @@ the top. `/leclause:whats-new` (no argument) prints the most
 recent section. Patch-level marketplace tweaks that change
 nothing observable are intentionally silent.
 
+## [2026-06-10]
+
+### Migration
+
+- **`anger-management` moves without renaming and becomes multi-agent.** Install `anger-management@laicluse-agent-tools`, then uninstall `anger-management@leclause`. The friction pile moves to `${LAICLUSE_HOME:-~/.laicluse}/anger-management/`; existing captures migrate automatically on the next capture or repair.
+
 ## [2026-06-09]
 
 ### Changed
