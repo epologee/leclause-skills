@@ -41,11 +41,23 @@ This is not optional. This is not "where possible". This is ALWAYS, for every fe
 
 The spec bounds the work. If there is no spec for it, it does not exist as a requirement. Want to do more? Write a new spec first. This prevents scope creep, gold plating, and the urge to "real quick" / "even snel" slip in something extra.
 
+## Scar tissue
+
+Umbrella term for defensive test material that exists because of a past wound rather than a present requirement. A scar is justified while the wound can reopen; once the anatomy has changed so it cannot, the scar is bloat that the suite drags along forever. Species under this umbrella:
+
+- **Absence pinning** (see below): asserting that something removed stays removed.
+- **Test case hoarding**: every bug, incident, or review remark becomes a permanent test, with no pruning judgment, until the suite is too noisy to mean anything.
+- **Phrasing pinning**: asserting exact wording or structure of output where only the function is the requirement; the spec then breaks on every harmless rewording.
+
+The test of a scar is the wound: can you name the failure this spec still protects against, in terms of behavior the system has today? If yes, it is a guard. If the answer is "it went wrong here once", it is scar tissue. Bug reproductions are mandated by this philosophy and are not scar tissue by default; they become it when the code path they pinned no longer exists.
+
+Pruning is deliberate and per-spec: name the spec, name why its wound is closed, remove it in its own commit. Mass-deleting tests remains a smell (see below); scar removal at scale is a sign you are dodging failures, not curating a suite.
+
 ## Do not spec absence (absence pinning)
 
 After removing a feature, the reflex is to assert the removal: `refute_includes`, `expect(...).not_to`, a spec that the thing is gone. Resist it. The space of things a system must NOT do is unbounded; a spec on one absence is an infinity-minus-one requirement that guards nothing while bloating the suite. Dijkstra's dictum is the root: testing shows the presence of behavior, never its absence. The removal itself is already proven by the diff and by the suite staying green without the removed feature's positive specs.
 
-There is no single canonical name for this smell; the nearest established vocabulary is "negative requirements" (requirements engineering's untestable "shall not" clauses), "scar tissue", and "test case hoarding" (defensive cases accumulating until the suite stops meaning anything). Working name here: **absence pinning**.
+There is no single canonical name for this smell; the nearest established vocabulary is "negative requirements" (requirements engineering's untestable "shall not" clauses) and the scar-tissue family above. Working name here: **absence pinning**.
 
 Two distinctions keep this honest:
 
