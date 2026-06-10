@@ -41,6 +41,19 @@ This is not optional. This is not "where possible". This is ALWAYS, for every fe
 
 The spec bounds the work. If there is no spec for it, it does not exist as a requirement. Want to do more? Write a new spec first. This prevents scope creep, gold plating, and the urge to "real quick" / "even snel" slip in something extra.
 
+## Do not spec absence (absence pinning)
+
+After removing a feature, the reflex is to assert the removal: `refute_includes`, `expect(...).not_to`, a spec that the thing is gone. Resist it. The space of things a system must NOT do is unbounded; a spec on one absence is an infinity-minus-one requirement that guards nothing while bloating the suite. Dijkstra's dictum is the root: testing shows the presence of behavior, never its absence. The removal itself is already proven by the diff and by the suite staying green without the removed feature's positive specs.
+
+There is no single canonical name for this smell; the nearest established vocabulary is "negative requirements" (requirements engineering's untestable "shall not" clauses), "scar tissue", and "test case hoarding" (defensive cases accumulating until the suite stops meaning anything). Working name here: **absence pinning**.
+
+Two distinctions keep this honest:
+
+- **A bug reproduction is not absence pinning.** A repro spec specifies correct behavior at one concrete input, even when phrased negatively ("does not raise", "does not double-charge"). It has a behavioral anchor. Absence pinning specs the non-existence of code or content with no behavior attached.
+- **An exploitable leftover is a real requirement.** When the removed thing carries risk if it lingers (a revenue-affecting voucher path, an auth bypass, a vestigial endpoint customers might keep calling), an absence check is a deliberate guard. Name that risk in the spec description; if you cannot name it, the spec does not belong.
+
+Red flag: "the test proves it was removed." Git proves it was removed.
+
 ## UI/UX bugs get end-to-end behaviour tests
 
 When a bug involves user interaction (buttons, forms, navigation, confirm dialogs, status transitions in the browser): write a behaviour test in the project's end-to-end framework (Cucumber, Playwright, Cypress, XCUITest, RSpec system specs, whichever the project uses). Behaviour tests describe behavior from the user's perspective and exercise the full stack including the front-end runtime.
