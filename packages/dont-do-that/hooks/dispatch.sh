@@ -43,6 +43,8 @@ case "$EVENT" in
     ;;
 
   Stop)
+    # allow-comment: headless `claude -p` returns its last turn as the result, so any Stop-block forces a nudge-turn that overwrites it; DD_HEADLESS opts the whole Stop set out while PreToolUse safety stays on.
+    [ -n "$DD_HEADLESS" ] && exit 0
     # false-claims and tool-error run in subshells so that an emit + exit in
     # one of them does not prevent the other from updating its own
     # /tmp/.claude-<guard>-<sid> state on the same fire. Pre-refactor they

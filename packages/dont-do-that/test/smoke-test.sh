@@ -180,6 +180,24 @@ expect_pass "premature: WIP hatch" \
 expect_pass "premature: mutex skips" \
   "$(stop_payload "Iets." true)"
 
+headless_out=$(printf '%s' "$(stop_payload "Klaar 🏁")" | DD_HEADLESS=1 bash "$DISPATCH" 2>/dev/null)
+if [ -z "$headless_out" ]; then
+  PASS=$((PASS + 1))
+else
+  echo "FAIL [headless: DD_HEADLESS suppresses Stop block]"
+  echo "  output: ${headless_out}"
+  FAIL=$((FAIL + 1))
+fi
+
+guarded_out=$(printf '%s' "$(stop_payload "Klaar 🏁")" | bash "$DISPATCH" 2>/dev/null)
+if echo "$guarded_out" | grep -q '"decision":"block"'; then
+  PASS=$((PASS + 1))
+else
+  echo "FAIL [headless: unset DD_HEADLESS still blocks]"
+  echo "  output: ${guarded_out:-<empty>}"
+  FAIL=$((FAIL + 1))
+fi
+
 # --- compliance-reflex ---
 
 expect_block "compliance: shall I question" \
