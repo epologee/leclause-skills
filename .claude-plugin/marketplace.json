@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "clipboard",
-      "description": "Copy core content of the last answer to the macOS clipboard via the clipboard-copy helper (pbcopy for plain, pbcopy-html for Slack rich text).",
+      "description": "DEPRECATED. clipboard has moved to clipboard@laicluse-agent-tools; the commands are unchanged (/clipboard, /clipboard slack). Install the successor, then run `claude plugins uninstall clipboard@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
       "source": "./packages/clipboard"
     },
     {
