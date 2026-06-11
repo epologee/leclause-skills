@@ -17,6 +17,14 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
 
+## [v1.0.18]
+
+### Changed
+
+- **Clipboard helper resolves successor-first.** The resolver now tries
+  `clipboard@laicluse-agent-tools` before the legacy `clipboard@leclause`
+  install; the generic `pbcopy`/`xclip`/`clip.exe` fallback is unchanged.
+
 ## [v1.0.17]
 
 ### Changed
