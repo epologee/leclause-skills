@@ -18,4 +18,9 @@ claude plugins uninstall clipboard@leclause
 One behavioural note for scripts: the successor resolves its
 `clipboard-copy` helper via the plugin root instead of a jq lookup, and no
 longer ships `bin/clipboard-paths.sh`. Anything that sourced that shim
-should invoke `<installPath>/bin/clipboard-copy` directly.
+should invoke the helper directly:
+
+```bash
+IP=$(jq -r '.plugins["clipboard@laicluse-agent-tools"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json)
+printf 'content' | "$IP/bin/clipboard-copy"
+```
