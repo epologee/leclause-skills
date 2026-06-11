@@ -1,56 +1,41 @@
-# autonomous
+# autonomous (deprecated)
 
-Dispatch a rover at a task. You stay back, the rover works in the field. The distance means it has to decide locally, so the plugin ships a decide framework, a contrarian pride check, and an evidence-discipline verify pass. The rover only reports done when the mission is solid.
+`autonomous` has moved to **`laicluse-agent-tools`** and was **split into
+two plugins** on the way:
 
-One hard dependency: `gurus@leclause` (same marketplace). The rover invokes `gurus:gurus` once per mission at INSPECT for opinionated panel review; the orchestrator routes to `gurus:software`, `gurus:council`, or any future panel. Install both plugins together: `claude plugins install autonomous@leclause gurus@leclause`.
+- **`rover@laicluse-agent-tools`** carries the mission framework you most
+  likely used: `/autonomous:rover` is now `/rover:rover`, and the same
+  rename applies to `prepare`, `decide`, `pride`, `trim`, `verify`,
+  `stop`, and `rover-help`.
+- **`autonomous@laicluse-agent-tools`** keeps only the stay-alive layer
+  (keepalive, cron heartbeat with backoff, wake). The rover pulls it in
+  by itself when it detects an interactive session; persistent processes
+  run without it.
 
-No other hard dependencies on personal or team skills. Optional integrations (notifier, reviewbot, commit-splitter) are user-named at invocation and only used when installed.
+This package is now a tombstone: it ships no skills. Its only remaining
+behaviour is a SessionStart notice that points here.
 
-## User-invocable skills
-
-### `/autonomous:rover [loop-file-path | free-form text]`
-
-Entry point. Accepts a loop file path to resume or free-form mission text (a description, a pasted issue body, a GitHub URL the operator wants the rover to address). Writes `.autonomous/<NAME>.md` (the loop file) and starts a `CronCreate` job that re-enters the conversation each minute while the REPL is idle. The rover does not fetch remote content on its own; if an issue body or PR diff is part of the mission, the operator pastes it into the invocation.
-
-### `/autonomous:wake <loop-file-path>`
-
-Wake a stopped or expired loop. Reads the file, restores the cron via `cron`, summarizes current state, kicks off the next iteration.
-
-### `/autonomous:stop [loop-file-path]`
-
-Cleanly stop a running loop. Deletes the cron, writes a final log entry, produces a recap.
-
-### `/autonomous:pride [git-range | uncommitted]`
-
-Spawns a contrarian agent that reviews a rover artefact for what the user would notice but the rover missed. Hard gate inside the rover: runs on every artefact the rover produces (code, docs, prose, research briefs, media, communiqués), not just pushes. Also invocable directly.
-
-### `/autonomous:verify [--propose <loop-file> | <loop-file> | free text]`
-
-Evidence discipline. With `--propose`, writes Done criteria into the loop file at the end of SURVEY. Default mode ticks each criterion with evidence at the end of INSPECT.
-
-## Internal skills (loaded by the rover)
-
-- **`cron`**: scheduling machine. CronCreate, CronDelete, exponential backoff, auto-stop after sustained idleness, restoration after session restart.
-- **`decide`**: decision framework. Loaded when the loop faces a choice and would otherwise ask the user.
-
-## Phase machine
-
-```
-SURVEY -> DRIVE -> INSPECT -> STOW -> STANDBY
-```
-
-The loop is autonomous. It does not ask questions mid-phase. When it hits a choice it invokes `decide`. Before any artefact leaves the rover (push, PR, handoff communiqué, research brief, generated doc, media, or any other deliverable) it invokes `pride`. Pushes themselves are never autonomous: the user must say "push" or equivalent.
-
-## Loop file
-
-Lives in `.autonomous/<NAME>.md` at the git root. Holds context, plan, Done criteria, decision audit trail, and a timestamped log. Tail it to watch progress.
-
-## Cost awareness
-
-A cron at one-minute cadence drives many Claude turns. During active phases that is the point. During STANDBY the backoff progresses to 60-minute intervals and auto-stops after roughly 5 hours of sustained idleness. For small tasks consider whether an ordinary conversation is cheaper.
-
-## Installation
+## Migrate
 
 ```bash
-/plugin install autonomous@leclause
+claude plugins marketplace add epologee/laicluse-agent-tools
+claude plugins install rover@laicluse-agent-tools
+claude plugins install autonomous@laicluse-agent-tools
+claude plugins uninstall autonomous@leclause
 ```
+
+Existing loop files under `.autonomous/` in your projects stay readable;
+the successor rover wakes them with the same loop-file format. Muscle
+memory is the only breaking change: type `/rover:rover` (or any
+`/rover:*` skill) where you typed `/autonomous:*` before, except for the
+keepalive layer, which stays under `autonomous` and is not normally
+invoked by hand.
+
+## Why a tombstone instead of a hard delete
+
+Removing a plugin's entry from a marketplace does not uninstall it for users
+who already have it: the install stays orphaned in the cache. A tombstone
+keeps the marketplace entry alive so that the next
+`claude plugins update autonomous@leclause` delivers this notice and the
+exact uninstall command. See the successor's `how-plugins-work` skill, section
+"Deprecating and removing a plugin", for the full pattern.

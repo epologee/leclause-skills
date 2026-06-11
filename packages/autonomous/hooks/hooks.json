@@ -1,0 +1,13 @@
+{
+  "description": "Tombstone: a single SessionStart notice that autonomous has split into rover@laicluse-agent-tools (mission framework) and autonomous@laicluse-agent-tools (keepalive layer). No other behaviour remains.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/deprecated-notice.sh" }
+        ]
+      }
+    ]
+  }
+}

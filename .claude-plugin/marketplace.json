@@ -99,7 +99,7 @@
     },
     {
       "name": "autonomous",
-      "description": "Dispatch a rover at a task. You stay back, the rover works in the field; the distance means it must decide autonomously. A decide framework picks the path, a pride check catches blind spots, and the rover only reports done when the mission is solid. No hard dependencies on personal or team skills.",
+      "description": "DEPRECATED. autonomous has split into rover@laicluse-agent-tools (the mission framework; /autonomous:rover is now /rover:rover, same rename for prepare, decide, pride, trim, verify, stop, rover-help) and autonomous@laicluse-agent-tools (only the keepalive/cron/wake layer, pulled in by the rover itself). Install both successors, then run `claude plugins uninstall autonomous@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain. Existing .autonomous/ loop files stay readable by the successor rover.",
       "source": "./packages/autonomous"
     },
     {

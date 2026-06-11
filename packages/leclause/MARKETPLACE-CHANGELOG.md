@@ -12,6 +12,12 @@ the top. `/leclause:whats-new` (no argument) prints the most
 recent section. Patch-level marketplace tweaks that change
 nothing observable are intentionally silent.
 
+## [2026-06-11]
+
+### Migration
+
+- **`autonomous` splits in two on its way to laicluse-agent-tools.** The mission framework moves to `rover@laicluse-agent-tools` (`/autonomous:rover` is now `/rover:rover`, same rename for prepare, decide, pride, trim, verify, stop, rover-help); the successor `autonomous@laicluse-agent-tools` keeps only the keepalive/cron/wake layer, which the rover pulls in by itself in interactive sessions. Install both, then uninstall `autonomous@leclause`. Existing `.autonomous/` loop files stay readable.
+
 ## [2026-06-10]
 
 ### Migration
