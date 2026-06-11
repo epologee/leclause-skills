@@ -49,7 +49,7 @@ Generate a short, descriptive session name based on the conversation context.
 
 4. **Copy the full `/rename <name>` command to the clipboard** via the clipboard plugin's `clipboard-copy` helper (macOS-only). The plugin moved to `clipboard@laicluse-agent-tools`; the resolver tries that first and falls back to the legacy `clipboard@leclause` install. If neither is installed, fall back to whichever clipboard mechanism the session has (a `pbcopy` / `xclip` / `clip.exe` invocation directly).
 
-   Reference resolver (uses the clipboard helper when installed; otherwise reports and skips):
+   Reference resolver (the canonical cross-plugin idiom from the clipboard plugin's README, section "Consuming from another plugin"; uses the helper when installed, otherwise reports and skips):
    ```bash
    IP=$(jq -r '.plugins["clipboard@laicluse-agent-tools"][0].installPath // .plugins["clipboard@leclause"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json 2>/dev/null)
    if [ -z "$IP" ] || [ ! -x "$IP/bin/clipboard-copy" ]; then

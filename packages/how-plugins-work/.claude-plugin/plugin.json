@@ -1,5 +1,5 @@
 {
   "name": "how-plugins-work",
   "description": "DEPRECATED. how-plugins-work has moved to how-plugins-work@laicluse-agent-tools. Install how-plugins-work@laicluse-agent-tools, then run `claude plugins uninstall how-plugins-work@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
-  "version": "1.0.32"
+  "version": "1.0.33"
 }

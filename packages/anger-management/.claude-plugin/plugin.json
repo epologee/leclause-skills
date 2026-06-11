@@ -1,5 +1,5 @@
 {
   "name": "anger-management",
   "description": "DEPRECATED. anger-management has moved to anger-management@laicluse-agent-tools. Install anger-management@laicluse-agent-tools, then run `claude plugins uninstall anger-management@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain. Existing friction captures migrate to the new storage root automatically.",
-  "version": "1.0.3"
+  "version": "1.0.4"
 }

@@ -8,5 +8,5 @@ To finish the move:
   claude plugins install how-plugins-work@laicluse-agent-tools
   claude plugins uninstall how-plugins-work@leclause
 
-Full migration: /leclause:whats-new
+Full migration guide: https://github.com/epologee/laicluse-agent-tools/blob/main/docs/migration.md
 NOTICE

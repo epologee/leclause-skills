@@ -1,5 +1,5 @@
 {
   "name": "gitgit",
   "description": "DEPRECATED. gitgit has moved to git-discipline@laicluse-agent-tools. Install git-discipline@laicluse-agent-tools, then run `claude plugins uninstall gitgit@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills, guards, or commit hooks remain, so it no longer enforces commit discipline.",
-  "version": "1.0.158"
+  "version": "1.0.159"
 }
