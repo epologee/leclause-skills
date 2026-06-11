@@ -211,11 +211,24 @@ Add the port to the start prompt (see step 2).
 
 Scan the worktree two levels deep for `package.json` and `Gemfile`. For every match: run the corresponding install command in that directory.
 
+For JavaScript projects the package manager MUST be detected per directory, never assumed. Running `npm install` in a yarn or pnpm project silently rewrites `yarn.lock` (npm ≥7 "syncs" it), drops a stray `package-lock.json` in the tree, and leaves a half-resolved `node_modules` behind: the worktree starts dirty and the dev server breaks. Detect via lockfile, fall back to the `packageManager` field, and only then to npm:
+
 ```bash
 find "$WORKTREE_PATH" -maxdepth 2 -name "package.json" -not -path "*/node_modules/*" | while read -r manifest; do
   dir=$(dirname "$manifest")
-  echo "Installing npm dependencies in $dir..."
-  (cd "$dir" && npm install)
+  if [ -f "$dir/yarn.lock" ]; then
+    echo "Installing yarn dependencies in $dir..."
+    (cd "$dir" && yarn install --frozen-lockfile)
+  elif [ -f "$dir/pnpm-lock.yaml" ]; then
+    echo "Installing pnpm dependencies in $dir..."
+    (cd "$dir" && pnpm install --frozen-lockfile)
+  elif [ -f "$dir/bun.lock" ] || [ -f "$dir/bun.lockb" ]; then
+    echo "Installing bun dependencies in $dir..."
+    (cd "$dir" && bun install --frozen-lockfile)
+  else
+    echo "Installing npm dependencies in $dir..."
+    (cd "$dir" && npm install)
+  fi
 done
 
 find "$WORKTREE_PATH" -maxdepth 2 -name "Gemfile" -not -path "*/vendor/*" | while read -r manifest; do
@@ -225,7 +238,7 @@ find "$WORKTREE_PATH" -maxdepth 2 -name "Gemfile" -not -path "*/vendor/*" | whil
 done
 ```
 
-Install failures (missing tool, network error) are reported but do not block: the worktree has been created and the user can recover manually. Other package managers (pnpm, yarn, poetry, cargo, go mod) are not yet covered; add them when they appear in a project.
+Install failures (missing tool, network error) are reported but do not block: the worktree has been created and the user can recover manually. Other ecosystems (poetry, cargo, go mod) are not yet covered; add them when they appear in a project.
 
 ### Step 2: Place start command on the clipboard
 
