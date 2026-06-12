@@ -1,0 +1,13 @@
+{
+  "description": "Tombstone: a single SessionStart notice that rename-suggestion is end of life with no successor. No other behaviour remains.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/deprecated-notice.sh" }
+        ]
+      }
+    ]
+  }
+}

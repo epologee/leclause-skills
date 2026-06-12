@@ -1,17 +1,17 @@
-# rename-suggestion
+# rename-suggestion (end of life)
 
-Generate a descriptive session name based on conversation context and copy the rename command to the clipboard.
+`rename-suggestion` is discontinued. There is no successor; the plugin will
+not move to `laicluse-agent-tools`.
 
-## Commands
+This package is now a tombstone: it ships no skills. Its only remaining
+behaviour is a SessionStart notice that points here.
 
-### `/rename-suggestion`
-
-Reads the conversation, picks a short descriptive name (kebab-case, intent-revealing), and copies the corresponding rename command to the clipboard so you can paste and run it.
-
-Also called by other skills when they finish a logical block of work and want to suggest a clearer session label.
-
-## Installation
+## Remove
 
 ```bash
-/plugin install rename-suggestion@leclause
+claude plugins uninstall rename-suggestion@leclause
 ```
+
+The session-rename idea itself needs no plugin: ask your agent for a short
+descriptive session name and it will end with a `/rename <name>` line you can
+use directly.

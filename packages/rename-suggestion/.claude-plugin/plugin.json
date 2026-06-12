@@ -1,5 +1,5 @@
 {
   "name": "rename-suggestion",
-  "description": "Generate a descriptive session name based on conversation context and copy the rename command to clipboard.",
-  "version": "1.0.19"
+  "description": "END OF LIFE. rename-suggestion is discontinued with no successor; it will not move to laicluse-agent-tools. Run `claude plugins uninstall rename-suggestion@leclause`. This plugin now ships only a SessionStart notice; no skills remain. The idea needs no plugin: ask your agent for a short descriptive session name ending in a /rename line.",
+  "version": "1.0.20"
 }
