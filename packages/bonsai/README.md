@@ -1,33 +1,26 @@
-# bonsai
+# bonsai (deprecated)
 
-Worktree lifecycle manager. Two modes: create a new worktree with a branch and launch a Claude session in a fresh iTerm2 pane, or prune existing worktrees with safety checks that prevent work loss.
+`bonsai` has moved to **`laicluse-agent-tools`** as
+`bonsai@laicluse-agent-tools`. The successor is a cross-platform CLI for the
+worktree lifecycle: `create`, `setup`, and `prune` (teardown), exposed through
+the `bonsai`, `setup`, and `prune` skills.
 
-Auto-triggers when a `.bonsai` file is spotted in a repository (via git status, ls, or file exploration) to verify gitignore setup.
+This package is now a tombstone: it ships no skills. Its only remaining
+behaviour is a SessionStart notice that points here.
 
-## Commands
+## What changed
 
-### `/bonsai new <branch> [prompt]`
+- No more clipboard / `cd … && claude "…"` start command, and no macOS-only
+  requirement. Bonsai now emits facts (`create --json` returns the worktree,
+  branch, base, and a dev-server port hint) and launches nothing; whatever runs
+  an agent in the worktree composes its own briefing.
+- Teardown is behind a hard safety gate: a clean-but-non-integrated worktree is
+  kept unless explicitly forced, and removal warns on orphaned commits.
 
-Creates a worktree, switches to a new branch, opens an iTerm2 pane, and starts a Claude session there. Optional prompt text seeds the new session.
-
-### `/bonsai prune`
-
-Lists worktrees and offers cleanup based on context: merged branches, abandoned work, stale worktrees. Refuses to drop worktrees with uncommitted changes or unpushed commits unless overridden.
-
-## Requirements
-
-macOS with iTerm2. The new-pane behavior uses `osascript` to drive iTerm2, which is macOS-only. `/bonsai prune` works anywhere git runs.
-
-If you wrap `claude` (alias, custom flags, model pinning), expose your wrapper via the `CLAUDE_CLI` env var in your shell rc:
-
-```bash
-export CLAUDE_CLI=my-wrapper
-```
-
-Bonsai falls back to `claude` when the var is not set.
-
-## Installation
+## Migrate
 
 ```bash
-/plugin install bonsai@leclause
+claude plugins marketplace add epologee/laicluse-agent-tools
+claude plugins install bonsai@laicluse-agent-tools
+claude plugins uninstall bonsai@leclause
 ```
