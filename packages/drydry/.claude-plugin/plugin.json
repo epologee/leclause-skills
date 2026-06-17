@@ -1,5 +1,5 @@
 {
   "name": "drydry",
-  "description": "Find and converge parallel paths in any artefact: code, prose, design systems. Methodology guide that disciplines how a duplication audit runs (eight chapters: Type-4 clone framing, verifier-burden LLM pass, allow-list scoping, drift hypothesis, three-bucket triage, two-fates discipline, contrarian second-pass, method-as-artefact) without prescribing what duplication looks like in your codebase. One user-invocable orchestrator (drydry:drydry) with quick and audit modes; the calling session formulates the audit checklist from the codebase in front of it, guided by formulation prompts. Six agent-only sub-skills (sweep, checklist as opt-in seed source, triage, learn, upstream, instructions).",
-  "version": "1.0.21"
+  "description": "DEPRECATED. drydry has moved to drydry@laicluse-agent-fieldkit; the orchestrator is unchanged (/drydry:drydry, quick and audit modes). Install the successor, then run `claude plugins uninstall drydry@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
+  "version": "1.0.22"
 }
