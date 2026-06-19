@@ -84,7 +84,7 @@
     },
     {
       "name": "testing-philosophy",
-      "description": "TDD principles, Cucumber/Gherkin conventions, flaky test handling, and test suite health. Red-Green-Refactor workflow.",
+      "description": "DEPRECATED. testing-philosophy has moved into the house-rules plugin at house-rules@laicluse-agent-fieldkit; the skill is unchanged. Install the successor, then run `claude plugins uninstall testing-philosophy@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
       "source": "./packages/testing-philosophy"
     },
     {
