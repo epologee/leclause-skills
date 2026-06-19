@@ -89,7 +89,7 @@
     },
     {
       "name": "whywhy",
-      "description": "Drill N layers deep into a question or goal (default 10). Claude autonomously asks and answers 'why?' N times, then analyzes the chain for a better direction.",
+      "description": "DEPRECATED. whywhy has moved to whywhy@laicluse-agent-fieldkit; the skill is unchanged (/whywhy [count] <question>). Install the successor, then run `claude plugins uninstall whywhy@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
       "source": "./packages/whywhy"
     },
     {

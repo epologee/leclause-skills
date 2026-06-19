@@ -1,27 +1,19 @@
-# whywhy
+# whywhy (deprecated)
 
-Drill N layers deep into a question or goal (default 10). Claude autonomously asks and answers "why?" itself, building a chain of reasoning, then analyzes the chain for a better direction toward the goal.
+`whywhy` has moved to **`laicluse-agent-fieldkit`** as
+`whywhy@laicluse-agent-fieldkit`. The skill is unchanged:
+`/whywhy [count] <question>`, the configurable why-chain.
 
-The classic five-whys exercise, but autonomous and slightly deeper. Useful when the surface-level answer feels too convenient.
+This package is now a tombstone: it ships no skills. Its only remaining
+behaviour is a SessionStart notice that points here.
 
-## Commands
-
-### `/whywhy [n] <question, goal, or statement>`
-
-Generates an `n`-deep "why?" chain (default 10), then analyzes the chain for:
-
-- assumptions that broke down
-- layers where the reasoning forked
-- a better-framed goal at one of the deeper layers
-
-Argument can be a question, a stated goal, or a claim to interrogate.
-
-## Auto-trigger
-
-Activates when the user types `/whywhy` with content. Does not auto-fire on free conversation.
-
-## Installation
+## Migrate
 
 ```bash
-/plugin install whywhy@leclause
+claude plugins marketplace add epologee/laicluse-agent-fieldkit
+claude plugins install whywhy@laicluse-agent-fieldkit
+claude plugins uninstall whywhy@leclause
 ```
+
+Full migration guide:
+https://github.com/epologee/laicluse-agent-fieldkit/blob/main/docs/migration.md
