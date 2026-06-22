@@ -9,5 +9,5 @@ To finish the move:
   claude plugins install whywhy@laicluse-agent-fieldkit
   claude plugins uninstall whywhy@leclause
 
-Full migration guide: https://github.com/epologee/laicluse-agent-fieldkit/blob/main/docs/migration.md
+Full migration guide: https://github.com/epologee/leclause-skills/blob/main/docs/migration.md
 NOTICE

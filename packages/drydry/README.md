@@ -16,4 +16,4 @@ claude plugins uninstall drydry@leclause
 ```
 
 Full migration guide:
-https://github.com/epologee/laicluse-agent-fieldkit/blob/main/docs/migration.md
+https://github.com/epologee/leclause-skills/blob/main/docs/migration.md

@@ -11,5 +11,5 @@ To finish the move:
   claude plugins uninstall ground@leclause
   claude plugins uninstall inspire@leclause
 
-Full migration guide: https://github.com/epologee/laicluse-agent-fieldkit/blob/main/docs/migration.md
+Full migration guide: https://github.com/epologee/leclause-skills/blob/main/docs/migration.md
 NOTICE

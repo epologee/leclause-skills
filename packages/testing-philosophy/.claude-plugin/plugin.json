@@ -1,5 +1,5 @@
 {
   "name": "testing-philosophy",
   "description": "DEPRECATED. testing-philosophy has moved into the house-rules plugin at house-rules@laicluse-agent-fieldkit; the skill is unchanged. Install the successor, then run `claude plugins uninstall testing-philosophy@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
-  "version": "1.0.15"
+  "version": "1.0.16"
 }

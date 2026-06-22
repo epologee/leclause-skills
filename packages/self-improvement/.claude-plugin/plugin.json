@@ -1,5 +1,5 @@
 {
   "name": "self-improvement",
   "description": "DEPRECATED. self-improvement has moved to self-improvement@laicluse-agent-tools. Install self-improvement@laicluse-agent-tools, then run `claude plugins uninstall self-improvement@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
-  "version": "1.0.17"
+  "version": "1.0.18"
 }

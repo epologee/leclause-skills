@@ -1,5 +1,5 @@
 {
   "name": "drydry",
   "description": "DEPRECATED. drydry has moved to drydry@laicluse-agent-fieldkit; the orchestrator is unchanged (/drydry:drydry, quick and audit modes). Install the successor, then run `claude plugins uninstall drydry@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
-  "version": "1.0.22"
+  "version": "1.0.23"
 }

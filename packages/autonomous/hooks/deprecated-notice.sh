@@ -13,5 +13,5 @@ To finish the move:
   claude plugins uninstall autonomous@leclause
 
 Existing .autonomous/ loop files stay readable; the successor rover wakes them unchanged.
-Full migration guide: https://github.com/epologee/laicluse-agent-tools/blob/main/docs/migration.md
+Full migration guide: https://github.com/epologee/leclause-skills/blob/main/docs/migration.md
 NOTICE

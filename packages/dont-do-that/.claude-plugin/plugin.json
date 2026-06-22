@@ -1,5 +1,5 @@
 {
   "name": "dont-do-that",
   "description": "DEPRECATED. dont-do-that has moved to dont-do-that@laicluse-agent-tools. Install dont-do-that@laicluse-agent-tools, then run `claude plugins uninstall dont-do-that@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills, guards, or hooks remain.",
-  "version": "1.0.86"
+  "version": "1.0.87"
 }

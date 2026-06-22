@@ -1,5 +1,5 @@
 {
   "name": "inspire",
   "description": "DEPRECATED. The /inspire skill has moved into the lifeline plugin at lifeline@laicluse-agent-fieldkit, paired with /ground. Install the successor, then uninstall inspire@leclause and ground@leclause. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
-  "version": "1.0.5"
+  "version": "1.0.6"
 }
