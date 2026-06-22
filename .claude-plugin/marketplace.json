@@ -39,7 +39,7 @@
     },
     {
       "name": "ground",
-      "description": "Verify Claude's recent output with external sources when the user expresses skepticism. Ad-hoc retrieval-augmented verification.",
+      "description": "DEPRECATED. The /ground skill has moved into the lifeline plugin at lifeline@laicluse-agent-fieldkit, paired with /inspire. Install the successor, then uninstall ground@leclause and inspire@leclause. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
       "source": "./packages/ground"
     },
     {
@@ -49,7 +49,7 @@
     },
     {
       "name": "inspire",
-      "description": "Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. Forces external perspectives before committing to one path.",
+      "description": "DEPRECATED. The /inspire skill has moved into the lifeline plugin at lifeline@laicluse-agent-fieldkit, paired with /ground. Install the successor, then uninstall inspire@leclause and ground@leclause. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
       "source": "./packages/inspire"
     },
     {

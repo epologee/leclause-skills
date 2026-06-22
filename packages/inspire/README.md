@@ -1,31 +1,20 @@
-# inspire
+# inspire (deprecated)
 
-Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. Forces external perspectives before committing to one path.
+The `/inspire` skill has moved into the **lifeline** plugin at
+`lifeline@laicluse-agent-fieldkit`, paired with `/ground`. The skill is
+unchanged.
 
-Dutch-language skill, but works against any topic.
+This package is now a tombstone: it ships no skills. Its only remaining
+behaviour is a SessionStart notice that points here.
 
-## Commands
-
-### `/inspire`
-
-Searches online for how others solve the current problem, summarizes the patterns found, and contrasts them with the approach under consideration. Returns concrete pointers (libraries, articles, repositories) rather than generic advice.
-
-## Auto-trigger
-
-Activates on questions like:
-
-- "hoe doen anderen dit"
-- "wat bestaat er al"
-- "is hier een library voor"
-- explicit research requests
-- unfamiliar domains where the conversation would otherwise rely on training data
-
-## Why
-
-The reflex to bolt together a bespoke solution is strong. `/inspire` interrupts that by insisting on a quick external survey first. Often the right answer is a well-tested library, not 50 lines of custom code.
-
-## Installation
+## Migrate
 
 ```bash
-/plugin install inspire@leclause
+claude plugins marketplace add epologee/laicluse-agent-fieldkit
+claude plugins install lifeline@laicluse-agent-fieldkit
+claude plugins uninstall inspire@leclause
+claude plugins uninstall ground@leclause
 ```
+
+Full migration guide:
+https://github.com/epologee/laicluse-agent-fieldkit/blob/main/docs/migration.md
