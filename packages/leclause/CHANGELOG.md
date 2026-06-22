@@ -21,5 +21,5 @@ without a `## [vX.Y.Z]` section stays silent on every update.
 
 ### Changed
 
-- **`@leclause` is entering maintenance mode.** Add the successor with `claude plugins marketplace add epologee/laicluse-agent-tools`; migrate plugins one at a time.
+- **`@leclause` is entering maintenance mode.** Add the successor with `claude plugins marketplace add epologee/laicluse-agent-fieldkit`; migrate plugins one at a time.
 - **Do not remove the `leclause` marketplace first.** Removing a marketplace from its last scope also uninstalls every plugin installed from it.

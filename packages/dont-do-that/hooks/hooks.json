@@ -1,5 +1,5 @@
 {
-  "description": "Tombstone: a single SessionStart notice that dont-do-that has moved to dont-do-that@laicluse-agent-tools. No skills, guards, or hook dispatcher remain.",
+  "description": "Tombstone: a single SessionStart notice that dont-do-that has moved to dont-do-that@laicluse-agent-fieldkit. No skills, guards, or hook dispatcher remain.",
   "hooks": {
     "SessionStart": [
       {

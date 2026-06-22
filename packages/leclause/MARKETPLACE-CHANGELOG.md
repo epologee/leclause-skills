@@ -16,27 +16,27 @@ nothing observable are intentionally silent.
 
 ### Migration
 
-- **`autonomous` splits in two on its way to laicluse-agent-tools.** The mission framework moves to `rover@laicluse-agent-tools` (`/autonomous:rover` is now `/rover:rover`, same rename for prepare, decide, pride, trim, verify, stop, rover-help); the successor `autonomous@laicluse-agent-tools` keeps only the keepalive/cron/wake layer, which the rover pulls in by itself in interactive sessions. Install both, then uninstall `autonomous@leclause`. Existing `.autonomous/` loop files stay readable.
+- **`autonomous` splits in two on its way to laicluse-agent-fieldkit.** The mission framework moves to `rover@laicluse-agent-fieldkit` (`/autonomous:rover` is now `/rover:rover`, same rename for prepare, decide, pride, trim, verify, stop, rover-help); the successor `autonomous@laicluse-agent-fieldkit` keeps only the keepalive/cron/wake layer, which the rover pulls in by itself in interactive sessions. Install both, then uninstall `autonomous@leclause`. Existing `.autonomous/` loop files stay readable.
 
 ## [2026-06-10]
 
 ### Migration
 
-- **`anger-management` moves without renaming and becomes multi-agent.** Install `anger-management@laicluse-agent-tools`, then uninstall `anger-management@leclause`. The friction pile moves to `${LAICLUSE_HOME:-~/.laicluse}/anger-management/`; existing captures migrate automatically on the next capture or repair.
+- **`anger-management` moves without renaming and becomes multi-agent.** Install `anger-management@laicluse-agent-fieldkit`, then uninstall `anger-management@leclause`. The friction pile moves to `${LAICLUSE_HOME:-~/.laicluse}/anger-management/`; existing captures migrate automatically on the next capture or repair.
 
 ## [2026-06-09]
 
 ### Changed
 
-- **`@leclause` is entering maintenance mode.** New multi-agent-compatible work moves to `epologee/laicluse-agent-tools` under the `@laicluse-agent-tools` marketplace alias.
+- **`@leclause` is entering maintenance mode.** New multi-agent-compatible work moves to `epologee/laicluse-agent-fieldkit` under the `@laicluse-agent-fieldkit` marketplace alias.
 - **Install the successor marketplace before removing this one.** `claude plugins marketplace remove leclause` uninstalls remaining `@leclause` plugins when this is the last configured scope.
 
 ### Migration
 
-- **`how-plugins-work` keeps its plugin name.** Install `how-plugins-work@laicluse-agent-tools`, then uninstall `how-plugins-work@leclause` when the new copy works for you.
-- **`gitgit` moves as `git-discipline`.** Install `git-discipline@laicluse-agent-tools`, then uninstall `gitgit@leclause` when the replacement covers your workflow.
-- **`self-improvement` moves without renaming.** Install `self-improvement@laicluse-agent-tools`, then uninstall `self-improvement@leclause` once the new copy is active.
-- **`intervision` moves without renaming and becomes multi-agent.** Install `intervision@laicluse-agent-tools`, then uninstall `intervision@leclause`; the successor adds a Codex side that consults Claude via `claude -p`.
+- **`how-plugins-work` keeps its plugin name.** Install `how-plugins-work@laicluse-agent-fieldkit`, then uninstall `how-plugins-work@leclause` when the new copy works for you.
+- **`gitgit` moves as `git-discipline`.** Install `git-discipline@laicluse-agent-fieldkit`, then uninstall `gitgit@leclause` when the replacement covers your workflow.
+- **`self-improvement` moves without renaming.** Install `self-improvement@laicluse-agent-fieldkit`, then uninstall `self-improvement@leclause` once the new copy is active.
+- **`intervision` moves without renaming and becomes multi-agent.** Install `intervision@laicluse-agent-fieldkit`, then uninstall `intervision@leclause`; the successor adds a Codex side that consults Claude via `claude -p`.
 - **Plugins not listed here remain in `@leclause` for now.** Migrate one plugin at a time; remove the whole marketplace only after nothing you use still comes from it.
 
 ## [2026-05-07]

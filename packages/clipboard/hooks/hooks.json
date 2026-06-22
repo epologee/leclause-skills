@@ -1,5 +1,5 @@
 {
-  "description": "Tombstone: a single SessionStart notice that clipboard has moved to clipboard@laicluse-agent-tools. No other behaviour remains.",
+  "description": "Tombstone: a single SessionStart notice that clipboard has moved to clipboard@laicluse-agent-fieldkit. No other behaviour remains.",
   "hooks": {
     "SessionStart": [
       {

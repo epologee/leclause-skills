@@ -1,14 +1,14 @@
 # how-plugins-work (deprecated)
 
-`how-plugins-work` has moved to **`how-plugins-work@laicluse-agent-tools`**.
+`how-plugins-work` has moved to **`how-plugins-work@laicluse-agent-fieldkit`**.
 This package is now a tombstone: it ships no skills. Its only remaining
 behaviour is a SessionStart notice that points here.
 
 ## Migrate
 
 ```bash
-claude plugins marketplace add epologee/laicluse-agent-tools
-claude plugins install how-plugins-work@laicluse-agent-tools
+claude plugins marketplace add epologee/laicluse-agent-fieldkit
+claude plugins install how-plugins-work@laicluse-agent-fieldkit
 claude plugins uninstall how-plugins-work@leclause
 ```
 

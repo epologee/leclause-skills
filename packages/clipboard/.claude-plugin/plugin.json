@@ -1,5 +1,5 @@
 {
   "name": "clipboard",
-  "description": "DEPRECATED. clipboard has moved to clipboard@laicluse-agent-tools; the commands are unchanged (/clipboard, /clipboard slack). Install the successor, then run `claude plugins uninstall clipboard@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
-  "version": "1.0.26"
+  "description": "DEPRECATED. clipboard has moved to clipboard@laicluse-agent-fieldkit; the commands are unchanged (/clipboard, /clipboard slack). Install the successor, then run `claude plugins uninstall clipboard@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
+  "version": "1.0.27"
 }

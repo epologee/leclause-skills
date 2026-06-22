@@ -4,22 +4,22 @@
     "name": "Leclause"
   },
   "metadata": {
-    "description": "Maintenance-mode Claude Code marketplace; selected tools are moving to epologee/laicluse-agent-tools"
+    "description": "Maintenance-mode Claude Code marketplace; selected tools are moving to epologee/laicluse-agent-fieldkit"
   },
   "plugins": [
     {
       "name": "clipboard",
-      "description": "DEPRECATED. clipboard has moved to clipboard@laicluse-agent-tools; the commands are unchanged (/clipboard, /clipboard slack). Install the successor, then run `claude plugins uninstall clipboard@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
+      "description": "DEPRECATED. clipboard has moved to clipboard@laicluse-agent-fieldkit; the commands are unchanged (/clipboard, /clipboard slack). Install the successor, then run `claude plugins uninstall clipboard@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
       "source": "./packages/clipboard"
     },
     {
       "name": "bonsai",
-      "description": "DEPRECATED. bonsai has moved to bonsai@laicluse-agent-tools, now a cross-platform CLI (create, setup, prune) with no clipboard and no macOS requirement. Install the successor, then run `claude plugins uninstall bonsai@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
+      "description": "DEPRECATED. bonsai has moved to bonsai@laicluse-agent-fieldkit, now a cross-platform CLI (create, setup, prune) with no clipboard and no macOS requirement. Install the successor, then run `claude plugins uninstall bonsai@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
       "source": "./packages/bonsai"
     },
     {
       "name": "dont-do-that",
-      "description": "DEPRECATED. dont-do-that has moved to dont-do-that@laicluse-agent-tools. Install dont-do-that@laicluse-agent-tools, then run `claude plugins uninstall dont-do-that@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills, guards, or hooks remain.",
+      "description": "DEPRECATED. dont-do-that has moved to dont-do-that@laicluse-agent-fieldkit. Install dont-do-that@laicluse-agent-fieldkit, then run `claude plugins uninstall dont-do-that@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills, guards, or hooks remain.",
       "source": "./packages/dont-do-that"
     },
     {
@@ -54,7 +54,7 @@
     },
     {
       "name": "intervision",
-      "description": "DEPRECATED. intervision has moved to intervision@laicluse-agent-tools. Install intervision@laicluse-agent-tools, then run `claude plugins uninstall intervision@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
+      "description": "DEPRECATED. intervision has moved to intervision@laicluse-agent-fieldkit. Install intervision@laicluse-agent-fieldkit, then run `claude plugins uninstall intervision@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
       "source": "./packages/intervision"
     },
     {
@@ -69,7 +69,7 @@
     },
     {
       "name": "rename-suggestion",
-      "description": "END OF LIFE. rename-suggestion is discontinued with no successor; it will not move to laicluse-agent-tools. Run `claude plugins uninstall rename-suggestion@leclause`. This plugin now ships only a SessionStart notice; no skills remain. The idea needs no plugin: ask your agent for a short descriptive session name ending in a /rename line.",
+      "description": "END OF LIFE. rename-suggestion is discontinued with no successor; it will not move to laicluse-agent-fieldkit. Run `claude plugins uninstall rename-suggestion@leclause`. This plugin now ships only a SessionStart notice; no skills remain. The idea needs no plugin: ask your agent for a short descriptive session name ending in a /rename line.",
       "source": "./packages/rename-suggestion"
     },
     {
@@ -94,22 +94,22 @@
     },
     {
       "name": "how-plugins-work",
-      "description": "DEPRECATED. how-plugins-work has moved to how-plugins-work@laicluse-agent-tools. Install how-plugins-work@laicluse-agent-tools, then run `claude plugins uninstall how-plugins-work@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
+      "description": "DEPRECATED. how-plugins-work has moved to how-plugins-work@laicluse-agent-fieldkit. Install how-plugins-work@laicluse-agent-fieldkit, then run `claude plugins uninstall how-plugins-work@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
       "source": "./packages/how-plugins-work"
     },
     {
       "name": "autonomous",
-      "description": "DEPRECATED. autonomous has split into rover@laicluse-agent-tools (the mission framework; /autonomous:rover is now /rover:rover, same rename for prepare, decide, pride, trim, verify, stop, rover-help) and autonomous@laicluse-agent-tools (only the keepalive/cron/wake layer, pulled in by the rover itself). Install both successors, then run `claude plugins uninstall autonomous@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain. Existing .autonomous/ loop files stay readable by the successor rover.",
+      "description": "DEPRECATED. autonomous has split into rover@laicluse-agent-fieldkit (the mission framework; /autonomous:rover is now /rover:rover, same rename for prepare, decide, pride, trim, verify, stop, rover-help) and autonomous@laicluse-agent-fieldkit (only the keepalive/cron/wake layer, pulled in by the rover itself). Install both successors, then run `claude plugins uninstall autonomous@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain. Existing .autonomous/ loop files stay readable by the successor rover.",
       "source": "./packages/autonomous"
     },
     {
       "name": "gitgit",
-      "description": "DEPRECATED. gitgit has moved to git-discipline@laicluse-agent-tools. Install git-discipline@laicluse-agent-tools, then run `claude plugins uninstall gitgit@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills, guards, or commit hooks remain, so it no longer enforces commit discipline.",
+      "description": "DEPRECATED. gitgit has moved to git-discipline@laicluse-agent-fieldkit. Install git-discipline@laicluse-agent-fieldkit, then run `claude plugins uninstall gitgit@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills, guards, or commit hooks remain, so it no longer enforces commit discipline.",
       "source": "./packages/gitgit"
     },
     {
       "name": "self-improvement",
-      "description": "DEPRECATED. self-improvement has moved to self-improvement@laicluse-agent-tools. Install self-improvement@laicluse-agent-tools, then run `claude plugins uninstall self-improvement@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
+      "description": "DEPRECATED. self-improvement has moved to self-improvement@laicluse-agent-fieldkit. Install self-improvement@laicluse-agent-fieldkit, then run `claude plugins uninstall self-improvement@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
       "source": "./packages/self-improvement"
     },
     {
@@ -119,7 +119,7 @@
     },
     {
       "name": "anger-management",
-      "description": "DEPRECATED. anger-management has moved to anger-management@laicluse-agent-tools. Install anger-management@laicluse-agent-tools, then run `claude plugins uninstall anger-management@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain. Existing friction captures migrate to the new storage root automatically.",
+      "description": "DEPRECATED. anger-management has moved to anger-management@laicluse-agent-fieldkit. Install anger-management@laicluse-agent-fieldkit, then run `claude plugins uninstall anger-management@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain. Existing friction captures migrate to the new storage root automatically.",
       "source": "./packages/anger-management"
     }
   ]

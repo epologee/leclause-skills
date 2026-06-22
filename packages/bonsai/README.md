@@ -1,7 +1,7 @@
 # bonsai (deprecated)
 
-`bonsai` has moved to **`laicluse-agent-tools`** as
-`bonsai@laicluse-agent-tools`. The successor is a cross-platform CLI for the
+`bonsai` has moved to **`laicluse-agent-fieldkit`** as
+`bonsai@laicluse-agent-fieldkit`. The successor is a cross-platform CLI for the
 worktree lifecycle: `create`, `setup`, and `prune` (teardown), exposed through
 the `bonsai`, `setup`, and `prune` skills.
 
@@ -20,7 +20,7 @@ behaviour is a SessionStart notice that points here.
 ## Migrate
 
 ```bash
-claude plugins marketplace add epologee/laicluse-agent-tools
-claude plugins install bonsai@laicluse-agent-tools
+claude plugins marketplace add epologee/laicluse-agent-fieldkit
+claude plugins install bonsai@laicluse-agent-fieldkit
 claude plugins uninstall bonsai@leclause
 ```

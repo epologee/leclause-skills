@@ -1,6 +1,6 @@
 # dont-do-that (deprecated)
 
-`dont-do-that` has moved to **`dont-do-that@laicluse-agent-tools`**. This
+`dont-do-that` has moved to **`dont-do-that@laicluse-agent-fieldkit`**. This
 package is now a tombstone: it ships no skills, no guards, and no hook
 dispatcher. Its only remaining behaviour is a SessionStart notice that points
 here.
@@ -8,8 +8,8 @@ here.
 ## Migrate
 
 ```bash
-claude plugins marketplace add epologee/laicluse-agent-tools
-claude plugins install dont-do-that@laicluse-agent-tools
+claude plugins marketplace add epologee/laicluse-agent-fieldkit
+claude plugins install dont-do-that@laicluse-agent-fieldkit
 claude plugins uninstall dont-do-that@leclause
 ```
 

@@ -1,5 +1,5 @@
 {
-  "description": "Tombstone: a single SessionStart notice that gitgit has moved to git-discipline@laicluse-agent-tools. No commit guards remain.",
+  "description": "Tombstone: a single SessionStart notice that gitgit has moved to git-discipline@laicluse-agent-fieldkit. No commit guards remain.",
   "hooks": {
     "SessionStart": [
       {

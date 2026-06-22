@@ -1,18 +1,18 @@
 # gitgit (deprecated)
 
-`gitgit` has moved to **`git-discipline@laicluse-agent-tools`**. This package
+`gitgit` has moved to **`git-discipline@laicluse-agent-fieldkit`**. This package
 is now a tombstone: it ships no skills, no guards, and no commit hooks. Its
 only remaining behaviour is a SessionStart notice that points here.
 
 ## Migrate
 
 ```bash
-claude plugins marketplace add epologee/laicluse-agent-tools
-claude plugins install git-discipline@laicluse-agent-tools
+claude plugins marketplace add epologee/laicluse-agent-fieldkit
+claude plugins install git-discipline@laicluse-agent-fieldkit
 claude plugins uninstall gitgit@leclause
 ```
 
-`git-discipline@laicluse-agent-tools` carries the same thirteen skills under
+`git-discipline@laicluse-agent-fieldkit` carries the same thirteen skills under
 the same names (`commit-all-the-things`, `commit-snipe`, `commit-discipline`,
 `rebase-latest-default`, `merge-to-default`, `push-policy`, `install-hooks`,
 `run-spec`, `disable-discipline`, `enable-discipline`, `discipline-status`,

@@ -1,5 +1,5 @@
 {
-  "description": "Tombstone: a single SessionStart notice that anger-management has moved to anger-management@laicluse-agent-tools. No other behaviour remains.",
+  "description": "Tombstone: a single SessionStart notice that anger-management has moved to anger-management@laicluse-agent-fieldkit. No other behaviour remains.",
   "hooks": {
     "SessionStart": [
       {

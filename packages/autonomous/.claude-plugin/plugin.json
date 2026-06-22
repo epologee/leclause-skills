@@ -1,5 +1,5 @@
 {
   "name": "autonomous",
-  "description": "DEPRECATED. autonomous has split into rover@laicluse-agent-tools (the mission framework; /autonomous:rover is now /rover:rover, same rename for prepare, decide, pride, trim, verify, stop, rover-help) and autonomous@laicluse-agent-tools (only the keepalive/cron/wake layer, pulled in by the rover itself). Install both successors, then run `claude plugins uninstall autonomous@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain. Existing .autonomous/ loop files stay readable by the successor rover.",
-  "version": "1.0.87"
+  "description": "DEPRECATED. autonomous has split into rover@laicluse-agent-fieldkit (the mission framework; /autonomous:rover is now /rover:rover, same rename for prepare, decide, pride, trim, verify, stop, rover-help) and autonomous@laicluse-agent-fieldkit (only the keepalive/cron/wake layer, pulled in by the rover itself). Install both successors, then run `claude plugins uninstall autonomous@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain. Existing .autonomous/ loop files stay readable by the successor rover.",
+  "version": "1.0.88"
 }

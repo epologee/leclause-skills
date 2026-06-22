@@ -1,5 +1,5 @@
 {
   "name": "bonsai",
-  "description": "DEPRECATED. bonsai has moved to bonsai@laicluse-agent-tools, now a cross-platform CLI (create, setup, prune) with no clipboard and no macOS requirement. Install the successor, then run `claude plugins uninstall bonsai@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
-  "version": "1.0.10"
+  "description": "DEPRECATED. bonsai has moved to bonsai@laicluse-agent-fieldkit, now a cross-platform CLI (create, setup, prune) with no clipboard and no macOS requirement. Install the successor, then run `claude plugins uninstall bonsai@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
+  "version": "1.0.11"
 }

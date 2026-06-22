@@ -1,13 +1,13 @@
 # autonomous (deprecated)
 
-`autonomous` has moved to **`laicluse-agent-tools`** and was **split into
+`autonomous` has moved to **`laicluse-agent-fieldkit`** and was **split into
 two plugins** on the way:
 
-- **`rover@laicluse-agent-tools`** carries the mission framework you most
+- **`rover@laicluse-agent-fieldkit`** carries the mission framework you most
   likely used: `/autonomous:rover` is now `/rover:rover`, and the same
   rename applies to `prepare`, `decide`, `pride`, `trim`, `verify`,
   `stop`, and `rover-help`.
-- **`autonomous@laicluse-agent-tools`** keeps only the stay-alive layer
+- **`autonomous@laicluse-agent-fieldkit`** keeps only the stay-alive layer
   (keepalive, cron heartbeat with backoff, wake). The rover pulls it in
   by itself when it detects an interactive session; persistent processes
   run without it.
@@ -18,9 +18,9 @@ behaviour is a SessionStart notice that points here.
 ## Migrate
 
 ```bash
-claude plugins marketplace add epologee/laicluse-agent-tools
-claude plugins install rover@laicluse-agent-tools
-claude plugins install autonomous@laicluse-agent-tools
+claude plugins marketplace add epologee/laicluse-agent-fieldkit
+claude plugins install rover@laicluse-agent-fieldkit
+claude plugins install autonomous@laicluse-agent-fieldkit
 claude plugins uninstall autonomous@leclause
 ```
 

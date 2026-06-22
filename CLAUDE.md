@@ -22,8 +22,8 @@ replacement marketplace has actionable migration instructions for external
 users. Do not remove, rename, or hollow out existing public plugins merely
 because a local l'Aicluse successor exists.
 
-The planned public successor is `laicluse-agent-tools` with marketplace alias
-`@laicluse-agent-tools`. During the transition, `how-plugins-work` and
+The planned public successor is `laicluse-agent-fieldkit` with marketplace alias
+`@laicluse-agent-fieldkit`. During the transition, `how-plugins-work` and
 git-discipline may exist in both the old and new local repos. That temporary
 duplication is intentional migration staging, not a DRY cleanup target. Existing
 users should keep using `@leclause` until a plugin-specific migration stub tells

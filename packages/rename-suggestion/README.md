@@ -1,7 +1,7 @@
 # rename-suggestion (end of life)
 
 `rename-suggestion` is discontinued. There is no successor; the plugin will
-not move to `laicluse-agent-tools`.
+not move to `laicluse-agent-fieldkit`.
 
 This package is now a tombstone: it ships no skills. Its only remaining
 behaviour is a SessionStart notice that points here.

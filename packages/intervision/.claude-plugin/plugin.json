@@ -1,5 +1,5 @@
 {
   "name": "intervision",
-  "description": "DEPRECATED. intervision has moved to intervision@laicluse-agent-tools. Install intervision@laicluse-agent-tools, then run `claude plugins uninstall intervision@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
-  "version": "1.0.11"
+  "description": "DEPRECATED. intervision has moved to intervision@laicluse-agent-fieldkit. Install intervision@laicluse-agent-fieldkit, then run `claude plugins uninstall intervision@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
+  "version": "1.0.12"
 }

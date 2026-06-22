@@ -1,14 +1,14 @@
 # anger-management (deprecated)
 
-`anger-management` has moved to **`anger-management@laicluse-agent-tools`**.
+`anger-management` has moved to **`anger-management@laicluse-agent-fieldkit`**.
 This package is now a tombstone: it ships no skills. Its only remaining
 behaviour is a SessionStart notice that points here.
 
 ## Migrate
 
 ```bash
-claude plugins marketplace add epologee/laicluse-agent-tools
-claude plugins install anger-management@laicluse-agent-tools
+claude plugins marketplace add epologee/laicluse-agent-fieldkit
+claude plugins install anger-management@laicluse-agent-fieldkit
 claude plugins uninstall anger-management@leclause
 ```
 

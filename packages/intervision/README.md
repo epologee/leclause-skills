@@ -1,14 +1,14 @@
 # intervision (deprecated)
 
-`intervision` has moved to **`intervision@laicluse-agent-tools`**. This
+`intervision` has moved to **`intervision@laicluse-agent-fieldkit`**. This
 package is now a tombstone: it ships no skills. Its only remaining behaviour
 is a SessionStart notice that points here.
 
 ## Migrate
 
 ```bash
-claude plugins marketplace add epologee/laicluse-agent-tools
-claude plugins install intervision@laicluse-agent-tools
+claude plugins marketplace add epologee/laicluse-agent-fieldkit
+claude plugins install intervision@laicluse-agent-fieldkit
 claude plugins uninstall intervision@leclause
 ```
 
