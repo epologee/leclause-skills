@@ -1,5 +1,5 @@
 {
   "name": "saysay",
-  "description": "Speech mode via macOS say command. Claude speaks output aloud after every response, translating screen content to spoken language.",
-  "version": "1.0.14"
+  "description": "DEPRECATED. saysay has moved to saysay@laicluse-agent-fieldkit; the speech mode is unchanged (/saysay, /saysay off). Install the successor, then run `claude plugins uninstall saysay@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
+  "version": "1.0.15"
 }

@@ -1,41 +1,19 @@
-# saysay
+# saysay (deprecated)
 
-Speech mode via the macOS `say` command. Once enabled, Claude speaks every response aloud, translating screen content into spoken language.
+`saysay` has moved to **`laicluse-agent-fieldkit`** as
+`saysay@laicluse-agent-fieldkit`. The speech mode is unchanged: `/saysay`
+turns it on, `/saysay off` exits.
 
-## Commands
+This package is now a tombstone: it ships no skills. Its only remaining
+behaviour is a SessionStart notice that points here.
 
-### `/saysay`
-
-Enter speech mode. Subsequent responses are spoken aloud after rendering.
-
-### `/saysay off`
-
-Exit speech mode.
-
-## Requirements
-
-macOS. Speech mode needs the macOS `say` binary plus two scripts shipped with the plugin. The marketplace is symlink-free to keep Windows consumers working, so install the scripts with `cp -f`:
+## Migrate
 
 ```bash
-SRC=$(jq -r '.plugins["saysay@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)
-cp -f "$SRC/skills/saysay/saysay" /usr/local/bin/saysay
-cp -f "$SRC/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
+claude plugins marketplace add epologee/laicluse-agent-fieldkit
+claude plugins install saysay@laicluse-agent-fieldkit
+claude plugins uninstall saysay@leclause
 ```
 
-Re-run after each `claude plugins update saysay@leclause` so the installed copies match the updated plugin.
-
-## Phonetic mappings
-
-`say-phonetic` keeps a per-user pronunciation dictionary so that names, acronyms, and code identifiers come out the way you want. Mappings live in `~/.local/share/saysay/phonetics.json` (XDG).
-
-```bash
-say-phonetic add "kbd" "keyboard"
-say-phonetic remove "kbd"
-say-phonetic list
-```
-
-## Installation
-
-```bash
-/plugin install saysay@leclause
-```
+Full migration guide:
+https://github.com/epologee/leclause-skills/blob/main/docs/migration.md
