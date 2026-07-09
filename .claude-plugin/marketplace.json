@@ -34,7 +34,7 @@
     },
     {
       "name": "eye-of-the-beholder",
-      "description": "Visual layout review skill. Observation before explanation: screenshot, describe what you see, then diagnose. Design-TDD for CSS.",
+      "description": "DEPRECATED. eye-of-the-beholder has moved to eye-of-the-beholder@laicluse-agent-fieldkit; the skills are unchanged (eye-of-the-beholder, art-director, visual-inspection). Install the successor, then run `claude plugins uninstall eye-of-the-beholder@leclause`. This plugin now ships only a SessionStart deprecation notice; no skills remain.",
       "source": "./packages/eye-of-the-beholder"
     },
     {

@@ -1,0 +1,13 @@
+{
+  "description": "Tombstone: a single SessionStart notice that eye-of-the-beholder has moved to eye-of-the-beholder@laicluse-agent-fieldkit. No other behaviour remains.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/deprecated-notice.sh" }
+        ]
+      }
+    ]
+  }
+}
