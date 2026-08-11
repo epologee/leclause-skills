@@ -37,6 +37,10 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 
+if ! bin/check-tombstones; then
+  exit 1
+fi
+
 # Block symlinks anywhere in the repo. This repo is symlink-free so that
 # Windows consumers can clone with core.symlinks=false and still get working
 # files. A symlink in the index also means two paths point at the same

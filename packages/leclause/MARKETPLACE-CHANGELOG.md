@@ -12,6 +12,12 @@ the top. `/leclause:whats-new` (no argument) prints the most
 recent section. Patch-level marketplace tweaks that change
 nothing observable are intentionally silent.
 
+## [2026-08-11]
+
+### Migration
+
+- **`gurus` moves without renaming.** Install `gurus@laicluse-agent-fieldkit`, then uninstall `gurus@leclause`; the four skill names are unchanged.
+
 ## [2026-06-11]
 
 ### Migration

@@ -15,19 +15,11 @@ notes that the upstream maintainer kept Dutch on purpose); do not
 translate those, but never introduce new ones. When in doubt, write
 English.
 
-## l'Aicluse migration in progress
+## l'Aicluse migration
 
-This repository remains the active public `@leclause` marketplace until the
-replacement marketplace has actionable migration instructions for external
-users. Do not remove, rename, or hollow out existing public plugins merely
-because a local l'Aicluse successor exists.
+This repository remains the public `@leclause` marketplace for plugins that have not moved yet and for tombstones that reach existing installs. The public successor is `laicluse-agent-fieldkit` with marketplace alias `@laicluse-agent-fieldkit`. Existing users should keep `@leclause` installed until every plugin they use has a plugin-specific migration stub naming what to uninstall and what to install next.
 
-The planned public successor is `laicluse-agent-fieldkit` with marketplace alias
-`@laicluse-agent-fieldkit`. During the transition, `how-plugins-work` and
-git-discipline may exist in both the old and new local repos. That temporary
-duplication is intentional migration staging, not a DRY cleanup target. Existing
-users should keep using `@leclause` until a plugin-specific migration stub tells
-them what to uninstall and what to install next.
+Before hollowing out another public plugin, verify that its successor is public, registered in the successor marketplace, and documented with actionable migration instructions. A moved plugin stays in this marketplace as a tombstone with no runtime payload beyond its SessionStart migration notice.
 
 ## Authoring a new plugin
 

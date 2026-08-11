@@ -17,6 +17,12 @@ omitted; the broadcast budget is for things the user benefits from knowing.
 The helper writes the sentinel only when stdout is non-empty, so a CHANGELOG
 without a `## [vX.Y.Z]` section stays silent on every update.
 
+## [v1.0.15]
+
+### Changed
+
+- **`gurus` now points to its successor marketplace.** Install `gurus@laicluse-agent-fieldkit`, then uninstall `gurus@leclause`; the four skill names are unchanged.
+
 ## [v1.0.9]
 
 ### Changed

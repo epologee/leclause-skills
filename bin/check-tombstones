@@ -1,0 +1,47 @@
+#!/bin/sh
+set -eu
+
+repo_root=${1:-$(git rev-parse --show-toplevel)}
+failed=0
+
+for manifest in "$repo_root"/packages/*/.claude-plugin/plugin.json; do
+  [ -f "$manifest" ] || continue
+  plugin=$(jq -r '.name' "$manifest")
+  description=$(jq -r '.description' "$manifest")
+  case "$description" in
+    DEPRECATED.*|"END OF LIFE."*) ;;
+    *) continue ;;
+  esac
+
+  package="$repo_root/packages/$plugin"
+  for payload in skills agents bin; do
+    if [ -d "$package/$payload" ] && [ -n "$(find "$package/$payload" -type f -print -quit)" ]; then
+      echo "$plugin still ships runtime payload: $payload" >&2
+      failed=1
+    fi
+  done
+
+
+  for payload in CHANGELOG.md MARKETPLACE-CHANGELOG.md; do
+    if [ -f "$package/$payload" ]; then
+      echo "$plugin still ships runtime payload: $payload" >&2
+      failed=1
+    fi
+  done
+
+  catalog_row=$(grep -F "| **$plugin** |" "$repo_root/README.md" || true)
+  if [ -z "$catalog_row" ]; then
+    echo "$plugin is missing from the root README catalog" >&2
+    failed=1
+  elif ! printf '%s\n' "$catalog_row" | grep -Fq '| ❌'; then
+    echo "$plugin is still active in the root README catalog" >&2
+    failed=1
+  fi
+
+  if ! jq -e '.hooks as $hooks | ($hooks | keys) == ["SessionStart"] and ($hooks.SessionStart | length) == 1 and $hooks.SessionStart[0].matcher == "startup|resume"' "$package/hooks/hooks.json" >/dev/null 2>&1; then
+    echo "$plugin does not have the canonical SessionStart tombstone hook" >&2
+    failed=1
+  fi
+done
+
+exit "$failed"
