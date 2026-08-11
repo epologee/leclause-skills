@@ -16,17 +16,11 @@ Add the successor marketplace first:
 claude plugins marketplace add epologee/laicluse-agent-fieldkit
 ```
 
-Then install replacements one plugin at a time:
+Then install replacements one plugin at a time, using the mapping below:
 
 ```bash
-claude plugins install how-plugins-work@laicluse-agent-fieldkit
-claude plugins install git-discipline@laicluse-agent-fieldkit
-claude plugins install self-improvement@laicluse-agent-fieldkit
-claude plugins install intervision@laicluse-agent-fieldkit
-claude plugins install anger-management@laicluse-agent-fieldkit
-claude plugins install rover@laicluse-agent-fieldkit
-claude plugins install autonomous@laicluse-agent-fieldkit
-claude plugins install clipboard@laicluse-agent-fieldkit
+claude plugins install <new-plugin>@laicluse-agent-fieldkit
+claude plugins uninstall <old-plugin>@leclause
 ```
 
 Keep `@leclause` installed until every plugin you use has either been replaced
@@ -38,13 +32,23 @@ Current replacements:
 
 | Old plugin | New plugin |
 |------------|------------|
-| `how-plugins-work@leclause` | `how-plugins-work@laicluse-agent-fieldkit` |
-| `gitgit@leclause` | `git-discipline@laicluse-agent-fieldkit` |
-| `self-improvement@leclause` | `self-improvement@laicluse-agent-fieldkit` |
-| `intervision@leclause` | `intervision@laicluse-agent-fieldkit` |
 | `anger-management@leclause` | `anger-management@laicluse-agent-fieldkit` |
 | `autonomous@leclause` | split: `rover@laicluse-agent-fieldkit` (mission framework, `/rover:*`) + `autonomous@laicluse-agent-fieldkit` (keepalive layer) |
+| `bonsai@leclause` | `bonsai@laicluse-agent-fieldkit` |
 | `clipboard@leclause` | `clipboard@laicluse-agent-fieldkit` |
+| `dont-do-that@leclause` | `dont-do-that@laicluse-agent-fieldkit` |
+| `drydry@leclause` | `drydry@laicluse-agent-fieldkit` |
+| `eye-of-the-beholder@leclause` | `eye-of-the-beholder@laicluse-agent-fieldkit` |
+| `ground@leclause` | `lifeline@laicluse-agent-fieldkit` |
+| `gurus@leclause` | `gurus@laicluse-agent-fieldkit` |
+| `how-plugins-work@leclause` | `how-plugins-work@laicluse-agent-fieldkit` |
+| `gitgit@leclause` | `git-discipline@laicluse-agent-fieldkit` |
+| `inspire@leclause` | `lifeline@laicluse-agent-fieldkit` |
+| `intervision@leclause` | `intervision@laicluse-agent-fieldkit` |
+| `saysay@leclause` | `saysay@laicluse-agent-fieldkit` |
+| `self-improvement@leclause` | `self-improvement@laicluse-agent-fieldkit` |
+| `testing-philosophy@leclause` | `house-rules@laicluse-agent-fieldkit` |
+| `whywhy@leclause` | `whywhy@laicluse-agent-fieldkit` |
 
 Plugins not listed above remain in `@leclause` for now.
 
@@ -64,28 +68,28 @@ The `@leclause` suffix in the second command is the marketplace alias that the f
 | Plugin | Command | Auto | Hooks | Platform | Description |
 |--------|---------|:----:|:-----:|:--------:|-------------|
 | **autonomous** | ❌ deprecated | | | | **DEPRECATED. Split into `rover@laicluse-agent-fieldkit` and `autonomous@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. The mission framework lives on as `rover` (`/autonomous:rover` is now `/rover:rover`, same rename for `prepare`, `decide`, `pride`, `trim`, `verify`, `stop`, `rover-help`); the successor `autonomous` keeps only the keepalive/cron/wake layer, which the rover pulls in by itself in interactive sessions. Existing `.autonomous/` loop files stay readable. Install both successors, then `claude plugins uninstall autonomous@leclause`. See [autonomous](packages/autonomous/README.md). |
-| **bonsai** | `/bonsai` | | | macOS | Worktree lifecycle manager: create a worktree and put a `cd <worktree> && claude "..."` start command on the clipboard so you can paste it into any terminal pane/tab/app, or prune worktrees with safety checks. Requires macOS (uses `pbcopy`). |
+| **bonsai** | ❌ deprecated | | | | **DEPRECATED. Moved to `bonsai@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. Install the successor, then `claude plugins uninstall bonsai@leclause`. See [bonsai](packages/bonsai/README.md). |
 | **clipboard** | ❌ deprecated | | | | **DEPRECATED. Moved to `clipboard@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. The commands are unchanged in the successor (`/clipboard`, `/clipboard slack`). Install `clipboard@laicluse-agent-fieldkit`, then `claude plugins uninstall clipboard@leclause`. See [clipboard](packages/clipboard/README.md). |
-| **dont-do-that** | `/duh`, `/just-a-question` | | ✅ | | Guardrail hooks (one dispatcher, uniform `[dont-do-that/<code>]` messages) that push back on common AI reflexes: shifting blame, stopping prematurely, delegating verification, offering a recipe instead of executing it (`duh` guard), asking for confirmation when none was needed, handing back a bare option menu instead of a reasoned, emoji-marked pick (`prefer` guard at Stop detects lettered `(a)`/`(b)` menus, `Optie`/`Option N` lists, choice-column tables, and numbered menus, each gated by a choice signal so status tables and step plans stay silent; runs before the close-out nudges, mark your lean with 🅰️/🅱️ or 1️⃣/2️⃣, escape with 🧭 or 🚧, and gets a `/decide` pointer when `autonomous` is installed), em-dashes in prose, hallucinated hour/day/week effort estimates (`estimate` guard at Stop catches "een paar uur werk", "halve dag uitzoekwerk", "a few days of work", "binnen een uur", and the "option A is vandaag, B is deze week" comparison frame; calendar, cron, retention, SLA, and past-tense phrasing is filtered so legitimate scheduling and history claims pass; escape with `🧭` for deferred judgment, `🚧` for WIP), and adding code comments to programming-language files (`no-code-comments` guard at PreToolUse uses per-language awk tokenizers to distinguish real comments from strings, allow rules for URL, `allow-comment` escape, pragma allowlist, and shebangs). Plus two user-invocable skills: `/duh` is the operator's one-keystroke correction when Claude proposed an action instead of running it; it tells Claude to execute the proposal from the previous turn (or disambiguate when the turn had multiple proposals). `/just-a-question` is the inverse: half of "this is a question for information, not a request for change", which forbids mutation tools for the rest of the turn so a clarifying question cannot tip into mid-question code edits. See [dont-do-that](packages/dont-do-that/README.md). |
-| **drydry** | `/drydry:drydry` | | | | Find and converge parallel paths in any artefact (code in any language, prose, design systems, technical documentation). Methodology guide that disciplines how a duplication audit runs (eight chapters: Type-4 clone framing, verifier-burden LLM pass, allow-list scoping, drift hypothesis, three-bucket triage, two-fates discipline, contrarian second-pass, method-as-artefact) without prescribing what duplication looks like in your codebase. One user-invocable orchestrator `drydry:drydry` with two modes: `quick` (inline "is this duplicate?" check with a runnable verifier-grep, no artefact) and `audit` (full sweep producing a `<scope>-drydry-findings.md` artefact with `## Detection method chosen` and `## Findings`). In audit mode the calling session formulates the six-to-ten item checklist itself by reading the codebase against formulation prompts (canonical-channel bypass, parallel utilities, predicate pairs, framework-seam boilerplate, commit-history clusters, user-facing copy variants, parallel UX surfaces, off-template project-specific patterns, parallel orchestrations above a shared leaf-call); drydry disciplines how the list is used, not what is on it. Six agent-only sub-skills: `sweep` (Sonnet detection pass with verifier-burden discipline; hits without a runnable verifier are dropped), `checklist` (opt-in seed source returning starting-point templates per domain when the operator passes `seed-from <domain>`; the session rewrites the seed against the actual codebase before passing it to sweep), `triage` (three-bucket classification: cheap-and-safe / partial / needs-design with convergence cost per item), `learn` (online research on de-duplication state-of-the-art via parallel WebSearch and WebFetch subagents, enriches the discipline's external vocabulary), `upstream` (cross-toolbox audit against framework offerings: Rails/Devise helpers, SwiftUI/Foundation built-ins, React conventions; uses `inspire` and `ground` patterns to verify the framework actually offers what we suspect), `instructions` (CLAUDE.md audit for instructions that themselves cause DRY violations: two paths prescribed for the same job, or silence on existing helpers causing agent-generated parallel code). See [drydry](packages/drydry/README.md). |
+| **dont-do-that** | ❌ deprecated | | | | **DEPRECATED. Moved to `dont-do-that@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills or guards remain. Install the successor, then `claude plugins uninstall dont-do-that@leclause`. See [dont-do-that](packages/dont-do-that/README.md). |
+| **drydry** | ❌ deprecated | | | | **DEPRECATED. Moved to `drydry@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. Install the successor, then `claude plugins uninstall drydry@leclause`. See [drydry](packages/drydry/README.md). |
 | **export-skill** | `/export-skill` | | | macOS | Export a skill for sharing. Orchestrator that chains five sub-skills, each also user-invocable on its own: `sanitize` (PII + security), `translate` (en/nl), `port` (linux/windows/macos), `package` (zip or single-file md), `share` (clipboard summary + Finder handoff). The `share` sub-skill is macOS-only; the others run anywhere. |
-| **eye-of-the-beholder** | `/eye-of-the-beholder`, `/art-director`, `/visual-inspection` | ✅ | | | Three sister skills. `eye-of-the-beholder` catches cramped text, missing margins, and disproportionate spacing in visual layouts (diagnostic, per-change). `art-director` works upstream: captures brand identity, visual language across type / color / form / motion / photography, and design-system architecture (Curtis 3-layer tokens + Frost atomic components) BEFORE CSS exists. `visual-inspection` activates when the user asks to match one element to another along named axes (padding, corner radius, font, color); it forces a reference + result screenshot table comparison before "match" can be claimed. Not for small UI tweaks; for new products, brand refreshes, or first-time DS foundation. |
+| **eye-of-the-beholder** | ❌ deprecated | | | | **DEPRECATED. Moved to `eye-of-the-beholder@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. Install the successor, then `claude plugins uninstall eye-of-the-beholder@leclause`. See [eye-of-the-beholder](packages/eye-of-the-beholder/README.md). |
 | **gitgit** | ❌ deprecated | | | | **DEPRECATED. Moved to `git-discipline@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills or commit hooks remain. Install `git-discipline@laicluse-agent-fieldkit` (same thirteen skills under the same names, `/git-discipline:` prefix), then `claude plugins uninstall gitgit@leclause`. See [gitgit](packages/gitgit/README.md). |
-| **ground** | `/ground` | ✅ | | | Verify Claude's recent output with external sources when you challenge accuracy. |
-| **gurus** | `/gurus`, `/gurus:software`, `/gurus:council`, `/gurus:writers` | | | | Opinionated panels that challenge a decision from multiple perspectives. `gurus:software` hosts the eight-persona code review panel (Beck, Fowler, Uncle Bob, DHH, Metz, Evans, Hickey, Ousterhout). `gurus:council` runs Ole Lehmann's five-advisor pattern (pre-mortem, first-principles, opportunity-finder, stranger, action) with anonymised peer-review and chairman synthesis. `gurus:writers` runs a six-writer prose review panel (Didion, Saunders, Rovelli, Watts, Gladwell, Urban) for essays, scripts, manuscripts, and narrative copy; consensus across 4 of 6 yields an action plan of edits, cuts, and rewrites. `/gurus` is an orchestrator that routes between the three panels based on context; it is not itself a review. All voices run on the shared `gurus:sonnet-max` subagent. |
+| **ground** | ❌ deprecated | | | | **DEPRECATED. Moved into `lifeline@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. Install `lifeline@laicluse-agent-fieldkit`, then uninstall `ground@leclause` and `inspire@leclause`. See [ground](packages/ground/README.md). |
+| **gurus** | ❌ deprecated | | | | **DEPRECATED. Moved to `gurus@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills or subagents remain. The four skill names are unchanged. Install the successor, then `claude plugins uninstall gurus@leclause`. See [gurus](packages/gurus/README.md). |
 | **how-plugins-work** | ❌ deprecated | | | | **DEPRECATED. Moved to `how-plugins-work@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. The successor keeps the same plugin and skill names, so the slash commands stay identical. Install `how-plugins-work@laicluse-agent-fieldkit`, then `claude plugins uninstall how-plugins-work@leclause`. See [how-plugins-work](packages/how-plugins-work/README.md). |
-| **inspire** | `/inspire` | ✅ | | | Online research workflow for unfamiliar topics, design decisions, and evaluating approaches. |
+| **inspire** | ❌ deprecated | | | | **DEPRECATED. Moved into `lifeline@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. Install `lifeline@laicluse-agent-fieldkit`, then uninstall `inspire@leclause` and `ground@leclause`. See [inspire](packages/inspire/README.md). |
 | **intervision** | ❌ deprecated | | | | **DEPRECATED. Moved to `intervision@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. The successor keeps the same plugin and skill name (slash command stays `/intervision:second-opinion`) and is multi-agent: Claude consults Codex via `codex exec`, Codex consults Claude via `claude -p`. Install `intervision@laicluse-agent-fieldkit`, then `claude plugins uninstall intervision@leclause`. See [intervision](packages/intervision/README.md). |
 | **leclause** | `/leclause:whats-new` | | | | Marketplace-wide utilities. Currently ships `whats-new`, a one-stop reader for the post-update CHANGELOG section of any installed leclause plugin. Argument is the plugin name (`/leclause:whats-new gitgit`); without argument, lists every leclause plugin that adopted the broadcast pattern. The reader uses `--force`, so it never advances the per-plugin sentinel under `~/.claude/var/leclause/`. |
 | **anger-management** | ❌ deprecated | | | | **DEPRECATED. Moved to `anger-management@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. The successor keeps the same plugin and skill names (slash commands stay identical) and is multi-agent; the friction pile moves to `${LAICLUSE_HOME:-~/.laicluse}/anger-management/` with automatic migration of existing captures. Install `anger-management@laicluse-agent-fieldkit`, then `claude plugins uninstall anger-management@leclause`. See [anger-management](packages/anger-management/README.md). |
 | **recap** | `/recap` | | | | Structured status overview of the current session: what we are doing, where we are, what is next. |
 | **recursion** | `/recursion` | | | | Nightly workflow-improvement loop. Orchestrator manages schedule, state, focus, reject. Ships with an internal `research` sub-skill that runs parallel friction and external discovery agents, synthesizes findings, and writes atomic improvement plans. |
 | **rename-suggestion** | ❌ end of life | | | | **END OF LIFE. Discontinued without a successor.** Now a tombstone that ships only a SessionStart notice; no skills remain. Run `claude plugins uninstall rename-suggestion@leclause`. The idea needs no plugin: ask your agent for a short descriptive session name ending in a `/rename <name>` line. See [rename-suggestion](packages/rename-suggestion/README.md). |
-| **saysay** | `/saysay` | | | macOS | Claude speaks every response aloud. `/saysay off` to exit. |
+| **saysay** | ❌ deprecated | | | | **DEPRECATED. Moved to `saysay@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. Install the successor, then `claude plugins uninstall saysay@leclause`. See [saysay](packages/saysay/README.md). |
 | **self-improvement** | ❌ deprecated | | | | **DEPRECATED. Moved to `self-improvement@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. The successor keeps the same plugin and skill name, so the slash command stays `/self-improvement`. Install `self-improvement@laicluse-agent-fieldkit`, then `claude plugins uninstall self-improvement@leclause`. See [self-improvement](packages/self-improvement/README.md). |
 | **screen-recording** | `/screen-recording` | | | | Automated screen recordings and demo videos of browser-based features. |
-| **testing-philosophy** | ❌ | ✅ | | | Opinionated testing guide covering TDD workflow, end-to-end behaviour-test conventions (Cucumber/Gherkin and other framework choices), flaky test diagnosis, and test suite health. |
-| **whywhy** | `/whywhy [n]` | ✅ | | | Drill N layers deep into a question or goal (default 10), then analyze the chain for a better direction. |
+| **testing-philosophy** | ❌ deprecated | | | | **DEPRECATED. Moved into `house-rules@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. Install `house-rules@laicluse-agent-fieldkit`, then `claude plugins uninstall testing-philosophy@leclause`. See [testing-philosophy](packages/testing-philosophy/README.md). |
+| **whywhy** | ❌ deprecated | | | | **DEPRECATED. Moved to `whywhy@laicluse-agent-fieldkit`.** Now a tombstone that ships only a SessionStart migration notice; no skills remain. Install the successor, then `claude plugins uninstall whywhy@leclause`. See [whywhy](packages/whywhy/README.md). |
 
 **Auto column:** skills with a check in this column self-activate when Claude matches the skill's `description` frontmatter against the conversation context. No hook is involved, no separate frontmatter flag; Claude reads the description and decides whether the skill fits the current task.
 
@@ -95,7 +99,7 @@ The `@leclause` suffix in the second command is the marketplace alias that the f
 
 Some skills ship helper binaries that must live on your `$PATH`. Install them with `cp -f` from the active plugin install into `/usr/local/bin/` (or anywhere else on `$PATH`). Symlinks would reintroduce the Windows breakage the marketplace is symlink-free to avoid, so every install step below is a copy.
 
-The authoritative source for "which plugin version is active right now" is `~/.claude/plugins/installed_plugins.json`. Each install step below resolves the install path from that file via `jq`, so it always picks the version Claude Code is currently loading rather than the newest directory in the cache. Re-run the `cp -f` commands after each `claude plugins update <plugin>@leclause` so the installed binaries match the updated plugin.
+The authoritative source for "which plugin version is active right now" is `~/.claude/plugins/installed_plugins.json`. Each install step below resolves the install path from that file via `jq`, so it always picks the version Claude Code is currently loading rather than the newest directory in the cache. Re-run the `cp -f` commands after each plugin update so the installed binaries match the updated plugin.
 
 ### clipboard
 
@@ -111,15 +115,7 @@ Plain text mode goes through `pbcopy` directly, no install needed.
 
 ### saysay
 
-Speech mode requires the macOS `say` binary plus two scripts shipped with the plugin:
-
-```bash
-SRC=$(jq -r '.plugins["saysay@leclause"][0].installPath' ~/.claude/plugins/installed_plugins.json)
-cp -f "$SRC/skills/saysay/saysay" /usr/local/bin/saysay
-cp -f "$SRC/skills/saysay/say-phonetic" /usr/local/bin/say-phonetic
-```
-
-Phonetic mappings are stored per user in `~/.local/share/saysay/phonetics.json` (XDG).
+Moved to `saysay@laicluse-agent-fieldkit`; the runtime and helper installation notes live in that package's README.
 
 ### screen-recording
 
@@ -133,21 +129,13 @@ The skill is not auto-activated: self-activation on description match without th
 
 ### bonsai
 
-Requires macOS. `/bonsai new` puts the start command on the clipboard via `pbcopy`, which is macOS-only. `/bonsai prune` works anywhere git runs. Terminal-app agnostic: paste the command into iTerm2, Terminal.app, cmux, Ghostty, Warp, a tmux pane, whatever.
-
-If you use a wrapper around `claude` (custom alias, flags, model pinning), expose it via the `CLAUDE_CLI` env var in your shell rc:
-
-```bash
-export CLAUDE_CLI=my-wrapper
-```
-
-Bonsai puts the literal string `${CLAUDE_CLI:-claude}` in the clipboard command so the target shell evaluates it at paste time, falling back to `claude` if the var is not set.
+Moved to `bonsai@laicluse-agent-fieldkit`; the cross-platform CLI and worktree setup notes live in that package's README.
 
 ## Post-update broadcasts
 
 Plugins in this marketplace can ship a one-off broadcast that fires the next time the user runs one of the plugin's slash commands after `claude plugins update`. Use it to announce renames, new commands, breaking hook changes, or deprecation warnings. Patch-level fixes that change nothing observable are intentionally silent.
 
-All plugins in this marketplace ship the broadcast pattern, with two exceptions: `testing-philosophy` (referenced via the Skill tool only, no slash command for the broadcast to attach to) and the deprecated tombstones (`gitgit`, `self-improvement`, `how-plugins-work`, `intervision`, `anger-management`, `autonomous`), which carry no changelog because their SessionStart notice is their only remaining output. The `bin/check-broadcast` helper has a single canonical source at `bin/check-broadcast.mjs` in the repo root; every plugin's `bin/check-broadcast` is a byte-for-byte mirror, kept in sync by `bin/sync-check-broadcast` and policed by the pre-commit hook. Plugin authors do not edit per-plugin copies; they edit the canonical, then run the sync.
+Active plugins in this marketplace ship the broadcast pattern when they have an invocable entry skill. Deprecated tombstones carry no changelog because their SessionStart notice is their only remaining output. The `bin/check-broadcast` helper has a single canonical source at `bin/check-broadcast.mjs` in the repo root; every active plugin's `bin/check-broadcast` is a byte-for-byte mirror, kept in sync by `bin/sync-check-broadcast` and policed by the pre-commit hook. Plugin authors do not edit per-plugin copies; they edit the canonical, then run the sync.
 
 To adopt the pattern in a new plugin, run `bin/adopt-broadcast <plugin> [<entry-skill>]` from the repo root. The script writes the CHANGELOG.md skeleton, syncs the canonical helper into the plugin's `bin/`, and prepends the standard `<post-update-broadcast>` block to the named entry skill (defaults to `<plugin>` when `packages/<plugin>/skills/<plugin>/SKILL.md` exists). Re-running on an already-adopted plugin is a no-op except for re-syncing the helper.
 

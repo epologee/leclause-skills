@@ -33,4 +33,13 @@ claude plugins uninstall inspire@leclause
 claude plugins uninstall ground@leclause
 ```
 
-Per-plugin change detail lives in each plugin's changelog, shown once on update.
+Per-plugin migration detail lives in each tombstone README and its SessionStart notice.
+
+## gurus
+
+The four panel skills keep the same names in the successor plugin:
+
+```bash
+claude plugins install gurus@laicluse-agent-fieldkit
+claude plugins uninstall gurus@leclause
+```
