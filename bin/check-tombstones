@@ -29,6 +29,11 @@ for manifest in "$repo_root"/packages/*/.claude-plugin/plugin.json; do
     fi
   done
 
+  if [ -d "$repo_root/.github" ] && grep -R -Eq "packages/$plugin/(skills|agents|bin)/" "$repo_root/.github"; then
+    echo "$plugin still has CI references to removed runtime payload" >&2
+    failed=1
+  fi
+
   catalog_row=$(grep -F "| **$plugin** |" "$repo_root/README.md" || true)
   if [ -z "$catalog_row" ]; then
     echo "$plugin is missing from the root README catalog" >&2
