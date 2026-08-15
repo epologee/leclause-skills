@@ -15,11 +15,11 @@ notes that the upstream maintainer kept Dutch on purpose); do not
 translate those, but never introduce new ones. When in doubt, write
 English.
 
-## l'Aicluse migration
+## Deprecated repository
 
-This repository remains the public `@leclause` marketplace for plugins that have not moved yet and for tombstones that reach existing installs. The public successor is `laicluse-agent-fieldkit` with marketplace alias `@laicluse-agent-fieldkit`. Existing users should keep `@leclause` installed until every plugin they use has a plugin-specific migration stub naming what to uninstall and what to install next.
+This repository is deprecated, frozen, and receives no active support. Do not add features, compatibility updates, bug fixes, or releases. Existing artifacts remain public only so current `@leclause` users can migrate. The maintained successor is `laicluse-agent-fieldkit` with marketplace alias `@laicluse-agent-fieldkit`.
 
-Before hollowing out another public plugin, verify that its successor is public, registered in the successor marketplace, and documented with actionable migration instructions. A moved plugin stays in this marketplace as a tombstone with no runtime payload beyond its SessionStart migration notice.
+Only an explicit operator request may change this repository, and such work must be limited to correcting migration or deprecation information. Existing users should keep `@leclause` installed until every plugin they use has either been replaced or deliberately removed.
 
 ## Authoring a new plugin
 

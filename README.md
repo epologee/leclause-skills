@@ -1,14 +1,15 @@
 # Lecl(a)use Skills
 
+> [!WARNING]
+> **This marketplace is deprecated and unsupported.** It receives no active support, bug fixes, compatibility updates, or new releases. Existing artifacts remain available only so current users can migrate. Use [`epologee/laicluse-agent-fieldkit`](https://github.com/epologee/laicluse-agent-fieldkit) for maintained plugins.
+
 A curated subset of the skills I built while developing applications in Ruby, Swift, Go, JavaScript, Python, Kotlin, and others across various projects. These are the ones I managed to make reusable for colleagues and friends.
 
 I typically prompt in Dutch but write English code, so these skills are a mix of both. The `export-skill` skill can translate if needed.
 
-## Maintenance mode: l'Aicluse migration
+## Migration to l'Aicluse Agent Fieldkit
 
-This marketplace is entering maintenance mode. New multi-agent-compatible
-versions of selected tools are moving to `epologee/laicluse-agent-fieldkit` under
-the marketplace alias `@laicluse-agent-fieldkit`.
+This marketplace is frozen. Maintained multi-agent versions of selected tools live in `epologee/laicluse-agent-fieldkit` under the marketplace alias `@laicluse-agent-fieldkit`.
 
 Add the successor marketplace first:
 
@@ -50,9 +51,11 @@ Current replacements:
 | `testing-philosophy@leclause` | `house-rules@laicluse-agent-fieldkit` |
 | `whywhy@leclause` | `whywhy@laicluse-agent-fieldkit` |
 
-Plugins not listed above remain in `@leclause` for now.
+Plugins not listed above have no supported successor and remain available as-is.
 
-## Install
+## Legacy installation
+
+New installations are not supported. The commands below remain documented only for users recovering or migrating an existing installation.
 
 Same command on macOS, Linux, and Windows:
 

@@ -4,7 +4,7 @@
     "name": "Leclause"
   },
   "metadata": {
-    "description": "Maintenance-mode Claude Code marketplace; selected tools are moving to epologee/laicluse-agent-fieldkit"
+    "description": "DEPRECATED and unsupported Claude Code marketplace; retained only for migration to epologee/laicluse-agent-fieldkit"
   },
   "plugins": [
     {
@@ -114,7 +114,7 @@
     },
     {
       "name": "leclause",
-      "description": "Marketplace-wide utilities and migration notices for the leclause-skills marketplace. Currently ships /leclause:whats-new, a one-stop reader for the post-update CHANGELOG section of any installed leclause plugin.",
+      "description": "DEPRECATED and unsupported marketplace utility retained only for migration notices from leclause-skills to laicluse-agent-fieldkit.",
       "source": "./packages/leclause"
     },
     {
